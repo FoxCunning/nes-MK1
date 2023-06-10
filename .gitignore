@@ -1,0 +1,5 @@
+*.code-workspace
+out/**
+**/*.nes
+_debug.txt
+_listing.txt
