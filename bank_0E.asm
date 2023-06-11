@@ -10,12 +10,10 @@
 
 ; Temporary definitions
 ; TODO Remove once other banks have been disassembled
+rom_8000 = $8000	; TEMP
 rom_8002 = $8002	; TEMP
-rom_A000 = $A000	; TEMP
 rom_B000 = $B000	; TEMP
 sub_rom_8000 = $8000	; TEMP
-sub_rom_A000 = $A000	; TEMP
-sub_rom_A5E4 = $A5E4	; TEMP
 
 
 ; -----------------------------------------------------------------------------
@@ -102,7 +100,7 @@ sub_rom_C019:
 	sta PpuControl_2000
 	sta zp_02
 	lda #$00
-	sta rom_A000
+	sta mmc3_mirroring
 	inc zp_7A
 	nop
 	lda zp_60
@@ -129,14 +127,14 @@ sub_rom_C0C6:
 	sta ram_0440
 	lda #$86
 	sta zp_FC
-	sta rom_8000
+	sta mmc3_bank_select
 	lda #$00
-	sta rom_8001
+	sta mmc3_bank_data
 	lda #$87
 	sta zp_FC
-	sta rom_8000
+	sta mmc3_bank_select
 	lda #$01
-	sta rom_8001
+	sta mmc3_bank_data
 	jsr sub_rom_8000
 	rts
 
@@ -216,9 +214,9 @@ sub_rom_C122:
 	jsr sub_rom_CA5C
 	lda #$87
 	sta zp_FC
-	sta rom_8000
+	sta mmc3_bank_select
 	lda #$03
-	sta rom_8001
+	sta mmc3_bank_data
 	jsr sub_rom_A5E4
 	jsr sub_rom_A000
 	lda zp_94
@@ -3696,17 +3694,17 @@ sub_rom_D784:
 	sta zp_05
 	lda #$86
 	sta zp_FC
-	sta rom_8000
+	sta mmc3_bank_select
 	lda zp_05
-	sta rom_8001
+	sta mmc3_bank_data
 	lda #$87
 	sta zp_FC
-	sta rom_8000
+	sta mmc3_bank_select
 	lda #$01
-	sta rom_8001
-	lda rom_8000
+	sta mmc3_bank_data
+	lda rom_8000+0
 	sta zp_3B
-	lda rom_8001
+	lda rom_8000+1
 	sta zp_3C
 	lda zp_008E,Y
 	asl A

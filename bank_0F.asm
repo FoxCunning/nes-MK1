@@ -11,9 +11,6 @@
 ; TODO Remove once other banks have been disassembled
 rom_8C00 = $8C00	; TEMP
 sub_rom_8000 = $8000	; TEMP
-sub_rom_AA98 = $AA98	; TEMP
-sub_rom_AAEC = $AAEC	; TEMP
-sub_rom_AAFE = $AAFE	; TEMP
 sub_rom_B000 = $B000	; TEMP
 
 ; -----------------------------------------------------------------------------
@@ -44,9 +41,9 @@ reset:
 	sta DmcFreq_4010
 	lda #$40
 	sta Ctrl2_FrameCtr_4017
-	sta rom_E000
+	sta mmc3_irq_disable
 	lda #$80
-	sta rom_A001
+	sta mmc3_ram_protect
 	lda PpuStatus_2002
 	lda #$10
 	tax
@@ -57,7 +54,7 @@ reset:
 	dex
 	bne @E039
 
-	sta rom_E000
+	sta mmc3_irq_disable
 	lda #$00
 	sta ram_0100
 	lda #$00
@@ -75,14 +72,14 @@ reset:
 	jsr sub_rom_E264
 	lda #$86
 	sta a:zp_00FC		; Why?
-	sta rom_8000
+	sta mmc3_bank_select
 	lda #$02
-	sta rom_8001
+	sta mmc3_bank_data
 	lda #$87
 	sta a:zp_00FC		; Again
-	sta rom_8000
+	sta mmc3_bank_select
 	lda #$03
-	sta rom_8001
+	sta mmc3_bank_data
 	jsr sub_rom_AA98
 	lda #$20
 	sta ram_0673
@@ -130,14 +127,14 @@ reset:
 	jsr sub_rom_E8CB
 	lda #$86
 	sta a:zp_00FC
-	sta rom_8000
+	sta mmc3_bank_select
 	lda #$02
-	sta rom_8001
+	sta mmc3_bank_data
 	lda #$87
 	sta a:zp_00FC
-	sta rom_8000
+	sta mmc3_bank_select
 	lda #$03
-	sta rom_8001
+	sta mmc3_bank_data
 	jsr sub_rom_AAFE
 	lda #$00
 	sta a:zp_00FD
@@ -206,56 +203,56 @@ nmi:
 	sta ram_0418
 	jsr sub_rom_E318
 	lda ram_041C
-	sta rom_C000
-	sta rom_C001
-	sta rom_E001
+	sta mmc3_irq_latch
+	sta mmc3_irq_reload
+	sta mmc3_irq_enable
 	@E186:
 	nop
 	lda #$80
-	sta rom_8000
+	sta mmc3_bank_select
 	lda a:zp_0096		; !!!
-	sta rom_8001
+	sta mmc3_bank_data
 	lda #$81
-	sta rom_8000
+	sta mmc3_bank_select
 	lda a:zp_0097		; Also here
-	sta rom_8001
+	sta mmc3_bank_data
 	lda zp_40
 	bne @E1CC
 
 	ldx #$82
 	lda zp_58
-	stx rom_8000
-	sta rom_8001
+	stx mmc3_bank_select
+	sta mmc3_bank_data
 	ldx #$83
 	lda zp_59
-	stx rom_8000
-	sta rom_8001
+	stx mmc3_bank_select
+	sta mmc3_bank_data
 	ldx #$84
 	lda zp_5A
-	stx rom_8000
-	sta rom_8001
+	stx mmc3_bank_select
+	sta mmc3_bank_data
 	ldx #$85
 	lda zp_5B
-	stx rom_8000
-	sta rom_8001
+	stx mmc3_bank_select
+	sta mmc3_bank_data
 	jmp @E1F2
 	@E1CC:
 	lda #$82
-	sta rom_8000
+	sta mmc3_bank_select
 	ldx zp_34
-	stx rom_8001
+	stx mmc3_bank_data
 	lda #$83
-	sta rom_8000
+	sta mmc3_bank_select
 	inx
-	stx rom_8001
+	stx mmc3_bank_data
 	lda #$84
-	sta rom_8000
+	sta mmc3_bank_select
 	ldx zp_35
-	stx rom_8001
+	stx mmc3_bank_data
 	lda #$85
-	sta rom_8000
+	sta mmc3_bank_select
 	inx
-	stx rom_8001
+	stx mmc3_bank_data
 	@E1F2:
 	inc zp_25
 	jsr sub_rom_E2AE
@@ -266,7 +263,7 @@ nmi:
 	sta a:zp_00F7		; Why?
 	@E201:
 	lda a:zp_00FC		; Why?
-	sta rom_8000
+	sta mmc3_bank_select
 	pla
 	tay
 	pla
@@ -567,7 +564,7 @@ sub_rom_E38D:
 ; -----------------------------------------------------------------------------
 
 sub_rom_E398:
-	sta rom_E000
+	sta mmc3_irq_disable
 	ldx zp_03
 	lda a:zp_007A		; Why??
 	cmp #$03
@@ -598,21 +595,21 @@ sub_rom_E398:
 	lda ram_0414
 	sta PpuScroll_2005
 	lda #$82
-	sta rom_8000
+	sta mmc3_bank_select
 	lda #$B0
-	sta rom_8001
+	sta mmc3_bank_data
 	lda #$83
-	sta rom_8000
+	sta mmc3_bank_select
 	lda #$B1
-	sta rom_8001
+	sta mmc3_bank_data
 	lda #$84
-	sta rom_8000
+	sta mmc3_bank_select
 	lda #$B2
-	sta rom_8001
+	sta mmc3_bank_data
 	lda #$85
-	sta rom_8000
+	sta mmc3_bank_select
 	lda #$B3
-	sta rom_8001
+	sta mmc3_bank_data
 	lda #$00
 	sta ram_0435
 	lda ram_0421
@@ -631,7 +628,7 @@ sub_rom_E407:
 ; -----------------------------------------------------------------------------
 
 sub_rom_E408:
-	sta rom_E000
+	sta mmc3_irq_disable
 	lda PpuStatus_2002
 	lda a:zp_0081		; Why?!
 	sta PpuScroll_2005
@@ -644,20 +641,20 @@ sub_rom_E41B:
 ; ----------------
 sub_rom_E41E:
 	ldx #$82
-	stx rom_8000
-	sty rom_8001
+	stx mmc3_bank_select
+	sty mmc3_bank_data
 	inx
 	iny
-	stx rom_8000
-	sty rom_8001
+	stx mmc3_bank_select
+	sty mmc3_bank_data
 	inx
 	iny
-	stx rom_8000
-	sty rom_8001
+	stx mmc3_bank_select
+	sty mmc3_bank_data
 	inx
 	iny
-	stx rom_8000
-	sty rom_8001
+	stx mmc3_bank_select
+	sty mmc3_bank_data
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -666,10 +663,10 @@ sub_rom_E41E:
 sub_rom_E43F:
 	stx zp_85
 	sty zp_80
-	sta rom_E000
-	sta rom_E001
+	sta mmc3_irq_disable
+	sta mmc3_irq_enable
 	lda #$1F
-	sta rom_C000
+	sta mmc3_irq_latch
 	lda PpuStatus_2002
 	lda a:zp_0081		; And why?
 	sta PpuScroll_2005
@@ -680,7 +677,7 @@ sub_rom_E43F:
 
 ; Potentially unused
 sub_rom_E45B:
-	sta rom_E000
+	sta mmc3_irq_disable
 	lda PpuStatus_2002
 	lda a:zp_0081		; Again?
 	lsr A
@@ -701,10 +698,10 @@ sub_rom_E45B:
 ; -----------------------------------------------------------------------------
 
 sub_rom_E480:
-	sta rom_E000
-	sta rom_E001
+	sta mmc3_irq_disable
+	sta mmc3_irq_enable
 	lda #$1B
-	sta rom_C000
+	sta mmc3_irq_latch
 	lda PpuStatus_2002
 	lda zp_25
 	and #$07
@@ -722,10 +719,10 @@ sub_rom_E480:
 ; -----------------------------------------------------------------------------
 
 sub_rom_E4A6:
-	sta rom_E000
-	sta rom_E001
+	sta mmc3_irq_disable
+	sta mmc3_irq_enable
 	lda #$15
-	sta rom_C000
+	sta mmc3_irq_latch
 	lda PpuStatus_2002
 	lda zp_25
 	and #$03
@@ -764,7 +761,7 @@ sub_rom_E4CB:
 ; -----------------------------------------------------------------------------
 
 sub_rom_E4DF:
-	sta rom_E000
+	sta mmc3_irq_disable
 	lda PpuStatus_2002
 	lda a:zp_0081		; Why?
 	sta PpuScroll_2005
@@ -775,10 +772,10 @@ sub_rom_E4DF:
 ; -----------------------------------------------------------------------------
 
 sub_rom_E4F1:
-	sta rom_E000
-	sta rom_E001
+	sta mmc3_irq_disable
+	sta mmc3_irq_enable
 	lda #$40
-	sta rom_C000
+	sta mmc3_irq_latch
 	lda PpuStatus_2002
 	lda a:zp_0081		; Why?
 	sta PpuScroll_2005
@@ -788,24 +785,24 @@ sub_rom_E4F1:
 ; -----------------------------------------------------------------------------
 
 sub_rom_E50A:
-	sta rom_E000
+	sta mmc3_irq_disable
 	ldy #$E8
 	lda #$00
 	sta ram_0435
 	ldx #$82
-	stx rom_8000
-	sty rom_8001
+	stx mmc3_bank_select
+	sty mmc3_bank_data
 	inx
 	iny
-	stx rom_8000
-	sty rom_8001
+	stx mmc3_bank_select
+	sty mmc3_bank_data
 	inx
 	iny
-	stx rom_8000
-	sty rom_8001
+	stx mmc3_bank_select
+	sty mmc3_bank_data
 	inx
 	iny
-	stx rom_8000
+	stx mmc3_bank_select
 	lda a:zp_007A		; Why?
 	cmp #$05
 	bcs @E54E
@@ -820,7 +817,7 @@ sub_rom_E50A:
 	and #$01
 	tax
 	ldy rom_E564,X
-	sty rom_8001
+	sty mmc3_bank_data
 	rts
 ; ----------------
 	@E54E:
@@ -833,7 +830,7 @@ sub_rom_E50A:
 	and #$01
 	tax
 	ldy rom_E566,X
-	sty rom_8001
+	sty mmc3_bank_data
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -846,10 +843,10 @@ rom_E566:
 ; -----------------------------------------------------------------------------
 
 sub_rom_E568:
-	sta rom_E000
-	sta rom_E001
+	sta mmc3_irq_disable
+	sta mmc3_irq_enable
 	lda #$63
-	sta rom_C000
+	sta mmc3_irq_latch
 	lda PpuStatus_2002
 	lda a:zp_0081		; Why?
 	sta PpuScroll_2005
@@ -860,7 +857,7 @@ sub_rom_E568:
 ; -----------------------------------------------------------------------------
 
 sub_rom_E582:
-	sta rom_E000
+	sta mmc3_irq_disable
 	lda PpuStatus_2002
 	lda a:zp_0081		; Why?
 	sta PpuScroll_2005
@@ -872,10 +869,10 @@ sub_rom_E582:
 ; -----------------------------------------------------------------------------
 
 sub_rom_E598:
-	sta rom_E000
-	sta rom_E001
+	sta mmc3_irq_disable
+	sta mmc3_irq_enable
 	lda #$40
-	sta rom_C000
+	sta mmc3_irq_latch
 	lda PpuStatus_2002
 	lda a:zp_0081		; Why?
 	sta PpuScroll_2005
@@ -886,7 +883,7 @@ sub_rom_E598:
 ; -----------------------------------------------------------------------------
 
 sub_rom_E5B2:
-	sta rom_E000
+	sta mmc3_irq_disable
 	lda PpuStatus_2002
 	lda a:zp_0081		; Why?
 	sta PpuScroll_2005
@@ -898,10 +895,10 @@ sub_rom_E5B2:
 ; -----------------------------------------------------------------------------
 
 sub_rom_E5C8:
-	sta rom_E000
-	sta rom_E001
+	sta mmc3_irq_disable
+	sta mmc3_irq_enable
 	lda #$48
-	sta rom_C000
+	sta mmc3_irq_latch
 	lda PpuStatus_2002
 	lda a:zp_0081		; Why?
 	sta PpuScroll_2005
@@ -912,7 +909,7 @@ sub_rom_E5C8:
 ; -----------------------------------------------------------------------------
 
 sub_rom_E5E2:
-	sta rom_E000
+	sta mmc3_irq_disable
 	lda PpuStatus_2002
 	lda a:zp_0081		; ???
 	sta PpuScroll_2005
@@ -950,10 +947,10 @@ sub_rom_E5F8:
 
 ; Potentially unused and harmful
 sub_rom_E613:
-	sta rom_E000
-	sta rom_E001
+	sta mmc3_irq_disable
+	sta mmc3_irq_enable
 	lda #$80
-	sta rom_C000
+	sta mmc3_irq_latch
 	lda PpuStatus_2002
 	lda a:zp_0081		; ???
 	lsr A
@@ -964,21 +961,21 @@ sub_rom_E613:
 	lsr A
 	tax
 	lda #$82
-	sta rom_8000
+	sta mmc3_bank_select
 	lda sub_rom_E43F,X	; That is not data...
-	sta rom_8001
+	sta mmc3_bank_data
 	lda #$83
-	sta rom_8000
+	sta mmc3_bank_select
 	lda a:zp_0099		; ???
-	sta rom_8001
+	sta mmc3_bank_data
 	lda #$84
-	sta rom_8000
+	sta mmc3_bank_select
 	lda a:zp_009A		; ???
-	sta rom_8001
+	sta mmc3_bank_data
 	lda #$85
-	sta rom_8000
+	sta mmc3_bank_select
 	lda a:zp_009B		; ???
-	sta rom_8001
+	sta mmc3_bank_data
 	lda zp_25
 	and #$07
 	bne @E66F
@@ -1003,10 +1000,10 @@ sub_rom_E613:
 
 ; Potentially unused
 sub_rom_E682:
-	sta rom_E000
-	sta rom_E001
+	sta mmc3_irq_disable
+	sta mmc3_irq_enable
 	lda #$1F
-	sta rom_C000
+	sta mmc3_irq_latch
 	lda PpuStatus_2002
 	lda a:zp_0081		; ???
 	sta PpuScroll_2005
@@ -1022,7 +1019,7 @@ sub_rom_E682:
 
 ; Potentially unused
 sub_rom_E6A7:
-	sta rom_E000
+	sta mmc3_irq_disable
 	lda PpuStatus_2002
 	lda a:zp_0081		; ???
 	lsr A
@@ -1043,7 +1040,7 @@ sub_rom_E6A7:
 ; -----------------------------------------------------------------------------
 
 sub_rom_E6CC:
-	sta rom_E000
+	sta mmc3_irq_disable
 	lda #$00
 	sta ram_0435
 	rts
@@ -1051,35 +1048,35 @@ sub_rom_E6CC:
 ; -----------------------------------------------------------------------------
 
 sub_rom_E6D5:
-	sta rom_E000
+	sta mmc3_irq_disable
 	ldy #$12
 	@E6DA:
 	dey
 	bne @E6DA
 	lda #$80
-	sta rom_8000
+	sta mmc3_bank_select
 	lda #$F4
-	sta rom_8001
+	sta mmc3_bank_data
 	lda #$81
-	sta rom_8000
+	sta mmc3_bank_select
 	lda #$F6
-	sta rom_8001
+	sta mmc3_bank_data
 	ldx #$82
 	lda #$F4
-	stx rom_8000
-	sta rom_8001
+	stx mmc3_bank_select
+	sta mmc3_bank_data
 	ldx #$83
 	lda #$F5
-	stx rom_8000
-	sta rom_8001
+	stx mmc3_bank_select
+	sta mmc3_bank_data
 	ldx #$84
 	lda #$F6
-	stx rom_8000
-	sta rom_8001
+	stx mmc3_bank_select
+	sta mmc3_bank_data
 	ldx #$85
 	lda #$F7
-	stx rom_8000
-	sta rom_8001
+	stx mmc3_bank_select
+	sta mmc3_bank_data
 	lda PpuStatus_2002
 	lda zp_51
 	sta PpuAddr_2006
@@ -1101,10 +1098,10 @@ sub_rom_E734:
 	sta PpuControl_2000
 	jmp sub_rom_E6CC
 	@E744:
-	sta rom_E000
-	sta rom_E001
+	sta mmc3_irq_disable
+	sta mmc3_irq_enable
 	lda #$0E
-	sta rom_C000
+	sta mmc3_irq_latch
 	lda PpuStatus_2002
 	lda #$89
 	sta PpuControl_2000
@@ -1114,30 +1111,30 @@ sub_rom_E734:
 ; -----------------------------------------------------------------------------
 
 sub_rom_E75B:
-	sta rom_E000
+	sta mmc3_irq_disable
 	ldx #$82
 	lda #$54
-	stx rom_8000
-	sta rom_8001
+	stx mmc3_bank_select
+	sta mmc3_bank_data
 	ldx #$83
 	lda #$55
-	stx rom_8000
-	sta rom_8001
+	stx mmc3_bank_select
+	sta mmc3_bank_data
 	ldx #$84
 	lda #$56
-	stx rom_8000
-	sta rom_8001
+	stx mmc3_bank_select
+	sta mmc3_bank_data
 	ldx #$85
 	lda #$57
-	stx rom_8000
-	sta rom_8001
+	stx mmc3_bank_select
+	sta mmc3_bank_data
 	jmp sub_rom_E6CC
 
 ; -----------------------------------------------------------------------------
 
 ; Potentially unused
 sub_rom_E789:
-	sta rom_E000
+	sta mmc3_irq_disable
 	lda #$00
 	sta ram_0435
 	rts
@@ -1201,12 +1198,12 @@ rom_E7CE:
 sub_rom_E7DC:
 	lda #$04
 	ldx #$86
-	stx rom_8000
-	sta rom_8001
+	stx mmc3_bank_select
+	sta mmc3_bank_data
 	lda #$05
 	ldx #$87
-	stx rom_8000
-	sta rom_8001
+	stx mmc3_bank_select
+	sta mmc3_bank_data
 	jmp sub_rom_B000
 	rts	; Unreachable
 
@@ -1363,14 +1360,14 @@ sub_rom_E89B:
 sub_rom_E8CB:
 	lda #$86
 	sta a:zp_00FC	; ???
-	sta rom_8000
+	sta mmc3_bank_select
 	lda #$02
-	sta rom_8001
+	sta mmc3_bank_data
 	lda #$87
 	sta a:zp_00FC	; ???
-	sta rom_8000
+	sta mmc3_bank_select
 	lda #$03
-	sta rom_8001
+	sta mmc3_bank_data
 	lda ram_0673
 	cmp ram_0674
 	bne @E8F3
