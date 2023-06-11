@@ -7,14 +7,6 @@
 
 .include "globals.inc"
 
-
-; Temporary definitions
-; TODO Remove once other banks have been disassembled
-rom_8000 = $8000	; TEMP
-rom_85BE = $85BE    ; TEMP
-rom_867E = $867E    ; TEMP
-
-
 ; -----------------------------------------------------------------------------
 .export sub_rom_03_A000
 
@@ -1370,9 +1362,9 @@ sub_rom_ABB5:
 	txa
 	asl A
 	tax
-	lda rom_867E+0,X
+	lda rom_02_867E+0,X
 	sta zp_FE
-	lda rom_867E+1,X
+	lda rom_02_867E+1,X
 	sta zp_FF
 	ldy #$00
 	@ABC4:
@@ -1536,9 +1528,9 @@ sub_rom_ACA2:
 	asl A
 	tay
 	ldx ram_070C
-	lda rom_85BE+0,Y
+	lda rom_02_85BE+0,Y
 	sta ram_0743,X
-	lda rom_85BE+1,Y
+	lda rom_02_85BE+1,Y
 	sta ram_0744,X
 	jmp @ACE8
 
@@ -1877,10 +1869,10 @@ sub_rom_AF0B:
 	lda ram_0757,X
 	asl A
 	tax
-	lda rom_8000+0,X
+	lda rom_02_8000+0,X
 	sta ram_0761,Y
 	sta zp_FE
-	lda rom_8000+1,X
+	lda rom_02_8000+1,X
 	sta ram_0762,Y
 	sta zp_FF
 	ldx ram_070B
@@ -1906,10 +1898,10 @@ sub_rom_AF3C:
 	lda ram_076B,X
 	asl A
 	tax
-	lda rom_8000+0,X
+	lda rom_02_8000+0,X
 	sta ram_076F,Y
 	sta zp_FE
-	lda rom_8000+1,X
+	lda rom_02_8000+1,X
 	sta ram_0770,Y
 	sta zp_FF
 	ldx ram_070B
@@ -1935,10 +1927,10 @@ sub_rom_AF6D:
 	lda ram_0773,X
 	asl A
 	tax
-	lda rom_8000+0,X
+	lda rom_02_8000+0,X
 	sta ram_077B,Y
 	sta zp_FE
-	lda rom_8000+1,X
+	lda rom_02_8000+1,X
 	sta ram_077C,Y
 	sta zp_FF
 	ldx ram_070B
