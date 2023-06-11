@@ -217,8 +217,8 @@ sub_rom_C122:
 	sta mmc3_bank_select
 	lda #$03
 	sta mmc3_bank_data
-	jsr sub_rom_A5E4
-	jsr sub_rom_A000
+	jsr sub_rom_03_A5E4
+	jsr sub_rom_03_A000
 	lda zp_94
 	cmp zp_92
 	bcs @C15E

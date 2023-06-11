@@ -154,8 +154,11 @@ zp_E6 = $E6     ;
 zp_00E7 = $00E7 ;
 zp_00E9 = $00E9 ;
 zp_E9 = $E9     ;
-zp_00EB = $EB   ;
-zp_00ED = $00ED ;
+zp_00EB = $00EB ;
+zp_EB = $EB     ;
+zp_00ED = $ED   ;
+zp_ED = $ED     ;
+
 zp_00EF = $00EF ;
 zp_EF = $EF     ;
 

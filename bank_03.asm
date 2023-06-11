@@ -16,9 +16,9 @@ rom_867E = $867E    ; TEMP
 
 
 ; -----------------------------------------------------------------------------
-.export sub_rom_A000
+.export sub_rom_03_A000
 
-sub_rom_A000:
+sub_rom_03_A000:
 	jsr sub_rom_A9FD
 	and #$01
 	jsr sub_rom_A00C
@@ -200,10 +200,10 @@ sub_rom_A00C:
 	pha
 	iny
 	lda (zp_3B),Y
-	sta zp_00EB,X
+	sta zp_EB,X
 	iny
 	lda (zp_3B),Y
-	sta a:zp_00ED,X     ; ??? No reason to use absolute addressing
+	sta zp_ED,X
 	pla
 	tay
 	txa
@@ -707,9 +707,9 @@ rom_A5DD:
 	.byte $7F, $7F, $00, $00, $00, $2E, $00
 
 ; -----------------------------------------------------------------------------
-.export sub_rom_A5E4
+.export sub_rom_03_A5E4
 
-sub_rom_A5E4:
+sub_rom_03_A5E4:
 	jsr sub_rom_A9FD
 	and #$01
 	jsr sub_rom_A5F0
@@ -860,7 +860,6 @@ sub_rom_A6BC:
 	sta zp_3C
 	jsr sub_rom_A63B
 	jsr sub_rom_A9EB
-	sbc #$A9
 	jsr sub_rom_A9FD
 	and #$1F
 	tax
@@ -1188,9 +1187,9 @@ rom_AA3D:
 	.byte $0A, $02
 
 ; -----------------------------------------------------------------------------
-.export sub_rom_AA98
+.export sub_rom_03_AA98
 
-sub_rom_AA98:
+sub_rom_03_AA98:
 	lda #$0F
 	sta ApuStatus_4015
 	lda #$00
@@ -1239,9 +1238,9 @@ sub_rom_AA98:
 	rts
 
 ; -----------------------------------------------------------------------------
-.export sub_rom_AAEC
+.export sub_rom_03_AAEC
 
-sub_rom_AAEC:
+sub_rom_03_AAEC:
 	tax
 	ldy #$FF
 	@AAEF:
@@ -1258,9 +1257,9 @@ sub_rom_AAEC:
 	rts
 
 ; -----------------------------------------------------------------------------
-.export sub_rom_AAFE
+.export sub_rom_03_AAFE
 
-sub_rom_AAFE:
+sub_rom_03_AAFE:
 	lda ram_0709
 	bne @AB54
 
