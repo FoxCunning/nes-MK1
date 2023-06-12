@@ -72,13 +72,13 @@ reset:
 	jsr sub_rom_E264
 	; $8000-$9FFF = Bank $02
 	lda #$86
-	sta a:zp_00FC		; Why?
+	sta a:zp_FC		; Why?
 	sta mmc3_bank_select
 	lda #$02
 	sta mmc3_bank_data
 	; $A000-$BFFF = Bank $03
 	lda #$87
-	sta a:zp_00FC		; Again
+	sta a:zp_FC		; Again
 	sta mmc3_bank_select
 	lda #$03
 	sta mmc3_bank_data
@@ -90,7 +90,7 @@ reset:
 	lda #$00
 	sta zp_28
 	lda #$01
-	sta a:zp_00F6		; Also why?
+	sta a:zp_F6		; Also why?
 	lda #$88
 	sta ram_0409
 	lda #$13
@@ -118,30 +118,30 @@ reset:
 	sta PpuMask_2001
 	@E0DB:
 	inc zp_22
-	lda a:zp_00F7		; Why all these?! Precise timing? Why not use NOPs?
+	lda a:zp_F7		; Why all these?! Precise timing? If so, why not use NOPs?
 	beq @E0DB
 
-	dec a:zp_00F7
+	dec a:zp_F7
 	lda #$01
-	sta a:zp_00FD
+	sta a:zp_FD
 	jsr sub_rom_E7C8
 	jsr sub_rom_E902
 	jsr sub_rom_E8CB
 	; $8000-$9FFF = Bank $02
 	lda #$86
-	sta a:zp_00FC
+	sta a:zp_FC
 	sta mmc3_bank_select
 	lda #$02
 	sta mmc3_bank_data
 	; $8000-$9FFF = Bank $03
 	lda #$87
-	sta a:zp_00FC
+	sta a:zp_FC
 	sta mmc3_bank_select
 	lda #$03
 	sta mmc3_bank_data
 	jsr sub_rom_03_AAFE
 	lda #$00
-	sta a:zp_00FD
+	sta a:zp_FD
 	jmp @E0DB
 
 ; -----------------------------------------------------------------------------
@@ -178,7 +178,7 @@ nmi:
 	sta ram_0675
 	lda #$02
 	sta SpriteDma_4014
-	lda a:zp_00FD		; Why...?
+	lda a:zp_FD		; Why...?
 	bne @E155
 	lda zp_44
 	beq @E14C
@@ -200,7 +200,7 @@ nmi:
 	sta PpuControl_2000
 	lda zp_04
 	sta PpuMask_2001
-	lda a:zp_00F6		; ...?
+	lda a:zp_F6		; ...?
 	beq @E186
 	
 	lda ram_0416
@@ -214,11 +214,11 @@ nmi:
 	nop
 	lda #$80
 	sta mmc3_bank_select
-	lda a:zp_0096		; !!!
+	lda a:zp_96		; !!!
 	sta mmc3_bank_data
 	lda #$81
 	sta mmc3_bank_select
-	lda a:zp_0097		; Also here
+	lda a:zp_97		; Also here
 	sta mmc3_bank_data
 	lda zp_40
 	bne @E1CC
@@ -260,13 +260,13 @@ nmi:
 	@E1F2:
 	inc zp_25
 	jsr sub_rom_E2AE
-	lda a:zp_00FD		; Why?
+	lda a:zp_FD		; Why?
 	bne @E201
 
 	lda #$01
-	sta a:zp_00F7		; Why?
+	sta a:zp_F7		; Why?
 	@E201:
-	lda a:zp_00FC		; Why?
+	lda a:zp_FC		; Why?
 	sta mmc3_bank_select
 	pla
 	tay
@@ -483,7 +483,7 @@ sub_rom_E303:
 	iny
 	lda (zp_14),Y
 	sta zp_13
-	jmp (zp_0012)
+	jmp (zp_12)
 
 ; -----------------------------------------------------------------------------
 
@@ -572,7 +572,7 @@ sub_rom_E38D:
 sub_rom_E398:
 	sta mmc3_irq_disable
 	ldx zp_03
-	lda a:zp_007A		; Why??
+	lda a:zp_7A		; Why??
 	cmp #$03
 	bcc @E3C0
 
@@ -636,7 +636,7 @@ sub_rom_E407:
 sub_rom_E408:
 	sta mmc3_irq_disable
 	lda PpuStatus_2002
-	lda a:zp_0081		; Why?!
+	lda a:zp_81		; Why?!
 	sta PpuScroll_2005
 	lda #$00
 	sta PpuScroll_2005
@@ -674,7 +674,7 @@ sub_rom_E43F:
 	lda #$1F
 	sta mmc3_irq_latch
 	lda PpuStatus_2002
-	lda a:zp_0081		; And why?
+	lda a:zp_81		; And why?
 	sta PpuScroll_2005
 	inc ram_0435
 	rts
@@ -685,7 +685,7 @@ sub_rom_E43F:
 sub_rom_E45B:
 	sta mmc3_irq_disable
 	lda PpuStatus_2002
-	lda a:zp_0081		; Again?
+	lda a:zp_81		; Again?
 	lsr A
 	sta PpuScroll_2005
 	lda PpuStatus_2002
@@ -717,7 +717,7 @@ sub_rom_E480:
 	@E497:
 	lda ram_043F
 	clc
-	adc a:zp_0081		; Why?
+	adc a:zp_81		; Why?
 	sta PpuScroll_2005
 	ldy #$E0
 	jmp sub_rom_E41B
@@ -738,7 +738,7 @@ sub_rom_E4A6:
 	@E4BD:
 	lda ram_0440
 	clc
-	adc a:zp_0081		; Why?
+	adc a:zp_81		; Why?
 	sta PpuScroll_2005
 	inc ram_0435
 	rts
@@ -769,7 +769,7 @@ sub_rom_E4CB:
 sub_rom_E4DF:
 	sta mmc3_irq_disable
 	lda PpuStatus_2002
-	lda a:zp_0081		; Why?
+	lda a:zp_81		; Why?
 	sta PpuScroll_2005
 	lda #$00
 	sta ram_0435
@@ -783,7 +783,7 @@ sub_rom_E4F1:
 	lda #$40
 	sta mmc3_irq_latch
 	lda PpuStatus_2002
-	lda a:zp_0081		; Why?
+	lda a:zp_81		; Why?
 	sta PpuScroll_2005
 	ldy #$E4
 	jmp sub_rom_E41B
@@ -810,7 +810,7 @@ sub_rom_E50A:
 	inx
 	iny
 	stx mmc3_bank_select
-	lda a:zp_007A		; Why?
+	lda a:zp_7A		; Why?
 	cmp #$05
 	bcs @E54E
 
@@ -860,7 +860,7 @@ sub_rom_E568:
 	lda #$63
 	sta mmc3_irq_latch
 	lda PpuStatus_2002
-	lda a:zp_0081		; Why?
+	lda a:zp_81		; Why?
 	sta PpuScroll_2005
 	ldy #$1C
 	jmp sub_rom_E41B
@@ -871,7 +871,7 @@ sub_rom_E568:
 sub_rom_E582:
 	sta mmc3_irq_disable
 	lda PpuStatus_2002
-	lda a:zp_0081		; Why?
+	lda a:zp_81		; Why?
 	sta PpuScroll_2005
 	lda #$00
 	sta ram_0435
@@ -886,7 +886,7 @@ sub_rom_E598:
 	lda #$40
 	sta mmc3_irq_latch
 	lda PpuStatus_2002
-	lda a:zp_0081		; Why?
+	lda a:zp_81		; Why?
 	sta PpuScroll_2005
 	ldy #$24
 	jmp sub_rom_E41B
@@ -897,7 +897,7 @@ sub_rom_E598:
 sub_rom_E5B2:
 	sta mmc3_irq_disable
 	lda PpuStatus_2002
-	lda a:zp_0081		; Why?
+	lda a:zp_81		; Why?
 	sta PpuScroll_2005
 	lda #$00
 	sta ram_0435
@@ -912,7 +912,7 @@ sub_rom_E5C8:
 	lda #$48
 	sta mmc3_irq_latch
 	lda PpuStatus_2002
-	lda a:zp_0081		; Why?
+	lda a:zp_81		; Why?
 	sta PpuScroll_2005
 	ldy #$2C
 	jmp sub_rom_E41B
@@ -923,7 +923,7 @@ sub_rom_E5C8:
 sub_rom_E5E2:
 	sta mmc3_irq_disable
 	lda PpuStatus_2002
-	lda a:zp_0081		; ???
+	lda a:zp_81		; ???
 	sta PpuScroll_2005
 	lda #$00
 	sta ram_0435
@@ -964,7 +964,7 @@ sub_rom_E613:
 	lda #$80
 	sta mmc3_irq_latch
 	lda PpuStatus_2002
-	lda a:zp_0081		; ???
+	lda a:zp_81		; ???
 	lsr A
 	sta PpuScroll_2005
 	lda zp_25
@@ -978,15 +978,15 @@ sub_rom_E613:
 	sta mmc3_bank_data
 	lda #$83
 	sta mmc3_bank_select
-	lda a:zp_0099		; ???
+	lda a:zp_99		; ???
 	sta mmc3_bank_data
 	lda #$84
 	sta mmc3_bank_select
-	lda a:zp_009A		; ???
+	lda a:zp_9A		; ???
 	sta mmc3_bank_data
 	lda #$85
 	sta mmc3_bank_select
-	lda a:zp_009B		; ???
+	lda a:zp_9B		; ???
 	sta mmc3_bank_data
 	lda zp_25
 	and #$07
@@ -1017,7 +1017,7 @@ sub_rom_E682:
 	lda #$1F
 	sta mmc3_irq_latch
 	lda PpuStatus_2002
-	lda a:zp_0081		; ???
+	lda a:zp_81		; ???
 	sta PpuScroll_2005
 	lda PpuStatus_2002
 	lda #$22
@@ -1033,7 +1033,7 @@ sub_rom_E682:
 sub_rom_E6A7:
 	sta mmc3_irq_disable
 	lda PpuStatus_2002
-	lda a:zp_0081		; ???
+	lda a:zp_81		; ???
 	lsr A
 	sta PpuScroll_2005
 	lda PpuStatus_2002
@@ -1190,7 +1190,7 @@ sub_rom_E792:
 ; -----------------------------------------------------------------------------
 
 sub_rom_E7C8:
-	lda a:zp_0040		; ???
+	lda a:zp_40		; ???
 	jsr sub_rom_E303	; The sub will pull from the stack and jump, so this is
 						; basically a JMP
 
@@ -1233,47 +1233,47 @@ sub_rom_E7F4:
 
 sub_rom_E7F5:
 	lda #$00
-	sta a:zp_004F
-	sta a:zp_0040
+	sta a:zp_4F
+	sta a:zp_40
 	ldx ram_040C
-	lda a:zp_00F2,X	; WHY?!
+	lda a:zp_F2,X	; WHY?!
 	bpl @E80B
 
 	@E805:
 	lda #$04
-	sta a:zp_004E		; ???
+	sta a:zp_4E		; ???
 	rts
 ; ----------------
 	@E80B:
-	lda a:zp_00F2		; ???
-	eor a:zp_00F3		; ???
+	lda a:zp_F2		; ???
+	eor a:zp_F3		; ???
 	and #$80
 	beq @E805
 
 	lda #$03
-	sta a:zp_004E		; ???
+	sta a:zp_4E		; ???
 	lda ram_0100
 	asl A
 	asl A
 	clc
-	adc a:zp_005F		; ???
+	adc a:zp_5F		; ???
 	tax
-	inc a:zp_0061		; ???
-	lda a:zp_0061		; ???
+	inc a:zp_61		; ???
+	lda a:zp_61		; ???
 	cmp rom_E849,X
 	bcc @E848
 
 	lda #$00
-	sta a:zp_0061		; ???
-	inc a:zp_005F		; ???
-	lda a:zp_005F		; ???
+	sta a:zp_61		; ???
+	inc a:zp_5F		; ???
+	lda a:zp_5F		; ???
 	cmp #$04
 	bcc @E848
 
 	lda #$00
-	sta a:zp_004F		; ???
+	sta a:zp_4F		; ???
 	lda #$06
-	sta a:zp_004E		; ???
+	sta a:zp_4E		; ???
 	@E848:
 	rts
 
@@ -1287,7 +1287,7 @@ rom_E849:
 ; Potentially unused
 sub_rom_E851:
 	lda #$00
-	sta a:zp_0040	; ???
+	sta a:zp_40	; ???
 	lda #$36	; Useless: immediately overwritten
 	; This would change CHR A12 inversion and then crash the game
 	lda #$04
@@ -1301,10 +1301,10 @@ sub_rom_E851:
 
 sub_rom_E866:
 	lda #$00
-	sta a:zp_004F	; ???
+	sta a:zp_4F	; ???
 	lda #$00
-	sta a:zp_004E	; ???
-	sta a:zp_0040	; ???
+	sta a:zp_4E	; ???
+	sta a:zp_40	; ???
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1312,7 +1312,7 @@ sub_rom_E866:
 ; Potentially unused
 sub_rom_E874:
 	lda #$00
-	sta a:zp_0040	; ???
+	sta a:zp_40	; ???
 	lda #$02
 	; Like the sub at $E851, this would crash the game
 	lda #$04
@@ -1335,42 +1335,42 @@ sub_rom_E889:
 
 sub_rom_E893:
 	lda #$00
-	sta a:zp_0040	; ???
+	sta a:zp_40	; ???
 	lda #$00
 	rts
 
 ; -----------------------------------------------------------------------------
 
 sub_rom_E89B:
-	lda a:zp_002A	; ???
+	lda a:zp_2A	; ???
 	and #$40
 	beq @E8A7
 
 	lda #$00
 	sta ram_040C
 	@E8A7:
-	lda a:zp_002A	; ???
+	lda a:zp_2A	; ???
 	and #$80
 	beq @E8B3
 
 	lda #$01
 	sta ram_040C
 	@E8B3:
-	lda a:zp_002A	; ???
+	lda a:zp_2A	; ???
 	and #$10
 	beq @E8C4
 
-	lda a:zp_005E	; ???
+	lda a:zp_5E	; ???
 	bne @E8C5
 
 	lda #$02
-	sta a:zp_0040	; ???
+	sta a:zp_40	; ???
 	@E8C4:
 	rts
 ; ----------------
 	@E8C5:
 	lda #$03
-	sta a:zp_0040	; ???
+	sta a:zp_40	; ???
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1378,12 +1378,12 @@ sub_rom_E89B:
 ; Sound / music stuff
 sub_rom_E8CB:
 	lda #$86
-	sta a:zp_00FC	; ???
+	sta a:zp_FC	; ???
 	sta mmc3_bank_select
 	lda #$02
 	sta mmc3_bank_data
 	lda #$87
-	sta a:zp_00FC	; ???
+	sta a:zp_FC	; ???
 	sta mmc3_bank_select
 	lda #$03
 	sta mmc3_bank_data
@@ -1409,11 +1409,11 @@ sub_rom_E8CB:
 
 sub_rom_E902:
 	ldx #$20
-	lda a:zp_009C	; ???
+	lda a:zp_9C	; ???
 	cmp #$18
 	bcs @E910
 
-	lda a:zp_009D	; ???
+	lda a:zp_9D	; ???
 	beq @E917
 
 	@E910:
@@ -1422,16 +1422,16 @@ sub_rom_E902:
 	bne @E91D
 
 	@E917:
-	lda a:zp_008C	; ???
+	lda a:zp_8C	; ???
 	jmp @E920
 
 	@E91D:
-	lda a:zp_0025	; ???
+	lda a:zp_25	; ???
 	@E920:
 	and #$02
 	bne @E995
 
-	lda a:zp_0025	; ???
+	lda a:zp_25	; ???
 	and #$01
 	bne @E960
 
@@ -1482,7 +1482,7 @@ sub_rom_E902:
 	rts
 ; ----------------
 	@E995:
-	lda a:zp_0025	; ???
+	lda a:zp_25	; ???
 	and #$01
 	bne @E9D1
 
@@ -1536,7 +1536,7 @@ sub_rom_E902:
 
 ; Potentially unused
 sub_rom_EA06:
-	lda a:zp_002A	; ???
+	lda a:zp_2A	; ???
 	and #$30
 	eor #$30
 	bne @EA12
@@ -1551,23 +1551,23 @@ sub_rom_EA06:
 sub_rom_EA13:
 	lda #$2F
 	sta ram_041C
-	lda a:zp_005E	; ???
+	lda a:zp_5E	; ???
 	beq @EA2A
 
-	lda a:zp_002D	; ???
+	lda a:zp_2D	; ???
 	and #$10
 	beq @EA53
 
 	lda #$09
-	sta a:zp_007A	; ???
+	sta a:zp_7A	; ???
 	rts
 ; ----------------
 	@EA2A:
-	lda a:zp_002D	; ???
+	lda a:zp_2D	; ???
 	and #$10
 	beq @EA4D
 
-	lda a:zp_007A	; ???
+	lda a:zp_7A	; ???
 	cmp #$03
 	bne @EA53
 
@@ -1577,11 +1577,11 @@ sub_rom_EA13:
 	jsr sub_rom_EA5B
 	lda #$0E
 	sta ram_0672
-	lda a:zp_0024	; ???
+	lda a:zp_24	; ???
 	eor #$01
-	sta a:zp_0024	; ???
+	sta a:zp_24	; ???
 	@EA4D:
-	lda a:zp_0024	; ???
+	lda a:zp_24	; ???
 	beq @EA53
 
 	rts
@@ -1642,7 +1642,7 @@ sub_rom_EA5B:
 	lda #$C5
 	sta ram_0311
 	lda #$DA
-	sta a:zp_0097
+	sta a:zp_97
 	rts
 
 ; -----------------------------------------------------------------------------
