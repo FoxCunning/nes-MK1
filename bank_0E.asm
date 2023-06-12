@@ -13,7 +13,8 @@
 rom_8000 = $8000	; TEMP
 rom_8002 = $8002	; TEMP
 rom_B000 = $B000	; TEMP
-sub_rom_8000 = $8000	; TEMP
+
+sub_rom_01_8000 = $8000	; TEMP
 
 
 ; -----------------------------------------------------------------------------
@@ -125,17 +126,19 @@ sub_rom_C0C6:
 	lda #$00
 	sta ram_043F
 	sta ram_0440
+	; Bank $00 in $8000-$9FFF
 	lda #$86
 	sta zp_FC
 	sta mmc3_bank_select
 	lda #$00
 	sta mmc3_bank_data
+	; Bank $01 in $A000-$BFFF
 	lda #$87
 	sta zp_FC
 	sta mmc3_bank_select
 	lda #$01
 	sta mmc3_bank_data
-	jsr sub_rom_8000
+	jsr sub_rom_01_8000
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -212,6 +215,7 @@ sub_rom_C122:
 	jsr sub_rom_CF1F
 	jsr sub_rom_C7B0
 	jsr sub_rom_CA5C
+	; Bank $03 in $A000-$BFFF
 	lda #$87
 	sta zp_FC
 	sta mmc3_bank_select
@@ -3692,33 +3696,36 @@ sub_rom_D784:
 	ldx zp_A3,Y
 	lda rom_D8D8,X
 	sta zp_05
+	; Load a new bank in $8000-$9FFF from table below
 	lda #$86
 	sta zp_FC
 	sta mmc3_bank_select
 	lda zp_05
 	sta mmc3_bank_data
+	; Bank $01 in $A000-$BFFF
 	lda #$87
 	sta zp_FC
 	sta mmc3_bank_select
 	lda #$01
 	sta mmc3_bank_data
+	; Read a pointer from the top of the new ROM in $8000
 	lda rom_8000+0
 	sta zp_3B
 	lda rom_8000+1
 	sta zp_3C
 	lda zp_008E,Y
 	asl A
-	bcc @D7BA
+	bcc :+
 
-	inc zp_3C
-	@D7BA:
-	clc
+		inc zp_3C
+
+:	clc
 	adc zp_008E,Y
-	bcc @D7C2
+	bcc :+
 
-	inc zp_3C
-	@D7C2:
-	sta zp_12
+		inc zp_3C
+
+:	sta zp_12
 	tay
 	lda (zp_3B),Y
 	asl A
@@ -3886,10 +3893,23 @@ sub_rom_D784:
 
 ; -----------------------------------------------------------------------------
 
+; Bank numbers, will be mapped to $8000-$9FFF
+; These contain animation data (sprite indices) and maybe "moves" data
 rom_D8D8:
-	.byte $05, $06, $07, $08, $09, $0A, $0B, $0C
-	.byte $0D, $05, $05, $05, $00, $01, $00, $02
-	.byte $00, $01, $00, $01, $02, $00, $01, $00
+	.byte $05	; Raiden
+	.byte $06	; Sonya
+	.byte $07	; Sub-Zero
+	.byte $08	; Skorpion
+	.byte $09	; Kano
+	.byte $0A	; Cage
+	.byte $0B	; Liu Kang
+	.byte $0C	; Goro
+	.byte $0D	; Shang-Tsung
+	.byte $05, $05, $05	; Potentially unused
+; This portion is also potentially unused
+rom_D8E4:
+	.byte $00, $01, $00, $02, $00, $01, $00, $01
+	.byte $02, $00, $01, $00
 
 ; -----------------------------------------------------------------------------
 
@@ -3899,24 +3919,32 @@ sub_rom_D8F0:
 	and #$7F
 	cmp #$08
 	beq @D8FE
+
 	cmp #$14
 	bne @D92B
+
 	@D8FE:
 	lda zp_90,X
 	bne @D923
+
 	ldy zp_8E,X
 	lda rom_D977,Y
 	beq @D923
+
 	cmp #$01
 	bne @D91D
+
 	lda zp_A3,X
 	cmp #$08
 	bne @D923
+
 	jsr sub_rom_D96D
 	cpy #$08
 	bne @D933
+
 	dey
 	bne @D933
+
 	@D91D:
 	lda #$08
 	sta zp_A3,X
@@ -3925,6 +3953,7 @@ sub_rom_D8F0:
 	lda zp_48,X
 	cmp #$30
 	bcs @D92C
+
 	inc zp_48,X
 	@D92B:
 	rts
@@ -3932,6 +3961,7 @@ sub_rom_D8F0:
 	@D92C:
 	lda zp_8E,X
 	bne @D92B
+
 	jsr sub_rom_D96D
 	@D933:
 	sty zp_A3,X
