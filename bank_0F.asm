@@ -331,6 +331,7 @@ sub_rom_E22A:
 	rts
 
 ; -----------------------------------------------------------------------------
+.export sub_rom_E249
 
 sub_rom_E249:
 	asl A
@@ -353,6 +354,7 @@ sub_rom_E249:
 	rts
 
 ; -----------------------------------------------------------------------------
+.export sub_rom_E264
 
 sub_rom_E264:
 	lda #$F8
@@ -788,6 +790,7 @@ sub_rom_E4F1:
 
 ; -----------------------------------------------------------------------------
 
+; Disables IRQs and selects CHR banks
 sub_rom_E50A:
 	sta mmc3_irq_disable
 	ldy #$E8
@@ -811,13 +814,14 @@ sub_rom_E50A:
 	cmp #$05
 	bcs @E54E
 
-	lda zp_25
-	and #$1F
-	bne @E541
+		lda zp_25
+		and #$1F
 
-	inc ram_043F
-	@E541:
-	lda ram_043F
+	bne :+
+
+		inc ram_043F
+
+:	lda ram_043F
 	and #$01
 	tax
 	ldy rom_E564,X
@@ -827,10 +831,11 @@ sub_rom_E50A:
 	@E54E:
 	lda zp_25
 	and #$07
-	bne @E557
-	inc ram_043F
-	@E557:
-	lda ram_043F
+	bne :+
+
+		inc ram_043F
+
+:	lda ram_043F
 	and #$01
 	tax
 	ldy rom_E566,X
@@ -839,8 +844,11 @@ sub_rom_E50A:
 
 ; -----------------------------------------------------------------------------
 
+; CHR bank indices
 rom_E564:
 	.byte $EC, $ED
+
+; CHR bank indices
 rom_E566:
 	.byte $EE, $EF
 
@@ -1281,12 +1289,12 @@ sub_rom_E851:
 	lda #$00
 	sta a:zp_0040	; ???
 	lda #$36	; Useless: immediately overwritten
-	; This would change CHR A12 inversion and PRG bank mode, crashing the game
+	; This would change CHR A12 inversion and then crash the game
 	lda #$04
 	sta rom_8C00+0
 	lda #$05
 	sta rom_8C00+1
-	jsr sub_rom_8000
+	jsr sub_rom_8000	; This would try to execute data as code
 	rts
 
 ; -----------------------------------------------------------------------------
