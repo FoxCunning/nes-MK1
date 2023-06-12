@@ -11,7 +11,7 @@
 ; TODO Remove once other banks have been disassembled
 rom_8C00 = $8C00	; TEMP
 sub_rom_8000 = $8000	; TEMP
-sub_rom_B000 = $B000	; TEMP
+sub_rom_05_B000 = $B000	; TEMP
 
 ; -----------------------------------------------------------------------------
 
@@ -70,11 +70,13 @@ reset:
 	sta ram_042C
 	jsr sub_rom_E249
 	jsr sub_rom_E264
+	; $8000-$9FFF = Bank $02
 	lda #$86
 	sta a:zp_00FC		; Why?
 	sta mmc3_bank_select
 	lda #$02
 	sta mmc3_bank_data
+	; $A000-$BFFF = Bank $03
 	lda #$87
 	sta a:zp_00FC		; Again
 	sta mmc3_bank_select
@@ -125,11 +127,13 @@ reset:
 	jsr sub_rom_E7C8
 	jsr sub_rom_E902
 	jsr sub_rom_E8CB
+	; $8000-$9FFF = Bank $02
 	lda #$86
 	sta a:zp_00FC
 	sta mmc3_bank_select
 	lda #$02
 	sta mmc3_bank_data
+	; $8000-$9FFF = Bank $03
 	lda #$87
 	sta a:zp_00FC
 	sta mmc3_bank_select
@@ -1178,12 +1182,13 @@ sub_rom_E792:
 ; -----------------------------------------------------------------------------
 
 sub_rom_E7C8:
-	lda a:zp_0040
-	jsr sub_rom_E303	; This will pull from the stack and jump, so this is
+	lda a:zp_0040		; ???
+	jsr sub_rom_E303	; The sub will pull from the stack and jump, so this is
 						; basically a JMP
 
 ; -----------------------------------------------------------------------------
 
+; Potentially Unused
 rom_E7CE:
 	.word sub_rom_E7DC
 	.word sub_rom_EA13
@@ -1195,6 +1200,9 @@ rom_E7CE:
 
 ; -----------------------------------------------------------------------------
 
+; Potentially unused
+; Bank $04 in $8000-$9FFF
+; Bank $05 in $A000-$BFFF
 sub_rom_E7DC:
 	lda #$04
 	ldx #$86
@@ -1204,7 +1212,7 @@ sub_rom_E7DC:
 	ldx #$87
 	stx mmc3_bank_select
 	sta mmc3_bank_data
-	jmp sub_rom_B000
+	jmp sub_rom_05_B000
 	rts	; Unreachable
 
 ; -----------------------------------------------------------------------------
@@ -1272,7 +1280,8 @@ rom_E849:
 sub_rom_E851:
 	lda #$00
 	sta a:zp_0040	; ???
-	lda #$36
+	lda #$36	; Useless: immediately overwritten
+	; This would change CHR A12 inversion and PRG bank mode, crashing the game
 	lda #$04
 	sta rom_8C00+0
 	lda #$05
@@ -1297,6 +1306,7 @@ sub_rom_E874:
 	lda #$00
 	sta a:zp_0040	; ???
 	lda #$02
+	; Like the sub at $E851, this would crash the game
 	lda #$04
 	sta rom_8C00+0
 	lda #$05
@@ -1357,6 +1367,7 @@ sub_rom_E89B:
 
 ; -----------------------------------------------------------------------------
 
+; Sound / music stuff
 sub_rom_E8CB:
 	lda #$86
 	sta a:zp_00FC	; ???

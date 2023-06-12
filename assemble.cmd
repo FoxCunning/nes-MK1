@@ -38,7 +38,7 @@ for %%f in (bank_*.asm) do (
 )
 
 :: Make sure all object files exist
-for %%o in (0 1 2 3 4 5 6 7 8 9 A B C D E F) do (
+for %%o in (0 1 2 3 4 5t 5b 6 7 8 9 A B C D E F) do (
 	if not exist out\bank_0%%o.o (
 		echo.
 		echo out\bank_%%o.o not found!
@@ -56,7 +56,8 @@ ld65 -C ld65.cfg -o out\MK1.bin --dbgfile _debug.txt ^
 	out\bank_02.o ^
 	out\bank_03.o ^
 	out\bank_04.o ^
-	out\bank_05.o ^
+	out\bank_05t.o ^
+	out\bank_05b.o ^
 	out\bank_06.o ^
 	out\bank_07.o ^
 	out\bank_08.o ^

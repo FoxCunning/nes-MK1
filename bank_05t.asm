@@ -1,5 +1,5 @@
-.segment "BANK_05"
-; $A000-$BFFF
+.segment "BANK_05t"
+; $8000-$8FFF
 .setcpu "6502X"
 
 .feature org_per_seg
@@ -7,4 +7,4 @@
 
 .include "globals.inc"
 
-.incbin "bin/bank_05.bin"
+.incbin "bin/bank_05_top.bin"
