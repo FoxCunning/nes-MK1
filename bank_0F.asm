@@ -7,13 +7,12 @@
 
 .include "globals.inc"
 
-; Temporary definitions
-; TODO Remove once other banks have been disassembled
-rom_8C00 = $8C00	; TEMP
-sub_rom_8000 = $8000	; TEMP
-sub_rom_05_B000 = $B000	; TEMP
+sub_rom_8000 = $8000	; Likely unused, leftover from a different game
+rom_8C00 = $8C00		; Likely unused, leftover from a different game
+
 
 ; -----------------------------------------------------------------------------
+.export reset
 
 reset:
 	sei
@@ -469,6 +468,7 @@ sub_rom_E2E7:
 	rts
 
 ; -----------------------------------------------------------------------------
+.export sub_rom_E303
 
 sub_rom_E303:
 	asl A
@@ -493,7 +493,7 @@ sub_rom_E318:
 	lda ram_0410
 	asl A
 	tax
-	lda rom_E32F,X
+	lda rom_E32F+0,X
 	sta ram_0424
 	lda rom_E32F+1,X
 	sta ram_0425
