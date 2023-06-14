@@ -6,15 +6,11 @@
 .feature pc_assignment
 
 .include "globals.inc"
-; .include "charmap.inc"
 
 ; Temporary definitions
 ; TODO Remove once other banks have been disassembled
 rom_8000 = $8000	; TEMP
 rom_8002 = $8002	; TEMP
-rom_B000 = $B000	; TEMP
-
-sub_rom_01_8000 = $8000	; TEMP
 
 
 ; -----------------------------------------------------------------------------
@@ -138,7 +134,7 @@ sub_rom_C0C6:
 	sta mmc3_bank_select
 	lda #$01
 	sta mmc3_bank_data
-	jsr sub_rom_01_8000
+	jsr sub_rom_00_8000
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -4152,9 +4148,9 @@ sub_rom_D9AF:
 	pha
 	lda ram_0429
 	tay
-	lda rom_B000+0,Y
+	lda rom_01_B000+0,Y
 	sta zp_3D
-	lda rom_B000+1,Y
+	lda rom_01_B000+1,Y
 	sta zp_3E
 	lda ram_0301,X
 	and #$07
