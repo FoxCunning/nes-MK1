@@ -1,5 +1,5 @@
 .segment "BANK_09"
-; $A000-$BFFF
+; $8000-$9FFF
 .setcpu "6502X"
 
 .feature org_per_seg
