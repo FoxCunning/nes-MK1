@@ -8,9 +8,8 @@
 .include "globals.inc"
 
 ; Temporary definitions
-; TODO Remove once other banks have been disassembled
-rom_8000 = $8000	; TEMP
-rom_8002 = $8002	; TEMP
+rom_8000 = $8000	;
+rom_8002 = $8002	;
 
 
 ; -----------------------------------------------------------------------------
