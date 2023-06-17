@@ -355,27 +355,70 @@ PpuScroll_2005   = $2005    ;
 PpuAddr_2006     = $2006    ;
 PpuData_2007     = $2007    ;
 
+;DDLC VVVV
+;Duty (D), envelope loop / length counter halt (L), constant volume (C), volume/envelope (V)
 Sq0Duty_4000     = $4000    ;
+;EPPP NSSS
+;Sweep unit: enabled (E), period (P), negate (N), shift (S)
 Sq0Sweep_4001    = $4001    ;
+;TTTT TTTT
+;Timer low (T)
 Sq0Timer_4002    = $4002    ;
+;LLLL LTTT
+;Length counter load (L), timer high (T)
 Sq0Length_4003   = $4003    ;
+;DDLC VVVV
+;Duty (D), envelope loop / length counter halt (L), constant volume (C), volume/envelope (V)
 Sq1Duty_4004     = $4004    ;
+;EPPP NSSS
+;Sweep unit: enabled (E), period (P), negate (N), shift (S)
 Sq1Sweep_4005    = $4005    ;
+;TTTT TTTT
+;Timer low (T)
 Sq1Timer_4006    = $4006    ;
+;LLLL LTTT
+;Length counter load (L), timer high (T)
 Sq1Length_4007   = $4007    ;
+;CRRR RRRR
+;Length counter halt / linear counter control (C), linear counter load (R)
 TrgLinear_4008   = $4008    ;
+;TTTT TTTT
+;Timer low (T)
 TrgTimer_400A    = $400A    ;
+;LLLL LTTT
+;Length counter load (L), timer high (T)
 TrgLength_400B   = $400B    ;
+;--LC VVVV
+;Envelope loop / length counter halt (L), constant volume (C), volume/envelope (V)
 NoiseVolume_400C = $400C    ;
+;L--- PPPP
+;Loop noise (L), noise period (P)
 NoisePeriod_400E = $400E    ;
+;LLLL L---
+;Length counter load (L)
 NoiseLength_400F = $400F    ;
+;IL-- RRRR
+;IRQ enable (I), loop (L), frequency (R)
 DmcFreq_4010     = $4010    ;
+;-DDD DDDD
+;Load counter (D)
 DmcCounter_4011  = $4011    ;
+;AAAA AAAA
+;Sample address (A)
 DmcAddress_4012  = $4012    ;
+;LLLL LLLL
+;Sample length (L)
 DmcLength_4013   = $4013    ;
 
 SpriteDma_4014   = $4014    ;
 
+;Read:
+;IF-D NT21
+;DMC interrupt (I), frame interrupt (F), DMC active (D), length counter > 0 (N/T/2/1)
+;
+;Write:
+;---D NT21
+;Enable DMC (D), noise (N), triangle (T), and pulse channels (2/1)
 ApuStatus_4015   = $4015    ;
 
 Ctrl1_4016       = $4016    ;
