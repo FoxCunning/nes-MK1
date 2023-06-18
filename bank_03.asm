@@ -1179,20 +1179,25 @@ rom_AA3D:
 	.byte $0A, $02
 
 ; -----------------------------------------------------------------------------
-.export sub_rom_03_AA98
+.export sub_apu_init
 
-sub_rom_03_AA98:
+; Initialises the APU registers, clears RAM used by sound routines
+sub_apu_init:
+	; Disable DMC, enable everything else
 	lda #$0F
 	sta ApuStatus_4015
+	; Silence all channels
 	lda #$00
 	sta Sq0Duty_4000
 	sta Sq1Duty_4004
 	sta TrgLinear_4008
 	sta NoiseVolume_400C
 	sta DmcFreq_4010
+	; Disable sweep units
 	lda #$7F
 	sta Sq0Sweep_4001
 	sta Sq1Sweep_4005
+
 	lda #$00
 	ldy #$F9
 	@AABA:
@@ -1230,22 +1235,27 @@ sub_rom_03_AA98:
 	rts
 
 ; -----------------------------------------------------------------------------
-.export sub_rom_03_AAEC
+.export sub_play_sound
 
-sub_rom_03_AAEC:
+; Parameters:
+; A = index of the SFX or music track to play
+sub_play_sound:
 	tax
 	ldy #$FF
 	@AAEF:
 	cpy #$07
-	beq @AAFD
+	beq :+
 
-	iny
-	lda ram_0701,Y
-	bpl @AAEF
+		; Read from $0701 to $0707, or until a value with bit 7 set is found
+		iny
+		lda ram_0701,Y
 
-	txa
-	sta ram_0701,Y
-	@AAFD:
+		bpl @AAEF
+
+		; ...then put the parameter where that value was found, or at index 6
+		txa
+		sta ram_0701,Y
+:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1335,23 +1345,23 @@ sub_rom_AB96:
 	lda ram_0700
 	beq sub_rom_ABB4
 
-	ldy #$00
-	@AB9D:
-	lda ram_0701,Y
-	bmi @ABAF
+		ldy #$00
+		@AB9D:
+		lda ram_0701,Y
+		bmi :+
 
-	tax
-	tya
-	pha
-	jsr sub_rom_ABB5
-	pla
-	tay
-	lda #$FF
-	sta ram_0701,Y
-	@ABAF:
-	iny
-	cpy #$08
-	bne @AB9D
+			tax
+			tya
+			pha
+			jsr sub_rom_ABB5
+			pla
+			tay
+			lda #$FF
+			sta ram_0701,Y
+:
+		iny
+		cpy #$08
+		bne @AB9D
 
 sub_rom_ABB4:
 	rts
@@ -1362,9 +1372,9 @@ sub_rom_ABB5:
 	txa
 	asl A
 	tax
-	lda rom_02_867E+0,X
+	lda tbl_track_ptrs+0,X
 	sta zp_FE
-	lda rom_02_867E+1,X
+	lda tbl_track_ptrs+1,X
 	sta zp_FF
 	ldy #$00
 	@ABC4:
@@ -1528,9 +1538,9 @@ sub_rom_ACA2:
 	asl A
 	tay
 	ldx ram_070C
-	lda rom_02_85BE+0,Y
+	lda tbl_pitches+0,Y
 	sta ram_0743,X
-	lda rom_02_85BE+1,Y
+	lda tbl_pitches+1,Y
 	sta ram_0744,X
 	jmp @ACE8
 
@@ -1869,10 +1879,10 @@ sub_rom_AF0B:
 	lda ram_0757,X
 	asl A
 	tax
-	lda rom_02_8000+0,X
+	lda tbl_instrument_ptrs+0,X
 	sta ram_0761,Y
 	sta zp_FE
-	lda rom_02_8000+1,X
+	lda tbl_instrument_ptrs+1,X
 	sta ram_0762,Y
 	sta zp_FF
 	ldx ram_070B
@@ -1898,10 +1908,10 @@ sub_rom_AF3C:
 	lda ram_076B,X
 	asl A
 	tax
-	lda rom_02_8000+0,X
+	lda tbl_instrument_ptrs+0,X
 	sta ram_076F,Y
 	sta zp_FE
-	lda rom_02_8000+1,X
+	lda tbl_instrument_ptrs+1,X
 	sta ram_0770,Y
 	sta zp_FF
 	ldx ram_070B
@@ -1927,10 +1937,10 @@ sub_rom_AF6D:
 	lda ram_0773,X
 	asl A
 	tax
-	lda rom_02_8000+0,X
+	lda tbl_instrument_ptrs+0,X
 	sta ram_077B,Y
 	sta zp_FE
-	lda rom_02_8000+1,X
+	lda tbl_instrument_ptrs+1,X
 	sta ram_077C,Y
 	sta zp_FF
 	ldx ram_070B
@@ -2173,16 +2183,18 @@ sub_rom_B123:
 	ldy #$76
 	lda ram_079F
 	ora ram_07A0
-	bne @B133
+	bne :+
 
-	ldx #$00
-	ldy #$00
-	@B133:
+		ldx #$00
+		ldy #$00
+:
 	jsr sub_rom_B242
 	lda zp_FE
+
 	pha
 	jsr sub_rom_B267
 	pla
+
 	ora zp_FE
 	ora #$30
 	sta Sq0Duty_4000
@@ -2190,10 +2202,10 @@ sub_rom_B123:
 	lda #$00
 	sta zp_FF
 	lda zp_FE
-	bpl @B151
+	bpl :+
 
-	dec zp_FF
-	@B151:
+		dec zp_FF
+:
 	lda ram_0743,Y
 	clc
 	adc zp_FE
@@ -2205,12 +2217,12 @@ sub_rom_B123:
 	adc zp_FF
 	tax
 	cpx zp_FE
-	beq @B174
+	beq :+
 
-	sta ram_074E,Y
-	ora #$F8
-	sta Sq0Length_4003
-	@B174:
+		sta ram_074E,Y
+		ora #$F8
+		sta Sq0Length_4003
+:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -2220,16 +2232,18 @@ sub_rom_B175:
 	ldy #$78
 	lda ram_07A1
 	ora ram_07A2
-	bne @B185
+	bne :+
 
-	ldx #$01
-	ldy #$02
-	@B185:
+		ldx #$01
+		ldy #$02
+:
 	jsr sub_rom_B242
 	lda zp_FE
+
 	pha
 	jsr sub_rom_B267
 	pla
+
 	ora zp_FE
 	ora #$30
 	sta Sq1Duty_4004
@@ -2237,10 +2251,10 @@ sub_rom_B175:
 	lda #$00
 	sta zp_FF
 	lda zp_FE
-	bpl @B1A3
+	bpl :+
 
-	dec zp_FF
-	@B1A3:
+		dec zp_FF
+:
 	lda ram_0743,Y
 	clc
 	adc zp_FE
@@ -2252,12 +2266,12 @@ sub_rom_B175:
 	adc zp_FF
 	tax
 	cpx zp_FE
-	beq @B1C6
+	beq :+
 
-	sta ram_074E,Y
-	ora #$F8
-	sta Sq1Length_4007
-	@B1C6:
+		sta ram_074E,Y
+		ora #$F8
+		sta Sq1Length_4007
+:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -2337,13 +2351,14 @@ sub_rom_B216:
 sub_rom_B242:
 	tya
 	pha
+
 	lda ram_075C,X
 	tay
 	cpy #$FF
 	bne @B251
 
-	lda #$00
-	jmp @B262
+		lda #$00
+		jmp @B262
 
 	@B251:
 	pla
@@ -2357,6 +2372,7 @@ sub_rom_B242:
 	lda (zp_FE),Y
 	@B262:
 	sta zp_FE
+
 	pla
 	tay
 	rts
@@ -2366,13 +2382,14 @@ sub_rom_B242:
 sub_rom_B267:
 	tya
 	pha
+
 	lda ram_076D,X
 	tay
 	cpy #$FF
 	bne @B276
 
-	lda #$00
-	jmp @B287
+		lda #$00
+		jmp @B287
 
 	@B276:
 	pla
@@ -2386,6 +2403,7 @@ sub_rom_B267:
 	lda (zp_FE),Y
 	@B287:
 	sta zp_FE
+
 	pla
 	tay
 	rts

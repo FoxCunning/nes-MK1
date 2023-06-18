@@ -81,10 +81,10 @@ reset:
 	sta mmc3_bank_select
 	lda #$03
 	sta mmc3_bank_data
-	jsr sub_rom_03_AA98
+	jsr sub_apu_init
 	lda #$20
 	sta ram_0673
-	jsr sub_rom_03_AAEC
+	jsr sub_play_sound
 	inc ram_0700
 	lda #$00
 	sta zp_28
@@ -1400,7 +1400,7 @@ sub_rom_E8CB:
 	lda ram_0673
 	sta ram_0674
 	@E8F9:
-	jsr sub_rom_03_AAEC
+	jsr sub_play_sound
 	lda #$00
 	sta ram_0672
 	rts
