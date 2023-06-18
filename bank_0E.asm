@@ -79,7 +79,7 @@ sub_rom_C019:
 	txa
 	clc
 	adc #$25
-	sta ram_0673
+	sta ram_req_song
 	lda #$00
 	sta ram_0435
 	sta ram_042D
@@ -276,7 +276,7 @@ sub_rom_C186:
 	bne @C1AF
 
 	lda #$22
-	sta ram_0673
+	sta ram_req_song
 	lda #$03
 	sta ram_0672
 	@C1AF:
@@ -3190,8 +3190,9 @@ sub_rom_D359:
 	lda zp_4B
 	bmi @D38B
 
+	; Play the "victory jingle"
 	lda #$32
-	sta ram_0673
+	sta ram_req_song
 	lda #$10
 	sta zp_92
 	sta ram_0438

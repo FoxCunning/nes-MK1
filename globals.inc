@@ -273,8 +273,12 @@ ram_0640 = $0640    ;
 ram_066D = $066D    ;
 ram_066E = $066E    ;
 ram_0672 = $0672    ;
-ram_0673 = $0673    ;
-ram_0674 = $0674    ;
+; Index of the music track to play
+; Can be used for SFX too, but it's meant to "request" music
+; Requesting the same track that is already playing has no effect
+ram_req_song = $0673    ;
+; Index of the music track currently playing (or last played)
+ram_cur_song = $0674    ;
 ram_0675 = $0675    ;
 ram_0678 = $0678    ;
 ram_0679 = $0679    ;
@@ -291,8 +295,11 @@ ram_06C3 = $06C3    ;
 ram_06C6 = $06C6    ;
 ram_06CD = $06CD    ;
 
-ram_0700 = $0700    ;
-ram_0701 = $0701    ;
+; Will contain 1 after the APU and sound engine have been initialised
+; Nothing will play while this is set to zero
+ram_snd_initialised = $0700    ;
+; Up to eight song/sfx indices to play ($FF = nothing is playing)
+ram_snd_stack = $0701    ; size=8
 ram_0709 = $0709    ;
 ram_070A = $070A    ;
 ram_070B = $070B    ;

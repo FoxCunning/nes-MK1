@@ -1198,40 +1198,43 @@ sub_apu_init:
 	sta Sq0Sweep_4001
 	sta Sq1Sweep_4005
 
+	; Clear all sound variables
 	lda #$00
 	ldy #$F9
-	@AABA:
-	sta ram_0700,Y
+:
+	sta ram_snd_initialised,Y
 	dey
-	bne @AABA
+	bne :-
 
 	lda #$FF
 	ldx #$05
-	@AAC4:
+:
 	dex
 	sta ram_075C,X
 	sta ram_07D2,X
-	bne @AAC4
+	bne :-
 
 	ldx #$04
-	@AACF:
+:
 	dex
 	sta ram_0777,X
 	sta ram_07ED,X
-	bne @AACF
+	bne :-
 
 	ldx #$02
-	@AADA:
+:
 	dex
 	sta ram_076D,X
 	sta ram_07E3,X
-	bne @AADA
+	bne :-
 
+	; Clear the sound stack by putting $FF in all eight slots
 	ldx #$08
-	@AAE5:
+:
 	dex
-	sta ram_0701,X
-	bne @AAE5
+	sta ram_snd_stack,X
+	bne :-
+
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1248,13 +1251,13 @@ sub_play_sound:
 
 		; Read from $0701 to $0707, or until a value with bit 7 set is found
 		iny
-		lda ram_0701,Y
+		lda ram_snd_stack,Y
 
 		bpl @AAEF
 
-		; ...then put the parameter where that value was found, or at index 6
+		; ...then put the sound index where that value was found
 		txa
-		sta ram_0701,Y
+		sta ram_snd_stack,Y
 :
 	rts
 
@@ -1342,12 +1345,12 @@ sub_rom_03_AAFE:
 ; -----------------------------------------------------------------------------
 
 sub_rom_AB96:
-	lda ram_0700
-	beq sub_rom_ABB4
+	lda ram_snd_initialised
+	beq sub_rom_ABB4	; Skip if the queue is empty
 
 		ldy #$00
 		@AB9D:
-		lda ram_0701,Y
+		lda ram_snd_stack,Y
 		bmi :+
 
 			tax
@@ -1357,7 +1360,7 @@ sub_rom_AB96:
 			pla
 			tay
 			lda #$FF
-			sta ram_0701,Y
+			sta ram_snd_stack,Y
 :
 		iny
 		cpy #$08

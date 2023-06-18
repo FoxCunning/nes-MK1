@@ -170,7 +170,7 @@ sub_rom_B0CC:
 	and #$D0
 	beq sub_rom_B0CC
 	lda #$31
-	sta ram_0673
+	sta ram_req_song
 	inc zp_4F
 	lda #$05
 	sta zp_55
@@ -1385,14 +1385,14 @@ sub_rom_B926:
 	cmp #$01
 	beq @B941
 
-	lda #$02
-	sta zp_50
-	jsr sub_rom_04_805A
-	jsr sub_rom_BA74
-	jsr sub_rom_B9DB
-	lda #$8A
-	sta ram_0680
-	jmp @B956
+		lda #$02	; Index used for VS screen (it's the same as player select)
+		sta zp_50
+		jsr sub_rom_04_805A
+		jsr sub_rom_BA74
+		jsr sub_rom_B9DB
+		lda #$8A
+		sta ram_0680
+		jmp @B956
 
 	@B941:
 	lda #$07

@@ -758,7 +758,7 @@ tbl_track_ptrs:
 	.word track_silence		; $1F
 	.word mus_876B			; $20
 	.word mus_88D5			; $21
-	.word track_silence		; $22	Probably supposed to be option menu BG track
+	.word track_silence		; $22
 	.word mus_8960			; $23
 	.word mus_8A1A			; $24
 	.word mus_8D5F			; $25
@@ -774,7 +774,7 @@ tbl_track_ptrs:
 	.word mus_94C4			; $2F
 	.word mus_96B1			; $30
 	.word sfx_8A4E			; $31
-	.word mus_8A9E			; $32
+	.word mus_victory_jingle; $32
 
 ; -----------------------------------------------------------------------------
 
@@ -937,6 +937,7 @@ rom_88D4:
 
 ; ----------------
 
+; Player select / VS screen
 mus_88D5:
 	.byte $00
 	.word rom_877B
@@ -1144,7 +1145,7 @@ rom_8A9D:
 
 ; ----------------
 
-mus_8A9E:
+mus_victory_jingle:
 	.byte $00
 	.word rom_8A5E
 	.byte $01

@@ -22,43 +22,55 @@ sub_rom_04_8000:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_800B:
+; Data is using some kind of RLE compression
+; Parameters:
+; Data pointer in zp_12
+; Nametable selector (high byte of VRAM pointer) in zp_14
+sub_unpack_nametable:
+	; Disable rendering
 	lda #$00
 	sta PpuControl_2000
 	sta PpuMask_2001
+
 	ldy #$00
 	lda PpuStatus_2002
+
 	lda zp_14
 	sta PpuAddr_2006
-	jsr sub_rom_8053
+	jsr sub_next_packed_byte
 	lda #$00
 	sta PpuAddr_2006
+
 	@8025:
-	jsr sub_rom_8053
+	jsr sub_next_packed_byte
 	lda (zp_12),Y
-	bpl @8042
-	cmp #$FF
+	bpl @rle_repeat_byte
+
+	cmp #$FF	; Stop byte
 	beq @8052
 
+	; Values >= $80 are RLE command codes (number of bytes to copy & $80)
 	and #$7F
 	sta zp_08
-	@8034:
-	jsr sub_rom_8053
+:
+	jsr sub_next_packed_byte
 	lda (zp_12),Y
 	sta PpuData_2007
 	dec zp_08
-	bne @8034
+	bne :-
 
-	beq @8025
+		; Get the next byte when the counter reaches zero
+		beq @8025
 
-	@8042:
+	@rle_repeat_byte:
+	; Values < $80 are the number of times the next byte must be copied
 	sta zp_08
-	jsr sub_rom_8053
+	jsr sub_next_packed_byte
 	lda (zp_12),Y
-	@8049:
+:
 	sta PpuData_2007
 	dec zp_08
-	bne @8049
+	bne :-
 
 	beq @8025
 
@@ -67,12 +79,13 @@ sub_rom_800B:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_8053:
+; Advances the pointer to the next byte
+sub_next_packed_byte:
 	inc zp_12
-	bne @8059
+	bne :+
 
-	inc zp_13
-	@8059:
+		inc zp_13
+:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -103,7 +116,7 @@ sub_rom_04_805A:
 	lda rom_81C0+1,Y
 	sta zp_56
 	jsr sub_rom_80F5
-	jsr sub_rom_9D41
+	jsr sub_choose_music_track
 	lda #$00
 	sta zp_57
 	sta zp_55
@@ -123,7 +136,7 @@ sub_rom_80A0:
 	sta zp_13
 	lda rom_8178+2,X
 	sta zp_14
-	jsr sub_rom_800B
+	jsr sub_unpack_nametable
 	lda zp_50
 	asl A
 	asl A
@@ -135,7 +148,7 @@ sub_rom_80A0:
 	sta zp_13
 	lda rom_817C+2,X
 	sta zp_14
-	jsr sub_rom_800B
+	jsr sub_unpack_nametable
 	lda zp_50
 	asl A
 	asl A
@@ -222,7 +235,7 @@ rom_8178:
 rom_817C:
 	.word rom_85D4
     .byte $28, $28
-    .word rom_88AB
+    .word nam_option_menu_rle
     .byte $20, $20
 	.word rom_8B04
     .byte $28, $28
@@ -597,7 +610,7 @@ rom_85D4:
 
 ; -----------------------------------------------------------------------------
 
-rom_88AB:
+nam_option_menu_rle:
 	.byte $20, $00, $4C, $42, $88, $02, $46, $07
 	.byte $09, $02, $03, $06, $00, $18, $42, $88
 	.byte $0F, $47, $14, $16, $0F, $10, $13, $00
@@ -752,7 +765,9 @@ rom_8B04:
 	.byte $84, $66, $55, $FD, $BB, $02, $55, $02
 	.byte $F5, $81, $E6, $02, $F5, $81, $B9, $02
 	.byte $F5, $02, $FF, $84, $AE, $AD, $AF, $AB
-	.byte $0A, $FF, $81, $0F, $FF, $FF, $FF
+	.byte $0A, $FF
+	; Glitchy! The next byte should be $FF (and also the last)
+	.byte $81, $0F, $FF, $FF, $FF
 
 ; -----------------------------------------------------------------------------
 
@@ -844,7 +859,9 @@ rom_8D5B:
 	.byte $AF, $02, $FF, $86, $00, $77, $DD, $77
 	.byte $DD, $AA, $03, $FF, $84, $55, $33, $CC
 	.byte $AA, $04, $FF, $84, $F5, $F3, $FC, $FA
-	.byte $0A, $FF, $81, $0F, $FF, $FF, $FF
+	.byte $0A, $FF
+	; Glitchy! The next byte should be $FF (and also the last)
+	.byte $81, $0F, $FF, $FF, $FF
 
 ; -----------------------------------------------------------------------------
 
@@ -1323,17 +1340,25 @@ rom_9CF9:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_9D41:
+; Requests the engine to play a music track depending on the current screen
+sub_choose_music_track:
 	ldx zp_50
-	lda rom_9D4A,X
-	sta ram_0673
+	lda @tbl_bg_music,X
+	sta ram_req_song
 	rts
 
 ; -----------------------------------------------------------------------------
 
-rom_9D4A:
-	.byte $20, $22, $21, $21, $24, $22, $22, $21
-	.byte $22
+	@tbl_bg_music:
+	.byte $20	; $00	Menu intro
+	.byte $22	; $01	Options menu (silence)
+	.byte $21	; $02	Player select (also VS screen)
+	.byte $21	; $03
+	.byte $24	; $04	High scores
+	.byte $22	; $05
+	.byte $22	; $06
+	.byte $21	; $07
+	.byte $22	; $08	Black screen (silence)
 
 ; -----------------------------------------------------------------------------
 

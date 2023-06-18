@@ -82,10 +82,13 @@ reset:
 	lda #$03
 	sta mmc3_bank_data
 	jsr sub_apu_init
+
+	; This will not actually play anything, maybe it was put here as a test
 	lda #$20
-	sta ram_0673
+	sta ram_req_song
 	jsr sub_play_sound
-	inc ram_0700
+	inc ram_snd_initialised	; Sounds will start playing after this
+
 	lda #$00
 	sta zp_28
 	lda #$01
@@ -1387,18 +1390,19 @@ sub_rom_E8CB:
 	sta mmc3_bank_select
 	lda #$03
 	sta mmc3_bank_data
-	lda ram_0673
-	cmp ram_0674
+	
+	lda ram_req_song
+	cmp ram_cur_song
 	bne @E8F3
 
-	lda ram_0672
-	bne @E8F9
+		lda ram_0672
+		bne @E8F9
 
 	rts
 ; ----------------
 	@E8F3:
-	lda ram_0673
-	sta ram_0674
+	lda ram_req_song
+	sta ram_cur_song
 	@E8F9:
 	jsr sub_play_sound
 	lda #$00
