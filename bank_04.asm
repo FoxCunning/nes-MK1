@@ -214,58 +214,73 @@ rom_8120:
 
 ; -----------------------------------------------------------------------------
 
+; Values for CHR bank data register, all banks (registers R0-R5)
 ; Trailing zeroes are just padding to keep 8-byte alignment for easy indexing
 rom_8130:
-	.byte $F0, $F2, $F0, $F1, $F2, $F3, $00, $00
-	.byte $FC, $FE, $FC, $FD, $FE, $FF, $00, $00
-	.byte $FC, $FE, $F8, $F9, $FA, $FB, $00, $00
-	.byte $FC, $FE, $F8, $F9, $FA, $FB, $00, $00
-	.byte $FC, $FE, $FC, $FD, $FE, $FF, $00, $00
-	.byte $FC, $FE, $FC, $FD, $FE, $FF, $00, $00
-	.byte $D8, $DA, $D8, $D9, $DA, $DB, $00, $00
-	.byte $FC, $FE, $F8, $F9, $FA, $FB, $00, $00
-	.byte $BC, $BE, $BC, $BD, $BE, $BF, $00, $00
+	.byte $F0, $F2, $F0, $F1, $F2, $F3, $00, $00	; $00
+	.byte $FC, $FE, $FC, $FD, $FE, $FF, $00, $00	; $01
+	.byte $FC, $FE, $F8, $F9, $FA, $FB, $00, $00	; $02
+	.byte $FC, $FE, $F8, $F9, $FA, $FB, $00, $00	; $03
+	.byte $FC, $FE, $FC, $FD, $FE, $FF, $00, $00	; $04
+	.byte $FC, $FE, $FC, $FD, $FE, $FF, $00, $00	; $05
+	.byte $D8, $DA, $D8, $D9, $DA, $DB, $00, $00	; $06
+	.byte $FC, $FE, $F8, $F9, $FA, $FB, $00, $00	; $07
+	.byte $BC, $BE, $BC, $BD, $BE, $BF, $00, $00	; $08
 
 ; -----------------------------------------------------------------------------
 
+; Left/Top nametable data pointers (even entries)
+; Third byte is VRAM address high byte
+; Fourth byte is unused (kept for alignment)
 rom_8178:
-	.word rom_83EF
+	.word nam_main_menu_top_rle				; $00
     .byte $20, $20
 ; ----------------
+; Right/Bottom nametable data pointers (odd entries)
+; Third byte is VRAM address high byte
+; Fourth byte is unused (kept for alignment)
 rom_817C:
-	.word rom_85D4
+	.word nam_main_menu_btm_rle
     .byte $28, $28
-    .word nam_option_menu_rle
+
+    .word nam_option_menu_rle	; $01
     .byte $20, $20
-	.word rom_8B04
+	.word nam_option_menu_2_rle
     .byte $28, $28
-    .word rom_8D5B
-    .byte $20, $20
-	.word rom_92B4
-    .byte $28, $28
-    .word rom_901A
+
+    .word rom_8D5B				; $02
     .byte $20, $20
 	.word rom_92B4
     .byte $28, $28
-    .word rom_9757
+
+    .word rom_901A				; $03
+    .byte $20, $20
+	.word rom_92B4
+    .byte $28, $28
+
+    .word rom_9757				; $04
     .byte $20, $20
 	.word rom_9757
     .byte $28, $28
-    .word rom_9591
+
+    .word rom_9591				; $05
     .byte $20, $20
 	.word rom_968C
     .byte $28, $28
-    .word rom_8327
+
+    .word rom_8327				; $06
     .byte $20, $20
 	.word rom_8390
     .byte $28, $28
-    .word rom_9391
+
+    .word rom_9391				; $07
     .byte $20, $20
 	.word rom_9491
     .byte $28, $28
-    .word rom_9A7F
+
+    .word nam_titles_rle		; $08
     .byte $20, $20
-	.word rom_9A7F
+	.word nam_titles_rle
     .byte $28, $28
 
 ; -----------------------------------------------------------------------------
@@ -353,14 +368,14 @@ rom_8230:
 ; -----------------------------------------------------------------------------
 
 rom_8239:
-	.word rom_82E7, rom_8307
+	.word palette_82E7, palette_8307
 ; ----------------
 rom_823D:
-	.word rom_8247, rom_8267, rom_8287, rom_82A7, rom_82C7
+	.word palette_8247, palette_8267, palette_8287, palette_82A7, palette_82C7
 
 ; -----------------------------------------------------------------------------
 
-rom_8247:
+palette_8247:
 	.byte $0E, $00, $10, $27, $0E, $00, $10, $10
 	.byte $0E, $06, $00, $10, $0E, $16, $27, $30
 	.byte $0E, $00, $10, $20, $0E, $00, $10, $10
@@ -368,7 +383,7 @@ rom_8247:
 
 ; -----------------------------------------------------------------------------
 
-rom_8267:
+palette_8267:
 	.byte $0E, $01, $11, $28, $0E, $00, $10, $26
 	.byte $0E, $10, $00, $38, $0E, $00, $10, $20
 	.byte $0E, $01, $11, $28, $0E, $00, $10, $26
@@ -376,7 +391,7 @@ rom_8267:
 
 ; -----------------------------------------------------------------------------
 
-rom_8287:
+palette_8287:
 	.byte $FF, $08, $17, $30, $FF, $11, $21, $30
 	.byte $FF, $08, $18, $30, $FF, $00, $10, $27
 	.byte $0F, $17, $27, $38, $0E, $13, $21, $30
@@ -384,7 +399,7 @@ rom_8287:
 
 ; -----------------------------------------------------------------------------
 
-rom_82A7:
+palette_82A7:
 	.byte $0E, $16, $2A, $38, $0E, $21, $26, $20
 	.byte $0E, $21, $26, $20, $0E, $21, $26, $20
 	.byte $0E, $16, $2A, $38, $0E, $21, $26, $20
@@ -392,7 +407,7 @@ rom_82A7:
 
 ; -----------------------------------------------------------------------------
 
-rom_82C7:
+palette_82C7:
 	.byte $0E, $21, $26, $20, $0E, $21, $26, $20
 	.byte $0E, $21, $26, $20, $0E, $16, $27, $20
 	.byte $0E, $21, $26, $20, $0E, $21, $26, $20
@@ -400,7 +415,7 @@ rom_82C7:
 
 ; -----------------------------------------------------------------------------
 
-rom_82E7:
+palette_82E7:
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
@@ -408,7 +423,7 @@ rom_82E7:
 
 ; -----------------------------------------------------------------------------
 
-rom_8307:
+palette_8307:
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $00, $00, $00, $00, $FF, $FF, $FF, $FF
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
@@ -450,7 +465,7 @@ rom_8390:
 
 ; -----------------------------------------------------------------------------
 
-rom_83EF:
+nam_main_menu_top_rle:
 	.byte $20, $00, $41, $00, $81, $01, $0A, $02
 	.byte $88, $03, $04, $05, $06, $07, $08, $09
 	.byte $0A, $0A, $02, $84, $0B, $00, $00, $0C
@@ -515,7 +530,9 @@ rom_83EF:
 
 ; -----------------------------------------------------------------------------
 
-rom_85D4:
+; This is the bottom half the of the main menu, repeated twice vertically
+; The bottom copy has the "options" menu item selected
+nam_main_menu_btm_rle:
 	.byte $28, $00, $07, $BE, $02, $8C, $17, $BE
 	.byte $20, $8C, $04, $BE, $98, $01, $02, $03
 	.byte $04, $05, $06, $07, $08, $09, $0A, $0B
@@ -606,7 +623,8 @@ rom_85D4:
 	.byte $0A, $4A, $02, $AA, $86, $44, $55, $15
 	.byte $11, $00, $54, $02, $AA, $88, $04, $55
 	.byte $01, $51, $00, $55, $AA, $FA, $03, $F0
-	.byte $04, $F5, $81, $0A, $FF, $FF, $FF
+	; Fixed glitchy attributes
+	.byte $03, $F5, $81, $FA, $FF, $FF, $FF
 
 ; -----------------------------------------------------------------------------
 
@@ -617,13 +635,13 @@ nam_option_menu_rle:
 	.byte $0E, $42, $81, $1B, $1A, $1C, $81, $1D
 	.byte $04, $42, $81, $1E, $1A, $42, $81, $1E
 	.byte $04, $42, $82, $1E, $42, $03, $00, $83
-	.byte $50, $09, $52, $02, $21, $86, $09, $3A
-	.byte $0D, $01, $07, $3C, $02, $00, $85, $01
-	.byte $05, $52, $05, $01, $03, $00, $82, $42
+	.byte $00, $50, $09, $02, $21, $86, $09, $3A
+	.byte $0D, $01, $07, $3C, $01, $00, $85, $01
+	.byte $05, $52, $05, $01, $04, $00, $82, $42
 	.byte $1E, $04, $42, $82, $1E, $42, $03, $00
-	.byte $83, $51, $16, $53, $02, $2A, $86, $16
-	.byte $3B, $1A, $0E, $14, $3D, $02, $00, $85
-	.byte $0E, $12, $53, $12, $0E, $03, $00, $82
+	.byte $83, $00, $51, $16, $02, $2A, $86, $16
+	.byte $3B, $1A, $0E, $14, $3D, $01, $00, $85
+	.byte $0E, $12, $53, $12, $0E, $04, $00, $82
 	.byte $42, $1E, $04, $42, $81, $1E, $1A, $42
 	.byte $81, $1E, $04, $42, $81, $40, $1A, $1C
 	.byte $81, $41, $0A, $42, $81, $1B, $0E, $1C
@@ -685,12 +703,14 @@ nam_option_menu_rle:
 	.byte $55, $81, $66, $02, $FF, $81, $BB, $02
 	.byte $55, $02, $F5, $81, $E6, $02, $FF, $81
 	.byte $BB, $02, $F5, $02, $FF, $84, $AE, $AD
-	.byte $AF, $AB, $0A, $FF, $81, $0F, $FF, $FF
+	.byte $AF, $AB, $0A, $FF, $FF, $FF, $FF, $FF
 	.byte $FF
 
 ; -----------------------------------------------------------------------------
 
-rom_8B04:
+; This is basically the same as the previous nametable, but with different
+; attributes to highlight the options
+nam_option_menu_2_rle:
 	.byte $20, $00, $4C, $42, $88, $02, $46, $07
 	.byte $09, $02, $03, $06, $00, $18, $42, $88
 	.byte $0F, $47, $14, $16, $0F, $10, $13, $00
@@ -765,9 +785,7 @@ rom_8B04:
 	.byte $84, $66, $55, $FD, $BB, $02, $55, $02
 	.byte $F5, $81, $E6, $02, $F5, $81, $B9, $02
 	.byte $F5, $02, $FF, $84, $AE, $AD, $AF, $AB
-	.byte $0A, $FF
-	; Glitchy! The next byte should be $FF (and also the last)
-	.byte $81, $0F, $FF, $FF, $FF
+	.byte $0A, $FF, $FF, $FF, $FF, $FF, $FF
 
 ; -----------------------------------------------------------------------------
 
@@ -1228,7 +1246,8 @@ rom_9757:
 
 ; -----------------------------------------------------------------------------
 
-rom_9A7F:
+; This is the "title sequence" before the main menu appears
+nam_titles_rle:
 	.byte $20, $00, $4B, $00, $8A, $27, $28, $29
 	.byte $2A, $2B, $2C, $2D, $2E, $2F, $30, $14
 	.byte $00, $86, $31, $32, $33, $34, $35, $36
