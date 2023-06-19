@@ -22,19 +22,17 @@ echo.
 echo [1;33mAssembling Mortal Kombat...[0m
 echo.
 
-:: TODO Check if object file is already up to date
+:: Compress nametables
+for %%f in (bin\*.nam) do (
+	rlepack %%f
+)
+
 echo [1;93m
 for %%f in (bank_*.asm) do (
-	REM echo | set /p d="[1;39m%%f[0m... "
 	<nul set /p=[%%~nf] 
 	
-	REM call :Compare %%f out\%%~nf.o
-	REM echo | set /p d="!newsrc! - !errorlevel!"
-
-	REM del out\%%~nf.o >nul 2>&1
 	ca65 -U -l %%~nf.lst -g %%f -o out\%%~nf.o
 	if !errorlevel! neq 0 goto Error
-	REM echo | set /p d="... "
 )
 
 :: Make sure all object files exist
@@ -105,28 +103,4 @@ echo.
 del *.lst >nul 2>&1
 choice /C YN /M "Try again"
 if "%errorlevel%"=="1" goto Assemble
-exit /b 1
-
-
-:Compare
-:: echo Comparing %~1 to %~2 ...
-
-:: Source file
-for %%i in (%~1) do set srcdate=%%~ti
-:: Object file
-for %%i in (%~2) do set objdate=%%~ti
-
-if "%srcdate%"=="%objdate%" goto CompareEnd
-
-for /f %%i in ('dir /B /O:D %~1 %~2') do set newer=%%i
-if %newer%==%~1 goto NewSource
-
-:CompareEnd
-:: echo Object file is up to date.
-set newsrc=0
-exit /b 0
-
-:NewSource
-:: echo Source file modified.
-set newsrc=1
 exit /b 1
