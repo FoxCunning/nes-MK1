@@ -3,5 +3,6 @@
 out/**
 **/*.nes
 **/.idea/**
+**/*.bak
 _debug.txt
 _listing.txt
