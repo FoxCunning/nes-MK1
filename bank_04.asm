@@ -43,7 +43,7 @@ sub_unpack_nametable:
 
 	@8025:
 	jsr sub_next_packed_byte
-	lda (zp_12),Y
+	lda (zp_ptr_lo),Y
 	bpl @rle_repeat_byte
 
 	cmp #$FF	; Stop byte
@@ -54,7 +54,7 @@ sub_unpack_nametable:
 	sta zp_08
 :
 	jsr sub_next_packed_byte
-	lda (zp_12),Y
+	lda (zp_ptr_lo),Y
 	sta PpuData_2007
 	dec zp_08
 	bne :-
@@ -66,7 +66,7 @@ sub_unpack_nametable:
 	; Values < $80 are the number of times the next byte must be copied
 	sta zp_08
 	jsr sub_next_packed_byte
-	lda (zp_12),Y
+	lda (zp_ptr_lo),Y
 :
 	sta PpuData_2007
 	dec zp_08
@@ -81,10 +81,10 @@ sub_unpack_nametable:
 
 ; Advances the pointer to the next byte
 sub_next_packed_byte:
-	inc zp_12
+	inc zp_ptr_lo
 	bne :+
 
-		inc zp_13
+		inc zp_ptr_hi
 :
 	rts
 
@@ -131,9 +131,9 @@ sub_rom_80A0:
 	asl A
 	tax
 	lda rom_8178+0,X
-	sta zp_12
+	sta zp_ptr_lo
 	lda rom_8178+1,X
-	sta zp_13
+	sta zp_ptr_hi
 	lda rom_8178+2,X
 	sta zp_14
 	jsr sub_unpack_nametable
@@ -143,9 +143,9 @@ sub_rom_80A0:
 	asl A
 	tax
 	lda rom_817C+0,X
-	sta zp_12
+	sta zp_ptr_lo
 	lda rom_817C+1,X
-	sta zp_13
+	sta zp_ptr_hi
 	lda rom_817C+2,X
 	sta zp_14
 	jsr sub_unpack_nametable
@@ -154,17 +154,17 @@ sub_rom_80A0:
 	asl A
 	asl A
 	tax
-	lda rom_8130+0,X
+	lda tbl_chr_banks_per_screen+0,X
 	sta zp_96
-	lda rom_8130+1,X
+	lda tbl_chr_banks_per_screen+1,X
 	sta zp_97
-	lda rom_8130+2,X
+	lda tbl_chr_banks_per_screen+2,X
 	sta zp_58
-	lda rom_8130+3,X
+	lda tbl_chr_banks_per_screen+3,X
 	sta zp_59
-	lda rom_8130+4,X
+	lda tbl_chr_banks_per_screen+4,X
 	sta zp_5A
-	lda rom_8130+5,X
+	lda tbl_chr_banks_per_screen+5,X
 	sta zp_5B
 	rts
 
@@ -201,14 +201,13 @@ sub_rom_04_810A:
 	asl A
 	asl A
 	clc
-	adc rom_8120,X
+	adc @rom_8120,X
 	tay
-	lda (zp_12),Y
+	lda (zp_ptr_lo),Y
 	rts
+; ----------------
 
-; -----------------------------------------------------------------------------
-
-rom_8120:
+	@rom_8120:
 	.byte $00, $01, $00, $01, $03, $01, $00, $01
 	.byte $02, $01, $00, $01, $03, $01, $00, $01
 
@@ -216,7 +215,7 @@ rom_8120:
 
 ; Values for CHR bank data register, all banks (registers R0-R5)
 ; Trailing zeroes are just padding to keep 8-byte alignment for easy indexing
-rom_8130:
+tbl_chr_banks_per_screen:
 	.byte $F0, $F2, $F0, $F1, $F2, $F3, $00, $00	; $00
 	.byte $FC, $FE, $FC, $FD, $FE, $FF, $00, $00	; $01
 	.byte $FC, $FE, $F8, $F9, $FA, $FB, $00, $00	; $02
@@ -304,9 +303,9 @@ sub_rom_04_81D2:
 	asl A
 	tay
 	lda rom_823D+0,Y
-	sta zp_12
+	sta zp_ptr_lo
 	lda rom_823D+1,Y
-	sta zp_13
+	sta zp_ptr_hi
 	lda zp_57
 	asl A
 	tay
@@ -317,7 +316,7 @@ sub_rom_04_81D2:
 	lda zp_44
 	bne @822F
 
-        lda zp_25
+        lda zp_frame_counter
         and #$03
 	    bne @822F
 
@@ -329,11 +328,11 @@ sub_rom_04_81D2:
 	lda (zp_14),Y
 	bpl @820A
 
-        lda (zp_12),Y
+        lda (zp_ptr_lo),Y
         jmp @8213
 
 	@820A:
-	lda (zp_12),Y
+	lda (zp_ptr_lo),Y
 	sec
 	sbc zp_05
 	bpl @8213

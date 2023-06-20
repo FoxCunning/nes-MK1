@@ -180,23 +180,27 @@ nmi:
 	sta ram_0675
 	lda #$02
 	sta SpriteDma_4014
+
 	lda a:zp_FD		; Why...?
 	bne @E155
+
 	lda zp_44
 	beq @E14C
 
-	jsr sub_rom_E272
+		jsr sub_rom_E272
+
 	@E14C:
 	lda zp_40
 	cmp #$01
 	bne @E155
 
-	jsr sub_rom_D270
+		jsr sub_rom_D270
+
 	@E155:
 	lda PpuStatus_2002
-	lda zp_1E
+	lda zp_scroll_x
 	sta PpuScroll_2005
-	lda zp_20
+	lda zp_scroll_y
 	sta PpuScroll_2005
 	lda zp_02
 	sta PpuControl_2000
@@ -205,13 +209,14 @@ nmi:
 	lda a:zp_F6		; ...?
 	beq @E186
 	
-	lda ram_0416
-	sta ram_0418
-	jsr sub_rom_E318
-	lda ram_041C
-	sta mmc3_irq_latch
-	sta mmc3_irq_reload
-	sta mmc3_irq_enable
+		lda ram_0416
+		sta ram_0418
+		jsr sub_rom_E318
+		lda ram_041C
+		sta mmc3_irq_latch
+		sta mmc3_irq_reload
+		sta mmc3_irq_enable
+		
 	@E186:
 	nop
 	lda #$80
@@ -225,23 +230,24 @@ nmi:
 	lda zp_40
 	bne @E1CC
 
-	ldx #$82
-	lda zp_58
-	stx mmc3_bank_select
-	sta mmc3_bank_data
-	ldx #$83
-	lda zp_59
-	stx mmc3_bank_select
-	sta mmc3_bank_data
-	ldx #$84
-	lda zp_5A
-	stx mmc3_bank_select
-	sta mmc3_bank_data
-	ldx #$85
-	lda zp_5B
-	stx mmc3_bank_select
-	sta mmc3_bank_data
-	jmp @E1F2
+		ldx #$82
+		lda zp_58
+		stx mmc3_bank_select
+		sta mmc3_bank_data
+		ldx #$83
+		lda zp_59
+		stx mmc3_bank_select
+		sta mmc3_bank_data
+		ldx #$84
+		lda zp_5A
+		stx mmc3_bank_select
+		sta mmc3_bank_data
+		ldx #$85
+		lda zp_5B
+		stx mmc3_bank_select
+		sta mmc3_bank_data
+		jmp @E1F2
+
 	@E1CC:
 	lda #$82
 	sta mmc3_bank_select
@@ -260,13 +266,14 @@ nmi:
 	inx
 	stx mmc3_bank_data
 	@E1F2:
-	inc zp_25
-	jsr sub_rom_E2AE
+	inc zp_frame_counter
+	jsr sub_get_controller_input
 	lda a:zp_FD		; Why?
 	bne @E201
 
-	lda #$01
-	sta a:zp_F7		; Why?
+		lda #$01
+		sta a:zp_F7	; Why?
+
 	@E201:
 	lda a:zp_FC		; Why?
 	sta mmc3_bank_select
@@ -412,26 +419,27 @@ sub_rom_E272:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_E2AE:
-	jsr sub_rom_E2C4
+sub_get_controller_input:
+	jsr sub_read_controllers
 	ldx #$00
-	jsr sub_rom_E2B7
-	inx
-; ----------------
-sub_rom_E2B7:
-	lda zp_2A,X
-	eor zp_2F,X
-	and zp_2A,X
-	sta zp_2D,X
-	lda zp_2A,X
-	sta zp_2F,X
+	jsr @E2B7	; Process controller 1
+	inx					; And now do controller 2
+	; ----
+	@E2B7:
+	lda zp_controller1,X
+	eor zp_controller1_prev,X
+	and zp_controller1,X
+	sta zp_controller1_new,X		; This now contains only "new" button presses
+	lda zp_controller1,X
+	sta zp_controller1_prev,X
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_E2C4:
+sub_read_controllers:
 	lda #$01
 	sta Ctrl1_4016
+	; The next three writes might be unnecessary
 	lda #$00
 	sta Ctrl1_4016
 	lda #$01
@@ -443,37 +451,45 @@ sub_rom_E2C4:
 	nop
 	nop
 	lda #$01
-	lsr A
+	; ----
+	lsr A	; A is now zero
 	tax
 	sta Ctrl1_4016
-	jsr sub_rom_E2E7
+	jsr @E2E7	; Read controller 1
 	inx
+	; Now read controller 2
 ; ----------------
-sub_rom_E2E7:
+	@E2E7:
 	lda #$00
 	sta zp_05
-	ldy #$08
+
+	ldy #$08	; Read all 8 buttons
 	@E2ED:
 	pha
 	lda Ctrl1_4016,X
 	sta zp_07
 	lsr A
-	lsr A
-	rol zp_05
-	lsr zp_07
+	lsr A		; Expansion controller bit in C
+	rol zp_05	; This will hold data read from expansion port controller
+	lsr zp_07	; Standard controller bit in C
 	pla
-	rol A
+	rol A		; Standard controller bit now in A
 	dey
 	bne @E2ED
 
-	ora zp_05
-	sta zp_2A,X
+	ora zp_05	; Join inputs from standard controller and expansion port
+	sta zp_controller1,X
 	rts
 
 ; -----------------------------------------------------------------------------
-.export sub_rom_E303
+.export sub_trampoline
 
-sub_rom_E303:
+; Jumps to a location that is selected from a list of pointers
+; The pointers start at the address following the call to this sub (taken from
+; the stack, so call this with JSR and whatever is after the JSR is pointer #0)
+; Parameters:
+; A = index of the selected pointer
+sub_trampoline:
 	asl A
 	tay
 	pla
@@ -482,11 +498,11 @@ sub_rom_E303:
 	sta zp_15
 	iny
 	lda (zp_14),Y
-	sta zp_12
+	sta zp_ptr_lo
 	iny
 	lda (zp_14),Y
-	sta zp_13
-	jmp (zp_12)
+	sta zp_ptr_hi
+	jmp (zp_ptr_lo)
 
 ; -----------------------------------------------------------------------------
 
@@ -587,7 +603,7 @@ sub_rom_E398:
 	beq @E3C0
 
 	@E3AF:
-	lda zp_25
+	lda zp_frame_counter
 	and #$01
 	bne @E3C0
 	inc ram_0414
@@ -712,7 +728,7 @@ sub_rom_E480:
 	lda #$1B
 	sta mmc3_irq_latch
 	lda PpuStatus_2002
-	lda zp_25
+	lda zp_frame_counter
 	and #$07
 	bne @E497
 
@@ -733,7 +749,7 @@ sub_rom_E4A6:
 	lda #$15
 	sta mmc3_irq_latch
 	lda PpuStatus_2002
-	lda zp_25
+	lda zp_frame_counter
 	and #$03
 	bne @E4BD
 
@@ -760,11 +776,11 @@ sub_rom_E4CB:
 	adc zp_16
 	@E4D6:
 	ror A
-	ror zp_12
+	ror zp_ptr_lo
 	dex
 	bne @E4CF
 
-	sta zp_13
+	sta zp_ptr_hi
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -817,7 +833,7 @@ sub_rom_E50A:
 	cmp #$05
 	bcs @E54E
 
-		lda zp_25
+		lda zp_frame_counter
 		and #$1F
 
 	bne :+
@@ -832,7 +848,7 @@ sub_rom_E50A:
 	rts
 ; ----------------
 	@E54E:
-	lda zp_25
+	lda zp_frame_counter
 	and #$07
 	bne :+
 
@@ -970,7 +986,7 @@ sub_rom_E613:
 	lda a:zp_81		; ???
 	lsr A
 	sta PpuScroll_2005
-	lda zp_25
+	lda zp_frame_counter
 	and #$0C
 	lsr A
 	lsr A
@@ -991,7 +1007,7 @@ sub_rom_E613:
 	sta mmc3_bank_select
 	lda a:zp_9B		; ???
 	sta mmc3_bank_data
-	lda zp_25
+	lda zp_frame_counter
 	and #$07
 	bne @E66F
 
@@ -1194,7 +1210,7 @@ sub_rom_E792:
 
 sub_rom_E7C8:
 	lda a:zp_40		; ???
-	jsr sub_rom_E303	; The sub will pull from the stack and jump, so this is
+	jsr sub_trampoline	; The sub will pull from the stack and jump, so this is
 						; basically a JMP
 
 ; -----------------------------------------------------------------------------
@@ -1345,29 +1361,29 @@ sub_rom_E893:
 ; -----------------------------------------------------------------------------
 
 sub_rom_E89B:
-	lda a:zp_2A	; ???
-	and #$40
+	lda a:zp_controller1	; ???
+	and #$40	; Button B
 	beq @E8A7
 
-	lda #$00
-	sta ram_040C
+		lda #$00
+		sta ram_040C
 	@E8A7:
-	lda a:zp_2A	; ???
-	and #$80
+	lda a:zp_controller1	; ???
+	and #$80	; Button A
 	beq @E8B3
 
-	lda #$01
-	sta ram_040C
+		lda #$01
+		sta ram_040C
 	@E8B3:
-	lda a:zp_2A	; ???
-	and #$10
+	lda a:zp_controller1	; ???
+	and #$10	; Start Button
 	beq @E8C4
 
 	lda a:zp_5E	; ???
 	bne @E8C5
 
-	lda #$02
-	sta a:zp_40	; ???
+		lda #$02
+		sta a:zp_40	; ???
 	@E8C4:
 	rts
 ; ----------------
@@ -1430,12 +1446,12 @@ sub_rom_E902:
 	jmp @E920
 
 	@E91D:
-	lda a:zp_25	; ???
+	lda a:zp_frame_counter	; ???
 	@E920:
 	and #$02
 	bne @E995
 
-	lda a:zp_25	; ???
+	lda a:zp_frame_counter	; ???
 	and #$01
 	bne @E960
 
@@ -1486,7 +1502,7 @@ sub_rom_E902:
 	rts
 ; ----------------
 	@E995:
-	lda a:zp_25	; ???
+	lda a:zp_frame_counter	; ???
 	and #$01
 	bne @E9D1
 
@@ -1540,7 +1556,7 @@ sub_rom_E902:
 
 ; Potentially unused
 sub_rom_EA06:
-	lda a:zp_2A	; ???
+	lda a:zp_controller1	; ???
 	and #$30
 	eor #$30
 	bne @EA12
@@ -1558,8 +1574,8 @@ sub_rom_EA13:
 	lda a:zp_5E	; ???
 	beq @EA2A
 
-	lda a:zp_2D	; ???
-	and #$10
+	lda a:zp_controller1_new	; ???
+	and #$10	; Start Button
 	beq @EA53
 
 	lda #$09
@@ -1567,8 +1583,8 @@ sub_rom_EA13:
 	rts
 ; ----------------
 	@EA2A:
-	lda a:zp_2D	; ???
-	and #$10
+	lda a:zp_controller1_new	; ???
+	and #$10	; Start Button
 	beq @EA4D
 
 	lda a:zp_7A	; ???

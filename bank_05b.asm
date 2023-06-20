@@ -13,7 +13,7 @@
 
 sub_rom_05_B000:
 	lda zp_4E           ; This will be the index of the pointer to use
-	jsr sub_rom_E303    ; The sub will use the following table of pointers
+	jsr sub_trampoline    ; The sub will use the following table of pointers
                         ; to jump to one of those locations
 ; ----------------
 	.word sub_rom_B013, sub_rom_B174, sub_rom_B24F, sub_rom_B8BC
@@ -23,7 +23,7 @@ sub_rom_05_B000:
 
 sub_rom_B013:
 	lda zp_4F
-	jsr sub_rom_E303    ; Same trick again
+	jsr sub_trampoline    ; Same trick again
 ; ----------------
 	.word sub_rom_BF92, sub_rom_BFB9, sub_rom_BFCA, sub_rom_BFEA
 	.word sub_rom_B030, sub_rom_B079, sub_rom_B086, sub_rom_B0A5
@@ -38,8 +38,8 @@ sub_rom_B030:
 	sta zp_66
 	jsr sub_rom_04_805A
 	lda #$00
-	sta zp_1E
-	sta zp_20
+	sta zp_scroll_x
+	sta zp_scroll_y
 	lda #$88
 	sta PpuControl_2000
 	sta zp_02
@@ -84,7 +84,7 @@ sub_rom_B079:
 ; -----------------------------------------------------------------------------
 
 sub_rom_B086:
-	lda zp_25
+	lda zp_frame_counter
 	cmp zp_53
 	bne @B08D
 
@@ -108,7 +108,7 @@ sub_rom_B086:
 ; -----------------------------------------------------------------------------
 
 sub_rom_B0A5:
-	lda zp_25
+	lda zp_frame_counter
 	cmp zp_53
 	bne @B0AC
     
@@ -118,12 +118,12 @@ sub_rom_B0A5:
 	sta zp_53
 	ldx zp_54
 	lda rom_B0C4,X
-	sta zp_20
+	sta zp_scroll_y
 	dec zp_54
 	bpl @B0C3
 
 	lda #$00
-	sta zp_20
+	sta zp_scroll_y
 	lda #$0A
 	sta zp_54
 	inc zp_4F
@@ -138,7 +138,7 @@ rom_B0C4:
 ; -----------------------------------------------------------------------------
 
 sub_rom_B0CC:
-	lda zp_25
+	lda zp_frame_counter
 	cmp zp_53
 	bne @B0D3
 
@@ -146,7 +146,7 @@ sub_rom_B0CC:
 ; ----------------
 	@B0D3:
 	sta zp_53
-	lda zp_25
+	lda zp_frame_counter
 	and #$3F
 	bne @B0E4
 
@@ -166,7 +166,7 @@ sub_rom_B0CC:
 	sta zp_51
 	lda rom_B170+1,X
 	sta zp_52
-	lda zp_2D
+	lda zp_controller1_new
 	and #$D0
 	beq sub_rom_B0CC
 	lda #$31
@@ -193,7 +193,7 @@ sub_rom_B107:
 ; -----------------------------------------------------------------------------
 
 sub_rom_B114:
-	lda zp_25
+	lda zp_frame_counter
 	cmp zp_53
 	bne @B11B
 
@@ -242,10 +242,10 @@ sub_rom_B14D:
 	asl A
 	tax
 	lda rom_04_9CAD+0,X
-	sta zp_12
+	sta zp_ptr_lo
 	lda rom_04_9CAD+1,X
-	sta zp_13
-	lda zp_2D
+	sta zp_ptr_hi
+	lda zp_controller1_new
 	sta zp_06
 	lda zp_63
 	sta zp_05
@@ -267,7 +267,7 @@ rom_B170:
 
 sub_rom_B174:
 	lda zp_4F
-	jsr sub_rom_E303
+	jsr sub_trampoline
 ; ----------------
 	.word sub_rom_B183, sub_rom_B079, sub_rom_B1B2, sub_rom_B107
 	.word sub_rom_B1E2
@@ -299,7 +299,7 @@ sub_rom_B183:
 ; -----------------------------------------------------------------------------
 
 sub_rom_B1B2:
-	lda zp_25
+	lda zp_frame_counter
 	cmp zp_53
 	bne @B1B9
     
@@ -309,7 +309,7 @@ sub_rom_B1B2:
 	sta zp_53
 	jsr sub_rom_B200
 	jsr sub_rom_B223
-	lda zp_2D
+	lda zp_controller1_new
 	and #$D0
 	beq sub_rom_B1B2
 
@@ -332,7 +332,7 @@ sub_rom_B1B2:
 ; -----------------------------------------------------------------------------
 
 sub_rom_B1E2:
-	lda zp_25
+	lda zp_frame_counter
 	cmp zp_53
 	bne @B1E9
 
@@ -358,21 +358,24 @@ sub_rom_B200:
 	asl A
 	tax
 	lda rom_04_9CAD+0,X
-	sta zp_12
+	sta zp_ptr_lo
 	lda rom_04_9CAD+1,X
-	sta zp_13
-	lda zp_2D
+	sta zp_ptr_hi
+	lda zp_controller1_new
 	sta zp_06
 	lda zp_64
 	sta zp_05
 	jsr sub_rom_04_810A
 	bmi @B222
 
-	sta zp_64
-	lda #$03
-	sta ram_0672
+		sta zp_64
+		lda #$03
+		sta ram_0672
+
 	@B222:
 	rts
+
+; -----------------------------------------------------------------------------
 
 sub_rom_B223:
 	lda zp_64
@@ -403,7 +406,7 @@ rom_B24A:
 
 sub_rom_B24F:
 	lda zp_4F
-	jsr sub_rom_E303
+	jsr sub_trampoline
 ; ----------------
 ; Indirect jump pointers
 	.word sub_rom_B25C, sub_rom_B2AD, sub_rom_B2BD, sub_rom_B2E0
@@ -420,8 +423,8 @@ sub_rom_B25C:
 	jsr sub_rom_04_805A
 	jsr sub_rom_B4B2
 	lda #$00
-	sta zp_1E
-	sta zp_20
+	sta zp_scroll_x
+	sta zp_scroll_y
 	lda #$88
 	sta PpuControl_2000
 	sta zp_02
@@ -474,7 +477,7 @@ sub_rom_B2AD:
 
 
 sub_rom_B2BD:
-	lda zp_25
+	lda zp_frame_counter
 	cmp zp_53
 	bne @B2C4
 
@@ -529,7 +532,7 @@ sub_rom_B2FC:
 
 	lda #$09
 	sta zp_5C,X
-	lda zp_2A,X
+	lda zp_controller1,X
 	and #$0F
 	beq @B352
 
@@ -538,12 +541,12 @@ sub_rom_B2FC:
 	sta zp_63,X
 	lda #$00
 	sta zp_5C,X
-	sta zp_2D,X
+	sta zp_controller1_new,X
 	@B316:
 	lda zp_5C,X
 	bne @B352
 
-	lda zp_2D,X
+	lda zp_controller1_new,X
 	sta zp_06
 	lda zp_63,X
 	sta zp_05
@@ -551,9 +554,9 @@ sub_rom_B2FC:
 	asl A
 	tax
 	lda rom_04_9CAD+0,X
-	sta zp_12
+	sta zp_ptr_lo
 	lda rom_04_9CAD+1,X
-	sta zp_13
+	sta zp_ptr_hi
 	lda zp_06
 	sta zp_06
 	lda zp_05
@@ -568,7 +571,7 @@ sub_rom_B2FC:
 	lda #$03
 	sta ram_0672
 	@B34A:
-	lda zp_2D,X
+	lda zp_controller1_new,X
 	and #$C0
 	beq @B352
 
@@ -580,7 +583,7 @@ sub_rom_B2FC:
 	cmp #$09
 	bcs @B362
 
-	lda zp_25
+	lda zp_frame_counter
 	and #$0F
 	bne @B362
 
@@ -636,9 +639,9 @@ sub_rom_B393:
 	asl A
 	tay
 	lda rom_B414+0,Y
-	sta zp_12
+	sta zp_ptr_lo
 	lda rom_B414+1,Y
-	sta zp_13
+	sta zp_ptr_hi
 	lda zp_63,X
 	bpl @B3A6
 	rts
@@ -646,10 +649,10 @@ sub_rom_B393:
 	@B3A6:
 	asl A
 	tay
-	lda (zp_12),Y
+	lda (zp_ptr_lo),Y
 	sta zp_14
 	iny
-	lda (zp_12),Y
+	lda (zp_ptr_lo),Y
 	sta zp_15
 	ldy #$08
 	lda zp_5C,X
@@ -659,7 +662,7 @@ sub_rom_B393:
 	@B3B9:
 	sty zp_05
 	ldy #$00
-	lda zp_25
+	lda zp_frame_counter
 	and zp_05
 	beq @B3C5
 
@@ -757,13 +760,13 @@ sub_rom_B4B2:
 	asl A
 	tax
 	lda rom_B4CE+0,X
-	sta zp_12
+	sta zp_ptr_lo
 	lda rom_B4CE+1,X
-	sta zp_13
+	sta zp_ptr_hi
 	ldx #$40
 	ldy #$00
 	@B4C4:
-	lda (zp_12),Y
+	lda (zp_ptr_lo),Y
 	sta ram_0680,Y
 	iny
 	dex
@@ -832,20 +835,20 @@ sub_rom_B578:
 	asl A
 	tay
 	lda (zp_14),Y
-	sta zp_12
+	sta zp_ptr_lo
 	iny
 	lda (zp_14),Y
-	sta zp_13
+	sta zp_ptr_hi
 	ldy #$00
-	lda (zp_12),Y
+	lda (zp_ptr_lo),Y
 	@B58B:
 	tax
 	iny
 	lda ram_0680,X
-	ora (zp_12),Y
+	ora (zp_ptr_lo),Y
 	sta ram_0680,X
 	iny
-	lda (zp_12),Y
+	lda (zp_ptr_lo),Y
 	bpl @B58B
 
 	lda #$23
@@ -973,7 +976,7 @@ rom_B6CF:
 
 sub_rom_B6D8:
 	lda zp_4F
-	jsr sub_rom_E303
+	jsr sub_trampoline
 ; ----------------
 ; Jump pointers
 	.word sub_rom_B6E9, sub_rom_B712, sub_rom_B723, sub_rom_B776
@@ -986,8 +989,8 @@ sub_rom_B6E9:
 	sta zp_50
 	jsr sub_rom_04_805A
 	lda #$00
-	sta zp_1E
-	sta zp_20
+	sta zp_scroll_x
+	sta zp_scroll_y
 	lda #$88
 	sta PpuControl_2000
 	sta zp_02
@@ -1020,7 +1023,7 @@ sub_rom_B712:
 ; -----------------------------------------------------------------------------
 
 sub_rom_B723:
-	lda zp_25
+	lda zp_frame_counter
 	cmp zp_53
 	bne @B72A
 
@@ -1031,7 +1034,7 @@ sub_rom_B723:
 	lda ram_040C
 	eor #$01
 	tax
-	lda zp_2D,X
+	lda zp_controller1_new,X
 	and #$C0
 	beq @B744
 
@@ -1044,7 +1047,7 @@ sub_rom_B723:
 ; ----------------
 	@B744:
 	jsr sub_rom_B7C3
-	lda zp_25
+	lda zp_frame_counter
 	and #$3F
 	bne @B775
 
@@ -1118,7 +1121,7 @@ sub_rom_B789:
 ; -----------------------------------------------------------------------------
 
 sub_rom_B7A8:
-	lda zp_25
+	lda zp_frame_counter
 	cmp zp_53
 	bne @B7AF
 
@@ -1126,7 +1129,7 @@ sub_rom_B7A8:
 ; ----------------
 	@B7AF:
 	sta zp_53
-	lda zp_25
+	lda zp_frame_counter
 	and #$1F
 	bne @B7C2
 
@@ -1172,7 +1175,7 @@ rom_B7E8:
 
 sub_rom_B7FE:
 	lda zp_4F
-	jsr sub_rom_E303
+	jsr sub_trampoline
 ; ----------------
 ; Jump pointers
 	.word sub_rom_B80D, sub_rom_B834, sub_rom_B845, sub_rom_B864
@@ -1185,8 +1188,8 @@ sub_rom_B80D:
 	sta zp_50
 	jsr sub_rom_04_805A
 	lda #$00
-	sta zp_1E
-	sta zp_20
+	sta zp_scroll_x
+	sta zp_scroll_y
 	lda #$88
 	sta PpuControl_2000
 	sta zp_02
@@ -1219,7 +1222,7 @@ sub_rom_B834:
 ; -----------------------------------------------------------------------------
 
 sub_rom_B845:
-	lda zp_25
+	lda zp_frame_counter
 	cmp zp_53
 	bne @B84C
 
@@ -1227,14 +1230,14 @@ sub_rom_B845:
 ; ----------------
 	@B84C:
 	sta zp_53
-	lda zp_2D
+	lda zp_controller1_new
 	beq @B857
 
 	inc zp_4F
 	jmp @B861
 
 	@B857:
-	lda zp_25
+	lda zp_frame_counter
 	and #$3F
 	bne @B863
 
@@ -1309,7 +1312,7 @@ sub_rom_B8A5:
 
 sub_rom_B8BC:
 	lda zp_4F
-	jsr sub_rom_E303
+	jsr sub_trampoline
 ; ----------------
 ; Jump pointers
 	.word sub_rom_B8CB, sub_rom_B926, sub_rom_B982, sub_rom_B993
@@ -1411,8 +1414,8 @@ sub_rom_B926:
 	lda #$00
 	sta zp_57
 	sta zp_55
-	sta zp_1E
-	sta zp_20
+	sta zp_scroll_x
+	sta zp_scroll_y
 	lda #$88
 	sta PpuControl_2000
 	sta zp_02
@@ -1447,7 +1450,7 @@ sub_rom_B982:
 ; -----------------------------------------------------------------------------
 
 sub_rom_B993:
-	lda zp_25
+	lda zp_frame_counter
 	cmp zp_53
 	bne @B99A
 
@@ -1455,13 +1458,13 @@ sub_rom_B993:
 ; ----------------
 	@B99A:
 	sta zp_53
-	lda zp_2D
+	lda zp_controller1_new
 	bne @B9AE
 
-	lda zp_2E
+	lda zp_controller2_new
 	bne @B9AE
 
-	lda zp_25
+	lda zp_frame_counter
 	and #$1F
 	bne @B9B4
 
@@ -1789,9 +1792,9 @@ sub_rom_BC9A:
 	asl A
 	tay
 	lda rom_BB41+0,Y
-	sta zp_12
+	sta zp_ptr_lo
 	lda rom_BB41+1,Y
-	sta zp_13
+	sta zp_ptr_hi
 	lda #$04
 	sta zp_46
 	lda #$06
@@ -1799,7 +1802,7 @@ sub_rom_BC9A:
 	ldy #$00
 	sty zp_47
 	@BCB4:
-	lda (zp_12),Y
+	lda (zp_ptr_lo),Y
 	sta ram_0600,Y
 	iny
 	cpy #$18
@@ -2106,7 +2109,7 @@ rom_BF0C:
 
 sub_rom_BF1E:
 	lda zp_4F
-	jsr sub_rom_E303
+	jsr sub_trampoline
 ; ----------------
 ; Jump pointers
 	.word sub_rom_BF29, sub_rom_BF66, sub_rom_BF73
@@ -2118,8 +2121,8 @@ sub_rom_BF29:
 	sta zp_50
 	jsr sub_rom_04_805A
 	lda #$00
-	sta zp_1E
-	sta zp_20
+	sta zp_scroll_x
+	sta zp_scroll_y
 	lda #$01
 	sta mmc3_mirroring
 	lda #$88
@@ -2194,8 +2197,8 @@ sub_rom_BF92:
 	jsr sub_rom_04_805A
 	jsr sub_rom_E264
 	lda #$00
-	sta zp_1E
-	sta zp_20
+	sta zp_scroll_x
+	sta zp_scroll_y
 	lda #$88
 	sta PpuControl_2000
 	sta zp_02
@@ -2227,7 +2230,7 @@ sub_rom_BFB9:
 ; -----------------------------------------------------------------------------
 
 sub_rom_BFCA:
-	lda zp_25
+	lda zp_frame_counter
 	cmp zp_53
 	bne @BFD1
 
@@ -2235,11 +2238,11 @@ sub_rom_BFCA:
 ; ----------------
 	@BFD1:
 	sta zp_53
-	lda zp_2D
+	lda zp_controller1_new
 	and #$D0
 	bne @BFE3
 
-	lda zp_25
+	lda zp_frame_counter
 	and #$1F
 	bne @BFE9
 	dec zp_54

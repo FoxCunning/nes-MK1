@@ -69,25 +69,25 @@ sub_rom_A00C:
 	sta zp_3C
 	ldy #$00
 	lda (zp_3B),Y
-	sta zp_12
+	sta zp_ptr_lo
 	cmp #$FF
 	beq @A02A
 
 	bpl @A068
 
 	and #$0F
-	sta zp_12
+	sta zp_ptr_lo
 	txa
 	eor #$01
 	tax
-	lda zp_2A,X
+	lda zp_controller1,X
 	and #$04
 	bne @A02A
 
 	@A068:
 	ldx zp_7C
 	lda zp_90,X
-	cmp zp_12
+	cmp zp_ptr_lo
 	bcc @A02A
 
 	iny
@@ -913,7 +913,7 @@ rom_A733:
 
 sub_rom_A773:
 	ldy zp_7C
-	sta zp_12
+	sta zp_ptr_lo
 	cmp #$03
 	beq @A7AB
 
@@ -938,17 +938,17 @@ sub_rom_A773:
 	cmp #$2D
 	bcs @A7A5
 
-	lda zp_25
+	lda zp_frame_counter
 	and #$01
 	beq @A7B0
 
 	lda #$1E
-	sta zp_12
+	sta zp_ptr_lo
 	bne @A7B0
 
 	@A7A5:
 	lda #$04
-	sta zp_12
+	sta zp_ptr_lo
 	bne @A7B0
 
 	@A7AB:
@@ -959,7 +959,7 @@ sub_rom_A773:
 	lda #$00
 	sta zp_90,Y
 	@A7B5:
-	lda zp_12
+	lda zp_ptr_lo
 	and #$3F
 	sta zp_8E,Y
 	sty zp_8C
@@ -1100,7 +1100,7 @@ rom_A9AB:
 
 sub_rom_A9EB:
 	ldx ram_042C
-	lda zp_25
+	lda zp_frame_counter
 	and rom_A9F8,X
 	beq @A9F7
 
@@ -1346,7 +1346,7 @@ sub_rom_03_AAFE:
 
 sub_rom_AB96:
 	lda ram_snd_initialised
-	beq sub_rom_ABB4	; Skip if the queue is empty
+	beq sub_rom_ABB4	; Skip if the sound engine has not been initialised
 
 		ldy #$00
 		@AB9D:
@@ -1379,6 +1379,7 @@ sub_rom_ABB5:
 	sta zp_FE
 	lda tbl_track_ptrs+1,X
 	sta zp_FF
+	
 	ldy #$00
 	@ABC4:
 	lda (zp_FE),Y

@@ -19,8 +19,10 @@ zp_0B = $0B     ;
 zp_0D = $0D     ;
 zp_0F = $0F     ;
 
-zp_12 = $12     ;
-zp_13 = $13     ;
+; Generically used as a pointer for indirect addressing. Low byte.
+zp_ptr_lo = $12 ;
+; Generically used as a pointer for indirect addressing. High byte.
+zp_ptr_hi = $13 ;
 zp_14 = $14     ;
 zp_15 = $15     ;
 zp_16 = $16     ;
@@ -29,19 +31,36 @@ zp_18 = $18     ;
 zp_1A = $1A     ;
 zp_1B = $1B     ;
 zp_1C = $1C     ;
-zp_1E = $1E     ;
 
-zp_20 = $20     ;
+; Value for X scroll, will be written to $2005 on the next vblank
+zp_scroll_x = $1E   ;
+; Value for Y scroll, will be written to $2005 on the next vblank
+zp_scroll_y = $20   ;
+
 zp_22 = $22     ;
 zp_23 = $23     ;
 zp_24 = $24     ;
-zp_25 = $25     ;
+; Incremented at each vblank
+zp_frame_counter = $25     ;
 zp_28 = $28     ;
-zp_2A = $2A     ;
-zp_2B = $2B     ;
-zp_2D = $2D     ;
-zp_2E = $2E     ;
-zp_2F = $2F     ;
+
+; Most recent data read from controller port 1
+zp_controller1 = $2A     ;
+; Most recent data read from controller port 2
+zp_controller2 = $2B     ;
+; "New" button presses, i.e. controller status bits, but those that were
+; already set on the previous read will now be cleared, so all bits here
+; are from buttons that were not pressed on the previous frame
+zp_controller1_new = $2D    ;
+; "New" button presses, i.e. controller status bits, but those that were
+; already set on the previous read will now be cleared, so all bits here
+; are from buttons that were not pressed on the previous frame
+zp_controller2_new = $2E    ;
+; The status of the controller as it was on the last frame
+zp_controller1_prev = $2F   ;
+; The status of the controller as it was on the last frame
+; (Just for debugging, this does not need to be used in code since we use $2F,X)
+zp_controller2_prev = $30   ;
 
 zp_34 = $34     ;
 zp_35 = $35     ;
@@ -438,9 +457,30 @@ Ctrl2_FrameCtr_4017 = $4017 ;
 ;
 ; -----------------------------------------------------------------------------
 
+; CPxx xRRR
+; (C) CHR A12 inversion (0: two 2 KB banks at $0000-$0FFF, four 1 KB banks at $1000-$1FFF;
+;                       1: two 2 KB banks at $1000-$1FFF, four 1 KB banks at $0000-$0FFF)
+; (P) PRG ROM bank mode (0: $8000-$9FFF swappable, $C000-$DFFF fixed to second-last bank;
+;                       1: $C000-$DFFF swappable, $8000-$9FFF fixed to second-last bank)
+; (RRR) Specify which bank register to update on next write to Bank Data register
+;                      000: R0: Select 2 KB CHR bank at PPU $0000-$07FF (or $1000-$17FF)
+;                      001: R1: Select 2 KB CHR bank at PPU $0800-$0FFF (or $1800-$1FFF)
+;                      010: R2: Select 1 KB CHR bank at PPU $1000-$13FF (or $0000-$03FF)
+;                      011: R3: Select 1 KB CHR bank at PPU $1400-$17FF (or $0400-$07FF)
+;                      100: R4: Select 1 KB CHR bank at PPU $1800-$1BFF (or $0800-$0BFF)
+;                      101: R5: Select 1 KB CHR bank at PPU $1C00-$1FFF (or $0C00-$0FFF)
+;                      110: R6: Select 8 KB PRG ROM bank at $8000-$9FFF (or $C000-$DFFF)
+;                      111: R7: Select 8 KB PRG ROM bank at $A000-$BFFF
 mmc3_bank_select = $8000    ;
+; DDDD DDDD
+; New bank value, based on last value written to Bank select register
 mmc3_bank_data = $8001      ;
+; xxxx xxxM
+; (M) Nametable mirroring (0: vertical; 1: horizontal)
 mmc3_mirroring = $A000      ;
+; RWxx xxxx
+; (R) PRG RAM chip enable (0: disable; 1: enable)
+; (W) Write protection (0: allow writes; 1: deny writes)
 mmc3_ram_protect = $A001    ;
 
 mmc3_irq_latch = $C000      ;
