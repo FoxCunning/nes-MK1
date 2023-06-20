@@ -1496,22 +1496,39 @@ mus_9162:
 ; Square 0
 rom_9172:
 	.byte $F5, $02, $F6, $05, $F9, $12, $FA, $00
-	.byte $F8, $11, $8C, $00, $00, $00, $00, $F0
-	.byte $1A, $93, $F0, $1A, $93, $F0, $1A, $93
-	.byte $F0, $1A, $93, $30, $86, $32, $98, $2D
-	.byte $86, $00, $F0, $1A, $93, $8C, $2B, $86
-	.byte $2D, $98, $28, $86, $00, $F0, $1A, $93
+	.byte $F8, $11, $8C, $00, $00, $00, $00
+	.byte $F0
+	.word rom_931A
+	.byte $F0
+	.word rom_931A
+	.byte $F0
+	.word rom_931A
+	.byte $F0
+	.word rom_931A
+	.byte $30, $86, $32, $98, $2D, $86, $00
+	.byte $F0
+	.word rom_931A
+	.byte $8C, $2B, $86, $2D, $98, $28, $86, $00
+	.byte $F0
+	.word rom_931A
 	.byte $8C, $2D, $86, $28, $8C, $2B, $92, $2C
 	.byte $8C, $2D, $86, $2C, $8C, $2B, $92, $2C
 	.byte $B0, $28, $F9, $38, $FA, $39, $F8, $40
 	.byte $83, $1F, $21, $23, $24, $26, $28, $29
 	.byte $2B, $8C, $00, $00, $F9, $12, $FA, $00
 	.byte $F8, $11, $30, $86, $32, $98, $2D, $86
-	.byte $00, $F0, $1A, $93, $8C, $2B, $86, $2D
-	.byte $98, $28, $86, $00, $F0, $1A, $93, $8C
-	.byte $2D, $86, $28, $8C, $2B, $92, $2C, $8C
-	.byte $2D, $86, $2C, $8C, $2B, $92, $2C, $B0
-	.byte $28, $F0, $1A, $93, $F6, $05, $F9, $07
+	.byte $00
+	.byte $F0
+	.word rom_931A
+	.byte $8C, $2B, $86, $2D, $98, $28, $86, $00
+	.byte $F0
+	.word rom_931A
+	.byte $8C, $2D, $86, $28, $8C, $2B, $92, $2C
+	.byte $8C, $2D, $86, $2C, $8C, $2B, $92, $2C
+	.byte $B0, $28
+	.byte $F0
+	.word rom_931A
+	.byte $F6, $05, $F9, $07
 	.byte $FA, $05, $F8, $02, $A4, $2D, $8C, $28
 	.byte $B0, $2C, $A4, $2D, $8C, $2F, $B0, $28
 	.byte $A4, $2D, $8C, $28, $B0, $2C, $A4, $2D
@@ -1525,19 +1542,64 @@ rom_9172:
 ; Square 1
 rom_921A:
 	.byte $F6, $11, $F9, $12, $FA, $00, $F8, $11
-	.byte $8C, $00, $00, $00, $00, $F0, $1A, $93
-	.byte $F0, $1A, $93, $F0, $1A, $93, $F0, $1A
-	.byte $93, $F0, $1A, $93, $F0, $1A, $93, $F0
-	.byte $1A, $93, $F0, $1A, $93, $F0, $1A, $93
-	.byte $F0, $1A, $93, $F0, $1A, $93, $F0, $1A
-	.byte $93, $F0, $1A, $93, $F0, $1A, $93, $F0
-	.byte $1A, $93, $F0, $1A, $93, $F0, $1A, $93
-	.byte $F0, $1A, $93, $F0, $1A, $93, $F0, $1A
-	.byte $93, $F6, $11, $F9, $38, $FA, $39, $F8
-	.byte $40, $F0, $23, $93, $F0, $23, $93, $F0
-	.byte $23, $93, $F0, $23, $93, $F0, $23, $93
-	.byte $F0, $23, $93, $F0, $23, $93, $F0, $23
-	.byte $93
+	.byte $8C, $00, $00, $00, $00
+	.byte $F0
+	.word rom_931A
+	.byte $F0
+	.word rom_931A
+	.byte $F0
+	.word rom_931A
+	.byte $F0
+	.word rom_931A
+	.byte $F0
+	.word rom_931A
+	.byte $F0
+	.word rom_931A
+	.byte $F0
+	.word rom_931A
+	.byte $F0
+	.word rom_931A
+	.byte $F0
+	.word rom_931A
+	.byte $F0
+	.word rom_931A
+	.byte $F0
+	.word rom_931A
+	.byte $F0
+	.word rom_931A
+	.byte $F0
+	.word rom_931A
+	.byte $F0
+	.word rom_931A
+	.byte $F0
+	.word rom_931A
+	.byte $F0
+	.word rom_931A
+	.byte $F0
+	.word rom_931A
+	.byte $F0
+	.word rom_931A
+	.byte $F0
+	.word rom_931A
+	.byte $F0
+	.word rom_931A
+	.byte $F6, $11, $F9, $38, $FA, $39, $F8, $40
+	.byte $F0
+	.word rom_9323
+	.byte $F0
+	.word rom_9323
+	.byte $F0
+	.word rom_9323
+	.byte $F0
+	.word rom_9323
+	.byte $F0
+	.word rom_9323
+	.byte $F0
+	.word rom_9323
+	.byte $F0
+	.word rom_9323
+	.byte $F0
+	.word rom_9323
 	.byte $F4
 	.word rom_921A
 	.byte $FF
@@ -1547,23 +1609,60 @@ rom_921A:
 ; Triangle
 rom_9287:
 	.byte $F6, $00, $F9, $00, $FA, $64, $F8, $11
-	.byte $F0, $35, $93, $F0, $35, $93, $F0, $35
-	.byte $93, $F0, $35, $93, $F0, $3B, $93, $F0
-	.byte $3B, $93, $F0, $3B, $93, $F0, $3B, $93
-	.byte $F0, $3B, $93, $86, $28, $28, $24, $28
-	.byte $00, $24, $2B, $00, $28, $28, $24, $28
-	.byte $83, $24, $24, $24, $24, $2B, $2B, $2B
-	.byte $2B, $F0, $3B, $93, $F0, $3B, $93, $86
+	.byte $F0
+	.word rom_9335
+	.byte $F0
+	.word rom_9335
+	.byte $F0
+	.word rom_9335
+	.byte $F0
+	.word rom_9335
+	.byte $F0
+	.word rom_933B
+	.byte $F0
+	.word rom_933B
+	.byte $F0
+	.word rom_933B
+	.byte $F0
+	.word rom_933B
+	.byte $F0
+	.word rom_933B
+	.byte $86, $28, $28, $24, $28, $00, $24, $2B
+	.byte $00, $28, $28, $24, $28, $83, $24, $24
+	.byte $24, $24, $2B, $2B, $2B, $2B
+	.byte $F0
+	.word rom_933B
+	.byte $F0
+	.word rom_933B
+	.byte $86
 	.byte $28, $28, $24, $28, $00, $24, $2B, $00
 	.byte $8C, $24, $00, $24, $86, $2B, $2B, $28
 	.byte $28, $24, $28, $00, $24, $2B, $00, $8C
 	.byte $24, $00, $00, $86, $2B, $83, $2B, $2B
 	.byte $F9, $07, $FA, $05, $F8, $02, $F6, $0C
-	.byte $F0, $50, $93, $F6, $0B, $F0, $50, $93
-	.byte $F6, $0C, $F0, $50, $93, $F6, $10, $F0
-	.byte $50, $93, $F6, $0C, $F0, $50, $93, $F6
-	.byte $0B, $F0, $50, $93, $F6, $0C, $F0, $50
-	.byte $93, $F6, $10, $F0, $50, $93
+	.byte $F0
+	.word rom_9350
+	.byte $F6, $0B
+	.byte $F0
+	.word rom_9350
+	.byte $F6, $0C
+	.byte $F0
+	.word rom_9350
+	.byte $F6, $10
+	.byte $F0
+	.word rom_9350
+	.byte $F6, $0C
+	.byte $F0
+	.word rom_9350
+	.byte $F6, $0B
+	.byte $F0
+	.word rom_9350
+	.byte $F6, $0C
+	.byte $F0
+	.word rom_9350
+	.byte $F6, $10
+	.byte $F0
+	.word rom_9350
 	.byte $F4
 	.word rom_9287
 	.byte $FF
@@ -1576,16 +1675,22 @@ rom_9319:
 
 ; ----------------
 
-; Potentially unused portion
-unused_931A:
+; Segments used by the song above
+rom_931A:
 	.byte $86, $15, $15, $13, $15, $8C, $00, $00
-	.byte $F1, $83, $28, $29, $28, $26, $24, $23
-	.byte $24, $26, $28, $29, $2B, $29, $28, $29
-	.byte $2B, $29, $F1, $83, $2B, $2B, $2B, $2B
-	.byte $F1, $86, $26, $26, $24, $26, $00, $24
-	.byte $2B, $00, $26, $26, $24, $26, $00, $83
-	.byte $24, $26, $86, $2B, $24, $F1, $B0, $21
 	.byte $F1
+rom_9323:
+	.byte $83, $28, $29, $28, $26, $24, $23, $24
+	.byte $26, $28, $29, $2B, $29, $28, $29, $2B
+	.byte $29, $F1
+rom_9335:
+	.byte $83, $2B, $2B, $2B, $2B, $F1
+rom_933B:
+	.byte $86, $26, $26, $24, $26, $00, $24, $2B
+	.byte $00, $26, $26, $24, $26, $00, $83, $24
+	.byte $26, $86, $2B, $24, $F1
+rom_9350:
+	.byte $B0, $21, $F1
 
 ; ----------------
 
@@ -1633,16 +1738,56 @@ rom_9363:
 ; Square 1
 rom_93F9:
 	.byte $F6, $00, $F9, $12, $FA, $00, $F8, $11
-	.byte $F6, $00, $F0, $8B, $94, $F0, $96, $94
-	.byte $F6, $00, $F0, $8B, $94, $F0, $96, $94
-	.byte $F6, $00, $F0, $8B, $94, $F0, $96, $94
-	.byte $F6, $00, $F0, $8B, $94, $F0, $96, $94
-	.byte $F6, $05, $F0, $8B, $94, $F0, $96, $94
-	.byte $F6, $07, $F0, $96, $94, $F0, $96, $94
-	.byte $F6, $00, $F0, $8B, $94, $F0, $96, $94
-	.byte $F6, $00, $F0, $8B, $94, $F0, $96, $94
-	.byte $F6, $05, $F0, $8B, $94, $F0, $96, $94
-	.byte $F6, $07, $F0, $96, $94, $F0, $96, $94
+	.byte $F6, $00
+	.byte $F0
+	.word rom_948B
+	.byte $F0
+	.word rom_9496
+	.byte $F6, $00
+	.byte $F0
+	.word rom_948B
+	.byte $F0
+	.word rom_9496
+	.byte $F6, $00
+	.byte $F0
+	.word rom_948B
+	.byte $F0
+	.word rom_9496
+	.byte $F6, $00
+	.byte $F0
+	.word rom_948B
+	.byte $F0
+	.word rom_9496
+	.byte $F6, $05
+	.byte $F0
+	.word rom_948B
+	.byte $F0
+	.word rom_9496
+	.byte $F6, $07
+	.byte $F0
+	.word rom_9496
+	.byte $F0
+	.word rom_9496
+	.byte $F6, $00
+	.byte $F0
+	.word rom_948B
+	.byte $F0
+	.word rom_9496
+	.byte $F6, $00
+	.byte $F0
+	.word rom_948B
+	.byte $F0
+	.word rom_9496
+	.byte $F6, $05
+	.byte $F0
+	.word rom_948B
+	.byte $F0
+	.word rom_9496
+	.byte $F6, $07
+	.byte $F0
+	.word rom_9496
+	.byte $F0
+	.word rom_9496
 	.byte $F4
 	.word rom_93F9
 	.byte $FF
@@ -1651,23 +1796,47 @@ rom_93F9:
 ; Triangle
 rom_9455:
 	.byte $F6, $00, $F9, $00, $FA, $00, $F8, $33
-	.byte $F0, $A1, $94, $F0, $A1, $94, $F0, $A1
-	.byte $94, $F0, $A1, $94, $F9, $00, $FA, $64
-	.byte $F8, $11, $F0, $AB, $94, $F0, $AB, $94
-	.byte $F0, $AB, $94, $F0, $AB, $94, $F0, $AB
-	.byte $94, $F0, $AB, $94, $F0, $AB, $94, $F0
-	.byte $AB, $94
+	.byte $F0
+	.word rom_94A1
+	.byte $F0
+	.word rom_94A1
+	.byte $F0
+	.word rom_94A1
+	.byte $F0
+	.word rom_94A1
+	.byte $F9, $00, $FA, $64, $F8, $11
+	.byte $F0
+	.word rom_94AB
+	.byte $F0
+	.word rom_94AB
+	.byte $F0
+	.word rom_94AB
+	.byte $F0
+	.word rom_94AB
+	.byte $F0
+	.word rom_94AB
+	.byte $F0
+	.word rom_94AB
+	.byte $F0
+	.word rom_94AB
+	.byte $F0
+	.word rom_94AB
 	.byte $F4
 	.word rom_9455
 	.byte $FF
 ; ----------------
 
-; Potentially unused portion (noise channel plays a silent track)
-unused_948B:
+; Segments used by the song above
+rom_948B:
 	.byte $86, $21, $21, $21, $8C, $24, $86, $23
-	.byte $8C, $21, $F1, $86, $21, $21, $21, $8C
-	.byte $24, $86, $26, $8C, $28, $F1, $86, $2D
-	.byte $2D, $2D, $2D, $2D, $2D, $2D, $2D, $F1
+	.byte $8C, $21, $F1
+rom_9496:
+	.byte $86, $21, $21, $21, $8C, $24, $86, $26
+	.byte $8C, $28, $F1
+rom_94A1:
+	.byte $86, $2D, $2D, $2D, $2D, $2D, $2D, $2D
+	.byte $2D, $F1
+rom_94AB:
 	.byte $8C, $24, $86, $24, $8C, $2B, $86, $24
 	.byte $8C, $2B, $86, $24, $83, $24, $24, $86
 	.byte $24, $8C, $2B, $86, $24, $8C, $2B, $F1
