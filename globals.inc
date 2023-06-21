@@ -20,9 +20,9 @@ zp_0D = $0D     ;
 zp_0F = $0F     ;
 
 ; Generically used as a pointer for indirect addressing. Low byte.
-zp_ptr_lo = $12 ;
+zp_ptr1_lo = $12 ;
 ; Generically used as a pointer for indirect addressing. High byte.
-zp_ptr_hi = $13 ;
+zp_ptr1_hi = $13 ;
 zp_14 = $14     ;
 zp_15 = $15     ;
 zp_16 = $16     ;
@@ -180,8 +180,10 @@ zp_F6 = $F6     ;
 zp_F7 = $F7     ;
 zp_FC = $FC     ;
 zp_FD = $FD     ;
-zp_FE = $FE     ;
-zp_FF = $FF     ;
+; Used for indirect addressing by sound routines (low byte)
+zp_ptr2_lo = $FE     ;
+; Used for indirect addressing by sound routines (high byte)
+zp_ptr2_hi = $FF     ;
 
 
 ; -----------------------------------------------------------------------------
@@ -318,37 +320,76 @@ ram_06CD = $06CD    ;
 ; Nothing will play while this is set to zero
 ram_snd_initialised = $0700    ;
 ; Up to eight song/sfx indices to play ($FF = nothing is playing)
-ram_snd_stack = $0701    ; size=8
+ram_snd_stack = $0701    ; Size=8
 ram_0709 = $0709    ;
-ram_070A = $070A    ;
-ram_070B = $070B    ;
-ram_070C = $070C    ;
-ram_070D = $070D    ;
-ram_0710 = $0710    ;
-ram_0715 = $0715    ;
-ram_0716 = $0716    ;
-ram_071F = $071F    ;
-ram_0720 = $0720    ;
-ram_0729 = $0729    ;
-ram_072A = $072A    ;
-ram_0733 = $0733    ;
-ram_0734 = $0734    ;
-ram_0739 = $0739    ;
-ram_073A = $073A    ;
-ram_0743 = $0743    ;
-ram_0744 = $0744    ;
+; APU channel being currently processed: $00-$04 for music, $10-$14 for sfx
+ram_cur_apu_channel = $070A    ;
+; The four APU channels are used both for music and sfx, and each will have
+; variables in RAM at different offsets. Music starts at offset 0, using 118
+; bytes of RAM, so sound effects start from offset $76.
+; This way, we can reuse the same base addresses, for example $70C,X
+; would be $70D for music square channel 0, and $783 for sfx square channel 0
+ram_cur_channel_offset = $070B    ;
+; The four APU channels are used both for music and sfx, and each will have
+; variables in RAM at different offsets. Music starts at offset 0, using 118
+; bytes of RAM, so sound effects start from offset $76.
+; This way, we can reuse the same base addresses, for example $70C,X
+; would be $70D for music square channel 0, and $783 for sfx square channel 0
+; This is an offset for pointers, so it is 2-byte aligned: 0, 2, 4, 6, 8, 10...
+ram_cur_chan_ptr_offset = $070C    ;
+; This value will be added to note period index
+ram_note_transpose_value = $070D    ; Size=4
+; Used to loop parts of a music track
+; The loop ends when the counter reaches zero
+ram_track_loop_counter = $0710    ;
+; Address in the music track where the loop begins
+ram_track_loop_ptr_lo = $0715    ;
+; Address in the music track where the loop begins
+ram_track_loop_ptr_hi = $0716    ;
+; Backup pointer, used to jump back to track after calling a subsegment
+ram_track_ptr_backup_lo = $071F    ;
+; Backup pointer, used to jump back to track after calling a subsegment
+ram_track_ptr_backup_hi = $0720    ;
+; Pointer to the track data for each channel
+ram_track_ptr_lo = $0729    ;
+; Pointer to the track data for each channel
+ram_track_ptr_hi = $072A    ;
+; Music/SFX speed value (interval in frames between events)
+ram_track_speed = $0733     ;
+; Number of frames this note should last
+ram_cur_note_duration = $0734   ; Size=4
+; Frame counter, starts from track speed and counts down to zero
+; Events are only processed when this reaches zero
+; For example, at speed 4 a note with duration 2 lasts 8 frames
+ram_track_speed_counter = $0739 ; Size=4
+; Frames left for current note to play
+ram_note_frames_left = $073A    ; Size=4
+ram_cur_period_lo = $0743    ;
+ram_cur_period_hi = $0744    ;
 ram_074D = $074D    ;
 ram_074E = $074E    ;
-ram_0757 = $0757    ;
-ram_075C = $075C    ;
-ram_0761 = $0761    ;
-ram_0762 = $0762    ;
-ram_076B = $076B    ;
-ram_076D = $076D    ;
-ram_076F = $076F    ;
-ram_0770 = $0770    ;
-ram_0773 = $0773    ;
-ram_0777 = $0777    ;
+; ----------------
+; Index of duty envelope, one per channel
+ram_vol_env_idx = $0757             ; Size=4
+; Ticks left for current value of instrument's volume evenlope
+ram_cur_vol_env_duration = $075C    ; Size=4
+; Pointer to current position in volume envelope (one per channel)
+ram_vol_env_ptr_lo = $0761    ;
+; Pointer to current position in volume envelope (one per channel)
+ram_vol_env_ptr_hi = $0762    ;
+; ----------------
+; Index of duty envelope, one per channel (only used for Square wave channels)
+ram_duty_env_idx = $076B            ; Size=4
+; Ticks left for current value of instrument's duty evenlope
+ram_cur_duty_env_duration = $076D    ; Size=4
+ram_duty_env_ptr_lo = $076F    ;
+ram_duty_env_ptr_hi = $0770    ;
+; ----------------
+; Pitch evelope indices, one per channel
+ram_pitch_env_idx = $0773           ; Size=4
+; Ticks left for current value of instrument's pitch evenlope
+ram_cur_pitch_env_duration = $0777  ; Size=4
+; ----------------
 ram_077B = $077B    ;
 ram_077C = $077C    ;
 ram_079F = $079F    ;
@@ -359,9 +400,9 @@ ram_07A3 = $07A3    ;
 ram_07A4 = $07A4    ;
 ram_07A5 = $07A5    ;
 ram_07A6 = $07A6    ;
-ram_07D2 = $07D2    ;
-ram_07E3 = $07E3    ;
-ram_07ED = $07ED    ;
+ram_sfx_vol_env_duration = $07D2    ;
+ram_sfx_duty_env_duration = $07E3    ;
+ram_sfx_pitch_env_duration = $07ED    ;
 
 
 ; -----------------------------------------------------------------------------

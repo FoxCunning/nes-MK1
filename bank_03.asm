@@ -69,14 +69,14 @@ sub_rom_A00C:
 	sta zp_3C
 	ldy #$00
 	lda (zp_3B),Y
-	sta zp_ptr_lo
+	sta zp_ptr1_lo
 	cmp #$FF
 	beq @A02A
 
 	bpl @A068
 
 	and #$0F
-	sta zp_ptr_lo
+	sta zp_ptr1_lo
 	txa
 	eor #$01
 	tax
@@ -87,7 +87,7 @@ sub_rom_A00C:
 	@A068:
 	ldx zp_7C
 	lda zp_90,X
-	cmp zp_ptr_lo
+	cmp zp_ptr1_lo
 	bcc @A02A
 
 	iny
@@ -913,7 +913,7 @@ rom_A733:
 
 sub_rom_A773:
 	ldy zp_7C
-	sta zp_ptr_lo
+	sta zp_ptr1_lo
 	cmp #$03
 	beq @A7AB
 
@@ -943,12 +943,12 @@ sub_rom_A773:
 	beq @A7B0
 
 	lda #$1E
-	sta zp_ptr_lo
+	sta zp_ptr1_lo
 	bne @A7B0
 
 	@A7A5:
 	lda #$04
-	sta zp_ptr_lo
+	sta zp_ptr1_lo
 	bne @A7B0
 
 	@A7AB:
@@ -959,7 +959,7 @@ sub_rom_A773:
 	lda #$00
 	sta zp_90,Y
 	@A7B5:
-	lda zp_ptr_lo
+	lda zp_ptr1_lo
 	and #$3F
 	sta zp_8E,Y
 	sty zp_8C
@@ -1210,22 +1210,22 @@ sub_apu_init:
 	ldx #$05
 :
 	dex
-	sta ram_075C,X
-	sta ram_07D2,X
+	sta ram_cur_vol_env_duration,X
+	sta ram_sfx_vol_env_duration,X
 	bne :-
 
 	ldx #$04
 :
 	dex
-	sta ram_0777,X
-	sta ram_07ED,X
+	sta ram_cur_pitch_env_duration,X
+	sta ram_sfx_pitch_env_duration,X
 	bne :-
 
 	ldx #$02
 :
 	dex
-	sta ram_076D,X
-	sta ram_07E3,X
+	sta ram_cur_duty_env_duration,X
+	sta ram_sfx_duty_env_duration,X
 	bne :-
 
 	; Clear the sound stack by putting $FF in all eight slots
@@ -1271,34 +1271,37 @@ sub_rom_03_AAFE:
 	@AB03:
 	jsr sub_rom_B116
 	jsr sub_rom_AB96
+
+	; Process music channels ($00-$03)
 	lda #$00
-	sta ram_070A
-	sta ram_070B
-	sta ram_070C
+	sta ram_cur_apu_channel
+	sta ram_cur_channel_offset
+	sta ram_cur_chan_ptr_offset
 	@AB14:
-	jsr sub_rom_AC4F
-	jsr sub_rom_AFB6
-	inc ram_070A
-	inc ram_070B
-	inc ram_070C
-	inc ram_070C
-	ldx ram_070A
+		jsr sub_play_cur_channel
+		jsr sub_apply_envelopes
+		inc ram_cur_apu_channel
+		inc ram_cur_channel_offset
+		inc ram_cur_chan_ptr_offset
+		inc ram_cur_chan_ptr_offset
+	ldx ram_cur_apu_channel
 	cpx #$05
 	bne @AB14
 
+	; Process SFX channels ($10-$13)
 	lda #$10
-	sta ram_070A
+	sta ram_cur_apu_channel
 	lda #$76
-	sta ram_070B
-	sta ram_070C
+	sta ram_cur_channel_offset
+	sta ram_cur_chan_ptr_offset
 	@AB3A:
-	jsr sub_rom_AC4F
-	jsr sub_rom_AFB6
-	inc ram_070A
-	inc ram_070B
-	inc ram_070C
-	inc ram_070C
-	ldx ram_070A
+		jsr sub_play_cur_channel
+		jsr sub_apply_envelopes
+		inc ram_cur_apu_channel
+		inc ram_cur_channel_offset
+		inc ram_cur_chan_ptr_offset
+		inc ram_cur_chan_ptr_offset
+	ldx ram_cur_apu_channel
 	cpx #$15
 	bne @AB3A
 
@@ -1317,15 +1320,15 @@ sub_rom_03_AAFE:
 	@AB5E:
 	ldx #$00
 	ldy #$00
-	jsr sub_rom_B267
-	lda zp_FE
+	jsr sub_apply_duty_envelope
+	lda zp_ptr2_lo
 	and #$F0
 	ora #$30
 	sta Sq0Duty_4000
 	ldx #$01
 	ldy #$02
-	jsr sub_rom_B267
-	lda zp_FE
+	jsr sub_apply_duty_envelope
+	lda zp_ptr2_lo
 	and #$F0
 	ora #$30
 	sta Sq1Duty_4004
@@ -1376,84 +1379,84 @@ sub_rom_ABB5:
 	asl A
 	tax
 	lda tbl_track_ptrs+0,X
-	sta zp_FE
+	sta zp_ptr2_lo
 	lda tbl_track_ptrs+1,X
-	sta zp_FF
+	sta zp_ptr2_hi
 	
 	ldy #$00
 	@ABC4:
-	lda (zp_FE),Y
-	sta ram_070A
+	lda (zp_ptr2_lo),Y
+	sta ram_cur_apu_channel
 	tax
 	cpx #$FF
 	beq sub_rom_ABB4	; sub_rom_AB53 (rts)
 
-	lda ram_070A
+	lda ram_cur_apu_channel
 	bmi @ABDD
 
-	sta ram_070B
+	sta ram_cur_channel_offset
 	asl A
-	sta ram_070C
+	sta ram_cur_chan_ptr_offset
 	jmp @ABEF
 
 	@ABDD:
 	and #$7F
 	clc
 	adc #$76
-	sta ram_070B
+	sta ram_cur_channel_offset
 	txa
 	and #$7F
 	asl A
 	clc
 	adc #$76
-	sta ram_070C
+	sta ram_cur_chan_ptr_offset
 	@ABEF:
-	ldx ram_070C
+	ldx ram_cur_chan_ptr_offset
 	iny
-	lda (zp_FE),Y
-	sta ram_0729,X
+	lda (zp_ptr2_lo),Y
+	sta ram_track_ptr_lo,X
 	iny
-	lda (zp_FE),Y
-	sta ram_072A,X
+	lda (zp_ptr2_lo),Y
+	sta ram_track_ptr_hi,X
 	iny
 	tya
 	pha
 	ldy #$00
-	lda ram_070A
+	lda ram_cur_apu_channel
 	bpl @AC0A
 
 	ldy #$76
 	@AC0A:
-	lda ram_070A
+	lda ram_cur_apu_channel
 	and #$0F
 	tay
 	lda #$00
-	sta ram_0739,X
-	sta ram_073A,X
-	ldx ram_070B
+	sta ram_track_speed_counter,X
+	sta ram_note_frames_left,X
+	ldx ram_cur_channel_offset
 	lda #$00
-	sta ram_0757,X
+	sta ram_vol_env_idx,X
 	lda #$FF
-	sta ram_075C,X
+	sta ram_cur_vol_env_duration,X
 	cpy #$04
 	bpl @AC4A
 
 	lda #$00
-	sta ram_0773,X
+	sta ram_pitch_env_idx,X
 	lda #$FF
-	sta ram_0777,X
+	sta ram_cur_pitch_env_duration,X
 	cpy #$03
 	bpl @AC4A
 
 	lda #$00
-	sta ram_070D,X
+	sta ram_note_transpose_value,X
 	cpy #$02
 	bpl @AC4A
 
 	lda #$00
-	sta ram_076B,X
+	sta ram_duty_env_idx,X
 	lda #$FF
-	sta ram_076D,X
+	sta ram_cur_duty_env_duration,X
 	@AC4A:
 	pla
 	tay
@@ -1461,94 +1464,116 @@ sub_rom_ABB5:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_AC4F:
-	ldx ram_070C
-	lda ram_0729,X
-	ora ram_072A,X
-	beq @AC8D
+; Processes the current event in the playing channel, or moves to the next
+; event if the current one has ended
+sub_play_cur_channel:
+	ldx ram_cur_chan_ptr_offset
 
-	lda ram_0739,X
-	bne @AC8A
-	lda ram_073A,X
-	bne @AC73
+	lda ram_track_ptr_lo,X
+	ora ram_track_ptr_hi,X
+	beq @AC8D	; Skip if pointer is $0000
 
-	jsr sub_rom_AE11
-	ldx ram_070C
-	ldy ram_070B
-	lda ram_0734,Y
-	sta ram_073A,X
-	@AC73:
-	dec ram_073A,X
-	ldy ram_070A
-	cpy #$05
-	bmi @AC82
+		lda ram_track_speed_counter,X
+		bne @AC8A	; Skip processing if are still waiting
 
-	ldy #$76
-	jmp @AC84
-	@AC82:
-	ldy #$00
-	@AC84:
-	lda ram_0733,Y
-	sta ram_0739,X
-	@AC8A:
-	dec ram_0739,X
+			lda ram_note_frames_left,X
+			bne @AC73
+
+				jsr sub_get_next_track_byte
+				ldx ram_cur_chan_ptr_offset
+				ldy ram_cur_channel_offset
+				lda ram_cur_note_duration,Y
+				sta ram_note_frames_left,X
+
+			@AC73:
+			dec ram_note_frames_left,X
+
+			ldy ram_cur_apu_channel
+			cpy #$05
+			bmi @AC82
+
+				ldy #$76
+				jmp @AC84
+
+			@AC82:
+			ldy #$00
+			@AC84:
+			; Reload the counter for the next event/tick
+			lda ram_track_speed,Y
+			sta ram_track_speed_counter,X
+
+		@AC8A:
+		; If the speed timer has not expired, just decrease it
+		dec ram_track_speed_counter,X
+
 	@AC8D:
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_AC8E:
+; Saves note/rest length value as read from track data
+; Parameters:
+; A = Value of note duration (typically $8x)
+sub_cmd_note_duration:
 	and #$7F
-	beq @AC98
+	beq :+
 
-	ldx ram_070B
-	sta ram_0734,X
-	@AC98:
-	jsr sub_rom_B2B1
-	jmp sub_rom_AE11
+		ldx ram_cur_channel_offset
+		sta ram_cur_note_duration,X
+:
+	jsr sub_advance_track_ptr
+	jmp sub_get_next_track_byte
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_AC9E:
-	jsr sub_rom_B2B1
+sub_skip_track_data:
+	jsr sub_advance_track_ptr
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_ACA2:
-	bne @ACAB
-	jsr sub_rom_B2B1
-	jmp sub_rom_AE9B
+; Parameters:
+; A = value read from track data
+sub_process_note_or_rest:
+	bne :+
+
+		jsr sub_advance_track_ptr
+		jmp sub_stop_envelopes
+	; ------------
 
     ; Unreachable ?
 	rts
 ; ----------------
-	@ACAB:
+:
 	pha
-	lda ram_070A
+
+	lda ram_cur_apu_channel
 	and #$0F
 	tax
+
 	pla
 	cpx #$03
-	beq @ACD6
+	beq @noise_channel
 
 	cpx #$04
-	bne @ACBB
+	bne @ACBB	; This does nothing
 
 	@ACBB:
-	ldx ram_070B
+	ldx ram_cur_channel_offset
+
 	clc
-	adc ram_070D,X
+	adc ram_note_transpose_value,X
 	asl A
 	tay
-	ldx ram_070C
+	ldx ram_cur_chan_ptr_offset
 	lda tbl_pitches+0,Y
-	sta ram_0743,X
+	sta ram_cur_period_lo,X
 	lda tbl_pitches+1,Y
-	sta ram_0744,X
+	sta ram_cur_period_hi,X
+
 	jmp @ACE8
 
-	@ACD6:
+	@noise_channel:
 	tax
 	and #$10
 	beq @ACE1
@@ -1559,317 +1584,384 @@ sub_rom_ACA2:
 	tax
 	@ACE1:
 	txa
-	ldx ram_070C
-	sta ram_0743,X
+	ldx ram_cur_chan_ptr_offset
+	sta ram_cur_period_lo,X
+
 	@ACE8:
 	jsr sub_rom_AEF6
-	jsr sub_rom_B2B1
+	jsr sub_advance_track_ptr
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_ACEF:
+sub_process_track_command:
 	and #$0F
 	asl A
 	tay
-	jsr sub_rom_B2B1
+	jsr sub_advance_track_ptr
 	tya
 	tax
-	lda rom_AD05+0,X
-	sta zp_FE
-	lda rom_AD05+1,X
-	sta zp_FF
-	jmp (zp_FE)
 
-; -----------------------------------------------------------------------------
-
-rom_AD05:
-	.word sub_rom_AD25, sub_rom_AD3C, sub_rom_AD56, sub_rom_AD82
-	.word sub_rom_ADAA, sub_rom_ADC7, sub_rom_ADEA, sub_rom_AE11
-	.word sub_rom_AE32, sub_rom_AE4B, sub_rom_AE64, sub_rom_AEB8
-	.word sub_rom_AC9E, sub_rom_AC8E, sub_rom_AE11, sub_rom_AE7D
-
-; -----------------------------------------------------------------------------
-
-sub_rom_AD25:
-	ldx ram_070C
-	clc
-	lda ram_0729,X
-	adc #$02
-	sta ram_071F,X
-	lda ram_072A,X
-	adc #$00
-	sta ram_0720,X
-	jmp sub_rom_ADAD
-
-; -----------------------------------------------------------------------------
-
-sub_rom_AD3C:
-	ldx ram_070C
-	lda ram_071F,X
-	sta ram_0729,X
-	lda ram_0720,X
-	sta ram_072A,X
-	lda #$00
-	sta ram_071F,X
-	sta ram_0720,X
-	jmp sub_rom_AE11
-
-; -----------------------------------------------------------------------------
-
-sub_rom_AD56:
-	ldx ram_070C
-	lda ram_0729,X
-	sta zp_FE
-	lda ram_072A,X
-	sta zp_FF
-	ldx ram_070B
-	ldy #$00
-	lda (zp_FE),Y
-	sta ram_0710,X
-	jsr sub_rom_B2B1
-	ldx ram_070C
-	lda ram_0729,X
-	sta ram_0715,X
-	lda ram_072A,X
-	sta ram_0716,X
-	jmp sub_rom_AE11
-
-; -----------------------------------------------------------------------------
-
-sub_rom_AD82:
-	ldx ram_070B
-	dec ram_0710,X
-	beq @AD9C
-
-	ldx ram_070C
-	lda ram_0715,X
-	sta ram_0729,X
-	lda ram_0716,X
-	sta ram_072A,X
-	jmp sub_rom_AE11
-	@AD9C:
-	ldx ram_070C
-	lda #$00
-	sta ram_0715,X
-	sta ram_0716,X
-	jmp sub_rom_AE11
-
-; -----------------------------------------------------------------------------
-
-sub_rom_ADAA:
-	ldx ram_070C
-; ----------------
-sub_rom_ADAD:
-	lda ram_0729,X
-	sta zp_FE
-	lda ram_072A,X
-	sta zp_FF
-	ldy #$00
-	lda (zp_FE),Y
-	sta ram_0729,X
-	iny
-	lda (zp_FE),Y
-	sta ram_072A,X
-	jmp sub_rom_AE11
-
-; -----------------------------------------------------------------------------
-
-sub_rom_ADC7:
-	ldx ram_070C
-	lda ram_0729,X
-	sta zp_FE
-	lda ram_072A,X
-	sta zp_FF
-	ldy #$00
-	lda (zp_FE),Y
-	ldx ram_070A
-	cpx #$05
-	bmi @ADE1
+	lda tbl_track_cmd_ptrs+0,X
+	sta zp_ptr2_lo
+	lda tbl_track_cmd_ptrs+1,X
+	sta zp_ptr2_hi
 	
-	ldy #$76
-	@ADE1:
-	sta ram_0733,Y
-	jsr sub_rom_B2B1
-	jmp sub_rom_AE11
+	jmp (zp_ptr2_lo)
+; ----------------
+
+tbl_track_cmd_ptrs:
+	.word sub_cmd_call_seg		; $F0
+	.word sub_cmd_end_seg		; $F1
+	.word sub_cmd_start_loop	; $F2	Not used
+	.word sub_cmd_end_loop		; $F3	Not used
+	.word sub_cmd_track_jump	; $F4
+	.word sub_cmd_track_speed	; $F5
+	.word sub_cmd_transpose		; $F6
+	.word sub_get_next_track_byte	; $F7	(this byte is skipped)
+	.word sub_cmd_set_vol_env	; $F8
+	.word sub_cmd_set_duty_env	; $F9
+	.word sub_cmd_set_pitch_env	; $FA
+	.word sub_cmd_jump_after_loop	; $FB	Not used
+	.word sub_skip_track_data	; $FC	(does nothing)
+	.word sub_cmd_note_duration	; $FD	Not used ($8x in track data directly)
+	.word sub_get_next_track_byte	; $FE	(this byte is skipped)
+	.word sub_cmd_stop_playing		; $FF
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_ADEA:
-	lda ram_070A
+; Saves a backup of the current track data pointer (+2 to skip the subsegment
+; address), then changes the pointer to the start of the desired subsegment
+sub_cmd_call_seg:
+	ldx ram_cur_chan_ptr_offset
+	clc
+
+	lda ram_track_ptr_lo,X
+	adc #$02
+	sta ram_track_ptr_backup_lo,X
+
+	lda ram_track_ptr_hi,X
+	adc #$00
+	sta ram_track_ptr_backup_hi,X
+
+	jmp sub_track_jump_entry2
+
+; -----------------------------------------------------------------------------
+
+; Restores the track data pointer
+sub_cmd_end_seg:
+	ldx ram_cur_chan_ptr_offset
+
+	lda ram_track_ptr_backup_lo,X
+	sta ram_track_ptr_lo,X
+	lda ram_track_ptr_backup_hi,X
+	sta ram_track_ptr_hi,X
+
+	lda #$00
+	sta ram_track_ptr_backup_lo,X
+	sta ram_track_ptr_backup_hi,X
+	
+	jmp sub_get_next_track_byte
+
+; -----------------------------------------------------------------------------
+
+sub_cmd_start_loop:
+	ldx ram_cur_chan_ptr_offset
+
+	; Prepare pointer to track data
+	lda ram_track_ptr_lo,X
+	sta zp_ptr2_lo
+	lda ram_track_ptr_hi,X
+	sta zp_ptr2_hi
+
+	; Read next byte: loop counter
+	ldx ram_cur_channel_offset
+	ldy #$00
+	lda (zp_ptr2_lo),Y
+	sta ram_track_loop_counter,X
+
+	jsr sub_advance_track_ptr
+
+	; Save a copy of the track data pointer (this is where the loop starts)
+	ldx ram_cur_chan_ptr_offset
+	lda ram_track_ptr_lo,X
+	sta ram_track_loop_ptr_lo,X
+	lda ram_track_ptr_hi,X
+	sta ram_track_loop_ptr_hi,X
+
+	jmp sub_get_next_track_byte
+
+; -----------------------------------------------------------------------------
+
+sub_cmd_end_loop:
+	ldx ram_cur_channel_offset
+
+	dec ram_track_loop_counter,X
+	beq :+
+
+		ldx ram_cur_chan_ptr_offset
+		lda ram_track_loop_ptr_lo,X
+		sta ram_track_ptr_lo,X
+		lda ram_track_loop_ptr_hi,X
+		sta ram_track_ptr_hi,X
+
+		jmp sub_get_next_track_byte
+		; --------
+:
+	ldx ram_cur_chan_ptr_offset
+	lda #$00
+	sta ram_track_loop_ptr_lo,X
+	sta ram_track_loop_ptr_hi,X
+
+	jmp sub_get_next_track_byte
+
+; -----------------------------------------------------------------------------
+
+; Jumps to the address read from the next two bytes of track data
+sub_cmd_track_jump:
+	ldx ram_cur_chan_ptr_offset
+; ----------------
+; Jumps to the address read from the next two bytes of track data
+; Entry point that skips loading the track pointer offset
+sub_track_jump_entry2:
+	; Prepare pointer to track data
+	lda ram_track_ptr_lo,X
+	sta zp_ptr2_lo
+	lda ram_track_ptr_hi,X
+	sta zp_ptr2_hi
+	; Read next two bytes as the new pointer
+	ldy #$00
+	lda (zp_ptr2_lo),Y
+	sta ram_track_ptr_lo,X
+	iny
+	lda (zp_ptr2_lo),Y
+	sta ram_track_ptr_hi,X
+	; Start processing data from the new location
+	jmp sub_get_next_track_byte
+
+; -----------------------------------------------------------------------------
+
+sub_cmd_track_speed:
+	ldx ram_cur_chan_ptr_offset
+
+	; Prepare data pointer
+	lda ram_track_ptr_lo,X
+	sta zp_ptr2_lo
+	lda ram_track_ptr_hi,X
+	sta zp_ptr2_hi
+	; Read next byte
+	ldy #$00
+	lda (zp_ptr2_lo),Y
+	ldx ram_cur_apu_channel
+	cpx #$05
+	bmi :+
+	
+		ldy #$76	; Add offset for SFX channels
+:
+	sta ram_track_speed,Y
+	jsr sub_advance_track_ptr
+	jmp sub_get_next_track_byte
+
+; -----------------------------------------------------------------------------
+
+sub_cmd_transpose:
+	lda ram_cur_apu_channel
 	and #$0F
 	tax
 	cpx #$03
-	bpl @AE0B
+	bpl :+
 
-	ldx ram_070C
-	lda ram_0729,X
-	sta zp_FE
-	lda ram_072A,X
-	sta zp_FF
-	ldy #$00
-	lda (zp_FE),Y
-	ldx ram_070B
-	sta ram_070D,X
-	@AE0B:
-	jsr sub_rom_B2B1
-	jmp sub_rom_AE11
+		ldx ram_cur_chan_ptr_offset
+		lda ram_track_ptr_lo,X
+		sta zp_ptr2_lo
+		lda ram_track_ptr_hi,X
+		sta zp_ptr2_hi
+		ldy #$00
+		lda (zp_ptr2_lo),Y
+		ldx ram_cur_channel_offset
+		sta ram_note_transpose_value,X
+:
+	jsr sub_advance_track_ptr
+	jmp sub_get_next_track_byte	; Why? This line could just be removed
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_AE11:
-	ldx ram_070C
-	lda ram_0729,X
-	sta zp_FE
-	lda ram_072A,X
-	sta zp_FF
-	ldy #$00
-	lda (zp_FE),Y
-	bmi @AE27
+; Reads (and processes) the next value from track data
+sub_get_next_track_byte:
+	ldx ram_cur_chan_ptr_offset
 
-	jmp sub_rom_ACA2
-	@AE27:
+	; Prepare data pointer
+	lda ram_track_ptr_lo,X
+	sta zp_ptr2_lo
+	lda ram_track_ptr_hi,X
+	sta zp_ptr2_hi
+
+	; Read next byte
+	ldy #$00
+	lda (zp_ptr2_lo),Y
+	bmi :+
+
+		; Note value ($00-$7F)
+		jmp sub_process_note_or_rest
+		; --------
+:
 	tax
 	cpx #$F0
-	bpl @AE2F
+	bpl :+
 
-	jmp sub_rom_AC8E
-	@AE2F:
-	jmp sub_rom_ACEF
+		jmp sub_cmd_note_duration
+		; --------
+:
+	jmp sub_process_track_command
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_AE32:
-	lda ram_070A
+sub_cmd_set_vol_env:
+	lda ram_cur_apu_channel
 	and #$0F
 	tax
 	cpx #$04
-	bmi @AE42
+	bmi :+
 
-	jsr sub_rom_B2B1
-	jmp sub_rom_AE11
-	@AE42:
-	jsr sub_rom_AF9E
-	sta ram_0757,X
-	jmp sub_rom_AE11
+		jsr sub_advance_track_ptr
+		jmp sub_get_next_track_byte
+:
+	jsr sub_track_read_next_byte
+	sta ram_vol_env_idx,X
+	jmp sub_get_next_track_byte
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_AE4B:
-	lda ram_070A
+sub_cmd_set_duty_env:
+	lda ram_cur_apu_channel
 	and #$0F
 	tax
 	cpx #$02
-	bmi @AE5B
+	bmi :+
 
-	jsr sub_rom_B2B1
-	jmp sub_rom_AE11
-
-	@AE5B:
-	jsr sub_rom_AF9E
-	sta ram_076B,X
-	jmp sub_rom_AE11
+		; Skip Triangle and Noise channels
+		jsr sub_advance_track_ptr
+		jmp sub_get_next_track_byte
+:
+	jsr sub_track_read_next_byte
+	sta ram_duty_env_idx,X
+	jmp sub_get_next_track_byte
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_AE64:
-	lda ram_070A
+sub_cmd_set_pitch_env:
+	lda ram_cur_apu_channel
 	and #$0F
 	tax
 	cpx #$04
-	bmi @AE74
+	bmi :+
 
-	jsr sub_rom_B2B1
-	jmp sub_rom_AE11
-	@AE74:
-	jsr sub_rom_AF9E
-	sta ram_0773,X
-	jmp sub_rom_AE11
+		jsr sub_advance_track_ptr
+		jmp sub_get_next_track_byte
+:
+	jsr sub_track_read_next_byte
+	sta ram_pitch_env_idx,X
+	jmp sub_get_next_track_byte
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_AE7D:
-	ldx ram_070C
+; Stops the current channel, and resets its track data pointer and evelopes
+sub_cmd_stop_playing:
+	ldx ram_cur_chan_ptr_offset
+
 	lda #$00
-	sta ram_0729,X
-	sta ram_072A,X
-	lda ram_070A
+	sta ram_track_ptr_lo,X
+	sta ram_track_ptr_hi,X
+	lda ram_cur_apu_channel
 	and #$0F
 	asl A
 	tax
 	clc
-	adc #$76
+	adc #$76	; Add offset for SFX channels
 	tay
 	lda #$FF
 	sta ram_074E,X
 	sta ram_074E,Y
 ; ----------------
-sub_rom_AE9B:
-	ldy ram_070B
-	lda ram_070A
+sub_stop_envelopes:
+	ldy ram_cur_channel_offset
+	lda ram_cur_apu_channel
 	and #$0F
 	tax
 	lda #$FF
-	cpx #$04
-	bpl @AEB7
+	cpx #$04	; This is probably to avoid doing this for DMC?
+	bpl :+
 
-	sta ram_075C,Y
-	sta ram_0777,Y
-	cpx #$02
-	bpl @AEB7
+		; Stop pitch and volume envelopes by setting them to $FF
+		sta ram_cur_vol_env_duration,Y
+		sta ram_cur_pitch_env_duration,Y
+		cpx #$02
+		bpl :+
 
-	sta ram_076D,Y
-	@AEB7:
+		; Stop duty envelope for square wave channels
+		sta ram_cur_duty_env_duration,Y
+:
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_AEB8:
-	ldx ram_070C
-	lda ram_0729,X
-	sta zp_FE
-	lda ram_072A,X
-	sta zp_FF
-	jsr sub_rom_B2B1
-	ldx ram_070B
-	lda ram_0710,X
-	bne @AED7
+; Skips a jump address if we are in a loop, but if this is the last time we
+; are looping, then jumps to that address instead
+sub_cmd_jump_after_loop:
+	ldx ram_cur_chan_ptr_offset
+	
+	; Prepare track data pointer
+	lda ram_track_ptr_lo,X
+	sta zp_ptr2_lo
+	lda ram_track_ptr_hi,X
+	sta zp_ptr2_hi
+	jsr sub_advance_track_ptr
 
-	ldy #$00
-	lda (zp_FE),Y
-	sta ram_0710,X
-	@AED7:
-	dec ram_0710,X
-	bne @AEF3
+	ldx ram_cur_channel_offset
+	lda ram_track_loop_counter,X
+	bne :+
 
-	ldx ram_070C
-	lda ram_0729,X
-	clc
-	adc #$02
-	sta ram_0729,X
-	lda ram_072A,X
-	adc #$00
-	sta ram_072A,X
-	jmp sub_rom_AE11
-	@AEF3:
-	jmp sub_rom_ADAA
+		; Read next byte as the new loop counter,
+		; as long as we were not in a loop already
+		ldy #$00
+		lda (zp_ptr2_lo),Y
+		sta ram_track_loop_counter,X
+:
+	dec ram_track_loop_counter,X
+	bne :+
+
+		; This seems to skip the next two bytes
+		ldx ram_cur_chan_ptr_offset
+		lda ram_track_ptr_lo,X
+		clc
+		adc #$02
+		sta ram_track_ptr_lo,X
+		lda ram_track_ptr_hi,X
+		adc #$00
+		sta ram_track_ptr_hi,X
+
+		jmp sub_get_next_track_byte
+		; --------
+:
+	jmp sub_cmd_track_jump
 
 ; -----------------------------------------------------------------------------
 
 sub_rom_AEF6:
-	ldx ram_070C
+	ldx ram_cur_chan_ptr_offset
 	lda ram_074E,X
 	ora #$80
 	sta ram_074E,X
-	jsr sub_rom_AF0B
-	jsr sub_rom_AF3C
-	jsr sub_rom_AF6D
+	jsr sub_start_volume_envelope
+	jsr sub_start_duty_envelope
+	jsr sub_start_pitch_envelope
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_AF0B:
-	lda ram_070A
+; Reads the first byte of a volume envelope
+sub_start_volume_envelope:
+	lda ram_cur_apu_channel
 	and #$0F
 	tax
 	cpx #$04
@@ -1878,296 +1970,311 @@ sub_rom_AF0B:
 	rts
 ; ----------------
 	@AF16:
-	ldx ram_070B
-	ldy ram_070C
-	lda ram_0757,X
+	ldx ram_cur_channel_offset
+	ldy ram_cur_chan_ptr_offset
+	lda ram_vol_env_idx,X
 	asl A
 	tax
 	lda tbl_instrument_ptrs+0,X
-	sta ram_0761,Y
-	sta zp_FE
+	sta ram_vol_env_ptr_lo,Y
+	sta zp_ptr2_lo
 	lda tbl_instrument_ptrs+1,X
-	sta ram_0762,Y
-	sta zp_FF
-	ldx ram_070B
+	sta ram_vol_env_ptr_hi,Y
+	sta zp_ptr2_hi
+	ldx ram_cur_channel_offset
 	ldy #$00
-	lda (zp_FE),Y
-	sta ram_075C,X
+	lda (zp_ptr2_lo),Y
+	sta ram_cur_vol_env_duration,X
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_AF3C:
-	lda ram_070A
+; Reads the first byte of a duty envelope
+sub_start_duty_envelope:
+	lda ram_cur_apu_channel
 	and #$0F
 	tax
-	cpx #$02
+	cpx #$02	; Only pulse channels (0-1) can use this envelope
 	bmi @AF47
 
 	rts
 ; ----------------
 	@AF47:
-	ldx ram_070B
-	ldy ram_070C
-	lda ram_076B,X
+	ldx ram_cur_channel_offset
+	ldy ram_cur_chan_ptr_offset
+	lda ram_duty_env_idx,X
 	asl A
 	tax
 	lda tbl_instrument_ptrs+0,X
-	sta ram_076F,Y
-	sta zp_FE
+	sta ram_duty_env_ptr_lo,Y
+	sta zp_ptr2_lo
 	lda tbl_instrument_ptrs+1,X
-	sta ram_0770,Y
-	sta zp_FF
-	ldx ram_070B
+	sta ram_duty_env_ptr_hi,Y
+	sta zp_ptr2_hi
+	ldx ram_cur_channel_offset
 	ldy #$00
-	lda (zp_FE),Y
-	sta ram_076D,X
+	lda (zp_ptr2_lo),Y
+	sta ram_cur_duty_env_duration,X
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_AF6D:
-	lda ram_070A
+; Reads the first byte of a pitch envelope
+sub_start_pitch_envelope:
+	lda ram_cur_apu_channel
 	and #$0F
 	tax
-	cpx #$04
+	cpx #$04	; All music channels (0-3) can use this envelope
 	bmi @AF78
 
 	rts
 ; ----------------
 	@AF78:
-	ldx ram_070B
-	ldy ram_070C
-	lda ram_0773,X
+	ldx ram_cur_channel_offset
+	ldy ram_cur_chan_ptr_offset
+	lda ram_pitch_env_idx,X
 	asl A
 	tax
 	lda tbl_instrument_ptrs+0,X
 	sta ram_077B,Y
-	sta zp_FE
+	sta zp_ptr2_lo
 	lda tbl_instrument_ptrs+1,X
 	sta ram_077C,Y
-	sta zp_FF
-	ldx ram_070B
+	sta zp_ptr2_hi
+	ldx ram_cur_channel_offset
 	ldy #$00
-	lda (zp_FE),Y
-	sta ram_0777,X
+	lda (zp_ptr2_lo),Y
+	sta ram_cur_pitch_env_duration,X
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_AF9E:
-	ldx ram_070C
-	lda ram_0729,X
-	sta zp_FE
-	lda ram_072A,X
-	sta zp_FF
-	jsr sub_rom_B2B1
+sub_track_read_next_byte:
+	ldx ram_cur_chan_ptr_offset
+	lda ram_track_ptr_lo,X
+	sta zp_ptr2_lo
+	lda ram_track_ptr_hi,X
+	sta zp_ptr2_hi
+	jsr sub_advance_track_ptr
 	ldy #$00
-	lda (zp_FE),Y
-	ldx ram_070B
+	lda (zp_ptr2_lo),Y
+	ldx ram_cur_channel_offset
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_AFB6:
-	jsr sub_rom_AFC0
-	jsr sub_rom_B033
-	jsr sub_rom_B0A6
+; Processes the next event in each envelope for the current channel
+sub_apply_envelopes:
+	jsr sub_next_volume_envelope
+	jsr sub_next_duty_envelope
+	jsr sub_next_pitch_envelope
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_AFC0:
-	lda ram_070A
+; Moves to the next entry in a volume envelope table and reads its duration
+sub_next_volume_envelope:
+	lda ram_cur_apu_channel
 	and #$0F
 	tax
 	cpx #$04
-	bpl @B032
+	bpl @skip_volume_env	; Is this supposed to skip DPCM channels?
 
-	@AFCA:
-	ldx ram_070B
-	lda ram_075C,X
-	tay
-	cpy #$FF
-	beq @B032
+	@process_volume_env:
+	ldx ram_cur_channel_offset
 
-	ldx ram_070B
-	lda ram_075C,X
-	bne @B02F
+	lda ram_cur_vol_env_duration,X
+	tay						; This is not needed,
+	cpy #$FF				; why not just do a cmp?
+	beq @skip_volume_env
 
-	ldx ram_070C
-	lda #$02
-	clc
-	adc ram_0761,X
-	sta ram_0761,X
-	sta zp_FE
-	lda #$00
-	adc ram_0762,X
-	sta ram_0762,X
-	sta zp_FF
-	ldx ram_070B
-	ldy #$00
-	lda (zp_FE),Y
-	sta ram_075C,X
-	tay
-	cpy #$FF
-	bne @AFCA
+		ldx ram_cur_channel_offset	; Why? It's already in X
+		lda ram_cur_vol_env_duration,X	; And this is already in A
+		bne @vol_env_still_running
 
-	ldx ram_070C
-	ldy #$01
-	lda (zp_FE),Y
-	and #$FE
-	bpl @B022
+			; Move to next event in envelope and prepare pointer
+			ldx ram_cur_chan_ptr_offset
+			lda #$02	; Each event is two bytes long (duration, value)
+			clc
+			adc ram_vol_env_ptr_lo,X
+			sta ram_vol_env_ptr_lo,X
+			sta zp_ptr2_lo
+			lda #$00
+			adc ram_vol_env_ptr_hi,X
+			sta ram_vol_env_ptr_hi,X
+			sta zp_ptr2_hi
 
-	clc
-	adc ram_0761,X
-	sta ram_0761,X
-	sta zp_FE
-	bcs @B01D
+			ldx ram_cur_channel_offset
+			ldy #$00
+			lda (zp_ptr2_lo),Y
+			sta ram_cur_vol_env_duration,X
+			tay					; Same as above
+			cpy #$FF
+			bne @process_volume_env
 
-	dec ram_0762,X
-	@B01D:
-	lda ram_0762,X
-	sta zp_FF
-	@B022:
-	ldx ram_070B
-	ldy #$00
-	lda (zp_FE),Y
-	sta ram_075C,X
-	jmp @AFCA
+			; Found $FF at end of envelope data
+			ldx ram_cur_chan_ptr_offset
+			ldy #$01	; Read next byte (which is the last)
+			lda (zp_ptr2_lo),Y
+			and #$FE	; Make the number even (a x2 multiplier would have been better)
+			bpl @B022
 
-	@B02F:
-	dec ram_075C,X
-	@B032:
+				; A negative value will move the pointer back
+				clc
+				adc ram_vol_env_ptr_lo,X
+				sta ram_vol_env_ptr_lo,X
+				sta zp_ptr2_lo
+				bcs @B01D
+					dec ram_vol_env_ptr_hi,X
+				@B01D:
+				lda ram_vol_env_ptr_hi,X
+				sta zp_ptr2_hi
+
+			@B022:
+			ldx ram_cur_channel_offset
+			ldy #$00
+			lda (zp_ptr2_lo),Y
+			sta ram_cur_vol_env_duration,X
+			jmp @process_volume_env
+
+		@vol_env_still_running:
+		; Current value still running, or we just started a new one:
+		; decrease duration and return
+		dec ram_cur_vol_env_duration,X
+		
+	@skip_volume_env:
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B033:
-	lda ram_070A
+; Moves to the next entry in a duty envelope table and reads its duration
+sub_next_duty_envelope:
+	lda ram_cur_apu_channel
 	and #$0F
 	tax
 	cpx #$02
 	bpl @B0A5
 
 	@B03D:
-	ldx ram_070B
-	lda ram_076D,X
+	ldx ram_cur_channel_offset
+	lda ram_cur_duty_env_duration,X
 	tay
 	cpy #$FF
 	beq @B0A5
 
-	ldx ram_070B
-	lda ram_076D,X
+	ldx ram_cur_channel_offset
+	lda ram_cur_duty_env_duration,X
 	bne @B0A2
 
-	ldx ram_070C
+	ldx ram_cur_chan_ptr_offset
 	lda #$02
 	clc
-	adc ram_076F,X
-	sta ram_076F,X
-	sta zp_FE
+	adc ram_duty_env_ptr_lo,X
+	sta ram_duty_env_ptr_lo,X
+	sta zp_ptr2_lo
 	lda #$00
-	adc ram_0770,X
-	sta ram_0770,X
-	sta zp_FF
-	ldx ram_070B
+	adc ram_duty_env_ptr_hi,X
+	sta ram_duty_env_ptr_hi,X
+	sta zp_ptr2_hi
+	ldx ram_cur_channel_offset
 	ldy #$00
-	lda (zp_FE),Y
-	sta ram_076D,X
+	lda (zp_ptr2_lo),Y
+	sta ram_cur_duty_env_duration,X
 	tay
 	cpy #$FF
 	bne @B03D
 
-	ldx ram_070C
+	ldx ram_cur_chan_ptr_offset
 	ldy #$01
-	lda (zp_FE),Y
+	lda (zp_ptr2_lo),Y
 	and #$FE
 	bpl @B095
 
 	clc
-	adc ram_076F,X
-	sta ram_076F,X
-	sta zp_FE
+	adc ram_duty_env_ptr_lo,X
+	sta ram_duty_env_ptr_lo,X
+	sta zp_ptr2_lo
 	bcs @B090
 
-	dec ram_0770,X
+	dec ram_duty_env_ptr_hi,X
 	@B090:
-	lda ram_0770,X
-	sta zp_FF
+	lda ram_duty_env_ptr_hi,X
+	sta zp_ptr2_hi
 	@B095:
-	ldx ram_070B
+	ldx ram_cur_channel_offset
 	ldy #$00
-	lda (zp_FE),Y
-	sta ram_076D,X
+	lda (zp_ptr2_lo),Y
+	sta ram_cur_duty_env_duration,X
 	jmp @B03D
 
 	@B0A2:
-	dec ram_076D,X
+	dec ram_cur_duty_env_duration,X
 	@B0A5:
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B0A6:
-	lda ram_070A
+; Moves to the next entry in a duty envelope table and reads its duration
+sub_next_pitch_envelope:
+	lda ram_cur_apu_channel
 	and #$0F
 	tax
 	cpx #$04
 	bpl @B115
 
 	@B0B0:
-	ldx ram_070B
-	lda ram_0777,X
+	ldx ram_cur_channel_offset
+	lda ram_cur_pitch_env_duration,X
 	tay
 	cpy #$FF
 	beq @B115
 
-	lda ram_0777,X
+	lda ram_cur_pitch_env_duration,X
 	bne @B112
 
-	ldx ram_070C
+	ldx ram_cur_chan_ptr_offset
 	lda #$02
 	clc
 	adc ram_077B,X
 	sta ram_077B,X
-	sta zp_FE
+	sta zp_ptr2_lo
 	lda #$00
 	adc ram_077C,X
 	sta ram_077C,X
-	sta zp_FF
-	ldx ram_070B
+	sta zp_ptr2_hi
+	ldx ram_cur_channel_offset
 	ldy #$00
-	lda (zp_FE),Y
-	sta ram_0777,X
+	lda (zp_ptr2_lo),Y
+	sta ram_cur_pitch_env_duration,X
 	tay
 	cpy #$FF
 	bne @B0B0
 
-	ldx ram_070C
+	ldx ram_cur_chan_ptr_offset
 	ldy #$01
-	lda (zp_FE),Y
+	lda (zp_ptr2_lo),Y
 	and #$FE
 	bpl @B105
+
 	clc
 	adc ram_077B,X
 	sta ram_077B,X
-	sta zp_FE
+	sta zp_ptr2_lo
 	bcs @B100
 
 	dec ram_077C,X
 	@B100:
 	lda ram_077C,X
-	sta zp_FF
+	sta zp_ptr2_hi
 	@B105:
-	ldx ram_070B
+	ldx ram_cur_channel_offset
 	ldy #$00
-	lda (zp_FE),Y
-	sta ram_0777,X
+	lda (zp_ptr2_lo),Y
+	sta ram_cur_pitch_env_duration,X
 	jmp @B0B0
 
 	@B112:
-	dec ram_0777,X
+	dec ram_cur_pitch_env_duration,X
 	@B115:
 	rts
 
@@ -2192,35 +2299,35 @@ sub_rom_B123:
 		ldx #$00
 		ldy #$00
 :
-	jsr sub_rom_B242
-	lda zp_FE
+	jsr sub_apply_volume_envelope
+	lda zp_ptr2_lo
 
 	pha
-	jsr sub_rom_B267
+	jsr sub_apply_duty_envelope
 	pla
 
-	ora zp_FE
+	ora zp_ptr2_lo
 	ora #$30
 	sta Sq0Duty_4000
-	jsr sub_rom_B28C
+	jsr sub_apply_pitch_envelope
 	lda #$00
-	sta zp_FF
-	lda zp_FE
+	sta zp_ptr2_hi
+	lda zp_ptr2_lo
 	bpl :+
 
-		dec zp_FF
+		dec zp_ptr2_hi
 :
-	lda ram_0743,Y
+	lda ram_cur_period_lo,Y
 	clc
-	adc zp_FE
+	adc zp_ptr2_lo
 	sta ram_074D,Y
 	sta Sq0Timer_4002
 	lda ram_074E,Y
-	sta zp_FE
-	lda ram_0744,Y
-	adc zp_FF
+	sta zp_ptr2_lo
+	lda ram_cur_period_hi,Y
+	adc zp_ptr2_hi
 	tax
-	cpx zp_FE
+	cpx zp_ptr2_lo
 	beq :+
 
 		sta ram_074E,Y
@@ -2241,35 +2348,35 @@ sub_rom_B175:
 		ldx #$01
 		ldy #$02
 :
-	jsr sub_rom_B242
-	lda zp_FE
+	jsr sub_apply_volume_envelope
+	lda zp_ptr2_lo
 
 	pha
-	jsr sub_rom_B267
+	jsr sub_apply_duty_envelope
 	pla
 
-	ora zp_FE
+	ora zp_ptr2_lo
 	ora #$30
 	sta Sq1Duty_4004
-	jsr sub_rom_B28C
+	jsr sub_apply_pitch_envelope
 	lda #$00
-	sta zp_FF
-	lda zp_FE
+	sta zp_ptr2_hi
+	lda zp_ptr2_lo
 	bpl :+
 
-		dec zp_FF
+		dec zp_ptr2_hi
 :
-	lda ram_0743,Y
+	lda ram_cur_period_lo,Y
 	clc
-	adc zp_FE
+	adc zp_ptr2_lo
 	sta ram_074D,Y
 	sta Sq1Timer_4006
 	lda ram_074E,Y
-	sta zp_FE
-	lda ram_0744,Y
-	adc zp_FF
+	sta zp_ptr2_lo
+	lda ram_cur_period_hi,Y
+	adc zp_ptr2_hi
 	tax
-	cpx zp_FE
+	cpx zp_ptr2_lo
 	beq :+
 
 		sta ram_074E,Y
@@ -2290,33 +2397,33 @@ sub_rom_B1C7:
 	ldx #$02
 	ldy #$04
 	@B1D7:
-	jsr sub_rom_B242
-	lda zp_FE
+	jsr sub_apply_volume_envelope
+	lda zp_ptr2_lo
 	beq @B1E0
 
 	lda #$FF
 	@B1E0:
 	ora #$80
 	sta TrgLinear_4008
-	jsr sub_rom_B28C
+	jsr sub_apply_pitch_envelope
 	lda #$00
-	sta zp_FF
-	lda zp_FE
+	sta zp_ptr2_hi
+	lda zp_ptr2_lo
 	bpl @B1F2
 
-	dec zp_FF
+	dec zp_ptr2_hi
 	@B1F2:
-	lda ram_0743,Y
+	lda ram_cur_period_lo,Y
 	clc
-	adc zp_FE
+	adc zp_ptr2_lo
 	sta ram_074D,Y
 	sta TrgTimer_400A
 	lda ram_074E,Y
-	sta zp_FE
-	lda ram_0744,Y
-	adc zp_FF
+	sta zp_ptr2_lo
+	lda ram_cur_period_hi,Y
+	adc zp_ptr2_hi
 	tax
-	cpx zp_FE
+	cpx zp_ptr2_lo
 	beq @B215
 
 	sta ram_074E,Y
@@ -2337,14 +2444,14 @@ sub_rom_B216:
 	ldx #$03
 	ldy #$06
 	@B226:
-	jsr sub_rom_B242
-	lda zp_FE
+	jsr sub_apply_volume_envelope
+	lda zp_ptr2_lo
 	ora #$30
 	sta NoiseVolume_400C
-	jsr sub_rom_B28C
-	lda ram_0743,Y
+	jsr sub_apply_pitch_envelope
+	lda ram_cur_period_lo,Y
 	clc
-	adc zp_FE
+	adc zp_ptr2_lo
 	sta NoisePeriod_400E
 	lda #$F8
 	sta NoiseLength_400F
@@ -2352,11 +2459,11 @@ sub_rom_B216:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B242:
+sub_apply_volume_envelope:
 	tya
 	pha
 
-	lda ram_075C,X
+	lda ram_cur_vol_env_duration,X
 	tay
 	cpy #$FF
 	bne @B251
@@ -2368,14 +2475,14 @@ sub_rom_B242:
 	pla
 	pha
 	tay
-	lda ram_0761,Y
-	sta zp_FE
-	lda ram_0762,Y
-	sta zp_FF
+	lda ram_vol_env_ptr_lo,Y
+	sta zp_ptr2_lo
+	lda ram_vol_env_ptr_hi,Y
+	sta zp_ptr2_hi
 	ldy #$01
-	lda (zp_FE),Y
+	lda (zp_ptr2_lo),Y
 	@B262:
-	sta zp_FE
+	sta zp_ptr2_lo
 
 	pla
 	tay
@@ -2383,11 +2490,11 @@ sub_rom_B242:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B267:
+sub_apply_duty_envelope:
 	tya
 	pha
 
-	lda ram_076D,X
+	lda ram_cur_duty_env_duration,X
 	tay
 	cpy #$FF
 	bne @B276
@@ -2399,14 +2506,14 @@ sub_rom_B267:
 	pla
 	pha
 	tay
-	lda ram_076F,Y
-	sta zp_FE
-	lda ram_0770,Y
-	sta zp_FF
+	lda ram_duty_env_ptr_lo,Y
+	sta zp_ptr2_lo
+	lda ram_duty_env_ptr_hi,Y
+	sta zp_ptr2_hi
 	ldy #$01
-	lda (zp_FE),Y
+	lda (zp_ptr2_lo),Y
 	@B287:
-	sta zp_FE
+	sta zp_ptr2_lo
 
 	pla
 	tay
@@ -2414,43 +2521,47 @@ sub_rom_B267:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B28C:
+sub_apply_pitch_envelope:
 	tya
 	pha
-	lda ram_0777,X
+
+	lda ram_cur_pitch_env_duration,X
 	tay
 	cpy #$FF
-	bne @B29B
+	bne :+
 
-	lda #$00
-	jmp @B2AC
-
-	@B29B:
+		lda #$00
+		jmp @B2AC
+:
 	pla
 	pha
 	tay
 	lda ram_077B,Y
-	sta zp_FE
+	sta zp_ptr2_lo
 	lda ram_077C,Y
-	sta zp_FF
+	sta zp_ptr2_hi
 	ldy #$01
-	lda (zp_FE),Y
+	lda (zp_ptr2_lo),Y
+
 	@B2AC:
-	sta zp_FE
+	sta zp_ptr2_lo	; Use this as noise period modifier
+
 	pla
 	tay
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B2B1:
-	ldx ram_070C
-	inc ram_0729,X
-	lda ram_0729,X
-	bne @B2BF
+; Increments the track data pointer by one
+sub_advance_track_ptr:
+	ldx ram_cur_chan_ptr_offset
 
-	inc ram_072A,X
-	@B2BF:
+	inc ram_track_ptr_lo,X
+	lda ram_track_ptr_lo,X
+	bne :+
+
+		inc ram_track_ptr_hi,X
+:
 	rts
 
 ; -----------------------------------------------------------------------------

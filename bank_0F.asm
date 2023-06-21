@@ -498,11 +498,11 @@ sub_trampoline:
 	sta zp_15
 	iny
 	lda (zp_14),Y
-	sta zp_ptr_lo
+	sta zp_ptr1_lo
 	iny
 	lda (zp_14),Y
-	sta zp_ptr_hi
-	jmp (zp_ptr_lo)
+	sta zp_ptr1_hi
+	jmp (zp_ptr1_lo)
 
 ; -----------------------------------------------------------------------------
 
@@ -776,11 +776,11 @@ sub_rom_E4CB:
 	adc zp_16
 	@E4D6:
 	ror A
-	ror zp_ptr_lo
+	ror zp_ptr1_lo
 	dex
 	bne @E4CF
 
-	sta zp_ptr_hi
+	sta zp_ptr1_hi
 	rts
 
 ; -----------------------------------------------------------------------------

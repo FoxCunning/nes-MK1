@@ -44,10 +44,10 @@ sub_rom_C019:
 	sta ram_040F
 	lda zp_F2
 	and #$7F
-	sta zp_ptr_lo
+	sta zp_ptr1_lo
 	lda zp_F3
 	and #$7F
-	cmp zp_ptr_lo
+	cmp zp_ptr1_lo
 	bne @C05A
 
 	cmp #$0C
@@ -61,10 +61,10 @@ sub_rom_C019:
 	clc
 	adc #$0C
 	@C050:
-	sta zp_ptr_lo
+	sta zp_ptr1_lo
 	lda zp_F3
 	and #$80
-	ora zp_ptr_lo
+	ora zp_ptr1_lo
 	sta zp_F3
 	@C05A:
 	lda zp_F2
@@ -555,7 +555,7 @@ sub_rom_C2A8:
 	@C32C:
 	sta zp_06
 	lda rom_CB0A,Y
-	sta zp_ptr_lo
+	sta zp_ptr1_lo
 	clc
 	adc #$0C
 	tax
@@ -598,7 +598,7 @@ sub_rom_C36B:
 	lda rom_C3C9,Y
 	bmi @C397
 
-	ora zp_ptr_lo
+	ora zp_ptr1_lo
 	sta ram_0371,X
 	lda zp_05
 	sta ram_0373,X
@@ -1410,8 +1410,8 @@ sub_rom_C876:
 	tax
 	stx zp_7B
 	lda zp_A9,X
-	sta zp_ptr_lo
-	inc zp_ptr_lo
+	sta zp_ptr1_lo
+	inc zp_ptr1_lo
 	ldx zp_7C
 	lda zp_8A,X
 	tay
@@ -1431,7 +1431,7 @@ sub_rom_C876:
 	lda zp_controller1_new,X
 	eor #$03
 	@C8B0:
-	ldy zp_ptr_lo
+	ldy zp_ptr1_lo
 	ldx zp_7B
 	cmp (zp_3B),Y
 	beq @C8C2
@@ -1809,15 +1809,15 @@ sub_rom_CB0C:
 	lda zp_4A
 	sec
 	sbc #$22
-	sta zp_ptr_lo
+	sta zp_ptr1_lo
 	sec
 	sbc #$38
-	sta zp_ptr_hi
+	sta zp_ptr1_hi
 	lda zp_88,Y
-	cmp zp_ptr_lo
+	cmp zp_ptr1_lo
 	bcs @CB5A
 
-	cmp zp_ptr_hi
+	cmp zp_ptr1_hi
 	bcc @CB7E
 
 	lda zp_E5,Y
@@ -1832,7 +1832,7 @@ sub_rom_CB0C:
 	sta zp_8E,Y
 	lda #$0A
 	sta zp_90,Y
-	lda zp_ptr_hi
+	lda zp_ptr1_hi
 	clc
 	adc #$0C
 	sta zp_88,Y
@@ -1842,9 +1842,9 @@ sub_rom_CB0C:
 	lda zp_4A
 	sec
 	sbc #$1A
-	sta zp_ptr_lo
+	sta zp_ptr1_lo
 	lda zp_88,Y
-	cmp zp_ptr_lo
+	cmp zp_ptr1_lo
 	bcc @CB7E
 
 	lda #$02
@@ -2525,13 +2525,13 @@ sub_rom_CFB2:
 	asl A
 	tay
 	lda rom_D596+0,Y
-	sta zp_ptr_lo
+	sta zp_ptr1_lo
 	lda rom_D596+1,Y
-	sta zp_ptr_hi
+	sta zp_ptr1_hi
 	ldy #$00
 	ldx #$00
 	@CFCE:
-	lda (zp_ptr_lo),Y
+	lda (zp_ptr1_lo),Y
 	sta ram_0640,X
 	inx
 	iny
@@ -2548,12 +2548,12 @@ sub_rom_CFE4:
 	asl A
 	tay
 	lda rom_D4A6+0,Y
-	sta zp_ptr_lo
+	sta zp_ptr1_lo
 	lda rom_D4A6+1,Y
-	sta zp_ptr_hi
+	sta zp_ptr1_hi
 	ldy #$00
 	@CFF2:
-	lda (zp_ptr_lo),Y
+	lda (zp_ptr1_lo),Y
 	sta ram_0640,X
 	inx
 	iny
@@ -2570,13 +2570,13 @@ sub_rom_CFFE:
 	asl A
 	tax
 	lda rom_D4A6+0,X
-	sta zp_ptr_lo
+	sta zp_ptr1_lo
 	lda rom_D4A6+1,X
-	sta zp_ptr_hi
+	sta zp_ptr1_hi
 	ldy #$00
 	ldx #$00
 	@D010:
-	lda (zp_ptr_lo),Y
+	lda (zp_ptr1_lo),Y
 	sta ram_0600,X
 	inx
 	iny
@@ -2698,13 +2698,13 @@ sub_rom_D09F:
 	clc
 	lda zp_82
 	adc zp_84
-	sta zp_ptr_lo
+	sta zp_ptr1_lo
 	lda zp_83
 	adc zp_85
-	sta zp_ptr_hi
-	lsr zp_ptr_hi
-	ror zp_ptr_lo
-	lda zp_ptr_lo
+	sta zp_ptr1_hi
+	lsr zp_ptr1_hi
+	ror zp_ptr1_lo
+	lda zp_ptr1_lo
 	sec
 	sbc #$80
 	ldx ram_0410
@@ -3216,13 +3216,13 @@ sub_rom_D359:
 	lsr A
 	lsr A
 	lsr A
-	sta zp_ptr_lo
+	sta zp_ptr1_lo
 	txa
 	bne @D3B7
 
 	lda #$64
 	clc
-	adc zp_ptr_lo
+	adc zp_ptr1_lo
 	sta PpuAddr_2006
 	lda zp_A5
 	sec
@@ -3235,7 +3235,7 @@ sub_rom_D359:
 	@D3B7:
 	lda #$7B
 	sec
-	sbc zp_ptr_lo
+	sbc zp_ptr1_lo
 	sta PpuAddr_2006
 	lda zp_A5,X
 	sec
@@ -3496,11 +3496,11 @@ sub_rom_D68B:
 	sta zp_15
 	iny
 	lda (zp_14),Y
-	sta zp_ptr_lo
+	sta zp_ptr1_lo
 	iny
 	lda (zp_14),Y
-	sta zp_ptr_hi
-	jmp (zp_ptr_lo)
+	sta zp_ptr1_hi
+	jmp (zp_ptr1_lo)
 
 ; -----------------------------------------------------------------------------
 
@@ -3535,7 +3535,7 @@ sub_rom_D6AE:
 	dex
 	bne @D6B2
 
-	sta zp_ptr_lo
+	sta zp_ptr1_lo
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -3547,7 +3547,7 @@ sub_rom_D6C7:
 	sta zp_16
 	@D6CF:
 	jsr sub_rom_D6AE
-	lda zp_ptr_lo
+	lda zp_ptr1_lo
 	clc
 	adc zp_0D
 	sta ram_066D,Y
@@ -3581,7 +3581,7 @@ sub_rom_D6E0:
 	bcs sub_rom_D718
 
 	lda #$04
-	sta zp_ptr_lo
+	sta zp_ptr1_lo
 ; ----------------
 sub_rom_D701:
 	lda zp_8A,Y
@@ -3593,7 +3593,7 @@ sub_rom_D701:
 
 	lda zp_82,X
 	sec
-	sbc zp_ptr_lo
+	sbc zp_ptr1_lo
 	sta zp_82,X
 	bcs sub_rom_D718
 
@@ -3609,7 +3609,7 @@ sub_rom_D719:
 
 	lda zp_82,X
 	clc
-	adc zp_ptr_lo
+	adc zp_ptr1_lo
 	sta zp_82,X
 	bcc sub_rom_D718
 
@@ -3662,7 +3662,7 @@ sub_rom_D72C:
 	eor #$02
 	tax
 	lda #$08
-	sta zp_ptr_lo
+	sta zp_ptr1_lo
 	jsr sub_rom_D701
 	@D76C:
 	rts
@@ -3721,7 +3721,7 @@ sub_rom_D784:
 
 		inc zp_3C
 
-:	sta zp_ptr_lo
+:	sta zp_ptr1_lo
 	tay
 	lda (zp_3B),Y
 	asl A
@@ -3797,7 +3797,7 @@ sub_rom_D784:
 	clc
 	adc zp_06
 	sta zp_88,Y
-	ldy zp_ptr_lo
+	ldy zp_ptr1_lo
 	iny
 	lda (zp_3B),Y
 	sta zp_3D
@@ -3808,12 +3808,12 @@ sub_rom_D784:
 	lda zp_90,Y
 	tay
 	lda (zp_3D),Y
-	sta zp_ptr_lo
+	sta zp_ptr1_lo
 	lda rom_8002+0
 	sta zp_3D
 	lda rom_8002+1
 	sta zp_3E
-	lda zp_ptr_lo
+	lda zp_ptr1_lo
 	asl A
 	bcc @D862
 	@D862:
@@ -3859,10 +3859,10 @@ sub_rom_D784:
 	sta zp_86,Y
 	sta zp_07
 	ldx #$08
-	stx zp_ptr_lo
+	stx zp_ptr1_lo
 	lda zp_88,Y
 	sec
-	sbc zp_ptr_lo
+	sbc zp_ptr1_lo
 	sta zp_0A
 	ldx zp_7C
 	inc zp_90,X
@@ -3967,16 +3967,16 @@ sub_rom_D935:
 	asl A
 	tax
 	lda rom_D4A6+0,X
-	sta zp_ptr_lo
+	sta zp_ptr1_lo
 	lda rom_D4A6+1,X
-	sta zp_ptr_hi
+	sta zp_ptr1_hi
 	ldy #$00
 	ldx zp_7C
 	sty zp_48,X
 	sty zp_90,X
 	ldx #$00
 	@D94D:
-	lda (zp_ptr_lo),Y
+	lda (zp_ptr1_lo),Y
 	sta ram_0600,X
 	inx
 	iny
@@ -4063,7 +4063,7 @@ sub_rom_D9AF:
 	bne @D9FB
 
 	lda #$08
-	sta zp_ptr_lo
+	sta zp_ptr1_lo
 	lda zp_07
 	sec
 	sbc zp_0F
@@ -4071,7 +4071,7 @@ sub_rom_D9AF:
 
 	@D9FB:
 	lda #$F8
-	sta zp_ptr_lo
+	sta zp_ptr1_lo
 	lda zp_0F
 	sec
 	sbc #$08
@@ -4122,7 +4122,7 @@ sub_rom_D9AF:
 	inx
 	@DA44:
 	iny
-	lda zp_ptr_lo
+	lda zp_ptr1_lo
 	clc
 	adc zp_08
 	sta zp_08

@@ -43,7 +43,7 @@ sub_unpack_nametable:
 
 	@8025:
 	jsr sub_next_packed_byte
-	lda (zp_ptr_lo),Y
+	lda (zp_ptr1_lo),Y
 	bpl @rle_repeat_byte
 
 	cmp #$FF	; Stop byte
@@ -54,7 +54,7 @@ sub_unpack_nametable:
 	sta zp_08
 :
 	jsr sub_next_packed_byte
-	lda (zp_ptr_lo),Y
+	lda (zp_ptr1_lo),Y
 	sta PpuData_2007
 	dec zp_08
 	bne :-
@@ -66,7 +66,7 @@ sub_unpack_nametable:
 	; Values < $80 are the number of times the next byte must be copied
 	sta zp_08
 	jsr sub_next_packed_byte
-	lda (zp_ptr_lo),Y
+	lda (zp_ptr1_lo),Y
 :
 	sta PpuData_2007
 	dec zp_08
@@ -81,10 +81,10 @@ sub_unpack_nametable:
 
 ; Advances the pointer to the next byte
 sub_next_packed_byte:
-	inc zp_ptr_lo
+	inc zp_ptr1_lo
 	bne :+
 
-		inc zp_ptr_hi
+		inc zp_ptr1_hi
 :
 	rts
 
@@ -131,9 +131,9 @@ sub_rom_80A0:
 	asl A
 	tax
 	lda rom_8178+0,X
-	sta zp_ptr_lo
+	sta zp_ptr1_lo
 	lda rom_8178+1,X
-	sta zp_ptr_hi
+	sta zp_ptr1_hi
 	lda rom_8178+2,X
 	sta zp_14
 	jsr sub_unpack_nametable
@@ -143,9 +143,9 @@ sub_rom_80A0:
 	asl A
 	tax
 	lda rom_817C+0,X
-	sta zp_ptr_lo
+	sta zp_ptr1_lo
 	lda rom_817C+1,X
-	sta zp_ptr_hi
+	sta zp_ptr1_hi
 	lda rom_817C+2,X
 	sta zp_14
 	jsr sub_unpack_nametable
@@ -203,7 +203,7 @@ sub_rom_04_810A:
 	clc
 	adc @rom_8120,X
 	tay
-	lda (zp_ptr_lo),Y
+	lda (zp_ptr1_lo),Y
 	rts
 ; ----------------
 
@@ -303,9 +303,9 @@ sub_rom_04_81D2:
 	asl A
 	tay
 	lda rom_823D+0,Y
-	sta zp_ptr_lo
+	sta zp_ptr1_lo
 	lda rom_823D+1,Y
-	sta zp_ptr_hi
+	sta zp_ptr1_hi
 	lda zp_57
 	asl A
 	tay
@@ -328,11 +328,11 @@ sub_rom_04_81D2:
 	lda (zp_14),Y
 	bpl @820A
 
-        lda (zp_ptr_lo),Y
+        lda (zp_ptr1_lo),Y
         jmp @8213
 
 	@820A:
-	lda (zp_ptr_lo),Y
+	lda (zp_ptr1_lo),Y
 	sec
 	sbc zp_05
 	bpl @8213

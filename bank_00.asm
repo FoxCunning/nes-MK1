@@ -33,16 +33,16 @@ sub_rom_801F:
 	asl A
 	tax
 	lda rom_8098+0,X
-	sta zp_ptr_lo
+	sta zp_ptr1_lo
 	lda rom_8098+1,X
-	sta zp_ptr_hi
-	lda zp_ptr_lo
+	sta zp_ptr1_hi
+	lda zp_ptr1_lo
 	clc
 	adc #$02
-	sta zp_ptr_lo
-	lda zp_ptr_hi
+	sta zp_ptr1_lo
+	lda zp_ptr1_hi
 	adc #$00
-	sta zp_ptr_hi
+	sta zp_ptr1_hi
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -67,7 +67,7 @@ sub_rom_8041:
 	lda rom_8039+0,X
 	sta PpuAddr_2006
 	@805E:
-	lda (zp_ptr_lo),Y
+	lda (zp_ptr1_lo),Y
 	bpl @807C
 	cmp #$FF
 	beq @8090
@@ -76,7 +76,7 @@ sub_rom_8041:
 	sta zp_18
 	@806A:
 	jsr sub_rom_8091
-	lda (zp_ptr_lo),Y
+	lda (zp_ptr1_lo),Y
 	sta PpuData_2007
 	dec zp_18
 	bne @806A
@@ -87,7 +87,7 @@ sub_rom_8041:
 	@807C:
 	sta zp_18
 	jsr sub_rom_8091
-	lda (zp_ptr_lo),Y
+	lda (zp_ptr1_lo),Y
 	@8083:
 	sta PpuData_2007
 	dec zp_18
@@ -102,10 +102,10 @@ sub_rom_8041:
 ; -----------------------------------------------------------------------------
 
 sub_rom_8091:
-	inc zp_ptr_lo
+	inc zp_ptr1_lo
 	bne @8097
 
-	inc zp_ptr_hi
+	inc zp_ptr1_hi
 	@8097:
 	rts
 
