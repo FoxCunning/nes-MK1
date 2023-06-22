@@ -11,134 +11,134 @@
 .export tbl_instrument_ptrs
 
 tbl_instrument_ptrs:
-	.word @instr_8100
-	.word @instr_8104
-	.word @instr_8110
-	.word @instr_8116
-	.word @instr_811C
-	.word @instr_8124
-	.word @instr_8140
-	.word @instr_8146
-	.word @instr_814A
-	.word @instr_8158
-	.word @instr_815C
-	.word @instr_8176
-	.word @instr_8180
-	.word @instr_818A
-	.word @instr_8194
-	.word @instr_819C
-	.word @instr_81A6
-	.word @instr_81AC
-	.word @instr_81C2
-	.word @instr_81CD
-	.word @instr_81D9
-	.word @instr_81E3
-	.word @instr_81ED
-	.word @instr_81F7
-	.word @instr_81FF
-	.word @instr_8203
-	.word @instr_821F
-	.word @instr_822B
-	.word @instr_823B
-	.word @instr_8241
-	.word @instr_8245
-	.word @instr_8249
-	.word @instr_824F
-	.word @instr_826F
-	.word @instr_8275
-	.word @instr_827D
-	.word @instr_828D
-	.word @instr_8291
-	.word @instr_8100
-	.word @instr_8100
-	.word @instr_8100
-	.word @instr_8100
-	.word @instr_8100
-	.word @instr_8293
-	.word @instr_8100
-	.word @instr_8100
-	.word @instr_829D
-	.word @instr_82B5
-	.word @instr_82BF
-	.word @instr_82C9
-	.word @instr_82D1
-	.word @instr_82FD
-	.word @instr_831B
-	.word @instr_8100
-	.word @instr_8327
-	.word @instr_8337
-	.word @instr_833F
-	.word @instr_8343
-	.word @instr_8100
-	.word @instr_8100
-	.word @instr_8100
-	.word @instr_8100
-	.word @instr_8100
-	.word @instr_8100
-	.word @instr_834F
-	.word @instr_835F
-	.word @instr_8379
-	.word @instr_8381
-	.word @instr_8397
-	.word @instr_83A1
-	.word @instr_83B3
-	.word @instr_83C7
-	.word @instr_840B
-	.word @instr_840F
-	.word @instr_8413
-	.word @instr_8425
-	.word @instr_842B
-	.word @instr_8431
-	.word @instr_8437
-	.word @instr_8100
-	.word @instr_843D
-	.word @instr_844E
-	.word @instr_845E
-	.word @instr_8462
-	.word @instr_846E
-	.word @instr_8472
-	.word @instr_8486
-	.word @instr_84B0
-	.word @instr_84B4
-	.word @instr_84C0
-	.word @instr_8100
-	.word @instr_84CC
-	.word @instr_84D0
-	.word @instr_84DE
-	.word @instr_84EE
-	.word @instr_8508
-	.word @instr_8520
-	.word @instr_8528
-	.word @instr_853E
-	.word @instr_8554
-	.word @instr_8576
-	.word @instr_8100
-	.word @instr_8100
-	.word @instr_8100
-	.word @instr_8100
-	.word @instr_8100
-	.word @instr_8100
-	.word @instr_8100
-	.word @instr_8598
-	.word @instr_8100
-	.word @instr_8100
-	.word @instr_859A
-	.word @instr_8100
-	.word @instr_8100
-	.word @instr_8100
-	.word @instr_8100
-	.word @instr_85A0
-	.word @instr_85A8
-	.word @instr_8100
-	.word @instr_8100
-	.word @instr_8100
-	.word @instr_8100
-	.word @instr_8100
-	.word @instr_85B3
-	.word @instr_8100
-	.word @instr_8100
-	.word @instr_8100
-	.word @instr_8100
+	.word @instr_8100	; $00
+	.word @instr_8104	; $01
+	.word @instr_8110	; $02
+	.word @instr_8116	; $03
+	.word @instr_811C	; $04
+	.word @instr_8124	; $05
+	.word @instr_8140	; $06
+	.word @instr_8146	; $07
+	.word @instr_814A	; $08
+	.word @instr_8158	; $09
+	.word @instr_815C	; $0A
+	.word @instr_8176	; $0B
+	.word @instr_8180	; $0C
+	.word @instr_818A	; $0D
+	.word @instr_8194	; $0E
+	.word @instr_819C	; $0F
+	.word @instr_81A6	; $10
+	.word @instr_81AC	; $11
+	.word @instr_81C2	; $12
+	.word @instr_81CD	; $13
+	.word @instr_81D9	; $14
+	.word @instr_81E3	; $15
+	.word @instr_81ED	; $16
+	.word @instr_81F7	; $17
+	.word @instr_81FF	; $18
+	.word @instr_8203	; $19
+	.word @instr_821F	; $1A
+	.word @instr_822B	; $1B
+	.word @instr_823B	; $1C
+	.word @instr_8241	; $1D
+	.word @instr_8245	; $1E
+	.word @instr_8249	; $1F
+	.word @instr_824F	; $20
+	.word @instr_826F	; $21
+	.word @instr_8275	; $22
+	.word @instr_827D	; $23
+	.word @instr_828D	; $24
+	.word @instr_8291	; $25
+	.word @instr_8100	; $26
+	.word @instr_8100	; $27
+	.word @instr_8100	; $28
+	.word @instr_8100	; $29
+	.word @instr_8100	; $2A
+	.word @instr_8293	; $2B
+	.word @instr_8100	; $2C
+	.word @instr_8100	; $2D
+	.word @instr_829D	; $2E
+	.word @instr_82B5	; $2F
+	.word @instr_82BF	; $30
+	.word @instr_82C9	; $31
+	.word @instr_82D1	; $32
+	.word @instr_82FD	; $33
+	.word @instr_831B	; $34
+	.word @instr_8100	; $35
+	.word @instr_8327	; $36
+	.word @instr_8337	; $37
+	.word @instr_833F	; $38
+	.word @instr_8343	; $39
+	.word @instr_8100	; $3A
+	.word @instr_8100	; $3B
+	.word @instr_8100	; $3C
+	.word @instr_8100	; $3D
+	.word @instr_8100	; $3E
+	.word @instr_8100	; $3F
+	.word @instr_834F	; $40
+	.word @instr_835F	; $41
+	.word @instr_8379	; $42
+	.word @instr_8381	; $43
+	.word @instr_8397	; $44
+	.word @instr_83A1	; $45
+	.word @instr_83B3	; $46
+	.word @instr_83C7	; $47
+	.word @instr_840B	; $48
+	.word @instr_840F	; $49
+	.word @instr_8413	; $4A
+	.word @instr_8425	; $4B
+	.word @instr_842B	; $4C
+	.word @instr_8431	; $4D
+	.word @instr_8437	; $4E
+	.word @instr_8100	; $4F
+	.word @instr_843D	; $50
+	.word @instr_844E	; $51
+	.word @instr_845E	; $52
+	.word @instr_8462	; $53
+	.word @instr_846E	; $54
+	.word @instr_8472	; $55
+	.word @instr_8486	; $56
+	.word @instr_84B0	; $57
+	.word @instr_84B4	; $58
+	.word @instr_84C0	; $59
+	.word @instr_8100	; $5A
+	.word @instr_84CC	; $5B
+	.word @instr_84D0	; $5C
+	.word @instr_84DE	; $5D
+	.word @instr_84EE	; $5E
+	.word @instr_8508	; $5F
+	.word @instr_8520	; $60
+	.word @instr_8528	; $61
+	.word @instr_853E	; $62
+	.word @instr_8554	; $63
+	.word @instr_8576	; $64
+	.word @instr_8100	; $65
+	.word @instr_8100	; $66
+	.word @instr_8100	; $67
+	.word @instr_8100	; $68
+	.word @instr_8100	; $69
+	.word @instr_8100	; $6A
+	.word @instr_8100	; $6B
+	.word @instr_8598	; $6C
+	.word @instr_8100	; $6D
+	.word @instr_8100	; $6E
+	.word @instr_859A	; $6F
+	.word @instr_8100	; $70
+	.word @instr_8100	; $71
+	.word @instr_8100	; $72
+	.word @instr_8100	; $73
+	.word @instr_85A0	; $74
+	.word @instr_85A8	; $75
+	.word @instr_8100	; $76
+	.word @instr_8100	; $77
+	.word @instr_8100	; $78
+	.word @instr_8100	; $79
+	.word @instr_8100	; $7A
+	.word @instr_85B3	; $7B
+	.word @instr_8100	; $7C
+	.word @instr_8100	; $7D
+	.word @instr_8100	; $7E
+	.word @instr_8100	; $7F
 
 ; ----------------
 
@@ -694,30 +694,108 @@ tbl_instrument_ptrs:
 
 ; Period table (NTSC)
 tbl_pitches:
-	.word $0000, $0000, $0000, $0000
-	.word $0000, $0000, $0000, $0000
-	.word $0000, $07F2, $0780, $0714
-	.word $06AE, $064E, $05F4, $059E
-	.word $054D, $0501, $04B9, $0475
-	.word $0435, $03F9, $03C0, $038A
-	.word $0357, $0327, $02FA, $02CF
-	.word $02A7, $0281, $025D, $023B
-	.word $021B, $01FC, $01E0, $01C5
-	.word $01AC, $0194, $017D, $0168
-	.word $0153, $0140, $012E, $011D
-	.word $010D, $00FE, $00F0, $00E2
-	.word $00D6, $00CA, $00BE, $00B4
-	.word $00AA, $00A0, $0097, $008F
-	.word $0087, $007F, $0078, $0071
-	.word $006B, $0065, $005F, $005A
-	.word $0055, $0050, $004C, $0047
-	.word $0043, $0040, $003C, $0039
-	.word $0035, $0032, $0030, $002D
-	.word $002A, $0028, $0026, $0024
-	.word $0022, $0020, $001E, $001C
-	.word $001B, $0019, $0018, $0016
-	.word $0015, $0014, $0013, $0012
-	.word $0011, $0010, $000F, $000E
+	.word $0000	; $00	(rest)
+	.word $0000	; $01	N/A
+	.word $0000	; $02	N/A
+	.word $0000	; $03	N/A
+	.word $0000	; $04	N/A
+	.word $0000	; $05	N/A
+	.word $0000	; $06	N/A
+	.word $0000	; $07	N/A
+	.word $0000	; $08	N/A
+	.word $07F1	; $09	A0
+	.word $0780	; $0A	A#0
+	.word $0712	; $0B	B0
+
+	.word $06AD	; $0C	C1
+	.word $064D	; $0D	C#1
+	.word $05F3	; $0E	D1
+	.word $059D	; $0F	D#1
+	.word $054D	; $10	E1
+	.word $0500	; $11	F1
+	.word $04B8	; $12	F#1
+	.word $0475	; $13	G1
+	.word $0435	; $14	G#1
+	.word $03F8 ; $15	A1
+	.word $03BF	; $16	A#1
+	.word $0389	; $17	B1
+	.word $0356	; $18	C2
+	.word $0326	; $19	C#2
+	.word $02F9 ; $1A	D2
+	.word $02CE	; $1B	D#2
+	.word $02A6	; $1C	E2
+	.word $027F	; $1D	F2
+	.word $025C	; $1E	F#2
+	.word $023A	; $1F	G2
+	.word $021A	; $20	G#2
+	.word $01FB	; $21	A2
+	.word $01DF	; $22	A#2
+	.word $01C4	; $23	B2
+
+	.word $01AB	; $24	C3
+	.word $0193	; $25	C#3
+	.word $017C	; $26	D3
+	.word $0167	; $27	D#3
+	.word $0152	; $28	E3
+	.word $013F	; $29	F3
+	.word $012D	; $2A	F#3
+	.word $011C	; $2B	G3
+	.word $010C	; $2C	G#3
+	.word $00FD	; $2D	A3
+	.word $00EF	; $2E	A#3
+	.word $00E2	; $2F	B3
+
+	.word $00D2	; $30	C4
+	.word $00C9	; $31	C#4
+	.word $00BD	; $32	D4
+	.word $00B3	; $33	D#4
+	.word $00A9	; $34	E4
+	.word $009F	; $35	F4
+	.word $0096	; $36	F#4
+	.word $008E	; $37	G4
+	.word $0086	; $38	G#4
+	.word $007E	; $39	A4
+	.word $0077	; $3A	A#4
+	.word $0070	; $3B	B4
+
+	.word $006A	; $3C	C5
+	.word $0064	; $3D	C#5
+	.word $005E	; $3E	D5
+	.word $0059	; $3F	D#5
+	.word $0054	; $40	E5
+	.word $004F	; $41	F5
+	.word $004B	; $42	F#5
+	.word $0046	; $43	G5
+	.word $0042	; $44	G#5
+	.word $003F	; $45	A5
+	.word $003B	; $46	A#5
+	.word $0038	; $47	B5
+
+	.word $0034	; $48	C6
+	.word $0031	; $49	C#6
+	.word $002F	; $4A	D6
+	.word $002C	; $4B	D#6
+	.word $0029	; $4C	E6
+	.word $0027	; $4D	F6
+	.word $0025	; $4E	F#6
+	.word $0023	; $4F	G6
+	.word $0021	; $50	G#6
+	.word $001F	; $51	A6
+	.word $001D	; $52	A#6
+	.word $001B	; $53	B6
+
+	.word $001A	; $54	C7
+	.word $0018	; $55	C#7
+	.word $0017	; $56	D7
+	.word $0015	; $57	D#7
+	.word $0014	; $58	E7
+	.word $0013	; $59	F7
+	.word $0012	; $5A	F#7
+	.word $0011	; $5B	G7
+	.word $0010	; $5C	G#7
+	.word $000F	; $5D	A7
+	.word $000E	; $5E	A#7
+	.word $000D	; $5F	B7
 
 ; -----------------------------------------------------------------------------
 .export tbl_track_ptrs
@@ -756,8 +834,8 @@ tbl_track_ptrs:
 	.word track_silence		; $1D
 	.word track_silence		; $1E
 	.word track_silence		; $1F
-	.word mus_876B			; $20
-	.word mus_88D5			; $21
+	.word mus_menu_jingle	; $20
+	.word mus_player_select	; $21
 	.word track_silence		; $22
 	.word mus_8960			; $23
 	.word mus_8A1A			; $24
@@ -839,7 +917,7 @@ rom_876A:
 ; ----------------
 
 ; Menu intro jingle
-mus_876B:
+mus_menu_jingle:
 	.byte $00
 	.word rom_8703
 	.byte $01
@@ -938,7 +1016,7 @@ rom_88D4:
 ; ----------------
 
 ; Player select / VS screen
-mus_88D5:
+mus_player_select:
 	.byte $00
 	.word rom_877B
 	.byte $01

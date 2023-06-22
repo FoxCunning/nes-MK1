@@ -1269,7 +1269,7 @@ sub_rom_03_AAFE:
 	bne @AB54
 
 	@AB03:
-	jsr sub_rom_B116
+	jsr sub_sound_output
 	jsr sub_rom_AB96
 
 	; Process music channels ($00-$03)
@@ -1532,17 +1532,18 @@ sub_skip_track_data:
 
 ; -----------------------------------------------------------------------------
 
+; Processes a new note or rest that was just read from sound track data
 ; Parameters:
-; A = value read from track data
-sub_process_note_or_rest:
+; A = value from track data ($00-$5F)
+sub_new_note_or_rest:
 	bne :+
 
+		; Zero value = rest
 		jsr sub_advance_track_ptr
 		jmp sub_stop_envelopes
-	; ------------
-
-    ; Unreachable ?
-	rts
+		; ------------
+		; Unreachable ?
+		rts
 ; ----------------
 :
 	pha
@@ -1557,7 +1558,7 @@ sub_process_note_or_rest:
 
 	cpx #$04
 	bne @ACBB	; This does nothing
-
+				; Maybe there was supposed to be DPCM code here
 	@ACBB:
 	ldx ram_cur_channel_offset
 
@@ -1576,19 +1577,19 @@ sub_process_note_or_rest:
 	@noise_channel:
 	tax
 	and #$10
-	beq @ACE1
+	beq :+
 
-	txa
-	and #$0F
-	ora #$80
-	tax
-	@ACE1:
+		txa
+		and #$0F
+		ora #$80
+		tax
+	:
 	txa
 	ldx ram_cur_chan_ptr_offset
 	sta ram_cur_period_lo,X
 
 	@ACE8:
-	jsr sub_rom_AEF6
+	jsr sub_start_all_envelopes
 	jsr sub_advance_track_ptr
 	rts
 
@@ -1802,7 +1803,7 @@ sub_get_next_track_byte:
 	bmi :+
 
 		; Note value ($00-$7F)
-		jmp sub_process_note_or_rest
+		jmp sub_new_note_or_rest
 		; --------
 :
 	tax
@@ -1880,8 +1881,8 @@ sub_cmd_stop_playing:
 	adc #$76	; Add offset for SFX channels
 	tay
 	lda #$FF
-	sta ram_074E,X
-	sta ram_074E,Y
+	sta ram_note_period_hi,X
+	sta ram_note_period_hi,Y
 ; ----------------
 sub_stop_envelopes:
 	ldy ram_cur_channel_offset
@@ -1947,11 +1948,11 @@ sub_cmd_jump_after_loop:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_AEF6:
+sub_start_all_envelopes:
 	ldx ram_cur_chan_ptr_offset
-	lda ram_074E,X
+	lda ram_note_period_hi,X
 	ora #$80
-	sta ram_074E,X
+	sta ram_note_period_hi,X
 	jsr sub_start_volume_envelope
 	jsr sub_start_duty_envelope
 	jsr sub_start_pitch_envelope
@@ -2065,6 +2066,7 @@ sub_track_read_next_byte:
 
 ; Processes the next event in each envelope for the current channel
 sub_apply_envelopes:
+	; This could be removed by simply eliminating all RTS except the last
 	jsr sub_next_volume_envelope
 	jsr sub_next_duty_envelope
 	jsr sub_next_pitch_envelope
@@ -2080,7 +2082,7 @@ sub_next_volume_envelope:
 	cpx #$04
 	bpl @skip_volume_env	; Is this supposed to skip DPCM channels?
 
-	@process_volume_env:
+	@next_volume_env:
 	ldx ram_cur_channel_offset
 
 	lda ram_cur_vol_env_duration,X
@@ -2110,7 +2112,7 @@ sub_next_volume_envelope:
 			sta ram_cur_vol_env_duration,X
 			tay					; Same as above
 			cpy #$FF
-			bne @process_volume_env
+			bne @next_volume_env
 
 			; Found $FF at end of envelope data
 			ldx ram_cur_chan_ptr_offset
@@ -2135,7 +2137,7 @@ sub_next_volume_envelope:
 			ldy #$00
 			lda (zp_ptr2_lo),Y
 			sta ram_cur_vol_env_duration,X
-			jmp @process_volume_env
+			jmp @next_volume_env
 
 		@vol_env_still_running:
 		; Current value still running, or we just started a new one:
@@ -2153,63 +2155,64 @@ sub_next_duty_envelope:
 	and #$0F
 	tax
 	cpx #$02
-	bpl @B0A5
+	bpl @skip_duty_env
 
-	@B03D:
-	ldx ram_cur_channel_offset
-	lda ram_cur_duty_env_duration,X
-	tay
-	cpy #$FF
-	beq @B0A5
+		@next_duty_env:
+		ldx ram_cur_channel_offset
+		lda ram_cur_duty_env_duration,X
+		tay
+		cpy #$FF
+		beq @skip_duty_env
 
-	ldx ram_cur_channel_offset
-	lda ram_cur_duty_env_duration,X
-	bne @B0A2
+			ldx ram_cur_channel_offset
+			lda ram_cur_duty_env_duration,X
+			bne @duty_env_still_running
 
-	ldx ram_cur_chan_ptr_offset
-	lda #$02
-	clc
-	adc ram_duty_env_ptr_lo,X
-	sta ram_duty_env_ptr_lo,X
-	sta zp_ptr2_lo
-	lda #$00
-	adc ram_duty_env_ptr_hi,X
-	sta ram_duty_env_ptr_hi,X
-	sta zp_ptr2_hi
-	ldx ram_cur_channel_offset
-	ldy #$00
-	lda (zp_ptr2_lo),Y
-	sta ram_cur_duty_env_duration,X
-	tay
-	cpy #$FF
-	bne @B03D
+				ldx ram_cur_chan_ptr_offset
+				lda #$02
+				clc
+				adc ram_duty_env_ptr_lo,X
+				sta ram_duty_env_ptr_lo,X
+				sta zp_ptr2_lo
+				lda #$00
+				adc ram_duty_env_ptr_hi,X
+				sta ram_duty_env_ptr_hi,X
+				sta zp_ptr2_hi
+				ldx ram_cur_channel_offset
+				ldy #$00
+				lda (zp_ptr2_lo),Y
+				sta ram_cur_duty_env_duration,X
+				tay
+				cpy #$FF
+				bne @next_duty_env
 
-	ldx ram_cur_chan_ptr_offset
-	ldy #$01
-	lda (zp_ptr2_lo),Y
-	and #$FE
-	bpl @B095
+				ldx ram_cur_chan_ptr_offset
+				ldy #$01
+				lda (zp_ptr2_lo),Y
+				and #$FE
+				bpl @B095
 
-	clc
-	adc ram_duty_env_ptr_lo,X
-	sta ram_duty_env_ptr_lo,X
-	sta zp_ptr2_lo
-	bcs @B090
+					clc
+					adc ram_duty_env_ptr_lo,X
+					sta ram_duty_env_ptr_lo,X
+					sta zp_ptr2_lo
+					bcs @B090
 
-	dec ram_duty_env_ptr_hi,X
-	@B090:
-	lda ram_duty_env_ptr_hi,X
-	sta zp_ptr2_hi
-	@B095:
-	ldx ram_cur_channel_offset
-	ldy #$00
-	lda (zp_ptr2_lo),Y
-	sta ram_cur_duty_env_duration,X
-	jmp @B03D
+						dec ram_duty_env_ptr_hi,X
+					@B090:
+					lda ram_duty_env_ptr_hi,X
+					sta zp_ptr2_hi
+					
+				@B095:
+				ldx ram_cur_channel_offset
+				ldy #$00
+				lda (zp_ptr2_lo),Y
+				sta ram_cur_duty_env_duration,X
+				jmp @next_duty_env
 
-	@B0A2:
-	dec ram_cur_duty_env_duration,X
-	@B0A5:
+			@duty_env_still_running:
+			dec ram_cur_duty_env_duration,X
+	@skip_duty_env:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -2220,83 +2223,87 @@ sub_next_pitch_envelope:
 	and #$0F
 	tax
 	cpx #$04
-	bpl @B115
+	bpl @skip_pitch_env
 
-	@B0B0:
-	ldx ram_cur_channel_offset
-	lda ram_cur_pitch_env_duration,X
-	tay
-	cpy #$FF
-	beq @B115
+		@next_pitch_env:
+		ldx ram_cur_channel_offset
+		lda ram_cur_pitch_env_duration,X
+		tay
+		cpy #$FF
+		beq @skip_pitch_env
 
-	lda ram_cur_pitch_env_duration,X
-	bne @B112
+			lda ram_cur_pitch_env_duration,X
+			bne @duty_env_still_running
 
-	ldx ram_cur_chan_ptr_offset
-	lda #$02
-	clc
-	adc ram_077B,X
-	sta ram_077B,X
-	sta zp_ptr2_lo
-	lda #$00
-	adc ram_077C,X
-	sta ram_077C,X
-	sta zp_ptr2_hi
-	ldx ram_cur_channel_offset
-	ldy #$00
-	lda (zp_ptr2_lo),Y
-	sta ram_cur_pitch_env_duration,X
-	tay
-	cpy #$FF
-	bne @B0B0
+				ldx ram_cur_chan_ptr_offset
+				lda #$02
+				clc
+				adc ram_077B,X
+				sta ram_077B,X
+				sta zp_ptr2_lo
+				lda #$00
+				adc ram_077C,X
+				sta ram_077C,X
+				sta zp_ptr2_hi
+				ldx ram_cur_channel_offset
+				ldy #$00
+				lda (zp_ptr2_lo),Y
+				sta ram_cur_pitch_env_duration,X
+				tay
+				cpy #$FF
+				bne @next_pitch_env
 
-	ldx ram_cur_chan_ptr_offset
-	ldy #$01
-	lda (zp_ptr2_lo),Y
-	and #$FE
-	bpl @B105
+				ldx ram_cur_chan_ptr_offset
+				ldy #$01
+				lda (zp_ptr2_lo),Y
+				and #$FE
+				bpl @B105
 
-	clc
-	adc ram_077B,X
-	sta ram_077B,X
-	sta zp_ptr2_lo
-	bcs @B100
+					clc
+					adc ram_077B,X
+					sta ram_077B,X
+					sta zp_ptr2_lo
+					bcs @B100
 
-	dec ram_077C,X
-	@B100:
-	lda ram_077C,X
-	sta zp_ptr2_hi
-	@B105:
-	ldx ram_cur_channel_offset
-	ldy #$00
-	lda (zp_ptr2_lo),Y
-	sta ram_cur_pitch_env_duration,X
-	jmp @B0B0
+						dec ram_077C,X
+					@B100:
+					lda ram_077C,X
+					sta zp_ptr2_hi
 
-	@B112:
-	dec ram_cur_pitch_env_duration,X
-	@B115:
+				@B105:
+				ldx ram_cur_channel_offset
+				ldy #$00
+				lda (zp_ptr2_lo),Y
+				sta ram_cur_pitch_env_duration,X
+				jmp @next_pitch_env
+
+			@duty_env_still_running:
+			dec ram_cur_pitch_env_duration,X
+	@skip_pitch_env:
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B116:
-	jsr sub_rom_B123
-	jsr sub_rom_B175
-	jsr sub_rom_B1C7
-	jsr sub_rom_B216
+; Applies envelopes, notes and effects to all channels
+sub_sound_output:
+	; Why process them one by one?
+	; Just remove all RTS and there is no need for JSR
+	jsr sub_sq0_output
+	jsr sub_sq1_output
+	jsr sub_trg_output
+	jsr sub_noise_output
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B123:
-	ldx #$76
+sub_sq0_output:
+	ldx #$76		; SFX indices
 	ldy #$76
 	lda ram_079F
 	ora ram_07A0
 	bne :+
 
-		ldx #$00
+		ldx #$00	; Music indices
 		ldy #$00
 :
 	jsr sub_apply_volume_envelope
@@ -2310,6 +2317,7 @@ sub_rom_B123:
 	ora #$30
 	sta Sq0Duty_4000
 	jsr sub_apply_pitch_envelope
+
 	lda #$00
 	sta zp_ptr2_hi
 	lda zp_ptr2_lo
@@ -2320,9 +2328,10 @@ sub_rom_B123:
 	lda ram_cur_period_lo,Y
 	clc
 	adc zp_ptr2_lo
-	sta ram_074D,Y
+	sta ram_note_period_lo,Y
 	sta Sq0Timer_4002
-	lda ram_074E,Y
+
+	lda ram_note_period_hi,Y
 	sta zp_ptr2_lo
 	lda ram_cur_period_hi,Y
 	adc zp_ptr2_hi
@@ -2330,7 +2339,7 @@ sub_rom_B123:
 	cpx zp_ptr2_lo
 	beq :+
 
-		sta ram_074E,Y
+		sta ram_note_period_hi,Y
 		ora #$F8
 		sta Sq0Length_4003
 :
@@ -2338,14 +2347,14 @@ sub_rom_B123:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B175:
-	ldx #$77
+sub_sq1_output:
+	ldx #$77		; SFX indices
 	ldy #$78
 	lda ram_07A1
 	ora ram_07A2
 	bne :+
 
-		ldx #$01
+		ldx #$01	; Music indices
 		ldy #$02
 :
 	jsr sub_apply_volume_envelope
@@ -2369,9 +2378,9 @@ sub_rom_B175:
 	lda ram_cur_period_lo,Y
 	clc
 	adc zp_ptr2_lo
-	sta ram_074D,Y
+	sta ram_note_period_lo,Y
 	sta Sq1Timer_4006
-	lda ram_074E,Y
+	lda ram_note_period_hi,Y
 	sta zp_ptr2_lo
 	lda ram_cur_period_hi,Y
 	adc zp_ptr2_hi
@@ -2379,7 +2388,7 @@ sub_rom_B175:
 	cpx zp_ptr2_lo
 	beq :+
 
-		sta ram_074E,Y
+		sta ram_note_period_hi,Y
 		ora #$F8
 		sta Sq1Length_4007
 :
@@ -2387,16 +2396,16 @@ sub_rom_B175:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B1C7:
-	ldx #$78
+sub_trg_output:
+	ldx #$78		; SFX indices
 	ldy #$7A
 	lda ram_07A3
 	ora ram_07A4
-	bne @B1D7
+	bne :+
 
-	ldx #$02
-	ldy #$04
-	@B1D7:
+		ldx #$02	; Music indices
+		ldy #$04
+:
 	jsr sub_apply_volume_envelope
 	lda zp_ptr2_lo
 	beq @B1E0
@@ -2416,34 +2425,34 @@ sub_rom_B1C7:
 	lda ram_cur_period_lo,Y
 	clc
 	adc zp_ptr2_lo
-	sta ram_074D,Y
+	sta ram_note_period_lo,Y
 	sta TrgTimer_400A
-	lda ram_074E,Y
+	lda ram_note_period_hi,Y
 	sta zp_ptr2_lo
 	lda ram_cur_period_hi,Y
 	adc zp_ptr2_hi
 	tax
 	cpx zp_ptr2_lo
-	beq @B215
+	beq :+
 
-	sta ram_074E,Y
-	ora #$F8
-	sta TrgLength_400B
-	@B215:
+		sta ram_note_period_hi,Y
+		ora #$F8
+		sta TrgLength_400B
+:
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B216:
-	ldx #$79
+sub_noise_output:
+	ldx #$79		; SFX indices
 	ldy #$7C
 	lda ram_07A5
 	ora ram_07A6
-	bne @B226
+	bne :+
 
-	ldx #$03
-	ldy #$06
-	@B226:
+		ldx #$03	; Music indices
+		ldy #$06
+:
 	jsr sub_apply_volume_envelope
 	lda zp_ptr2_lo
 	ora #$30
@@ -2459,19 +2468,20 @@ sub_rom_B216:
 
 ; -----------------------------------------------------------------------------
 
+; Returns:
+; zp_ptr2_lo: current valut of volume envelope
 sub_apply_volume_envelope:
 	tya
 	pha
 
 	lda ram_cur_vol_env_duration,X
-	tay
+	tay		; No need to put this in Y, it's not used
 	cpy #$FF
-	bne @B251
+	bne :+
 
 		lda #$00
 		jmp @B262
-
-	@B251:
+:
 	pla
 	pha
 	tay

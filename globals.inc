@@ -364,10 +364,12 @@ ram_cur_note_duration = $0734   ; Size=4
 ram_track_speed_counter = $0739 ; Size=4
 ; Frames left for current note to play
 ram_note_frames_left = $073A    ; Size=4
-ram_cur_period_lo = $0743    ;
-ram_cur_period_hi = $0744    ;
-ram_074D = $074D    ;
-ram_074E = $074E    ;
+ram_cur_period_lo = $0743   ;
+ram_cur_period_hi = $0744   ;
+; Base value for the period register, before applying envelopes and effects
+ram_note_period_lo = $074D  ;
+; Base value for the period register, before applying envelopes and effects
+ram_note_period_hi = $074E  ;
 ; ----------------
 ; Index of duty envelope, one per channel
 ram_vol_env_idx = $0757             ; Size=4
@@ -381,7 +383,7 @@ ram_vol_env_ptr_hi = $0762    ;
 ; Index of duty envelope, one per channel (only used for Square wave channels)
 ram_duty_env_idx = $076B            ; Size=4
 ; Ticks left for current value of instrument's duty evenlope
-ram_cur_duty_env_duration = $076D    ; Size=4
+ram_cur_duty_env_duration = $076D   ; Size=4
 ram_duty_env_ptr_lo = $076F    ;
 ram_duty_env_ptr_hi = $0770    ;
 ; ----------------
@@ -401,8 +403,8 @@ ram_07A4 = $07A4    ;
 ram_07A5 = $07A5    ;
 ram_07A6 = $07A6    ;
 ram_sfx_vol_env_duration = $07D2    ;
-ram_sfx_duty_env_duration = $07E3    ;
-ram_sfx_pitch_env_duration = $07ED    ;
+ram_sfx_duty_env_duration = $07E3   ;
+ram_sfx_pitch_env_duration = $07ED  ;
 
 
 ; -----------------------------------------------------------------------------
