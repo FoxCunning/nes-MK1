@@ -1612,20 +1612,20 @@ sub_process_track_command:
 ; ----------------
 
 tbl_track_cmd_ptrs:
-	.word sub_cmd_call_seg		; $F0
-	.word sub_cmd_end_seg		; $F1
-	.word sub_cmd_start_loop	; $F2	Not used
-	.word sub_cmd_end_loop		; $F3	Not used
-	.word sub_cmd_track_jump	; $F4
-	.word sub_cmd_track_speed	; $F5
-	.word sub_cmd_transpose		; $F6
+	.word sub_cmd_call_seg			; $F0
+	.word sub_cmd_end_seg			; $F1
+	.word sub_cmd_start_loop		; $F2	Not used
+	.word sub_cmd_end_loop			; $F3	Not used
+	.word sub_cmd_track_jump		; $F4
+	.word sub_cmd_track_speed		; $F5
+	.word sub_cmd_transpose			; $F6
 	.word sub_get_next_track_byte	; $F7	(this byte is skipped)
-	.word sub_cmd_set_vol_env	; $F8
-	.word sub_cmd_set_duty_env	; $F9
-	.word sub_cmd_set_pitch_env	; $FA
+	.word sub_cmd_set_vol_env		; $F8
+	.word sub_cmd_set_duty_env		; $F9
+	.word sub_cmd_set_pitch_env		; $FA
 	.word sub_cmd_jump_after_loop	; $FB	Not used
-	.word sub_skip_track_data	; $FC	(does nothing)
-	.word sub_cmd_note_duration	; $FD	Not used ($8x in track data directly)
+	.word sub_skip_track_data		; $FC	(does nothing)
+	.word sub_cmd_note_duration		; $FD	Not used ($8x in track data directly)
 	.word sub_get_next_track_byte	; $FE	(this byte is skipped)
 	.word sub_cmd_stop_playing		; $FF
 
