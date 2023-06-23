@@ -1976,10 +1976,10 @@ sub_start_volume_envelope:
 	lda ram_vol_env_idx,X
 	asl A
 	tax
-	lda tbl_instrument_ptrs+0,X
+	lda tbl_vol_env_ptrs+0,X
 	sta ram_vol_env_ptr_lo,Y
 	sta zp_ptr2_lo
-	lda tbl_instrument_ptrs+1,X
+	lda tbl_vol_env_ptrs+1,X
 	sta ram_vol_env_ptr_hi,Y
 	sta zp_ptr2_hi
 	ldx ram_cur_channel_offset
@@ -2006,10 +2006,10 @@ sub_start_duty_envelope:
 	lda ram_duty_env_idx,X
 	asl A
 	tax
-	lda tbl_instrument_ptrs+0,X
+	lda tbl_duty_env_ptrs+0,X
 	sta ram_duty_env_ptr_lo,Y
 	sta zp_ptr2_lo
-	lda tbl_instrument_ptrs+1,X
+	lda tbl_duty_env_ptrs+1,X
 	sta ram_duty_env_ptr_hi,Y
 	sta zp_ptr2_hi
 	ldx ram_cur_channel_offset
@@ -2036,11 +2036,11 @@ sub_start_pitch_envelope:
 	lda ram_pitch_env_idx,X
 	asl A
 	tax
-	lda tbl_instrument_ptrs+0,X
-	sta ram_077B,Y
+	lda tbl_pitch_env_ptrs+0,X
+	sta ram_pitch_env_ptr_lo,Y
 	sta zp_ptr2_lo
-	lda tbl_instrument_ptrs+1,X
-	sta ram_077C,Y
+	lda tbl_pitch_env_ptrs+1,X
+	sta ram_pitch_env_ptr_hi,Y
 	sta zp_ptr2_hi
 	ldx ram_cur_channel_offset
 	ldy #$00
@@ -2118,7 +2118,8 @@ sub_next_volume_envelope:
 			ldx ram_cur_chan_ptr_offset
 			ldy #$01	; Read next byte (which is the last)
 			lda (zp_ptr2_lo),Y
-			and #$FE	; Make the number even (a x2 multiplier would have been better)
+			;and #$FE	; Make the number even (a x2 multiplier would have been better)
+			asl A
 			bpl @B022
 
 				; A negative value will move the pointer back
@@ -2189,7 +2190,8 @@ sub_next_duty_envelope:
 				ldx ram_cur_chan_ptr_offset
 				ldy #$01
 				lda (zp_ptr2_lo),Y
-				and #$FE
+				; and #$FE
+				asl A
 				bpl @B095
 
 					clc
@@ -2233,17 +2235,17 @@ sub_next_pitch_envelope:
 		beq @skip_pitch_env
 
 			lda ram_cur_pitch_env_duration,X
-			bne @duty_env_still_running
+			bne @pitch_env_still_running
 
 				ldx ram_cur_chan_ptr_offset
 				lda #$02
 				clc
-				adc ram_077B,X
-				sta ram_077B,X
+				adc ram_pitch_env_ptr_lo,X
+				sta ram_pitch_env_ptr_lo,X
 				sta zp_ptr2_lo
 				lda #$00
-				adc ram_077C,X
-				sta ram_077C,X
+				adc ram_pitch_env_ptr_hi,X
+				sta ram_pitch_env_ptr_hi,X
 				sta zp_ptr2_hi
 				ldx ram_cur_channel_offset
 				ldy #$00
@@ -2256,18 +2258,19 @@ sub_next_pitch_envelope:
 				ldx ram_cur_chan_ptr_offset
 				ldy #$01
 				lda (zp_ptr2_lo),Y
-				and #$FE
+				; and #$FE
+				asl A
 				bpl @B105
 
 					clc
-					adc ram_077B,X
-					sta ram_077B,X
+					adc ram_pitch_env_ptr_lo,X
+					sta ram_pitch_env_ptr_lo,X
 					sta zp_ptr2_lo
 					bcs @B100
 
-						dec ram_077C,X
+						dec ram_pitch_env_ptr_hi,X
 					@B100:
-					lda ram_077C,X
+					lda ram_pitch_env_ptr_hi,X
 					sta zp_ptr2_hi
 
 				@B105:
@@ -2277,7 +2280,7 @@ sub_next_pitch_envelope:
 				sta ram_cur_pitch_env_duration,X
 				jmp @next_pitch_env
 
-			@duty_env_still_running:
+			@pitch_env_still_running:
 			dec ram_cur_pitch_env_duration,X
 	@skip_pitch_env:
 	rts
@@ -2457,6 +2460,7 @@ sub_noise_output:
 	lda zp_ptr2_lo
 	ora #$30
 	sta NoiseVolume_400C
+
 	jsr sub_apply_pitch_envelope
 	lda ram_cur_period_lo,Y
 	clc
@@ -2464,6 +2468,7 @@ sub_noise_output:
 	sta NoisePeriod_400E
 	lda #$F8
 	sta NoiseLength_400F
+	
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -2546,9 +2551,9 @@ sub_apply_pitch_envelope:
 	pla
 	pha
 	tay
-	lda ram_077B,Y
+	lda ram_pitch_env_ptr_lo,Y
 	sta zp_ptr2_lo
-	lda ram_077C,Y
+	lda ram_pitch_env_ptr_hi,Y
 	sta zp_ptr2_hi
 	ldy #$01
 	lda (zp_ptr2_lo),Y

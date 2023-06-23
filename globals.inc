@@ -392,8 +392,10 @@ ram_pitch_env_idx = $0773           ; Size=4
 ; Ticks left for current value of instrument's pitch evenlope
 ram_cur_pitch_env_duration = $0777  ; Size=4
 ; ----------------
-ram_077B = $077B    ;
-ram_077C = $077C    ;
+; Pointer to the current position in the pitch envelope
+ram_pitch_env_ptr_lo = $077B    ;
+; Pointer to the current position in the pitch envelope
+ram_pitch_env_ptr_hi = $077C    ;
 ram_079F = $079F    ;
 ram_07A0 = $07A0    ;
 ram_07A1 = $07A1    ;

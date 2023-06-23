@@ -15,12 +15,84 @@ NOTES = ["(Rest)", "(Rest)", "(Rest)", "(Rest)", "(Rest)", "(Rest)", "(Rest)", "
          ]
 
 NOISE = [
-    0x31, 0x55, 0x30, 0x2F, 0x2E, 0x2D, 0x2C, 0x51, 0x2B, 0x2A, 0x29, 0x28, 0x27, 0x26, 0x25, 0x24
+    0x0F, 0x0E, 0x0D, 0x0C, 0x0B, 0x0A, 0x09, 0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, 0x00
 ]
 
 # noinspection SpellCheckingInspection
 EVENTS = ["CALL SEGMENT", "END SEGMENT", "LOOP START", "LOOP END", "JUMP", "SPEED", "TRANSPOSE", "SKIP",
           "VOL ENV", "DUTY ENV", "PITCH ENV", "LOOP JUMP", "NOP", "UNUSED", "SKIP", "STOP"]
+
+
+class FmtMacro:
+    """
+    FamiTracker Macro structure (envelope/arpeggio)
+    """
+
+    def __init__(self, text: str):
+        split = text.split()
+        # 0: volume, 1: arpeggio, 2: pitch, 3: hi-pitch, 4: duty/noise
+        self.type = int(split[1])
+        self.id = int(split[2])
+        self.loop_offset = int(split[3])
+        # TODO Release is not yet implemented
+        self.release_offset = int(split[4])
+        # 16/64 steps for volume envelopes, Absolute/Fixed/Relative/Scheme for arpeggios, Absolute/Relative for pitch
+        self.flag = int(split[5])
+
+        self.values: List[int] = []
+        for v in range(7, len(split)):
+            n = int(split[v])
+            if n < 0:
+                # 8-bit signed conversion
+                n = n + 0x100
+            self.values.append(n)
+
+        # Formatted data for the MK1 sound engine
+        self.data: List[int] = []
+        count = 0   # Count of repeated bytes
+        index = 0   # Keep count of where we are for loop and release offsets
+        loop_position = -1
+        last_value = self.values[0]
+        for v in self.values[1:]:
+            if index == self.loop_offset - 1:
+                # Loop offset reached, stop any sequence, so we can loop exactly from here
+                self.data.append(count + 1)
+                self.data.append(last_value)
+                loop_position = len(self.data) + 2
+                # Start a new sequence
+                count = 0
+
+            elif v == last_value:
+                count += 1
+
+            elif count > 0:
+                self.data.append(count + 1)
+                self.data.append(last_value)
+                count = 0
+
+            else:
+                self.data.append(1)
+                self.data.append(last_value)
+
+            index += 1
+            last_value = v
+
+        # Add the last value that was not caught by the loop
+        if count > 0:
+            self.data.append(count + 1)
+            self.data.append(last_value)
+        else:
+            self.data.append(1)
+            self.data.append(last_value)
+
+        # Termination byte
+        self.data.append(0xFF)
+
+        # Either stop or loop
+        if self.loop_offset > -1:
+            self.data.append(0xFF - (len(self.data) - loop_position)//2)
+        else:
+            self.data.append(0)
 
 
 class FmtInstrument:
@@ -33,9 +105,9 @@ class FmtInstrument:
         split = text.split()
         self.id = int(split[1])
         self.volume_idx = int(split[2])
-        self.duty_idx = int(split[3])
+        self.arp_idx = int(split[3])
         self.pitch_idx = int(split[4])
-        self.arp_idx = int(split[6])
+        self.duty_idx = int(split[6])
 
 
 instruments: List[FmtInstrument] = []
@@ -74,7 +146,7 @@ class FmtRow:
             event = self.event
 
         try:
-            noise = NOISE[int(event[0], 16)]
+            noise = int(event[0], 16)  # NOISE[int(event[0], 16)]
 
         except ValueError:
             print(f"!WARNING: Invalid noise value: '{event}'.")
@@ -98,7 +170,10 @@ class Channel:
     EVENT_SETSPEED = 0xF5  # Set song speed
 
     # noinspection SpellCheckingInspection
-    EVENT_VOL_ENV = 0xF8  # Change volume envelope
+    EVENT_VOL_ENV = 0xF8  # Set volume envelope
+    EVENT_DUTY_ENV = 0xF9  # Set duty envelope
+    EVENT_PITCH_ENV = 0xFA  # Set pitch envelope
+
     EVENT_MUTE = 0xFE  # *UNIMPLEMENTED* Mute channel for specified amount of ticks
 
     EVENT_HOLD = 0xFE  # *UNIMPLEMENTED* reload the duration counter with the specified value
@@ -196,6 +271,14 @@ class Channel:
                 self.last_vol_env = instruments[parameter].volume_idx
                 self.asm += f", ${self.last_vol_env:02X}\t; {name} {instruments[parameter].name}\n"
 
+            elif event == Channel.EVENT_DUTY_ENV:
+                self.last_duty_env = instruments[parameter].duty_idx
+                self.asm += f", ${self.last_duty_env:02X}\t; {name} {instruments[parameter].name}\n"
+
+            elif event == Channel.EVENT_PITCH_ENV:
+                self.last_pitch_env = instruments[parameter].pitch_idx
+                self.asm += f", ${self.last_pitch_env:02X}\t; {name} {instruments[parameter].name}\n"
+
             elif event == Channel.EVENT_TIMBRE:
                 print("!!! Unimplemented command: set timbre")
                 # if self.id < 2:
@@ -257,7 +340,7 @@ class Channel:
                 name = EVENTS[self.current_event & 0x7F]
             else:
                 if self.id == Channel.ID_NOISE:
-                    name = f"{NOISE.index(self.current_event):02X}-#"
+                    name = f"{self.current_event:02X}-#"
                 else:
                     name = NOTES[self.current_event]
 
@@ -268,25 +351,86 @@ class Channel:
         # Also warn if duration is negative
         elif self.current_duration < 0:
             print(f"![Ch{self.id}-P{self.current_pattern:02X}] \n" +
-                  f"WARNING: Negative duration ({self.current_duration}) for event: ${self.current_event:02X}")
+                  f"!WARNING: Negative duration ({self.current_duration}) for event: ${self.current_event:02X}")
 
         self.current_event = Channel.EVENT_NO_EVENT
         self.current_duration = -1
 
 
+def export_instruments(file_name: str, lines: List[str]):
+    found_macros = False
+    macros: List[FmtMacro] = []
+
+    for line in lines:
+        if found_macros is False and line[:11] == "# SEQUENCES":
+            found_macros = True
+
+        elif found_macros:
+            if len(line) == 0 or line[0] == '#':
+                break
+
+            elif line[:5] == "MACRO":
+                macros.append(FmtMacro(line))
+
+    print(f"Exporting {len(macros)} envelopes...")
+    try:
+        file_name.rindex('.')
+    except ValueError:
+        file_name = file_name + ".asm"
+
+    pointers = ["tbl_vol_env_ptrs:\n", "tbl_arp_ptrs:\n", "tbl_pitch_env_ptrs:\n", "", "tbl_duty_env_ptrs:\n"]
+
+    data = ["", "", "", "", ""]
+
+    for m in macros:
+        # Label
+        data[m.type] += "\n; -----------------\n\n"
+        if m.type == 0:
+            pointers[m.type] += f"\t.word @vol_env_{m.id:02X}\n"
+            data[m.type] += f"\t@vol_env_{m.id:02X}:\n"
+        elif m.type == 1:
+            pointers[m.type] += f"\t.word @arp_{m.id:02X}\n"
+            data[m.type] += f"\t@arp_{m.id:02X}:\n"
+        elif m.type == 2:
+            pointers[m.type] += f"\t.word @pitch_env_{m.id:02X}\n"
+            data[m.type] += f"\t@pitch_env_{m.id:02X}:\n"
+        elif m.type == 3:
+            # Skip hi-pitch envelopes
+            continue
+        elif m.type == 4:
+            pointers[m.type] += f"\t.word @duty_env_{m.id:02X}\n"
+            data[m.type] += f"\t@duty_env_{m.id:02X}:\n"
+
+        # Data
+        data[m.type] += f"\t.byte ${m.data[0]:02X}"  # There is always at least one value
+        count = 1  # Keep count to have max 8 bytes per line
+        for d in m.data[1:]:
+            if count == 8:
+                count = 0
+                data[m.type] += f"\n\t.byte"
+            else:
+                data[m.type] += ","
+            data[m.type] += f" ${d:02X}"
+            count += 1
+        data[m.type] += "\n"
+
+    with open(file_name, "w") as out_fd:
+        for t in range(0, 3):
+            out_fd.write("; ------------------------------------------------------------------------------\n\n")
+            out_fd.write(pointers[t])
+            out_fd.write(data[t] + "\n")
+        out_fd.write(pointers[4])
+        out_fd.write(data[4])
+
+
 def main():
     if len(sys.argv) < 4:
-        print(f"Usage: {sys.argv[0]} <input file> <output name> <track name> [loop offset]")
+        print(f"Usage: {sys.argv[0]} <input file> <output name> <track name|-i|--instruments>")
         return
 
     in_name = sys.argv[1]
     out_name = sys.argv[2]
     seek_track = sys.argv[3]
-
-    if len(sys.argv) > 4:
-        loop_offset = int(sys.argv[4], 10)
-    else:
-        loop_offset = 0
 
     with open(in_name, "r") as fd_in:
         lines = fd_in.read().splitlines()
@@ -308,9 +452,14 @@ def main():
 
     # Sanity check
     if instruments_found is False or len(instruments) == 0:
-        print("WARNING: Could not read instrument definitions.")
+        print("!!!ERROR: Could not read instrument definitions.")
+        sys.exit(1)
     else:
         print(f"Found {len(instruments)} instruments.")
+
+    if seek_track == "-i" or seek_track == "--instruments":
+        export_instruments(out_name, lines)
+        sys.exit(0)
 
     # ---- Find the first track
     track_line = 0
@@ -329,9 +478,9 @@ def main():
 
     if track_line >= length:
         if seek_track != "":
-            print(f"ERROR: Could not find track '{seek_track}'!")
+            print(f"!!!ERROR: Could not find track '{seek_track}'!")
         else:
-            print("ERROR: Could not find the first track!")
+            print("!!!ERROR: Could not find the first track!")
         return
 
     track = lines[track_line:]
@@ -339,7 +488,7 @@ def main():
     # ---- Retrieve song speed
     split = track[0].split()
     if len(split) < 4:
-        print("ERROR: Could not find speed value!")
+        print("!!!ERROR: Could not find speed value!")
         return
 
     speed = int(split[2])
@@ -442,7 +591,7 @@ def main():
                         # For each channel, calculate the byte offset to that frame and set that as the looping point
                         for channel in range(4):
                             # Add 3 bytes to skip the jump event itself, and add global loop offset from parameters
-                            channels[channel].loop_offset = 3 + loop_offset
+                            channels[channel].loop_offset = 3  # + loop_offset
                             for frame in range(value):
                                 # Try to adjust offset to accommodate the imprecise frame size count
                                 channels[channel].loop_offset += channels[channel].frame_size[frame] + 2
@@ -789,8 +938,11 @@ def main():
 
                         if vol_env != channels[c].last_vol_env:
                             channels[c].instant_event(Channel.EVENT_VOL_ENV, row.instrument)
-                        # TODO Duty
-                        # TODO Pitch
+                        if duty_env != channels[c].last_duty_env:
+                            channels[c].instant_event(Channel.EVENT_DUTY_ENV, row.instrument)
+                        if pitch_env != channels[c].last_pitch_env:
+                            channels[c].instant_event(Channel.EVENT_PITCH_ENV, row.instrument)
+
                         # TODO Arpeggio
 
                     # Check if we need to change the volume

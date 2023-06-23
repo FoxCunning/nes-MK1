@@ -19,6 +19,7 @@ your_destiny_ch0:
 	.byte $82		; Note length = 2
 	.byte $00		; (Rest), 2 ticks
 	.byte $F8, $09	; VOL ENV Pluck
+	.byte $F9, $02	; DUTY ENV Pluck
 	.byte $81		; Note length = 1
 	.byte $23		; B-2, 1 ticks
 	.byte $23		; B-2, 1 ticks
@@ -40,7 +41,8 @@ your_destiny_ch0:
 	.byte $23		; B-2, 2 ticks
 	.byte $21		; A-2, 2 ticks
 	.byte $1E		; F#2, 2 ticks
-	.byte $F1		; END SEGMENT
+	.byte $F4
+	.word @frame_00
 
 
 your_destiny_ch1:
@@ -52,6 +54,7 @@ your_destiny_ch1:
 	.byte $82		; Note length = 2
 	.byte $00		; (Rest), 2 ticks
 	.byte $F8, $09	; VOL ENV Pluck
+	.byte $F9, $02	; DUTY ENV Pluck
 	.byte $81		; Note length = 1
 	.byte $28		; E-3, 1 ticks
 	.byte $28		; E-3, 1 ticks
@@ -73,7 +76,8 @@ your_destiny_ch1:
 	.byte $28		; E-3, 2 ticks
 	.byte $26		; D-3, 2 ticks
 	.byte $23		; B-2, 2 ticks
-	.byte $F1		; END SEGMENT
+	.byte $F4
+	.word @frame_00
 
 
 your_destiny_ch2:
@@ -99,7 +103,8 @@ your_destiny_ch2:
 	.byte $00		; (Rest), 2 ticks
 	.byte $1C		; E-2, 2 ticks
 	.byte $00		; (Rest), 2 ticks
-	.byte $F1		; END SEGMENT
+	.byte $F4
+	.word @frame_00
 
 
 your_destiny_ch3:
@@ -110,43 +115,44 @@ your_destiny_ch3:
 	@frame_00:
 	.byte $F8, $00	; VOL ENV Kick Noise Enhance
 	.byte $82		; Note length = 2
-	.byte $2A		; 09-#, 2 ticks
+	.byte $09		; 09-#, 2 ticks
 	.byte $F8, $04	; VOL ENV Hat 1
-	.byte $28		; 0B-#, 2 ticks
+	.byte $0B		; 0B-#, 2 ticks
 	.byte $F8, $00	; VOL ENV Kick Noise Enhance
-	.byte $2A		; 09-#, 2 ticks
+	.byte $09		; 09-#, 2 ticks
 	.byte $F8, $04	; VOL ENV Hat 1
-	.byte $28		; 0B-#, 2 ticks
+	.byte $0B		; 0B-#, 2 ticks
 	.byte $F8, $00	; VOL ENV Kick Noise Enhance
-	.byte $2A		; 09-#, 2 ticks
+	.byte $09		; 09-#, 2 ticks
 	.byte $F8, $04	; VOL ENV Hat 1
-	.byte $28		; 0B-#, 2 ticks
+	.byte $0B		; 0B-#, 2 ticks
 	.byte $F8, $00	; VOL ENV Kick Noise Enhance
-	.byte $2A		; 09-#, 2 ticks
+	.byte $09		; 09-#, 2 ticks
 	.byte $F8, $15	; VOL ENV Quiet Drum
 	.byte $81		; Note length = 1
-	.byte $2E		; 04-#, 1 ticks
-	.byte $2E		; 04-#, 1 ticks
+	.byte $04		; 04-#, 1 ticks
+	.byte $04		; 04-#, 1 ticks
 	.byte $F8, $00	; VOL ENV Kick Noise Enhance
 	.byte $82		; Note length = 2
-	.byte $2A		; 09-#, 2 ticks
+	.byte $09		; 09-#, 2 ticks
 	.byte $F8, $04	; VOL ENV Hat 1
-	.byte $28		; 0B-#, 2 ticks
+	.byte $0B		; 0B-#, 2 ticks
 	.byte $F8, $00	; VOL ENV Kick Noise Enhance
-	.byte $2A		; 09-#, 2 ticks
+	.byte $09		; 09-#, 2 ticks
 	.byte $F8, $04	; VOL ENV Hat 1
-	.byte $28		; 0B-#, 2 ticks
+	.byte $0B		; 0B-#, 2 ticks
 	.byte $F8, $00	; VOL ENV Kick Noise Enhance
-	.byte $2A		; 09-#, 2 ticks
+	.byte $09		; 09-#, 2 ticks
 	.byte $F8, $15	; VOL ENV Quiet Drum
 	.byte $81		; Note length = 1
-	.byte $2E		; 04-#, 1 ticks
-	.byte $2E		; 04-#, 1 ticks
+	.byte $04		; 04-#, 1 ticks
+	.byte $04		; 04-#, 1 ticks
 	.byte $F8, $00	; VOL ENV Kick Noise Enhance
 	.byte $82		; Note length = 2
-	.byte $2A		; 09-#, 2 ticks
+	.byte $09		; 09-#, 2 ticks
 	.byte $F8, $15	; VOL ENV Quiet Drum
 	.byte $81		; Note length = 1
-	.byte $2E		; 04-#, 1 ticks
-	.byte $2E		; 04-#, 1 ticks
-	.byte $F1		; END SEGMENT
+	.byte $04		; 04-#, 1 ticks
+	.byte $04		; 04-#, 1 ticks
+	.byte $F4
+	.word @frame_00
