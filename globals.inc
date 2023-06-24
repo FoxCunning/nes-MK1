@@ -362,9 +362,9 @@ ram_cur_note_duration = $0734   ; Size=4
 ; Frame counter, starts from track speed and counts down to zero
 ; Events are only processed when this reaches zero
 ; For example, at speed 4 a note with duration 2 lasts 8 frames
-ram_track_speed_counter = $0739 ; Size=4
+ram_track_speed_counter = $0739 ; Use pointer offset to index
 ; Frames left for current note to play
-ram_note_frames_left = $073A    ; Size=4
+ram_note_frames_left = $073A    ; Use pointer offset to index
 ram_cur_period_lo = $0743   ;
 ram_cur_period_hi = $0744   ;
 ; Base value for the period register, before applying envelopes and effects
@@ -373,18 +373,18 @@ ram_note_period_lo = $074D  ;
 ram_note_period_hi = $074E  ;
 ; ----------------
 ; Index of duty envelope, one per channel
-ram_vol_env_idx = $0757             ; Size=4
+ram_vol_env_idx = $0757             ; Size=5
 ; Ticks left for current value of instrument's volume evenlope
-ram_cur_vol_env_duration = $075C    ; Size=4
+ram_cur_vol_env_duration = $075C    ; Size=5
 ; Pointer to current position in volume envelope (one per channel)
 ram_vol_env_ptr_lo = $0761    ;
 ; Pointer to current position in volume envelope (one per channel)
 ram_vol_env_ptr_hi = $0762    ;
 ; ----------------
 ; Index of duty envelope, one per channel (only used for Square wave channels)
-ram_duty_env_idx = $076B            ; Size=4
+ram_duty_env_idx = $076B            ; Size=2
 ; Ticks left for current value of instrument's duty evenlope
-ram_cur_duty_env_duration = $076D   ; Size=4
+ram_cur_duty_env_duration = $076D   ; Size=2
 ram_duty_env_ptr_lo = $076F    ;
 ram_duty_env_ptr_hi = $0770    ;
 ; ----------------
@@ -515,9 +515,9 @@ Ctrl2_FrameCtr_4017 = $4017 ;
 
 ; CPxx xRRR
 ; (C) CHR A12 inversion (0: two 2 KB banks at $0000-$0FFF, four 1 KB banks at $1000-$1FFF;
-;                       1: two 2 KB banks at $1000-$1FFF, four 1 KB banks at $0000-$0FFF)
+;                        1: two 2 KB banks at $1000-$1FFF, four 1 KB banks at $0000-$0FFF)
 ; (P) PRG ROM bank mode (0: $8000-$9FFF swappable, $C000-$DFFF fixed to second-last bank;
-;                       1: $C000-$DFFF swappable, $8000-$9FFF fixed to second-last bank)
+;                        1: $C000-$DFFF swappable, $8000-$9FFF fixed to second-last bank)
 ; (RRR) Specify which bank register to update on next write to Bank Data register
 ;                      000: R0: Select 2 KB CHR bank at PPU $0000-$07FF (or $1000-$17FF)
 ;                      001: R1: Select 2 KB CHR bank at PPU $0800-$0FFF (or $1800-$1FFF)

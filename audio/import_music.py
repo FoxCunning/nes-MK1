@@ -1,4 +1,7 @@
 __author__ = "Fox Cunning"
+__copyright__ = "Copyright (C) 2022-2023 Fox Cunning"
+__license__ = "MIT"
+__version__ = "1.1"
 
 import sys
 from typing import List, Optional
@@ -14,9 +17,11 @@ NOTES = ["(Rest)", "(Rest)", "(Rest)", "(Rest)", "(Rest)", "(Rest)", "(Rest)", "
          "C-7", "C#7", "D-7", "D#7", "E-7", "F-7", "F#7", "G-7", "G#7", "A-7", "A#7", "B-7"
          ]
 
+"""
 NOISE = [
     0x0F, 0x0E, 0x0D, 0x0C, 0x0B, 0x0A, 0x09, 0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, 0x00
 ]
+"""
 
 # noinspection SpellCheckingInspection
 EVENTS = ["CALL SEGMENT", "END SEGMENT", "LOOP START", "LOOP END", "JUMP", "SPEED", "TRANSPOSE", "SKIP",
@@ -37,7 +42,6 @@ class FmtMacro:
         # TODO Release is not yet implemented
         self.release_offset = int(split[4])
         # 16/64 steps for volume envelopes, Absolute/Fixed/Relative/Scheme for arpeggios, Absolute/Relative for pitch
-        # TODO Implement relative pitch envelopes
         self.flag = int(split[5])
 
         self.values: List[int] = []
@@ -50,6 +54,7 @@ class FmtMacro:
 
         # Formatted data for the MK1 sound engine
         self.data: List[int] = []
+        # TODO Add a byte for pitch/arpeggio flags
         count = 0   # Count of repeated bytes
         index = 0   # Keep count of where we are for loop and release offsets
         loop_position = -1
@@ -109,6 +114,15 @@ class FmtInstrument:
         self.arp_idx = int(split[3])
         self.pitch_idx = int(split[4])
         self.duty_idx = int(split[6])
+
+        if self.volume_idx == -1:
+            self.volume_idx = 0xFF
+        if self.arp_idx == -1:
+            self.arp_idx = 0xFF
+        if self.pitch_idx == -1:
+            self.pitch_idx = 0xFF
+        if self.duty_idx == -1:
+            self.duty_idx = 0xFF
 
 
 instruments: List[FmtInstrument] = []
@@ -215,9 +229,10 @@ class Channel:
         self.last_timbre = -1
         self.last_event = -1
         self.last_delta = -1
-        self.last_vol_env = -1
-        self.last_duty_env = -1
-        self.last_pitch_env = -1
+        self.last_vol_env = -1000
+        self.last_duty_env = -1000
+        self.last_pitch_env = -1000
+        self.last_arpeggio = -1000
         self.last_note_length = -1
         # noinspection SpellCheckingInspection
         self.last_volslide = 0
@@ -269,16 +284,28 @@ class Channel:
                     self.last_note_length = parameter
 
             elif event == Channel.EVENT_VOL_ENV:
-                self.last_vol_env = instruments[parameter].volume_idx
-                self.asm += f", ${self.last_vol_env:02X}\t; {name} {instruments[parameter].name}\n"
+                if parameter == 0xFF:
+                    self.last_vol_env = 0xFF
+                    self.asm += f", ${self.last_vol_env:02X}\t; {name} (None)\n"
+                else:
+                    self.last_vol_env = instruments[parameter].volume_idx
+                    self.asm += f", ${self.last_vol_env:02X}\t; {name} {instruments[parameter].name}\n"
 
             elif event == Channel.EVENT_DUTY_ENV:
-                self.last_duty_env = instruments[parameter].duty_idx
-                self.asm += f", ${self.last_duty_env:02X}\t; {name} {instruments[parameter].name}\n"
+                if parameter == 0xFF:
+                    self.last_duty_env = 0xFF
+                    self.asm += f", ${self.last_duty_env:02X}\t; {name} (None)\n"
+                else:
+                    self.last_duty_env = instruments[parameter].duty_idx
+                    self.asm += f", ${self.last_duty_env:02X}\t; {name} {instruments[parameter].name}\n"
 
             elif event == Channel.EVENT_PITCH_ENV:
-                self.last_pitch_env = instruments[parameter].pitch_idx
-                self.asm += f", ${self.last_pitch_env:02X}\t; {name} {instruments[parameter].name}\n"
+                if parameter == 0xFF:
+                    self.last_pitch_env = 0xFF
+                    self.asm += f", ${self.last_pitch_env:02X}\t; {name} (None)\n"
+                else:
+                    self.last_pitch_env = instruments[parameter].pitch_idx
+                    self.asm += f", ${self.last_pitch_env:02X}\t; {name} {instruments[parameter].name}\n"
 
             elif event == Channel.EVENT_TIMBRE:
                 print("!!! Unimplemented command: set timbre")
@@ -931,20 +958,28 @@ def main():
                         channels[c].instant_event(Channel.EVENT_DELTA, delta_counter)
 
                     # Check if we need to change the instrument
-                    if row.instrument != -1:
-                        vol_env = instruments[row.instrument].volume_idx
-                        duty_env = instruments[row.instrument].duty_idx
-                        pitch_env = instruments[row.instrument].pitch_idx
-                        arpeggio = instruments[row.instrument].arp_idx
+                    if row.instrument == -1:
+                        new_instrument = 0xFF
+                        vol_env = 0xFF
+                        duty_env = 0xFF
+                        pitch_env = 0xFF
+                        arpeggio = 0xFF
+                    else:
+                        new_instrument = row.instrument
+                        vol_env = instruments[new_instrument].volume_idx
+                        duty_env = instruments[new_instrument].duty_idx
+                        pitch_env = instruments[new_instrument].pitch_idx
+                        arpeggio = instruments[new_instrument].arp_idx
 
-                        if vol_env != channels[c].last_vol_env:
-                            channels[c].instant_event(Channel.EVENT_VOL_ENV, row.instrument)
+                    if vol_env != channels[c].last_vol_env:
+                        channels[c].instant_event(Channel.EVENT_VOL_ENV, new_instrument)
+                    if c < 2:   # Only for square wave channels
                         if duty_env != channels[c].last_duty_env:
-                            channels[c].instant_event(Channel.EVENT_DUTY_ENV, row.instrument)
-                        if pitch_env != channels[c].last_pitch_env:
-                            channels[c].instant_event(Channel.EVENT_PITCH_ENV, row.instrument)
+                            channels[c].instant_event(Channel.EVENT_DUTY_ENV, new_instrument)
+                    if pitch_env != channels[c].last_pitch_env:
+                        channels[c].instant_event(Channel.EVENT_PITCH_ENV, new_instrument)
 
-                        # TODO Arpeggio
+                    # TODO Arpeggio
 
                     # Check if we need to change the volume
                     volume = row.volume

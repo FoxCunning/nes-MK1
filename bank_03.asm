@@ -1477,15 +1477,16 @@ sub_play_cur_channel:
 		bne @AC8A	; Skip processing if are still waiting
 
 			lda ram_note_frames_left,X
-			bne @AC73
+			bne :+
 
+				; Current note just finished playing, get the next
 				jsr sub_get_next_track_byte
 				ldx ram_cur_chan_ptr_offset
 				ldy ram_cur_channel_offset
 				lda ram_cur_note_duration,Y
 				sta ram_note_frames_left,X
 
-			@AC73:
+			:
 			dec ram_note_frames_left,X
 
 			ldy ram_cur_apu_channel
@@ -1545,14 +1546,22 @@ sub_new_note_or_rest:
 		; Unreachable ?
 		rts
 ; ----------------
-:
+	; Non-zero = new note
+	:
 	pha
 
 	lda ram_cur_apu_channel
 	and #$0F
 	tax
 
+	cpx #$02	; Triangle channel
+	bne :+
+		; Stop playing the previous note, if any
+		lda #$80
+		sta TrgLinear_4008
+	:
 	pla
+
 	cpx #$03
 	beq @noise_channel
 
@@ -1828,6 +1837,12 @@ sub_cmd_set_vol_env:
 		jmp sub_get_next_track_byte
 :
 	jsr sub_track_read_next_byte
+	cmp #$FF
+	bne :+
+		
+		; If the index is $FF, disable the envelope
+		sta ram_cur_vol_env_duration,X
+:	
 	sta ram_vol_env_idx,X
 	jmp sub_get_next_track_byte
 
@@ -1845,6 +1860,12 @@ sub_cmd_set_duty_env:
 		jmp sub_get_next_track_byte
 :
 	jsr sub_track_read_next_byte
+	cmp #$FF
+	bne :+
+		
+		; If the index is $FF, disable the envelope
+		sta ram_cur_vol_env_duration,X
+:	
 	sta ram_duty_env_idx,X
 	jmp sub_get_next_track_byte
 
@@ -1861,6 +1882,12 @@ sub_cmd_set_pitch_env:
 		jmp sub_get_next_track_byte
 :
 	jsr sub_track_read_next_byte
+	cmp #$FF
+	bne :+
+		
+		; If the index is $FF, disable the envelope
+		sta ram_cur_vol_env_duration,X
+:	
 	sta ram_pitch_env_idx,X
 	jmp sub_get_next_track_byte
 
@@ -1899,9 +1926,14 @@ sub_stop_envelopes:
 		cpx #$02
 		bpl :+
 
-		; Stop duty envelope for square wave channels
-		sta ram_cur_duty_env_duration,Y
-:
+			; Stop duty envelope for square wave channels
+			sta ram_cur_duty_env_duration,Y
+		:
+		bne :+
+			; Mute triangle channel
+			lda #$80
+			sta TrgLinear_4008
+	:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1950,7 +1982,8 @@ sub_cmd_jump_after_loop:
 
 sub_start_all_envelopes:
 	ldx ram_cur_chan_ptr_offset
-	; Set bit 7 of length counter load to start playing
+
+	; This will set bit 7 of length counter load
 	lda ram_note_period_hi,X
 	ora #$80
 	sta ram_note_period_hi,X
@@ -1967,6 +2000,14 @@ sub_start_volume_envelope:
 	lda ram_cur_apu_channel
 	and #$0F
 	tax
+	
+	cpx #$02
+	bne :+
+		; Start playing triangle channel immediately
+		lda #$FF
+		sta TrgLinear_4008
+		rts
+	:
 	cpx #$04
 	bmi :+
 
@@ -1974,28 +2015,33 @@ sub_start_volume_envelope:
 ; ----------------
 :
 	ldx ram_cur_channel_offset
-	ldy ram_cur_chan_ptr_offse
-	t
+	ldy ram_cur_chan_ptr_offset
+	
 	; Get envelope index from RAM
 	lda ram_vol_env_idx,X
-	asl A
-	tax
+	cmp #$FF	; Skip if index is $FF
+	beq @skip_vol_env_start
 
-	; Prepare pointer
-	lda tbl_vol_env_ptrs+0,X
-	sta ram_vol_env_ptr_lo,Y
-	sta zp_ptr2_lo
+		asl A
+		tax
 
-	lda tbl_vol_env_ptrs+1,X
-	sta ram_vol_env_ptr_hi,Y
-	sta zp_ptr2_hi
+		; Prepare pointer
+		lda tbl_vol_env_ptrs+0,X
+		sta ram_vol_env_ptr_lo,Y
+		sta zp_ptr2_lo
 
-	ldx ram_cur_channel_offset
+		lda tbl_vol_env_ptrs+1,X
+		sta ram_vol_env_ptr_hi,Y
+		sta zp_ptr2_hi
 
-	; Read first byte (duration)
-	ldy #$00
-	lda (zp_ptr2_lo),Y
-	sta ram_cur_vol_env_duration,X
+		ldx ram_cur_channel_offset
+
+		; Read first byte (duration)
+		ldy #$00
+		lda (zp_ptr2_lo),Y
+		sta ram_cur_vol_env_duration,X
+
+	@skip_vol_env_start	:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -2013,19 +2059,25 @@ sub_start_duty_envelope:
 :
 	ldx ram_cur_channel_offset
 	ldy ram_cur_chan_ptr_offset
+
 	lda ram_duty_env_idx,X
-	asl A
-	tax
-	lda tbl_duty_env_ptrs+0,X
-	sta ram_duty_env_ptr_lo,Y
-	sta zp_ptr2_lo
-	lda tbl_duty_env_ptrs+1,X
-	sta ram_duty_env_ptr_hi,Y
-	sta zp_ptr2_hi
-	ldx ram_cur_channel_offset
-	ldy #$00
-	lda (zp_ptr2_lo),Y
-	sta ram_cur_duty_env_duration,X
+	cmp #$FF
+	beq @skip_duty_env_start
+
+		asl A
+		tax
+		lda tbl_duty_env_ptrs+0,X
+		sta ram_duty_env_ptr_lo,Y
+		sta zp_ptr2_lo
+		lda tbl_duty_env_ptrs+1,X
+		sta ram_duty_env_ptr_hi,Y
+		sta zp_ptr2_hi
+		ldx ram_cur_channel_offset
+		ldy #$00
+		lda (zp_ptr2_lo),Y
+		sta ram_cur_duty_env_duration,X
+
+	@skip_duty_env_start:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -2045,25 +2097,28 @@ sub_start_pitch_envelope:
 	ldy ram_cur_chan_ptr_offset
 
 	lda ram_pitch_env_idx,X
-	asl A
-	tax
+	cmp #$FF
+	beq @skip_pitch_env_start
 
-	lda tbl_pitch_env_ptrs+0,X
-	sta ram_pitch_env_ptr_lo,Y
-	sta zp_ptr2_lo
+		asl A
+		tax
 
-	lda tbl_pitch_env_ptrs+1,X
-	sta ram_pitch_env_ptr_hi,Y
-	sta zp_ptr2_hi
+		lda tbl_pitch_env_ptrs+0,X
+		sta ram_pitch_env_ptr_lo,Y
+		sta zp_ptr2_lo
 
-	ldx ram_cur_channel_offset
+		lda tbl_pitch_env_ptrs+1,X
+		sta ram_pitch_env_ptr_hi,Y
+		sta zp_ptr2_hi
 
-	; TODO Use first byte as "mode" flag (absolute/relative)
+		ldx ram_cur_channel_offset
 
-	; Read first byte (duration)
-	ldy #$00
-	lda (zp_ptr2_lo),Y
-	sta ram_cur_pitch_env_duration,X
+		; Read first byte (duration)
+		ldy #$00
+		lda (zp_ptr2_lo),Y
+		sta ram_cur_pitch_env_duration,X
+
+	@skip_pitch_env_start:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -2106,7 +2161,7 @@ sub_next_volume_envelope:
 	lda ram_cur_vol_env_duration,X
 	tay						; This is not needed,
 	cpy #$FF				; why not just do a cmp?
-	beq @skip_volume_env
+	beq @skip_volume_env	; Duration = $FF disables the envelope entirely
 
 		ldx ram_cur_channel_offset	; Why? It's already in X
 		lda ram_cur_vol_env_duration,X	; And this is already in A
@@ -2352,7 +2407,7 @@ sub_sq0_output:
 	lda ram_cur_period_lo,Y
 	clc
 	adc zp_ptr2_lo
-	; TODO For absolute envelopes, do not modify the base note period
+	; TODO For relative envelopes, also modify the base note period
 	sta ram_note_period_lo,Y
 	sta Sq0Timer_4002
 
@@ -2364,7 +2419,7 @@ sub_sq0_output:
 	cpx zp_ptr2_lo
 	beq :+
 
-		; TODO For absolute envelopes, do not modify the base note period
+		; TODO For relative envelopes, also modify the base note period
 		sta ram_note_period_hi,Y
 		ora #$F8
 		sta Sq0Length_4003
@@ -2431,23 +2486,28 @@ sub_trg_output:
 
 		ldx #$02	; Music indices
 		ldy #$04
-:
-	jsr sub_get_volume_envelope
-	lda zp_ptr2_lo
-	beq @B1E0
+	:
 
-	lda #$FF
-	@B1E0:
-	ora #$80
-	sta TrgLinear_4008
+	; ---- Don't waste time with volume envelopes on this channel
+	;		Just assume it's on when playing a note
+	;jsr sub_get_volume_envelope
+	;lda zp_ptr2_lo
+	;beq :+
+		; This will only turn on the channel when the volume envelope is not zero
+	;	lda #$FF
+	;:
+	;ora #$80
+	;sta TrgLinear_4008
+	; ----
+
 	jsr sub_get_pitch_envelope
 	lda #$00
 	sta zp_ptr2_hi
 	lda zp_ptr2_lo
-	bpl @B1F2
+	bpl :+
 
-	dec zp_ptr2_hi
-	@B1F2:
+		dec zp_ptr2_hi
+	:
 	lda ram_cur_period_lo,Y
 	clc
 	adc zp_ptr2_lo
@@ -2464,7 +2524,7 @@ sub_trg_output:
 		sta ram_note_period_hi,Y
 		ora #$F8
 		sta TrgLength_400B
-:
+	:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -2478,7 +2538,7 @@ sub_noise_output:
 
 		ldx #$03	; Music indices
 		ldy #$06
-:
+	:
 	jsr sub_get_volume_envelope
 	lda zp_ptr2_lo
 	ora #$30
@@ -2539,12 +2599,14 @@ sub_get_duty_envelope:
 	cpy #$FF
 	bne @B276
 
+		; A duration of $FF disables the envelope
 		lda #$00
 		jmp @B287
 
 	@B276:
 	pla
 	pha
+
 	tay
 	lda ram_duty_env_ptr_lo,Y
 	sta zp_ptr2_lo
