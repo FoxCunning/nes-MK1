@@ -293,7 +293,8 @@ ram_063F = $063F    ;
 ram_0640 = $0640    ;
 ram_066D = $066D    ;
 ram_066E = $066E    ;
-ram_0672 = $0672    ;
+; Index of the SFX to play starting from the next frame
+ram_req_sfx = $0672    ;
 ; Index of the music track to play
 ; Can be used for SFX too, but it's meant to "request" music
 ; Requesting the same track that is already playing has no effect
@@ -396,14 +397,24 @@ ram_cur_pitch_env_duration = $0777  ; Size=4
 ram_pitch_env_ptr_lo = $077B    ;
 ; Pointer to the current position in the pitch envelope
 ram_pitch_env_ptr_hi = $077C    ;
-ram_079F = $079F    ;
-ram_07A0 = $07A0    ;
-ram_07A1 = $07A1    ;
-ram_07A2 = $07A2    ;
-ram_07A3 = $07A3    ;
-ram_07A4 = $07A4    ;
-ram_07A5 = $07A5    ;
-ram_07A6 = $07A6    ;
+; ----------------
+; Pointer to the track data for each channel (SFX 0)
+ram_sfx0_data_ptr_lo = $079F    ;
+; Pointer to the track data for each channel (SFX 0)
+ram_sfx0_ptr_data_hi = $07A0    ;
+; Pointer to the track data for each channel (SFX 1)
+ram_sfx1_data_ptr_lo = $07A1    ;
+; Pointer to the track data for each channel (SFX 1)
+ram_sfx1_data_ptr_hi = $07A2    ;
+; Pointer to the track data for each channel (SFX 2)
+ram_sfx2_data_ptr_lo = $07A3    ;
+; Pointer to the track data for each channel (SFX 2)
+ram_sfx2_data_ptr_hi = $07A4    ;
+; Pointer to the track data for each channel (SFX 3)
+ram_sfx3_data_ptr_lo = $07A5    ;
+; Pointer to the track data for each channel (SFX 3)
+ram_sfx3_data_ptr_hi = $07A6    ;
+; ----------------
 ram_sfx_vol_env_duration = $07D2    ;
 ram_sfx_duty_env_duration = $07E3   ;
 ram_sfx_pitch_env_duration = $07ED  ;

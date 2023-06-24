@@ -278,7 +278,7 @@ sub_rom_C186:
 	lda #$22
 	sta ram_req_song
 	lda #$03
-	sta ram_0672
+	sta ram_req_sfx
 	@C1AF:
 	ldy #$00
 	ldx #$00
@@ -447,7 +447,7 @@ sub_rom_C284:
 	sta ram_067C
 	sta zp_7A
 	lda #$1F
-	sta ram_0672
+	sta ram_req_sfx
 	@C29D:
 	rts
 
@@ -1923,7 +1923,7 @@ sub_rom_CBC7:
 	beq @CBDE
 
 	lda #$07
-	sta ram_0672
+	sta ram_req_sfx
 	bne @CBED
 
 	@CBDE:
@@ -1932,7 +1932,7 @@ sub_rom_CBC7:
 	beq @CBFB
 
 	lda #$08
-	sta ram_0672
+	sta ram_req_sfx
 	inx
 	inx
 	inx
@@ -1967,7 +1967,7 @@ sub_rom_CBFC:
 	beq @CC19
 
 	lda #$08
-	sta ram_0672
+	sta ram_req_sfx
 	bne @CC27
 
 	@CC19:
@@ -1976,7 +1976,7 @@ sub_rom_CBFC:
 	beq @CC35
 
 	lda #$07
-	sta ram_0672
+	sta ram_req_sfx
 	inx
 	inx
 	@CC27:
@@ -2108,12 +2108,12 @@ sub_rom_CCAC:
 	cmp #$01
 	bcc @CCC0
 
-	lda #$02
-	sta ram_0672
-	lda #$00
-	sta zp_F1
-	inc zp_7A
-	rts
+		lda #$02	; Hit SFX
+		sta ram_req_sfx
+		lda #$00
+		sta zp_F1
+		inc zp_7A
+		rts
 ; ----------------
 	@CCC0:
 	inc zp_F1
@@ -2971,7 +2971,7 @@ sub_rom_D215:
 
 	sta zp_F4,Y
 	lda #$05
-	sta ram_0672
+	sta ram_req_sfx
 	rts
 ; ----------------
 	@D22A:
@@ -3009,7 +3009,7 @@ sub_rom_D22E:
 	bne @D25C
 
 	lda #$04
-	sta ram_0672
+	sta ram_req_sfx
 	rts
 ; ----------------
 	@D25C:
@@ -3022,7 +3022,7 @@ sub_rom_D22E:
 	bne @D26F
 	
 	lda #$08
-	sta ram_0672
+	sta ram_req_sfx
 	@D26F:
 	rts
 
@@ -3836,28 +3836,30 @@ sub_rom_D784:
 	cmp #$2E
 	beq @D88A
 
-	cmp #$28
-	bne @D88E
+		cmp #$28
+		bne @D88E
 
-	@D88A:
-	inx
-	inx
-	inx
-	inx
+		@D88A:
+		inx
+		inx
+		inx
+		inx
+
 	@D88E:
 	stx zp_1A
 	ldx zp_7B
 	lda zp_8A,Y
-	beq @D899
+	beq :+
 
-	lda #$40
-	@D899:
+		lda #$40
+:
 	sta zp_1B
 	lda zp_82,X
 	sec
 	sbc zp_81
 	sta zp_86,Y
 	sta zp_07
+
 	ldx #$08
 	stx zp_ptr1_lo
 	lda zp_88,Y
@@ -3869,13 +3871,14 @@ sub_rom_D784:
 	ldy zp_7C
 	ldx zp_8E,Y
 	lda zp_90,Y
+
 	cmp #$01
 	bne @D8C8
 
-	lda rom_DABE,X
-	beq @D8C8
+		lda rom_DABE,X
+		beq @D8C8
 
-	sta ram_0672
+			sta ram_req_sfx
 	@D8C8:
 	lda zp_18
 	beq @D8D4
@@ -4204,6 +4207,7 @@ rom_DAB4:
 
 ; -----------------------------------------------------------------------------
 
+; SFX indices
 rom_DABE:
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $00, $00, $00, $07, $07, $08, $00, $00

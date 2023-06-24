@@ -37,6 +37,7 @@ class FmtMacro:
         # TODO Release is not yet implemented
         self.release_offset = int(split[4])
         # 16/64 steps for volume envelopes, Absolute/Fixed/Relative/Scheme for arpeggios, Absolute/Relative for pitch
+        # TODO Implement relative pitch envelopes
         self.flag = int(split[5])
 
         self.values: List[int] = []

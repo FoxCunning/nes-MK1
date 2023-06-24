@@ -128,22 +128,22 @@ tbl_pitches:
 ; Track pointers
 tbl_track_ptrs:
 	.word track_silence		; $00
-	.word sfx_97A7			; $01
-	.word sfx_9712			; $02
-	.word sfx_9785			; $03
-	.word sfx_96DF			; $04
-	.word sfx_96CE			; $05
+	.word sfx_97A7			; $01	A glitchy sound that sometimes plays when a match starts
+	.word sfx_9712			; $02	Any hit
+	.word sfx_9785			; $03	Cursor move and point counter at end of match
+	.word sfx_96DF			; $04	Projectile/special attack
+	.word sfx_96CE			; $05	Bounce/land after jump
 	.word track_silence		; $06
-	.word sfx_96F0			; $07
-	.word sfx_96F0			; $08
+	.word sfx_96F0			; $07	Kick swing
+	.word sfx_96F0			; $08	Punch swing
 	.word track_silence		; $09
 	.word track_silence		; $0A
 	.word track_silence		; $0B
-	.word sfx_8A4E			; $0C
-	.word sfx_9736			; $0D
-	.word sfx_9750			; $0E
-	.word sfx_9736			; $0F
-	.word sfx_9771			; $10
+	.word sfx_8A4E			; $0C	"Siren" sound (e.g. after menu selection)
+	.word sfx_9736			; $0D	A weird three-note jingle
+	.word sfx_9750			; $0E	Pause
+	.word sfx_9736			; $0F	Same as $0D, but here it's used after choosing to continue
+	.word sfx_9771			; $10	Countdown for continue screen
 	.word track_silence		; $11
 	.word track_silence		; $12
 	.word track_silence		; $13

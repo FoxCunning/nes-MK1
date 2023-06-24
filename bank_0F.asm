@@ -1411,7 +1411,7 @@ sub_rom_E8CB:
 	cmp ram_cur_song
 	bne @E8F3
 
-		lda ram_0672
+		lda ram_req_sfx
 		bne @E8F9
 
 	rts
@@ -1422,7 +1422,7 @@ sub_rom_E8CB:
 	@E8F9:
 	jsr sub_play_sound
 	lda #$00
-	sta ram_0672
+	sta ram_req_sfx
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1596,7 +1596,7 @@ sub_rom_EA13:
 
 	jsr sub_rom_EA5B
 	lda #$0E
-	sta ram_0672
+	sta ram_req_sfx
 	lda a:zp_24	; ???
 	eor #$01
 	sta a:zp_24	; ???

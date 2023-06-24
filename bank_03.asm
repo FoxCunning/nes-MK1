@@ -1320,14 +1320,14 @@ sub_rom_03_AAFE:
 	@AB5E:
 	ldx #$00
 	ldy #$00
-	jsr sub_apply_duty_envelope
+	jsr sub_get_duty_envelope
 	lda zp_ptr2_lo
 	and #$F0
 	ora #$30
 	sta Sq0Duty_4000
 	ldx #$01
 	ldy #$02
-	jsr sub_apply_duty_envelope
+	jsr sub_get_duty_envelope
 	lda zp_ptr2_lo
 	and #$F0
 	ora #$30
@@ -1950,9 +1950,11 @@ sub_cmd_jump_after_loop:
 
 sub_start_all_envelopes:
 	ldx ram_cur_chan_ptr_offset
+	; Set bit 7 of length counter load to start playing
 	lda ram_note_period_hi,X
 	ora #$80
 	sta ram_note_period_hi,X
+
 	jsr sub_start_volume_envelope
 	jsr sub_start_duty_envelope
 	jsr sub_start_pitch_envelope
@@ -1966,23 +1968,31 @@ sub_start_volume_envelope:
 	and #$0F
 	tax
 	cpx #$04
-	bmi @AF16
+	bmi :+
 
-	rts
+		rts
 ; ----------------
-	@AF16:
+:
 	ldx ram_cur_channel_offset
-	ldy ram_cur_chan_ptr_offset
+	ldy ram_cur_chan_ptr_offse
+	t
+	; Get envelope index from RAM
 	lda ram_vol_env_idx,X
 	asl A
 	tax
+
+	; Prepare pointer
 	lda tbl_vol_env_ptrs+0,X
 	sta ram_vol_env_ptr_lo,Y
 	sta zp_ptr2_lo
+
 	lda tbl_vol_env_ptrs+1,X
 	sta ram_vol_env_ptr_hi,Y
 	sta zp_ptr2_hi
+
 	ldx ram_cur_channel_offset
+
+	; Read first byte (duration)
 	ldy #$00
 	lda (zp_ptr2_lo),Y
 	sta ram_cur_vol_env_duration,X
@@ -1996,11 +2006,11 @@ sub_start_duty_envelope:
 	and #$0F
 	tax
 	cpx #$02	; Only pulse channels (0-1) can use this envelope
-	bmi @AF47
+	bmi :+
 
-	rts
+		rts
 ; ----------------
-	@AF47:
+:
 	ldx ram_cur_channel_offset
 	ldy ram_cur_chan_ptr_offset
 	lda ram_duty_env_idx,X
@@ -2026,23 +2036,31 @@ sub_start_pitch_envelope:
 	and #$0F
 	tax
 	cpx #$04	; All music channels (0-3) can use this envelope
-	bmi @AF78
+	bmi :+
 
-	rts
+		rts
 ; ----------------
-	@AF78:
+:
 	ldx ram_cur_channel_offset
 	ldy ram_cur_chan_ptr_offset
+
 	lda ram_pitch_env_idx,X
 	asl A
 	tax
+
 	lda tbl_pitch_env_ptrs+0,X
 	sta ram_pitch_env_ptr_lo,Y
 	sta zp_ptr2_lo
+
 	lda tbl_pitch_env_ptrs+1,X
 	sta ram_pitch_env_ptr_hi,Y
 	sta zp_ptr2_hi
+
 	ldx ram_cur_channel_offset
+
+	; TODO Use first byte as "mode" flag (absolute/relative)
+
+	; Read first byte (duration)
 	ldy #$00
 	lda (zp_ptr2_lo),Y
 	sta ram_cur_pitch_env_duration,X
@@ -2302,27 +2320,30 @@ sub_sound_output:
 sub_sq0_output:
 	ldx #$76		; SFX indices
 	ldy #$76
-	lda ram_079F
-	ora ram_07A0
+	lda ram_sfx0_data_ptr_lo
+	ora ram_sfx0_ptr_data_hi
 	bne :+
 
 		ldx #$00	; Music indices
 		ldy #$00
 :
-	jsr sub_apply_volume_envelope
+	jsr sub_get_volume_envelope
 	lda zp_ptr2_lo
 
 	pha
-	jsr sub_apply_duty_envelope
+	jsr sub_get_duty_envelope
 	pla
 
 	ora zp_ptr2_lo
 	ora #$30
 	sta Sq0Duty_4000
-	jsr sub_apply_pitch_envelope
+
+	; TODO Implement arpeggio and apply that before pitch
+	jsr sub_get_pitch_envelope
 
 	lda #$00
 	sta zp_ptr2_hi
+
 	lda zp_ptr2_lo
 	bpl :+
 
@@ -2331,6 +2352,7 @@ sub_sq0_output:
 	lda ram_cur_period_lo,Y
 	clc
 	adc zp_ptr2_lo
+	; TODO For absolute envelopes, do not modify the base note period
 	sta ram_note_period_lo,Y
 	sta Sq0Timer_4002
 
@@ -2342,6 +2364,7 @@ sub_sq0_output:
 	cpx zp_ptr2_lo
 	beq :+
 
+		; TODO For absolute envelopes, do not modify the base note period
 		sta ram_note_period_hi,Y
 		ora #$F8
 		sta Sq0Length_4003
@@ -2353,24 +2376,24 @@ sub_sq0_output:
 sub_sq1_output:
 	ldx #$77		; SFX indices
 	ldy #$78
-	lda ram_07A1
-	ora ram_07A2
+	lda ram_sfx1_data_ptr_lo
+	ora ram_sfx1_data_ptr_hi
 	bne :+
 
 		ldx #$01	; Music indices
 		ldy #$02
 :
-	jsr sub_apply_volume_envelope
+	jsr sub_get_volume_envelope
 	lda zp_ptr2_lo
 
 	pha
-	jsr sub_apply_duty_envelope
+	jsr sub_get_duty_envelope
 	pla
 
 	ora zp_ptr2_lo
 	ora #$30
 	sta Sq1Duty_4004
-	jsr sub_apply_pitch_envelope
+	jsr sub_get_pitch_envelope
 	lda #$00
 	sta zp_ptr2_hi
 	lda zp_ptr2_lo
@@ -2402,14 +2425,14 @@ sub_sq1_output:
 sub_trg_output:
 	ldx #$78		; SFX indices
 	ldy #$7A
-	lda ram_07A3
-	ora ram_07A4
+	lda ram_sfx2_data_ptr_lo
+	ora ram_sfx2_data_ptr_hi
 	bne :+
 
 		ldx #$02	; Music indices
 		ldy #$04
 :
-	jsr sub_apply_volume_envelope
+	jsr sub_get_volume_envelope
 	lda zp_ptr2_lo
 	beq @B1E0
 
@@ -2417,7 +2440,7 @@ sub_trg_output:
 	@B1E0:
 	ora #$80
 	sta TrgLinear_4008
-	jsr sub_apply_pitch_envelope
+	jsr sub_get_pitch_envelope
 	lda #$00
 	sta zp_ptr2_hi
 	lda zp_ptr2_lo
@@ -2449,19 +2472,19 @@ sub_trg_output:
 sub_noise_output:
 	ldx #$79		; SFX indices
 	ldy #$7C
-	lda ram_07A5
-	ora ram_07A6
+	lda ram_sfx3_data_ptr_lo
+	ora ram_sfx3_data_ptr_hi
 	bne :+
 
 		ldx #$03	; Music indices
 		ldy #$06
 :
-	jsr sub_apply_volume_envelope
+	jsr sub_get_volume_envelope
 	lda zp_ptr2_lo
 	ora #$30
 	sta NoiseVolume_400C
 
-	jsr sub_apply_pitch_envelope
+	jsr sub_get_pitch_envelope
 	lda ram_cur_period_lo,Y
 	clc
 	adc zp_ptr2_lo
@@ -2474,8 +2497,8 @@ sub_noise_output:
 ; -----------------------------------------------------------------------------
 
 ; Returns:
-; zp_ptr2_lo: current valut of volume envelope
-sub_apply_volume_envelope:
+; zp_ptr2_lo: current value of volume envelope
+sub_get_volume_envelope:
 	tya
 	pha
 
@@ -2505,7 +2528,9 @@ sub_apply_volume_envelope:
 
 ; -----------------------------------------------------------------------------
 
-sub_apply_duty_envelope:
+; Returns:
+; zp_ptr2_lo: current value of duty envelope
+sub_get_duty_envelope:
 	tya
 	pha
 
@@ -2536,7 +2561,9 @@ sub_apply_duty_envelope:
 
 ; -----------------------------------------------------------------------------
 
-sub_apply_pitch_envelope:
+; Returns:
+; zp_ptr2_lo: current value of pitch envelope
+sub_get_pitch_envelope:
 	tya
 	pha
 
@@ -2551,10 +2578,12 @@ sub_apply_pitch_envelope:
 	pla
 	pha
 	tay
+	; Get pointer to current envelope entry
 	lda ram_pitch_env_ptr_lo,Y
 	sta zp_ptr2_lo
 	lda ram_pitch_env_ptr_hi,Y
 	sta zp_ptr2_hi
+	; Read value (second byte, the first is duration)
 	ldy #$01
 	lda (zp_ptr2_lo),Y
 

@@ -254,7 +254,7 @@ sub_rom_B14D:
 
 	sta zp_63
 	lda #$03
-	sta ram_0672
+	sta ram_req_sfx
 	@B16F:
 	rts
 
@@ -370,7 +370,7 @@ sub_rom_B200:
 
 		sta zp_64
 		lda #$03
-		sta ram_0672
+		sta ram_req_sfx
 
 	@B222:
 	rts
@@ -569,7 +569,7 @@ sub_rom_B2FC:
 
 	sta zp_63,X
 	lda #$03
-	sta ram_0672
+	sta ram_req_sfx
 	@B34A:
 	lda zp_controller1_new,X
 	and #$C0
@@ -1039,7 +1039,7 @@ sub_rom_B723:
 	beq @B744
 
 	lda #$0F
-	sta ram_0672
+	sta ram_req_sfx
 	inc zp_4F
 	lda #$05
 	sta zp_55
@@ -1052,7 +1052,7 @@ sub_rom_B723:
 	bne @B775
 
 	lda #$10
-	sta ram_0672
+	sta ram_req_sfx
 	dec zp_54
 	bpl @B775
 
