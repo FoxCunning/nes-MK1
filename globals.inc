@@ -293,6 +293,7 @@ ram_063F = $063F    ;
 ram_0640 = $0640    ;
 ram_066D = $066D    ;
 ram_066E = $066E    ;
+
 ; Index of the SFX to play starting from the next frame
 ram_req_sfx = $0672    ;
 ; Index of the music track to play
@@ -301,6 +302,7 @@ ram_req_sfx = $0672    ;
 ram_req_song = $0673    ;
 ; Index of the music track currently playing (or last played)
 ram_cur_song = $0674    ;
+
 ram_0675 = $0675    ;
 ram_0678 = $0678    ;
 ram_0679 = $0679    ;
@@ -317,12 +319,13 @@ ram_06C3 = $06C3    ;
 ram_06C6 = $06C6    ;
 ram_06CD = $06CD    ;
 
+; ----------------
 ; Will contain 1 after the APU and sound engine have been initialised
 ; Nothing will play while this is set to zero
 ram_snd_initialised = $0700    ;
 ; Up to eight song/sfx indices to play ($FF = nothing is playing)
 ram_snd_stack = $0701    ; Size=8
-ram_0709 = $0709    ;
+; ram_0709 = $0709    ; Unused
 ; APU channel being currently processed: $00-$04 for music, $10-$14 for sfx
 ram_cur_apu_channel = $070A    ;
 ; The four APU channels are used both for music and sfx, and each will have
@@ -338,8 +341,10 @@ ram_cur_channel_offset = $070B    ;
 ; would be $70D for music square channel 0, and $783 for sfx square channel 0
 ; This is an offset for pointers, so it is 2-byte aligned: 0, 2, 4, 6, 8, 10...
 ram_cur_chan_ptr_offset = $070C    ;
+; ----------------
 ; This value will be added to note period index
 ram_note_transpose_value = $070D    ; Size=4
+; ----------------
 ; Used to loop parts of a music track
 ; The loop ends when the counter reaches zero
 ram_track_loop_counter = $0710    ;
@@ -347,6 +352,7 @@ ram_track_loop_counter = $0710    ;
 ram_track_loop_ptr_lo = $0715    ;
 ; Address in the music track where the loop begins
 ram_track_loop_ptr_hi = $0716    ;
+; ----------------
 ; Backup pointer, used to jump back to track after calling a subsegment
 ram_track_ptr_backup_lo = $071F    ;
 ; Backup pointer, used to jump back to track after calling a subsegment
@@ -358,7 +364,7 @@ ram_track_ptr_hi = $072A    ;
 ; Music/SFX speed value (interval in frames between events)
 ram_track_speed = $0733     ;
 ; Number of frames this note should last
-ram_cur_note_duration = $0734   ; Size=4
+ram_cur_note_duration = $0734   ; Size=5
 ; Frame counter, starts from track speed and counts down to zero
 ; Events are only processed when this reaches zero
 ; For example, at speed 4 a note with duration 2 lasts 8 frames
@@ -389,14 +395,16 @@ ram_duty_env_ptr_lo = $076F    ;
 ram_duty_env_ptr_hi = $0770    ;
 ; ----------------
 ; Pitch evelope indices, one per channel
-ram_pitch_env_idx = $0773           ; Size=4
+ram_pitch_env_idx = $0773           ; Size=3
 ; Ticks left for current value of instrument's pitch evenlope
-ram_cur_pitch_env_duration = $0777  ; Size=4
+ram_cur_pitch_env_duration = $0776  ; Size=3
 ; ----------------
 ; Pointer to the current position in the pitch envelope
-ram_pitch_env_ptr_lo = $077B    ;
+ram_pitch_env_ptr_lo = $0779    ; Ptrs=3
 ; Pointer to the current position in the pitch envelope
-ram_pitch_env_ptr_hi = $077C    ;
+ram_pitch_env_ptr_hi = $077A    ; Ptrs=3
+; Index of the note currently being played
+ram_cur_note_idx = $077F    ; Size=4
 ; ----------------
 ; Pointer to the track data for each channel (SFX 0)
 ram_sfx0_data_ptr_lo = $079F    ;
@@ -417,8 +425,8 @@ ram_sfx3_data_ptr_hi = $07A6    ;
 ; ----------------
 ram_sfx_vol_env_duration = $07D2    ;
 ram_sfx_duty_env_duration = $07E3   ;
-ram_sfx_pitch_env_duration = $07ED  ;
-
+ram_sfx_pitch_env_duration = $07EC  ;
+ram_sfx_cur_note_idx = $7F5     ;
 
 ; -----------------------------------------------------------------------------
 ;

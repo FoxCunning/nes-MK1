@@ -1201,48 +1201,49 @@ sub_apu_init:
 	; Clear all sound variables
 	lda #$00
 	ldy #$F9
-:
-	sta ram_snd_initialised,Y
-	dey
+	:
+		sta ram_snd_initialised,Y
+		dey
 	bne :-
 
 	lda #$FF
 	ldx #$05
-:
-	dex
-	sta ram_cur_vol_env_duration,X
-	sta ram_sfx_vol_env_duration,X
+
+	:
+		dex
+		sta ram_cur_vol_env_duration,X
+		sta ram_sfx_vol_env_duration,X
 	bne :-
 
 	ldx #$04
-:
+	:
 	dex
-	sta ram_cur_pitch_env_duration,X
-	sta ram_sfx_pitch_env_duration,X
+		sta ram_cur_pitch_env_duration,X
+		sta ram_sfx_pitch_env_duration,X
 	bne :-
 
 	ldx #$02
-:
-	dex
-	sta ram_cur_duty_env_duration,X
-	sta ram_sfx_duty_env_duration,X
+	:
+		dex
+		sta ram_cur_duty_env_duration,X
+		sta ram_sfx_duty_env_duration,X
 	bne :-
 
 	; Clear the sound stack by putting $FF in all eight slots
 	ldx #$08
-:
-	dex
-	sta ram_snd_stack,X
+	:
+		dex
+		sta ram_snd_stack,X
 	bne :-
 
 	rts
 
 ; -----------------------------------------------------------------------------
-.export sub_play_sound
+.export sub_play_new_song_or_sfx
 
 ; Parameters:
 ; A = index of the SFX or music track to play
-sub_play_sound:
+sub_play_new_song_or_sfx:
 	tax
 	ldy #$FF
 	@AAEF:
@@ -1258,19 +1259,15 @@ sub_play_sound:
 		; ...then put the sound index where that value was found
 		txa
 		sta ram_snd_stack,Y
-:
+	:
 	rts
 
 ; -----------------------------------------------------------------------------
-.export sub_rom_03_AAFE
+.export sub_process_all_sound
 
-sub_rom_03_AAFE:
-	lda ram_0709
-	bne @AB54
-
-	@AB03:
+sub_process_all_sound:
 	jsr sub_sound_output
-	jsr sub_rom_AB96
+	jsr sub_init_new_track
 
 	; Process music channels ($00-$03)
 	lda #$00
@@ -1306,112 +1303,87 @@ sub_rom_03_AAFE:
 	bne @AB3A
 
 	rts
-; ----------------
-	@AB54:
-	tay
-	cpy #$F0
-	beq @AB5E
-
-	cpy #$F1
-	beq @AB8E
-
-	rts
-; ----------------
-	@AB5E:
-	ldx #$00
-	ldy #$00
-	jsr sub_get_duty_envelope
-	lda zp_ptr2_lo
-	and #$F0
-	ora #$30
-	sta Sq0Duty_4000
-	ldx #$01
-	ldy #$02
-	jsr sub_get_duty_envelope
-	lda zp_ptr2_lo
-	and #$F0
-	ora #$30
-	sta Sq1Duty_4004
-	lda #$00
-	sta TrgLinear_4008
-	lda #$30
-	sta NoiseVolume_400C
-	lda #$FF
-	sta ram_0709
-	rts
-; ----------------
-	@AB8E:
-	lda #$00
-	sta ram_0709
-	jmp @AB03
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_AB96:
+; Reads hader data for all music/SFX in the stack, preparing pointers and
+; variables for the channels used by that track
+sub_init_new_track:
 	lda ram_snd_initialised
-	beq sub_rom_ABB4	; Skip if the sound engine has not been initialised
+	beq @init_new_track_return	; Skip if the sound engine has not been initialised
 
 		ldy #$00
 		@AB9D:
+		; Loop through the whole stack
 		lda ram_snd_stack,Y
 		bmi :+
 
-			tax
-			tya
+			; Skip if the music/sfx index is > $7F
+			; (Typically, $FF = no index)
+			tax	; Pass this as a parameter
+			tya	; Preserve Y
 			pha
-			jsr sub_rom_ABB5
+			jsr @read_track_header
 			pla
 			tay
 			lda #$FF
 			sta ram_snd_stack,Y
-:
+		:
 		iny
 		cpy #$08
 		bne @AB9D
 
-sub_rom_ABB4:
+	@init_new_track_return:
 	rts
-
-; -----------------------------------------------------------------------------
-
-sub_rom_ABB5:
-	txa
+; ----------------
+	; Reads track header
+	; Header consists of:
+	; Byte: APU channel (0-5, bit 7 set = SFX) or $FF (end of header)
+	; Word: Pointer to track data for that channel
+	@read_track_header:
+	txa	; Index of the sound track from the stack
 	asl A
 	tax
+	; Get pointer from pointers table
 	lda tbl_track_ptrs+0,X
 	sta zp_ptr2_lo
 	lda tbl_track_ptrs+1,X
 	sta zp_ptr2_hi
 	
 	ldy #$00
-	@ABC4:
+	@next_track_header:
 	lda (zp_ptr2_lo),Y
 	sta ram_cur_apu_channel
 	tax
-	cpx #$FF
-	beq sub_rom_ABB4	; sub_rom_AB53 (rts)
+	cpx #$FF	; $FF = End of header
+	beq @init_new_track_return
 
 	lda ram_cur_apu_channel
-	bmi @ABDD
+	bmi @header_sfx_offsets	; Bit 7 set = channel used for SFX
 
+	; Music offsets
 	sta ram_cur_channel_offset
 	asl A
 	sta ram_cur_chan_ptr_offset
-	jmp @ABEF
+	jmp @header_track_data_ptr
 
-	@ABDD:
-	and #$7F
-	clc
+	; SFX offsets
+	@header_sfx_offsets:
+	;and #$7F
+	;clc
+	anc #$7F
 	adc #$76
 	sta ram_cur_channel_offset
 	txa
-	and #$7F
+	; and #$7F Useless: we are shifting left and clearing carry, so bit 7 is lost
 	asl A
 	clc
 	adc #$76
 	sta ram_cur_chan_ptr_offset
-	@ABEF:
+
+	@header_track_data_ptr:
 	ldx ram_cur_chan_ptr_offset
+	; Prepare pointer to track data
 	iny
 	lda (zp_ptr2_lo),Y
 	sta ram_track_ptr_lo,X
@@ -1421,46 +1393,44 @@ sub_rom_ABB5:
 	iny
 	tya
 	pha
-	ldy #$00
-	lda ram_cur_apu_channel
-	bpl @AC0A
+		ldy #$00
+		lda ram_cur_apu_channel
+		bpl :+
+			; SFX offset
+			ldy #$76
+		:
+		lda ram_cur_apu_channel
+		and #$0F
+		tay
+		lda #$00
+		sta ram_track_speed_counter,X
+		sta ram_note_frames_left,X
+		ldx ram_cur_channel_offset
+		lda #$00
+		sta ram_vol_env_idx,X
+		lda #$FF
+		sta ram_cur_vol_env_duration,X
+		cpy #$03	; DMC and noise channels skip pitch, transpose and duty
+		bpl :+
 
-	ldy #$76
-	@AC0A:
-	lda ram_cur_apu_channel
-	and #$0F
-	tay
-	lda #$00
-	sta ram_track_speed_counter,X
-	sta ram_note_frames_left,X
-	ldx ram_cur_channel_offset
-	lda #$00
-	sta ram_vol_env_idx,X
-	lda #$FF
-	sta ram_cur_vol_env_duration,X
-	cpy #$04
-	bpl @AC4A
+		lda #$00
+		sta ram_pitch_env_idx,X
+		lda #$FF
+		sta ram_cur_pitch_env_duration,X
 
-	lda #$00
-	sta ram_pitch_env_idx,X
-	lda #$FF
-	sta ram_cur_pitch_env_duration,X
-	cpy #$03
-	bpl @AC4A
+		lda #$00
+		sta ram_note_transpose_value,X
+		cpy #$02	; Triangle channel skips duty envelope only
+		bpl :+
 
-	lda #$00
-	sta ram_note_transpose_value,X
-	cpy #$02
-	bpl @AC4A
-
-	lda #$00
-	sta ram_duty_env_idx,X
-	lda #$FF
-	sta ram_cur_duty_env_duration,X
-	@AC4A:
+		lda #$00
+		sta ram_duty_env_idx,X
+		lda #$FF
+		sta ram_cur_duty_env_duration,X
+	:
 	pla
 	tay
-	jmp @ABC4
+	jmp @next_track_header
 
 ; -----------------------------------------------------------------------------
 
@@ -1560,17 +1530,20 @@ sub_new_note_or_rest:
 		lda #$80
 		sta TrgLinear_4008
 	:
-	pla
+	pla	; Retrieve note index
 
 	cpx #$03
 	beq @noise_channel
 
 	cpx #$04
-	bne @ACBB	; This does nothing
-				; Maybe there was supposed to be DPCM code here
-	@ACBB:
-	ldx ram_cur_channel_offset
+	beq @dmc_skip_save_note
 
+		; Save note index for Square and Triangle channels
+		ldx ram_cur_channel_offset
+		sta ram_cur_note_idx,X
+
+	@dmc_skip_save_note:
+	ldx ram_cur_channel_offset
 	clc
 	adc ram_note_transpose_value,X
 	asl A
@@ -1584,6 +1557,10 @@ sub_new_note_or_rest:
 	jmp @ACE8
 
 	@noise_channel:
+	; Save note index for Noise channel
+	ldx ram_cur_channel_offset
+	sta ram_cur_note_idx,X
+
 	tax
 	and #$10
 	beq :+
@@ -2297,7 +2274,7 @@ sub_next_pitch_envelope:
 	lda ram_cur_apu_channel
 	and #$0F
 	tax
-	cpx #$04
+	cpx #$03	; Only applies to Square and Triangle channels
 	bpl @skip_pitch_env
 
 		@next_pitch_env:
@@ -2544,10 +2521,8 @@ sub_noise_output:
 	ora #$30
 	sta NoiseVolume_400C
 
-	jsr sub_get_pitch_envelope
+	; TODO Apply arpeggio
 	lda ram_cur_period_lo,Y
-	clc
-	adc zp_ptr2_lo
 	sta NoisePeriod_400E
 	lda #$F8
 	sta NoiseLength_400F

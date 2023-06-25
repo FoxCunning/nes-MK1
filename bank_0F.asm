@@ -86,7 +86,7 @@ reset:
 	; This will not actually play anything, maybe it was put here as a test
 	lda #$20
 	sta ram_req_song
-	jsr sub_play_sound
+	jsr sub_play_new_song_or_sfx
 	inc ram_snd_initialised	; Sounds will start playing after this
 
 	lda #$00
@@ -141,7 +141,7 @@ reset:
 	sta mmc3_bank_select
 	lda #$03
 	sta mmc3_bank_data
-	jsr sub_rom_03_AAFE
+	jsr sub_process_all_sound
 	lda #$00
 	sta a:zp_FD
 	jmp @E0DB
@@ -1420,7 +1420,7 @@ sub_rom_E8CB:
 	lda ram_req_song
 	sta ram_cur_song
 	@E8F9:
-	jsr sub_play_sound
+	jsr sub_play_new_song_or_sfx
 	lda #$00
 	sta ram_req_sfx
 	rts
