@@ -345,13 +345,12 @@ ram_cur_chan_ptr_offset = $070C    ;
 ; This value will be added to note period index
 ram_note_transpose_value = $070D    ; Size=4
 ; ----------------
-; Used to loop parts of a music track
-; The loop ends when the counter reaches zero
-ram_track_loop_counter = $0710    ;
-; Address in the music track where the loop begins
-ram_track_loop_ptr_lo = $0715    ;
-; Address in the music track where the loop begins
-ram_track_loop_ptr_hi = $0716    ;
+; Index of the arpeggio, or $FF is no arpeggio is active
+ram_arpeggio_idx = $0713    ; Size=4
+; Pointer to arpeggio data
+ram_arpeggio_ptr_lo = $0717 ;
+; Pointer to arpeggio data
+ram_arpeggio_ptr_hi = $0718 ;
 ; ----------------
 ; Backup pointer, used to jump back to track after calling a subsegment
 ram_track_ptr_backup_lo = $071F    ;
@@ -369,13 +368,15 @@ ram_cur_note_duration = $0734   ; Size=5
 ; Events are only processed when this reaches zero
 ; For example, at speed 4 a note with duration 2 lasts 8 frames
 ram_track_speed_counter = $0739 ; Use pointer offset to index
-; Frames left for current note to play
-ram_note_frames_left = $073A    ; Use pointer offset to index
-ram_cur_period_lo = $0743   ;
-ram_cur_period_hi = $0744   ;
+; "Ticks" left for current note to play (total note frames = ticks * speed)
+ram_note_ticks_left = $073A    ; Use pointer offset to index
 ; Base value for the period register, before applying envelopes and effects
+ram_base_period_lo = $0743   ;
+; Base value for the period register, before applying envelopes and effects
+ram_base_period_hi = $0744   ;
+; Modified note period, after applying envelopes and effects
 ram_note_period_lo = $074D  ;
-; Base value for the period register, before applying envelopes and effects
+; Modified note period, after applying envelopes and effects
 ram_note_period_hi = $074E  ;
 ; ----------------
 ; Index of duty envelope, one per channel

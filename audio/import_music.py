@@ -17,15 +17,13 @@ NOTES = ["(Rest)", "(Rest)", "(Rest)", "(Rest)", "(Rest)", "(Rest)", "(Rest)", "
          "C-7", "C#7", "D-7", "D#7", "E-7", "F-7", "F#7", "G-7", "G#7", "A-7", "A#7", "B-7"
          ]
 
-"""
 NOISE = [
     0x0F, 0x0E, 0x0D, 0x0C, 0x0B, 0x0A, 0x09, 0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, 0x00
 ]
-"""
 
 # noinspection SpellCheckingInspection
 EVENTS = ["CALL SEGMENT", "END SEGMENT", "LOOP START", "LOOP END", "JUMP", "SPEED", "TRANSPOSE", "SKIP",
-          "VOL ENV", "DUTY ENV", "PITCH ENV", "LOOP JUMP", "NOP", "UNUSED", "SKIP", "STOP"]
+          "VOL ENV", "DUTY ENV", "PITCH ENV", "ARPEGGIO", "NOP", "UNUSED", "SKIP", "STOP"]
 
 
 class FmtMacro:
@@ -54,51 +52,60 @@ class FmtMacro:
 
         # Formatted data for the MK1 sound engine
         self.data: List[int] = []
-        # TODO Add a byte for pitch/arpeggio flags
-        count = 0   # Count of repeated bytes
-        index = 0   # Keep count of where we are for loop and release offsets
-        loop_position = -1
-        last_value = self.values[0]
-        for v in self.values[1:]:
-            if index == self.loop_offset - 1:
-                # Loop offset reached, stop any sequence, so we can loop exactly from here
+        # Add a byte for arpeggio flags
+        # TODO Do the same for pitch envelopes
+        if self.type == 1:
+            self.data.append(0 if self.flag == 0 else 0x80)
+
+            # Arpeggios are not RLE-encoded
+            self.data = self.data + self.values
+            self.data.append(0x7F)  # Special termination token for arpeggios
+        else:
+            # Encode other envelopes with some simplified RLE algorithm
+            count = 0   # Count of repeated bytes
+            index = 0   # Keep count of where we are for loop and release offsets
+            loop_position = -1
+            last_value = self.values[0]
+            for v in self.values[1:]:
+                if index == self.loop_offset - 1:
+                    # Loop offset reached, stop any sequence, so we can loop exactly from here
+                    self.data.append(count + 1)
+                    self.data.append(last_value)
+                    loop_position = len(self.data) + 2
+                    # Start a new sequence
+                    count = 0
+
+                elif v == last_value:
+                    count += 1
+
+                elif count > 0:
+                    self.data.append(count + 1)
+                    self.data.append(last_value)
+                    count = 0
+
+                else:
+                    self.data.append(1)
+                    self.data.append(last_value)
+
+                index += 1
+                last_value = v
+
+            # Add the last value that was not caught by the loop
+            if count > 0:
                 self.data.append(count + 1)
                 self.data.append(last_value)
-                loop_position = len(self.data) + 2
-                # Start a new sequence
-                count = 0
-
-            elif v == last_value:
-                count += 1
-
-            elif count > 0:
-                self.data.append(count + 1)
-                self.data.append(last_value)
-                count = 0
-
             else:
                 self.data.append(1)
                 self.data.append(last_value)
 
-            index += 1
-            last_value = v
+            # Termination byte
+            self.data.append(0xFF)
 
-        # Add the last value that was not caught by the loop
-        if count > 0:
-            self.data.append(count + 1)
-            self.data.append(last_value)
-        else:
-            self.data.append(1)
-            self.data.append(last_value)
-
-        # Termination byte
-        self.data.append(0xFF)
-
-        # Either stop or loop
-        if self.loop_offset > -1:
-            self.data.append(0xFF - (len(self.data) - loop_position)//2)
-        else:
-            self.data.append(0)
+            # Either stop or loop
+            if self.loop_offset > -1:
+                self.data.append(0xFF - (len(self.data) - loop_position)//2)
+            else:
+                self.data.append(0)
 
 
 class FmtInstrument:
@@ -161,7 +168,7 @@ class FmtRow:
             event = self.event
 
         try:
-            noise = int(event[0], 16)  # NOISE[int(event[0], 16)]
+            noise = NOISE[int(event[0], 16)]
 
         except ValueError:
             print(f"!WARNING: Invalid noise value: '{event}'.")
@@ -188,6 +195,7 @@ class Channel:
     EVENT_VOL_ENV = 0xF8  # Set volume envelope
     EVENT_DUTY_ENV = 0xF9  # Set duty envelope
     EVENT_PITCH_ENV = 0xFA  # Set pitch envelope
+    EVENT_ARPEGGIO = 0xFB   # Set arpeggio
 
     EVENT_MUTE = 0xFE  # *UNIMPLEMENTED* Mute channel for specified amount of ticks
 
@@ -307,6 +315,14 @@ class Channel:
                     self.last_pitch_env = instruments[parameter].pitch_idx
                     self.asm += f", ${self.last_pitch_env:02X}\t; {name} {instruments[parameter].name}\n"
 
+            elif event == Channel.EVENT_ARPEGGIO:
+                if parameter == 0xFF:
+                    self.last_arpeggio = parameter
+                    self.asm += f", ${parameter:02X}\t; {name} (None)\n"
+                else:
+                    self.last_arpeggio = instruments[parameter].arp_idx
+                    self.asm += f", ${self.last_arpeggio:02X}\t; {name} {instruments[parameter].name}\n"
+
             elif event == Channel.EVENT_TIMBRE:
                 print("!!! Unimplemented command: set timbre")
                 # if self.id < 2:
@@ -320,12 +336,8 @@ class Channel:
                 self.last_volslide = parameter
 
             elif event == Channel.EVENT_JUMP:
-                # JUMP has a two-byte parameter
-                lo = parameter & 0x00FF
-                hi = (parameter >> 8) & 0x00FF
-                self.data.append(hi)
-                self.data.append(lo)
-                self.asm += f", ${lo:02X}, ${hi:02X}"
+                # JUMP parameter is frame number
+                self.asm += f"\t\t; {name}\n\t.word @frame_{parameter:02X}\n"
 
             else:
                 self.data.append(parameter)
@@ -368,11 +380,11 @@ class Channel:
                 name = EVENTS[self.current_event & 0x7F]
             else:
                 if self.id == Channel.ID_NOISE:
-                    name = f"{self.current_event:02X}-#"
+                    name = f"{NOISE.index(self.current_event):1X}-#"
                 else:
                     name = NOTES[self.current_event]
 
-            self.asm += f"\t\t; {name}, {self.current_duration} ticks\n"
+            self.asm += f"\t\t; {name}, {self.current_duration} tick{'s' if self.current_duration > 1 else ''}\n"
 
             self.last_event = self.current_event
 
@@ -453,12 +465,16 @@ def export_instruments(file_name: str, lines: List[str]):
 
 def main():
     if len(sys.argv) < 4:
-        print(f"Usage: {sys.argv[0]} <input file> <output name> <track name|-i|--instruments>")
+        print(f"Usage: {sys.argv[0]} <input file> <output name> <track name|-i|--instruments> [-l|--loop]")
         return
 
     in_name = sys.argv[1]
     out_name = sys.argv[2]
     seek_track = sys.argv[3]
+    if len(sys.argv) > 4 and (sys.argv[4] == "-l" or sys.argv[4] == "--loop"):
+        loop_first_frame = True
+    else:
+        loop_first_frame = False
 
     with open(in_name, "r") as fd_in:
         lines = fd_in.read().splitlines()
@@ -978,8 +994,8 @@ def main():
                             channels[c].instant_event(Channel.EVENT_DUTY_ENV, new_instrument)
                     if pitch_env != channels[c].last_pitch_env:
                         channels[c].instant_event(Channel.EVENT_PITCH_ENV, new_instrument)
-
-                    # TODO Arpeggio
+                    if arpeggio != channels[c].last_arpeggio:
+                        channels[c].instant_event(Channel.EVENT_ARPEGGIO, new_instrument)
 
                     # Check if we need to change the volume
                     volume = row.volume
@@ -1056,7 +1072,10 @@ def main():
     for c in range(4):
         channels[c].finalise_event()
         if halt is False:
-            channels[c].instant_event(Channel.EVENT_ENDSEG)
+            if loop_first_frame:
+                channels[c].instant_event(Channel.EVENT_JUMP, 0)
+            else:
+                channels[c].instant_event(Channel.EVENT_ENDSEG)
         else:
             # channels[c].instant_event(Channel.EVENT_STOP)
             channels[c].instant_event(Channel.EVENT_END)
@@ -1077,6 +1096,7 @@ def main():
 
     # Write channel data
     for c in range(4):
+        # TODO If frame loop is disabled, make a looping list of segment calls
         # No binary version for now
         # with open(out_name + f"_Ch{c}.bin", "wb") as fd_out:
         #    fd_out.write(channels[c].data)

@@ -211,6 +211,7 @@ rom_8702:
 ; Square 0
 rom_8703:
 	.byte $F5, $02, $F6, $0F, $F9, $00, $FA, $00
+	.byte $FB, $FF
 	.byte $F8, $02, $83, $2D, $2B, $A4, $2D, $8C
 	.byte $00, $00, $F6, $01, $F9, $00, $FA, $00
 	.byte $F8, $00, $98, $17, $FF, $FF
@@ -218,6 +219,7 @@ rom_8703:
 ; Square 1
 rom_8721:
 	.byte $F6, $0F, $F9, $00, $FA, $00, $F8, $00
+	.byte $FB, $FF
 	.byte $83, $39, $37, $A4, $39, $8C, $00, $00
 	.byte $F6, $01, $F9, $00, $FA, $00, $F8, $00
 	.byte $BC, $15, $FF, $FF
@@ -225,12 +227,14 @@ rom_8721:
 ; Triangle
 rom_873D:
 	.byte $F6, $0F, $F9, $00, $FA, $00, $F8, $00
+	.byte $FB, $FF
 	.byte $83, $2B, $29, $A4, $28, $8C, $00, $00
 	.byte $FF
 
 ; Noise
 rom_874E:
 	.byte $F6, $00, $F9, $00, $FA, $00, $F8, $00
+	.byte $FB, $FF
 	.byte $83, $24, $24, $24, $24, $8C, $00, $00
 	.byte $00, $00, $F9, $00, $FA, $00, $F8, $00
 	.byte $A4, $2D, $FF, $FF
@@ -267,6 +271,7 @@ mus_player_select:
 rom_88E5:
 	.byte $F5, $02, $F6, $0B, $F9, $00, $FA, $00
 	.byte $F8, $00
+	.byte $FB, $FF
 	@rom_88EF:
 	.byte $F6, $0B, $F9, $00, $FA, $00, $F8, $00
 	.byte $88, $21, $2D, $2B, $2D, $00, $2D, $2B
@@ -280,6 +285,7 @@ rom_88E5:
 ; Square 1
 rom_890C:
 	.byte $F6, $0B, $F9, $00, $FA, $00, $F8, $00
+	.byte $FB, $FF
 	@rom_8914:
 	.byte $F9, $00, $FA, $00, $F8, $00, $88, $2D
 	.byte $84, $2B, $2D, $30, $2D, $88, $2D, $2D
@@ -293,6 +299,7 @@ rom_890C:
 ; Triangle
 rom_8933:
 	.byte $F6, $0A, $F9, $00, $FA, $00, $F8, $00
+	.byte $FB, $FF
 	.byte $88, $21, $2D, $2B, $2D, $00, $2D, $2B
 	.byte $2D
 	.byte $F4
@@ -303,6 +310,7 @@ rom_8933:
 ; Noise
 rom_8948:
 	.byte $F6, $00, $F9, $00, $FA, $00, $F8, $00
+	.byte $FB, $FF
 	.byte $88, $24, $24, $24, $24, $24, $24, $24
 	.byte $84, $24, $24
 	.byte $F4
@@ -356,16 +364,19 @@ mus_8A1A:
 ; Square 0
 rom_8A2A:
 	.byte $F5, $02, $F6, $00, $F9, $00, $FA, $00
+	.byte $FB, $FF
 	.byte $F8, $00, $A4, $1D, $FF
 
 ; Square 1
 rom_8A37:
 	.byte $F6, $01, $F9, $00, $FA, $00, $F8, $00
+	.byte $FB, $FF
 	.byte $A4, $21, $FF
 
 ; Triangle
 rom_8A42:
 	.byte $F6, $00, $F9, $00, $FA, $00, $F8, $00
+	.byte $FB, $FF
 	.byte $A4, $2F, $FF
 
 ; Silent channel
@@ -393,21 +404,25 @@ sfx_8A4E:
 ; Square 0
 rom_8A5E:
 	.byte $F5, $02, $F6, $0F, $F9, $07, $FA, $00
+	.byte $FB, $FF
 	.byte $F8, $02, $8C, $2B, $B0, $2D, $FF
 
 ; Square 1
 rom_8A6D:
 	.byte $F6, $0F, $F9, $12, $FA, $00, $F8, $00
+	.byte $FB, $FF
 	.byte $8C, $2B, $B0, $2D, $FF
 
 ; Triangle
 rom_8A7A:
 	.byte $F6, $0F, $F9, $00, $FA, $00, $F8, $00
+	.byte $FB, $FF
 	.byte $8C, $29, $B0, $28, $FF
 
 ; Noise
 rom_8A87:
 	.byte $F6, $00, $F9, $00, $FA, $00, $F8, $00
+	.byte $FB, $FF
 	.byte $83, $24, $24, $24, $24, $86, $24, $24
 	.byte $24, $24, $24, $24, $24, $FF
 
@@ -561,6 +576,7 @@ mus_96B1:
 ; Square 1
 rom_96C1:
 	.byte $F5, $02, $F6, $01, $F9, $00, $FA, $00
+	.byte $FB, $FF
 	.byte $F8, $00, $BC, $15, $FF
 
 ; ----------------
@@ -575,6 +591,7 @@ sfx_96CE:
 ; Noise
 rom_96D2:
 	.byte $F5, $03, $F6, $01, $F9, $00, $FA, $00
+	.byte $FB, $FF
 	.byte $F8, $00, $A0, $2D, $FF
 
 ; ----------------
@@ -589,6 +606,7 @@ sfx_96DF:
 ; Noise
 rom_96E3:
 	.byte $F5, $03, $F6, $01, $F9, $00, $FA, $00
+	.byte $FB, $FF
 	.byte $F8, $01, $A0, $2F, $FF
 
 ; ----------------
@@ -603,6 +621,7 @@ sfx_96F0:
 ; Unused SFX Noise channel
 rom_96F4:
 	.byte $F5, $03, $F6, $01, $F9, $00, $FA, $00
+	.byte $FB, $FF
 	.byte $F8, $00, $B2, $17, $FF
 
 ; ----------------
@@ -617,6 +636,7 @@ sfx_9701_unused:
 
 rom_9705:
 	.byte $F5, $03, $F6, $01, $F9, $00, $FA, $00
+	.byte $FB, $FF
 	.byte $F8, $00, $8C, $29, $FF
 
 ; ----------------
@@ -631,10 +651,12 @@ sfx_9712:
 ; Square 0
 rom_9716:
 	.byte $F5, $04, $F6, $00, $F9, $00, $FA, $00
+	.byte $FB, $FF
 	.byte $F8, $00, $83, $2D, $30, $95, $39, $FF
 ; Square 1
 rom_9726:
 	.byte $F6, $00, $F9, $00, $FA, $00, $F8, $00
+	.byte $FB, $FF
 	.byte $81, $00, $83, $2D, $30, $95, $39, $FF
 
 ; ----------------
@@ -651,6 +673,7 @@ sfx_9736:
 ; Square 1
 rom_973D:
 	.byte $F5, $01, $F6, $11, $F9, $00, $FA, $00
+	.byte $FB, $FF
 	.byte $F8, $00, $83, $28, $00, $24, $00, $28
 	.byte $00, $24, $FF
 
@@ -666,10 +689,12 @@ sfx_9750:
 ; Square 0
 rom_9754:
 	.byte $F5, $04, $F6, $00, $F9, $00, $FA, $00
+	.byte $FB, $FF
 	.byte $F8, $00, $81, $24, $89, $21, $FF
 ; Square 1
 rom_9763:
 	.byte $F6, $00, $F9, $00, $FA, $00, $F8, $00
+	.byte $FB, $FF
 	.byte $81, $00, $24, $89, $21, $FF
 
 ; ----------------
@@ -686,6 +711,7 @@ sfx_9771:
 ; Square 0
 rom_9778:
 	.byte $F5, $04, $F6, $00, $F9, $00, $FA, $00
+	.byte $FB, $FF
 	.byte $F8, $00, $83, $39, $FF
 
 ; ----------------
@@ -701,6 +727,7 @@ sfx_9785:
 ; Potentially unused SFX noise channel
 rom_9789:
 	.byte $F5, $03, $F6, $01, $F9, $00, $FA, $00
+	.byte $FB, $FF
 	.byte $F8, $00, $84, $2F, $FF
 
 ; ----------------
@@ -716,6 +743,7 @@ sfx_9796_unused:
 ; Noise
 rom_979A:
 	.byte $F5, $03, $F6, $01, $F9, $00, $FA, $00
+	.byte $FB, $FF
 	.byte $F8, $00, $85, $17, $FF
 
 ; ----------------

@@ -1213,6 +1213,7 @@ sub_apu_init:
 		dex
 		sta ram_cur_vol_env_duration,X
 		sta ram_sfx_vol_env_duration,X
+		sta ram_arpeggio_idx,X
 	bne :-
 
 	ldx #$04
@@ -1404,7 +1405,7 @@ sub_init_new_track:
 		tay
 		lda #$00
 		sta ram_track_speed_counter,X
-		sta ram_note_frames_left,X
+		sta ram_note_ticks_left,X
 		ldx ram_cur_channel_offset
 		lda #$00
 		sta ram_vol_env_idx,X
@@ -1441,12 +1442,12 @@ sub_play_cur_channel:
 
 	lda ram_track_ptr_lo,X
 	ora ram_track_ptr_hi,X
-	beq @AC8D	; Skip if pointer is $0000
+	beq @skip_playing_channel
 
 		lda ram_track_speed_counter,X
-		bne @AC8A	; Skip processing if are still waiting
+		bne @decrease_speed_counter	; Skip processing if are still waiting
 
-			lda ram_note_frames_left,X
+			lda ram_note_ticks_left,X
 			bne :+
 
 				; Current note just finished playing, get the next
@@ -1454,30 +1455,33 @@ sub_play_cur_channel:
 				ldx ram_cur_chan_ptr_offset
 				ldy ram_cur_channel_offset
 				lda ram_cur_note_duration,Y
-				sta ram_note_frames_left,X
-
+				sta ram_note_ticks_left,X
+				; This will only get the arpeggio index and type flag,
+				; unless it's disabled/inactive on this channel
+				jsr sub_start_arpeggio
+				ldx ram_cur_chan_ptr_offset
 			:
-			dec ram_note_frames_left,X
+			dec ram_note_ticks_left,X
 
 			ldy ram_cur_apu_channel
 			cpy #$05
-			bmi @AC82
+			bmi :+
 
 				ldy #$76
 				jmp @AC84
 
-			@AC82:
+			:
 			ldy #$00
 			@AC84:
 			; Reload the counter for the next event/tick
 			lda ram_track_speed,Y
 			sta ram_track_speed_counter,X
 
-		@AC8A:
+		@decrease_speed_counter:
 		; If the speed timer has not expired, just decrease it
-		dec ram_track_speed_counter,X
+		dec ram_track_speed_counter,X	; X = current channel POINTER index
 
-	@AC8D:
+	@skip_playing_channel:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1524,14 +1528,123 @@ sub_new_note_or_rest:
 	and #$0F
 	tax
 
-	cpx #$02	; Triangle channel
+	cpx #$02
 	bne :+
+		; Triangle channel
 		; Stop playing the previous note, if any
 		lda #$80
 		sta TrgLinear_4008
 	:
 	pla	; Retrieve note index
 
+	jsr sub_apply_note_pitch
+
+	jsr sub_start_all_envelopes
+	jsr sub_advance_track_ptr
+	rts
+
+; -----------------------------------------------------------------------------
+
+; Gets note pitch for arpeggio and saves it as current channel's base pitch
+; If arpeggio is inactive or disabled, nothing is changed
+; Does not save note index
+; Parameters:
+; zp_ptr2_lo = arpeggio value
+; X = index for byte channel data
+; Y = index for word/pointer channel data
+sub_apply_arpeggio_pitch:
+	txa
+	pha	; Preserve X
+
+	lda ram_arpeggio_idx,X
+	cmp #$FF	; Skip if arpeggio is inactive
+	beq @no_arpeggio
+
+		; Get next value
+		jsr sub_get_next_arpeggio_value
+		bcc :+
+			; If this arpeggio has ended (read last value),
+			; change pitch back to original note
+			lda ram_cur_note_idx,X
+			jmp @apply_note_pitch
+		:
+		; Check arpeggio type (absolute or fixed)
+		lda ram_arpeggio_idx,X
+		bmi :+
+			; Absolute arpeggio: add to base note index
+			lda ram_cur_note_idx,X
+			clc
+			adc zp_ptr2_lo
+			jmp @apply_note_pitch
+		:
+		; Fixed arpeggio: override base note index
+		lda zp_ptr2_lo
+
+		; A = note index
+		@apply_note_pitch:
+		asl A
+		tax
+
+		lda tbl_pitches+0,X
+		sta ram_base_period_lo,Y
+		lda tbl_pitches+1,x
+		sta ram_base_period_hi,Y
+
+	@no_arpeggio:
+	pla
+	tax
+	rts
+
+; -----------------------------------------------------------------------------
+
+; Gets noise value for arpeggio and saves it as current channel's base pitch
+; If arpeggio is inactive or disabled, nothing is changed
+; Does not save note index
+; Parameters:
+; zp_ptr2_lo = arpeggio value
+; X = index for byte channel data
+; Y = index for word/pointer channel data
+sub_apply_arpeggio_noise:
+	lda ram_arpeggio_idx,X
+	cmp #$FF	; Skip if arpeggio is inactive
+	beq @no_noise_arpeggio
+
+		; Get next value
+		jsr sub_get_next_arpeggio_value
+		bcc :+
+			; If this arpeggio has ended (read last value),
+			; change pitch period to original value
+			lda ram_cur_note_idx,X
+			jmp @apply_noise_period
+		:
+		; Check arpeggio type (absolute or fixed)
+		lda ram_arpeggio_idx,X
+		bmi :+
+			; Absolute arpeggio: add to base noise period
+			lda ram_base_period_lo,Y
+			clc
+			adc zp_ptr2_lo
+			jmp @apply_noise_period
+		:
+		; Fixed arpeggio: override base noise period
+		lda zp_ptr2_lo
+
+		@apply_noise_period:
+		sta ram_base_period_lo,Y
+
+	@no_noise_arpeggio:
+	rts
+
+; -----------------------------------------------------------------------------
+
+; Gets note pitch for current channel from period table and stores it
+; in the base note pitch for the current channel
+; Also saves the note index (except for DMC)
+; Parameters:
+; X = APU channel index (0-4)
+; Returns:
+; X = ram_cur_chan_ptr_offset
+sub_apply_note_pitch:
 	cpx #$03
 	beq @noise_channel
 
@@ -1550,11 +1663,11 @@ sub_new_note_or_rest:
 	tay
 	ldx ram_cur_chan_ptr_offset
 	lda tbl_pitches+0,Y
-	sta ram_cur_period_lo,X
+	sta ram_base_period_lo,X
 	lda tbl_pitches+1,Y
-	sta ram_cur_period_hi,X
+	sta ram_base_period_hi,X
 
-	jmp @ACE8
+	rts
 
 	@noise_channel:
 	; Save note index for Noise channel
@@ -1572,11 +1685,8 @@ sub_new_note_or_rest:
 	:
 	txa
 	ldx ram_cur_chan_ptr_offset
-	sta ram_cur_period_lo,X
-
-	@ACE8:
-	jsr sub_start_all_envelopes
-	jsr sub_advance_track_ptr
+	sta ram_base_period_lo,X
+	
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1609,7 +1719,7 @@ tbl_track_cmd_ptrs:
 	.word sub_cmd_set_vol_env		; $F8
 	.word sub_cmd_set_duty_env		; $F9
 	.word sub_cmd_set_pitch_env		; $FA
-	.word sub_cmd_jump_after_loop	; $FB	Not used
+	.word sub_cmd_set_arpeggio		; $FB
 	.word sub_skip_track_data		; $FC	(does nothing)
 	.word sub_cmd_note_duration		; $FD	Not used ($8x in track data directly)
 	.word sub_get_next_track_byte	; $FE	(this byte is skipped)
@@ -1652,53 +1762,17 @@ sub_cmd_end_seg:
 
 ; -----------------------------------------------------------------------------
 
+; Not used
 sub_cmd_start_loop:
-	ldx ram_cur_chan_ptr_offset
-
-	; Prepare pointer to track data
-	lda ram_track_ptr_lo,X
-	sta zp_ptr2_lo
-	lda ram_track_ptr_hi,X
-	sta zp_ptr2_hi
-
-	; Read next byte: loop counter
-	ldx ram_cur_channel_offset
-	ldy #$00
-	lda (zp_ptr2_lo),Y
-	sta ram_track_loop_counter,X
-
-	jsr sub_advance_track_ptr
-
-	; Save a copy of the track data pointer (this is where the loop starts)
-	ldx ram_cur_chan_ptr_offset
-	lda ram_track_ptr_lo,X
-	sta ram_track_loop_ptr_lo,X
-	lda ram_track_ptr_hi,X
-	sta ram_track_loop_ptr_hi,X
+	; Disabled
 
 	jmp sub_get_next_track_byte
 
 ; -----------------------------------------------------------------------------
 
+; Not used
 sub_cmd_end_loop:
-	ldx ram_cur_channel_offset
-
-	dec ram_track_loop_counter,X
-	beq :+
-
-		ldx ram_cur_chan_ptr_offset
-		lda ram_track_loop_ptr_lo,X
-		sta ram_track_ptr_lo,X
-		lda ram_track_loop_ptr_hi,X
-		sta ram_track_ptr_hi,X
-
-		jmp sub_get_next_track_byte
-		; --------
-:
-	ldx ram_cur_chan_ptr_offset
-	lda #$00
-	sta ram_track_loop_ptr_lo,X
-	sta ram_track_loop_ptr_hi,X
+	; Disabled
 
 	jmp sub_get_next_track_byte
 
@@ -1791,14 +1865,14 @@ sub_get_next_track_byte:
 		; Note value ($00-$7F)
 		jmp sub_new_note_or_rest
 		; --------
-:
+	:
 	tax
 	cpx #$F0
 	bpl :+
 
 		jmp sub_cmd_note_duration
 		; --------
-:
+	:
 	jmp sub_process_track_command
 
 ; -----------------------------------------------------------------------------
@@ -1917,43 +1991,20 @@ sub_stop_envelopes:
 
 ; Skips a jump address if we are in a loop, but if this is the last time we
 ; are looping, then jumps to that address instead
-sub_cmd_jump_after_loop:
-	ldx ram_cur_chan_ptr_offset
-	
-	; Prepare track data pointer
-	lda ram_track_ptr_lo,X
-	sta zp_ptr2_lo
-	lda ram_track_ptr_hi,X
-	sta zp_ptr2_hi
-	jsr sub_advance_track_ptr
+sub_cmd_set_arpeggio:
+	lda ram_cur_apu_channel
+	and #$0F
+	tax
+	cpx #$04
+	bmi :+
 
-	ldx ram_cur_channel_offset
-	lda ram_track_loop_counter,X
-	bne :+
-
-		; Read next byte as the new loop counter,
-		; as long as we were not in a loop already
-		ldy #$00
-		lda (zp_ptr2_lo),Y
-		sta ram_track_loop_counter,X
-:
-	dec ram_track_loop_counter,X
-	bne :+
-
-		; This seems to skip the next two bytes
-		ldx ram_cur_chan_ptr_offset
-		lda ram_track_ptr_lo,X
-		clc
-		adc #$02
-		sta ram_track_ptr_lo,X
-		lda ram_track_ptr_hi,X
-		adc #$00
-		sta ram_track_ptr_hi,X
-
+		jsr sub_advance_track_ptr
 		jmp sub_get_next_track_byte
-		; --------
-:
-	jmp sub_cmd_track_jump
+	:
+	jsr sub_track_read_next_byte
+	; If the index is $FF, arpeggio is automatically disabled
+	sta ram_arpeggio_idx,X
+	jmp sub_get_next_track_byte
 
 ; -----------------------------------------------------------------------------
 
@@ -2100,6 +2151,60 @@ sub_start_pitch_envelope:
 
 ; -----------------------------------------------------------------------------
 
+; Reads and processes the first byte of an arpeggio (type flag)
+; Call when an actual note starts (not on a rest or hold)
+; Returns:
+; A = arpeggio index with type flag, or $FF if no arpeggio
+sub_start_arpeggio:
+	lda ram_cur_apu_channel
+	and #$0F
+	cmp #$04
+	beq @arpeggio_disabled	; No arpeggio for DMC
+
+		tax
+		ldx ram_cur_channel_offset
+		ldy ram_cur_chan_ptr_offset
+
+		lda ram_cur_note_idx,X
+		cmp #$09
+		bcs :+
+
+			; Not a note (rest or hold), disable arpeggio
+			lda #$FF
+			sta ram_arpeggio_idx
+			rts
+		:
+		lda ram_arpeggio_idx,X
+		cmp #$FF
+		beq @arpeggio_disabled
+
+			asl A
+			tax
+
+			; Prepare and save pointer
+			lda tbl_arp_ptrs+0,X
+			sta ram_arpeggio_ptr_lo,Y
+			sta zp_ptr2_lo
+
+			lda tbl_arp_ptrs+1,X
+			sta ram_arpeggio_ptr_hi,Y
+			sta zp_ptr2_hi
+
+			; Read first byte (type flag)
+			ldy #$00
+			lda (zp_ptr2_lo),Y
+			ldx ram_cur_channel_offset
+			ora ram_arpeggio_idx,X
+			sta ram_arpeggio_idx,X
+
+	@arpeggio_disabled:
+	rts
+
+; -----------------------------------------------------------------------------
+
+; Returns:
+; A = next byte of track data
+; X = current channel offset
 sub_track_read_next_byte:
 	ldx ram_cur_chan_ptr_offset
 	lda ram_track_ptr_lo,X
@@ -2358,7 +2463,7 @@ sub_sq0_output:
 
 		ldx #$00	; Music indices
 		ldy #$00
-:
+	:
 	jsr sub_get_volume_envelope
 	lda zp_ptr2_lo
 
@@ -2370,7 +2475,6 @@ sub_sq0_output:
 	ora #$30
 	sta Sq0Duty_4000
 
-	; TODO Implement arpeggio and apply that before pitch
 	jsr sub_get_pitch_envelope
 
 	lda #$00
@@ -2380,8 +2484,8 @@ sub_sq0_output:
 	bpl :+
 
 		dec zp_ptr2_hi
-:
-	lda ram_cur_period_lo,Y
+	:
+	lda ram_base_period_lo,Y
 	clc
 	adc zp_ptr2_lo
 	; TODO For relative envelopes, also modify the base note period
@@ -2390,7 +2494,7 @@ sub_sq0_output:
 
 	lda ram_note_period_hi,Y
 	sta zp_ptr2_lo
-	lda ram_cur_period_hi,Y
+	lda ram_base_period_hi,Y
 	adc zp_ptr2_hi
 	tax
 	cpx zp_ptr2_lo
@@ -2400,7 +2504,7 @@ sub_sq0_output:
 		sta ram_note_period_hi,Y
 		ora #$F8
 		sta Sq0Length_4003
-:
+	:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -2433,14 +2537,14 @@ sub_sq1_output:
 
 		dec zp_ptr2_hi
 :
-	lda ram_cur_period_lo,Y
+	lda ram_base_period_lo,Y
 	clc
 	adc zp_ptr2_lo
 	sta ram_note_period_lo,Y
 	sta Sq1Timer_4006
 	lda ram_note_period_hi,Y
 	sta zp_ptr2_lo
-	lda ram_cur_period_hi,Y
+	lda ram_base_period_hi,Y
 	adc zp_ptr2_hi
 	tax
 	cpx zp_ptr2_lo
@@ -2477,6 +2581,11 @@ sub_trg_output:
 	;sta TrgLinear_4008
 	; ----
 
+	; Apply arpeggio (if needed) before reading pitch values
+	; That is because the arpeggio can modify them, and we apply other effects
+	; (such as pitch envelopes/vibrato) to that new value
+	jsr sub_apply_arpeggio_pitch
+
 	jsr sub_get_pitch_envelope
 	lda #$00
 	sta zp_ptr2_hi
@@ -2485,14 +2594,14 @@ sub_trg_output:
 
 		dec zp_ptr2_hi
 	:
-	lda ram_cur_period_lo,Y
+	lda ram_base_period_lo,Y
 	clc
 	adc zp_ptr2_lo
 	sta ram_note_period_lo,Y
 	sta TrgTimer_400A
 	lda ram_note_period_hi,Y
 	sta zp_ptr2_lo
-	lda ram_cur_period_hi,Y
+	lda ram_base_period_hi,Y
 	adc zp_ptr2_hi
 	tax
 	cpx zp_ptr2_lo
@@ -2521,8 +2630,10 @@ sub_noise_output:
 	ora #$30
 	sta NoiseVolume_400C
 
-	; TODO Apply arpeggio
-	lda ram_cur_period_lo,Y
+	; This will change the base period if needed
+	jsr sub_apply_arpeggio_noise
+
+	lda ram_base_period_lo,Y
 	sta NoisePeriod_400E
 	lda #$F8
 	sta NoiseLength_400F
@@ -2633,6 +2744,54 @@ sub_get_pitch_envelope:
 
 ; -----------------------------------------------------------------------------
 
+; Parameters:
+; X = current channel data offset
+; Y = current channel pointer offset
+; Returns:
+; C = set if end of data reached, clear if not
+; zp_ptr2_lo = next value from arpeggio table (or $7F if disabled)
+sub_get_next_arpeggio_value:
+	tya
+	pha	; Preserve Y
+
+	; Advance pointer
+	lda ram_arpeggio_ptr_lo,Y
+	clc
+	adc #$01
+	sta ram_arpeggio_ptr_lo,Y
+	sta zp_ptr2_lo
+	lda #$00
+	adc ram_arpeggio_ptr_hi,Y
+	sta ram_arpeggio_ptr_hi,Y
+	sta zp_ptr2_hi
+
+	; Read the entry and check if it's an end of data token
+	ldy #$00
+	lda (zp_ptr2_lo),Y
+	sta zp_ptr2_lo
+	cmp #$7F
+	bne @arp_end
+		; End of data reached
+		; Move the pointer back one byte to "loop" the end token
+		pla
+		tay
+		lda #$FF
+		dcp ram_arpeggio_ptr_lo,Y
+		bne :+
+			clc
+			adc ram_arpeggio_ptr_hi,Y
+			sta ram_arpeggio_ptr_hi,Y
+		:
+		sec
+		rts
+	@arp_end:
+	pla
+	tay
+	clc
+	rts
+
+; -----------------------------------------------------------------------------
+
 ; Increments the track data pointer by one
 sub_advance_track_ptr:
 	ldx ram_cur_chan_ptr_offset
@@ -2646,6 +2805,3 @@ sub_advance_track_ptr:
 	rts
 
 ; -----------------------------------------------------------------------------
-
-; Corrupted data follows
-; (mirror of a section of bank 1, plus some unassembled code)
