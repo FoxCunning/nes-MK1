@@ -242,19 +242,19 @@ rom_817C:
 	.word nam_main_menu_btm_rle
     .byte $28, $28
 
-    .word nam_option_menu_rle	; $01
+    .word nam_option_menu_rle				; $01
     .byte $20, $20
 	.word nam_option_menu_2_rle
     .byte $28, $28
 
-    .word rom_8D5B				; $02
+    .word rom_player_select_rle				; $02
     .byte $20, $20
-	.word rom_92B4
+	.word rom_vs_screen_2_rle
     .byte $28, $28
 
     .word rom_901A				; $03
     .byte $20, $20
-	.word rom_92B4
+	.word rom_vs_screen_2_rle
     .byte $28, $28
 
     .word rom_9757				; $04
@@ -790,7 +790,7 @@ nam_option_menu_2_rle:
 
 ; -----------------------------------------------------------------------------
 
-rom_8D5B:
+rom_player_select_rle:
 	.byte $20, $00, $46, $FC, $82, $E0, $E1, $02
 	.byte $E2, $8F, $E3, $E4, $FC, $E5, $E2, $E6
 	.byte $E7, $FC, $E8, $E9, $E0, $E1, $EA, $E4
@@ -880,7 +880,8 @@ rom_8D5B:
 	.byte $AA, $04, $FF, $84, $F5, $F3, $FC, $FA
 	.byte $0A, $FF
 	; Glitchy! The next byte should be $FF (and also the last)
-	.byte $81, $0F, $FF, $FF, $FF
+	; .byte $81, $0F, $FF, $FF, $FF
+	.byte $FF
 
 ; -----------------------------------------------------------------------------
 
@@ -967,12 +968,13 @@ rom_901A:
 	.byte $22, $CC, $FF, $77, $11, $44, $55, $11
 	.byte $88, $22, $CC, $B7, $A1, $24, $05, $41
 	.byte $58, $92, $EC, $BB, $AA, $22, $00, $44
-	.byte $55, $99, $EE, $10, $FF, $81, $0F, $FF
-	.byte $FF, $FF
+	.byte $55, $99, $EE, $10, $FF
+	; .byte $81, $0F, $FF, $FF, $FF
+	.byte $FF
 
 ; -----------------------------------------------------------------------------
 
-rom_92B4:
+rom_vs_screen_2_rle:
 	.byte $20, $00, $77, $15, $77, $15, $37, $15
 	.byte $81, $EB, $04, $EC, $81, $ED, $0A, $15
 	.byte $81, $EB, $04, $EC, $81, $ED, $0A, $15
@@ -1000,7 +1002,8 @@ rom_92B4:
 	.byte $FF, $86, $0F, $7F, $DD, $77, $DF, $AF
 	.byte $03, $FF, $84, $55, $33, $CC, $AA, $04
 	.byte $FF, $84, $F5, $F3, $FC, $FA, $0A, $FF
-	.byte $81, $0F, $FF, $FF, $FF
+	; .byte $81, $0F, $FF, $FF, $FF
+	.byte $FF
 
 ; -----------------------------------------------------------------------------
 
