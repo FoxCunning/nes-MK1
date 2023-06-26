@@ -25,15 +25,15 @@ sub_rom_B013:
 	lda zp_4F
 	jsr sub_trampoline    ; Same trick again
 ; ----------------
-	.word sub_rom_BF92, sub_rom_BFB9, sub_rom_BFCA, sub_rom_BFEA
+	.word sub_rom_BF92, sub_rom_BFB9, sub_titles_loop, sub_rom_BFEA
 	.word sub_rom_B030, sub_rom_B079, sub_rom_B086, sub_rom_B0A5
-	.word sub_rom_B0CC, sub_rom_B107, sub_rom_B114, sub_rom_B13A
+	.word sub_main_menu_loop, sub_rom_B107, sub_rom_B114, sub_rom_B13A
 
 ; -----------------------------------------------------------------------------
 
 sub_rom_B030:
 	lda #$00
-	sta zp_50
+	sta zp_tmp_idx
 	lda #$00
 	sta zp_66
 	jsr sub_rom_04_805A
@@ -44,7 +44,7 @@ sub_rom_B030:
 	sta PpuControl_2000
 	sta zp_02
 	cli
-	jsr sub_rom_04_8000
+	jsr sub_wait_vblank
 	lda #$1E
 	sta zp_04
 	lda #$0D
@@ -59,9 +59,9 @@ sub_rom_B030:
 	lda #$02
 	sta zp_64
 	lda rom_B170+0
-	sta zp_51
+	sta zp_ppu_ptr_hi
 	lda rom_B170+1
-	sta zp_52
+	sta zp_ppu_ptr_lo
 	inc zp_4F
 	lda #$00
 	sta zp_5E
@@ -85,13 +85,13 @@ sub_rom_B079:
 
 sub_rom_B086:
 	lda zp_frame_counter
-	cmp zp_53
+	cmp zp_last_execution_frame
 	bne @B08D
 
 	rts
 ; ----------------
 	@B08D:
-	sta zp_53
+	sta zp_last_execution_frame
 	dec ram_041C
 	lda ram_041C
 	cmp #$8B
@@ -109,13 +109,13 @@ sub_rom_B086:
 
 sub_rom_B0A5:
 	lda zp_frame_counter
-	cmp zp_53
+	cmp zp_last_execution_frame
 	bne @B0AC
     
 	rts
 ; ----------------
 	@B0AC:
-	sta zp_53
+	sta zp_last_execution_frame
 	ldx zp_54
 	lda rom_B0C4,X
 	sta zp_scroll_y
@@ -137,40 +137,46 @@ rom_B0C4:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B0CC:
+sub_main_menu_loop:
 	lda zp_frame_counter
-	cmp zp_53
-	bne @B0D3
+	cmp zp_last_execution_frame
+	bne :+
 
-	rts
+		rts
 ; ----------------
-	@B0D3:
-	sta zp_53
+	:
+	sta zp_last_execution_frame
 	lda zp_frame_counter
 	and #$3F
-	bne @B0E4
+	bne :+
 
-	dec zp_54
-	bpl @B0E4
+		dec zp_54
+		bpl :+
 
-	lda #$0B
-	sta zp_4F
-	rts
+			lda #$0B
+			sta zp_4F
+			rts
 ; ----------------
-	@B0E4:
-	jsr sub_rom_B14D
+	:
+	jsr sub_get_controller1_main_menu
+
 	lda zp_63
 	asl A
 	tax
 	lda rom_B170+0,X
-	sta zp_51
+	sta zp_ppu_ptr_hi
 	lda rom_B170+1,X
-	sta zp_52
+	sta zp_ppu_ptr_lo
+
 	lda zp_controller1_new
 	and #$D0
-	beq sub_rom_B0CC
-	lda #$31
+	beq sub_main_menu_loop
+
+	; ---- End of loop: a button was pressed
+
+	lda #$31	; This will stop music and plays the "selection" sound instead
 	sta ram_req_song
+
 	inc zp_4F
 	lda #$05
 	sta zp_55
@@ -194,13 +200,13 @@ sub_rom_B107:
 
 sub_rom_B114:
 	lda zp_frame_counter
-	cmp zp_53
+	cmp zp_last_execution_frame
 	bne @B11B
 
 	rts
 ; ----------------
 	@B11B:
-	sta zp_53
+	sta zp_last_execution_frame
 	lda #$0C
 	sta ram_0410
 	lda #$00
@@ -237,29 +243,33 @@ sub_rom_B13A:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B14D:
-	lda #$00
-	asl A
-	tax
-	lda rom_04_9CAD+0,X
+; Handles controller 1 input for main menu
+sub_get_controller1_main_menu:
+	;lda #$00	; What's the point? Just read the first two bytes...
+	;asl A
+	;tax
+	;lda rom_04_9CAD+0,X
+	lda rom_04_9CAD+0
 	sta zp_ptr1_lo
-	lda rom_04_9CAD+1,X
+	;lda rom_04_9CAD+1,X
+	lda rom_04_9CAD+1
 	sta zp_ptr1_hi
 	lda zp_controller1_new
 	sta zp_06
 	lda zp_63
 	sta zp_05
 	jsr sub_rom_04_810A
-	bmi @B16F
+	bmi :+
 
-	sta zp_63
-	lda #$03
-	sta ram_req_sfx
-	@B16F:
+		sta zp_63
+		lda #$03
+		sta ram_req_sfx
+	:
 	rts
 
 ; -----------------------------------------------------------------------------
 
+; PPU pointers for "cursor" in main menu?
 rom_B170:
 	.byte $28, $20, $2A, $20
 
@@ -276,15 +286,18 @@ sub_rom_B174:
 
 sub_rom_B183:
 	lda #$01
-	sta zp_50
+	sta zp_tmp_idx
 	jsr sub_rom_04_805A
+	; Switch to vertical mirroring
 	lda #$00
 	sta mmc3_mirroring
+	; Use bottom table for sprites
 	lda #$88
 	sta PpuControl_2000
 	sta zp_02
-	cli
-	jsr sub_rom_04_8000
+	
+	cli		; Enable MMC3 interrupts
+	jsr sub_wait_vblank
 	lda #$1E
 	sta zp_04
 	lda ram_042C
@@ -300,14 +313,14 @@ sub_rom_B183:
 
 sub_rom_B1B2:
 	lda zp_frame_counter
-	cmp zp_53
-	bne @B1B9
+	cmp zp_last_execution_frame
+	bne :+
     
-	rts
+		rts
 ; ----------------
-	@B1B9:
-	sta zp_53
-	jsr sub_rom_B200
+	:
+	sta zp_last_execution_frame
+	jsr sub_get_controller1_options_menu
 	jsr sub_rom_B223
 	lda zp_controller1_new
 	and #$D0
@@ -315,15 +328,14 @@ sub_rom_B1B2:
 
 	lda zp_64
 	cmp #$05
-	bcs @B1DB
+	bcs :+
 
-	ldx zp_64
-	stx ram_042C
-	lda rom_B24A,X
-	sta ram_041C
-	jmp sub_rom_B1B2
-
-	@B1DB:
+		ldx zp_64
+		stx ram_042C
+		lda rom_B24A,X
+		sta ram_041C
+		jmp sub_rom_B1B2
+	:
 	inc zp_4F
 	lda #$05
 	sta zp_55
@@ -333,13 +345,13 @@ sub_rom_B1B2:
 
 sub_rom_B1E2:
 	lda zp_frame_counter
-	cmp zp_53
-	bne @B1E9
+	cmp zp_last_execution_frame
+	bne :+
 
-	rts
+		rts
 ; ----------------
-	@B1E9:
-	sta zp_53
+	:
+	sta zp_last_execution_frame
 	lda #$0C
 	sta ram_0410
 	lda #$00
@@ -353,7 +365,8 @@ sub_rom_B1E2:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B200:
+; Handles controller 1 input for options menu
+sub_get_controller1_options_menu:
 	lda #$01
 	asl A
 	tax
@@ -366,13 +379,12 @@ sub_rom_B200:
 	lda zp_64
 	sta zp_05
 	jsr sub_rom_04_810A
-	bmi @B222
+	bmi :+
 
 		sta zp_64
 		lda #$03
 		sta ram_req_sfx
-
-	@B222:
+	:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -419,7 +431,7 @@ sub_rom_B25C:
 	beq @B263
 	iny
 	@B263:
-	sty zp_50
+	sty zp_tmp_idx
 	jsr sub_rom_04_805A
 	jsr sub_rom_B4B2
 	lda #$00
@@ -429,7 +441,7 @@ sub_rom_B25C:
 	sta PpuControl_2000
 	sta zp_02
 	cli
-	jsr sub_rom_04_8000
+	jsr sub_wait_vblank
 	lda #$1E
 	sta zp_04
 	lda #$0C
@@ -478,13 +490,13 @@ sub_rom_B2AD:
 
 sub_rom_B2BD:
 	lda zp_frame_counter
-	cmp zp_53
+	cmp zp_last_execution_frame
 	bne @B2C4
 
 	rts
 ; ----------------
 	@B2C4:
-	sta zp_53
+	sta zp_last_execution_frame
 	jsr sub_rom_B2F1
 	jsr sub_rom_B363
 	jsr sub_rom_B556
@@ -550,7 +562,7 @@ sub_rom_B2FC:
 	sta zp_06
 	lda zp_63,X
 	sta zp_05
-	lda zp_50
+	lda zp_tmp_idx
 	asl A
 	tax
 	lda rom_04_9CAD+0,X
@@ -635,7 +647,7 @@ rom_B391:
 ; -----------------------------------------------------------------------------
 
 sub_rom_B393:
-	lda zp_50
+	lda zp_tmp_idx
 	asl A
 	tay
 	lda rom_B414+0,Y
@@ -756,7 +768,7 @@ rom_B452:
 ; -----------------------------------------------------------------------------
 
 sub_rom_B4B2:
-	lda zp_50
+	lda zp_tmp_idx
 	asl A
 	tax
 	lda rom_B4CE+0,X
@@ -806,7 +818,7 @@ rom_B516:
 ; -----------------------------------------------------------------------------
 
 sub_rom_B556:
-	lda zp_50
+	lda zp_tmp_idx
 	asl A
 	tay
 	lda rom_B5BF+0,Y
@@ -986,7 +998,7 @@ sub_rom_B6D8:
 
 sub_rom_B6E9:
 	lda #$05
-	sta zp_50
+	sta zp_tmp_idx
 	jsr sub_rom_04_805A
 	lda #$00
 	sta zp_scroll_x
@@ -995,7 +1007,7 @@ sub_rom_B6E9:
 	sta PpuControl_2000
 	sta zp_02
 	cli
-	jsr sub_rom_04_8000
+	jsr sub_wait_vblank
 	lda #$1E
 	sta zp_04
 	lda #$0C
@@ -1024,13 +1036,13 @@ sub_rom_B712:
 
 sub_rom_B723:
 	lda zp_frame_counter
-	cmp zp_53
+	cmp zp_last_execution_frame
 	bne @B72A
 
 	rts
 ; ----------------
 	@B72A:
-	sta zp_53
+	sta zp_last_execution_frame
 	lda ram_040C
 	eor #$01
 	tax
@@ -1122,13 +1134,13 @@ sub_rom_B789:
 
 sub_rom_B7A8:
 	lda zp_frame_counter
-	cmp zp_53
+	cmp zp_last_execution_frame
 	bne @B7AF
 
 	rts
 ; ----------------
 	@B7AF:
-	sta zp_53
+	sta zp_last_execution_frame
 	lda zp_frame_counter
 	and #$1F
 	bne @B7C2
@@ -1185,7 +1197,7 @@ sub_rom_B7FE:
 
 sub_rom_B80D:
 	lda #$04
-	sta zp_50
+	sta zp_tmp_idx
 	jsr sub_rom_04_805A
 	lda #$00
 	sta zp_scroll_x
@@ -1194,7 +1206,7 @@ sub_rom_B80D:
 	sta PpuControl_2000
 	sta zp_02
 	cli
-	jsr sub_rom_04_8000
+	jsr sub_wait_vblank
 	lda #$1E
 	sta zp_04
 	lda #$0C
@@ -1223,13 +1235,13 @@ sub_rom_B834:
 
 sub_rom_B845:
 	lda zp_frame_counter
-	cmp zp_53
+	cmp zp_last_execution_frame
 	bne @B84C
 
 	rts
 ; ----------------
 	@B84C:
-	sta zp_53
+	sta zp_last_execution_frame
 	lda zp_controller1_new
 	beq @B857
 
@@ -1389,7 +1401,7 @@ sub_rom_B926:
 	beq @B941
 
 		lda #$02	; Index used for VS screen (it's the same as player select)
-		sta zp_50
+		sta zp_tmp_idx
 		jsr sub_rom_04_805A
 		jsr sub_rom_BA74
 		jsr sub_rom_B9DB
@@ -1399,7 +1411,7 @@ sub_rom_B926:
 
 	@B941:
 	lda #$07
-	sta zp_50
+	sta zp_tmp_idx
 	jsr sub_rom_04_805A
 	jsr sub_rom_BC2B
 	ldy #$88
@@ -1420,7 +1432,7 @@ sub_rom_B926:
 	sta PpuControl_2000
 	sta zp_02
 	cli
-	jsr sub_rom_04_8000
+	jsr sub_wait_vblank
 	lda #$1E
 	sta zp_04
 	lda ram_0680
@@ -1451,13 +1463,13 @@ sub_rom_B982:
 
 sub_rom_B993:
 	lda zp_frame_counter
-	cmp zp_53
+	cmp zp_last_execution_frame
 	bne @B99A
 
 	rts
 ; ----------------
 	@B99A:
-	sta zp_53
+	sta zp_last_execution_frame
 	lda zp_controller1_new
 	bne @B9AE
 
@@ -2118,7 +2130,7 @@ sub_rom_BF1E:
 
 sub_rom_BF29:
 	lda #$06
-	sta zp_50
+	sta zp_tmp_idx
 	jsr sub_rom_04_805A
 	lda #$00
 	sta zp_scroll_x
@@ -2129,7 +2141,7 @@ sub_rom_BF29:
 	sta PpuControl_2000
 	sta zp_02
 	cli
-	jsr sub_rom_04_8000
+	jsr sub_wait_vblank
 	lda #$1E
 	sta zp_04
 	ldy #$80
@@ -2193,7 +2205,7 @@ sub_rom_BF73:
 
 sub_rom_BF92:
 	lda #$08
-	sta zp_50
+	sta zp_tmp_idx
 	jsr sub_rom_04_805A
 	jsr sub_rom_E264
 	lda #$00
@@ -2203,7 +2215,7 @@ sub_rom_BF92:
 	sta PpuControl_2000
 	sta zp_02
 	cli
-	jsr sub_rom_04_8000
+	jsr sub_wait_vblank
 	lda #$1E
 	sta zp_04
 	lda #$7C
@@ -2217,41 +2229,43 @@ sub_rom_BFB9:
 	jsr sub_rom_04_81D2
 	lda zp_55
 	cmp #$05
-	bcs @BFC3
+	bcs :+
 
-	rts
+		rts
 ; ----------------
-	@BFC3:
+	:
 	inc zp_4F
-	lda #$0A
+	lda #$03	; Wait timer for titles screen
 	sta zp_54
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_BFCA:
+; Fades out the titles on controller press, or when the timer expires
+sub_titles_loop:
 	lda zp_frame_counter
-	cmp zp_53
-	bne @BFD1
+	cmp zp_last_execution_frame
+	bne :+
 
-	rts
+		rts
 ; ----------------
-	@BFD1:
-	sta zp_53
+	:
+	sta zp_last_execution_frame
 	lda zp_controller1_new
 	and #$D0
 	bne @BFE3
 
-	lda zp_frame_counter
-	and #$1F
-	bne @BFE9
-	dec zp_54
-	bne @BFE9
+		lda zp_frame_counter
+		and #$1F
+		bne @BFE9
+		dec zp_54
+		bne @BFE9
 
 	@BFE3:
 	lda #$00
 	sta zp_54
 	inc zp_4F
+
 	@BFE9:
 	rts
 
@@ -2261,19 +2275,19 @@ sub_rom_BFEA:
 	jsr sub_rom_04_81D2
 	lda zp_55
 	cmp #$09
-	bcs @BFF4
+	bcs :+
 
-	rts
+		rts
 ; ----------------
-	@BFF4:
+	:
 	inc zp_4F
 	rts
 
 ; -----------------------------------------------------------------------------
 
 ; Potentially unused
-rom_BFF7:
-	.byte $20, $24, $32, $31, $2C, $24, $34, $34
-	.byte $2C
+;rom_BFF7:
+;	.byte $20, $24, $32, $31, $2C, $24, $34, $34
+;	.byte $2C
 
 ; -----------------------------------------------------------------------------
