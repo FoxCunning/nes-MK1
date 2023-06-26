@@ -8,23 +8,27 @@
 .include "globals.inc"
 
 ; -----------------------------------------------------------------------------
-.export sub_rom_04_8000
+.export sub_wait_vblank
 
-sub_rom_04_8000:
+sub_wait_vblank:
 	lda PpuStatus_2002
-	bpl sub_rom_04_8000
+	bpl sub_wait_vblank
 
-	@8005:
+	; Probably this repeat is to work around the potential issue that happens
+	; when the status is read right after the NMI flag was set in the PPU
+	:
 	lda PpuStatus_2002
-	bpl @8005
+	bpl :-
+
+	; TODO Use the global frame counter instead?
 
 	rts
 
 ; -----------------------------------------------------------------------------
 
-; Data is using some kind of RLE compression
+; Data is using a simple RLE compression
 ; Parameters:
-; Data pointer in zp_12
+; Data pointer in zp_ptr1
 ; Nametable selector (high byte of VRAM pointer) in zp_14
 sub_unpack_nametable:
 	; Disable rendering
@@ -92,7 +96,7 @@ sub_next_packed_byte:
 .export sub_rom_04_805A
 
 sub_rom_04_805A:
-	jsr sub_rom_04_8000
+	jsr sub_wait_vblank
 	lda #$00
 	sta PpuControl_2000
 	sta PpuMask_2001
@@ -108,7 +112,7 @@ sub_rom_04_805A:
 	jsr sub_rom_E249
 	jsr sub_rom_E264
 	jsr sub_rom_80A0
-	lda zp_50
+	lda zp_tmp_idx
 	asl A
 	tay
 	lda rom_81C0+0,Y
@@ -125,31 +129,31 @@ sub_rom_04_805A:
 ; -----------------------------------------------------------------------------
 
 sub_rom_80A0:
-	lda zp_50
+	lda zp_tmp_idx
 	asl A
 	asl A
 	asl A
 	tax
-	lda rom_8178+0,X
+	lda tbl_rle_data_ptr_even+0,X
 	sta zp_ptr1_lo
-	lda rom_8178+1,X
+	lda tbl_rle_data_ptr_even+1,X
 	sta zp_ptr1_hi
-	lda rom_8178+2,X
+	lda tbl_rle_data_ptr_even+2,X
 	sta zp_14
 	jsr sub_unpack_nametable
-	lda zp_50
+	lda zp_tmp_idx
 	asl A
 	asl A
 	asl A
 	tax
-	lda rom_817C+0,X
+	lda tbl_rle_data_ptr_odd+0,X
 	sta zp_ptr1_lo
-	lda rom_817C+1,X
+	lda tbl_rle_data_ptr_odd+1,X
 	sta zp_ptr1_hi
-	lda rom_817C+2,X
+	lda tbl_rle_data_ptr_odd+2,X
 	sta zp_14
 	jsr sub_unpack_nametable
-	lda zp_50
+	lda zp_tmp_idx
 	asl A
 	asl A
 	asl A
@@ -216,7 +220,7 @@ sub_rom_04_810A:
 ; Values for CHR bank data register, all banks (registers R0-R5)
 ; Trailing zeroes are just padding to keep 8-byte alignment for easy indexing
 tbl_chr_banks_per_screen:
-	.byte $F0, $F2, $F0, $F1, $F2, $F3, $00, $00	; $00
+	.byte $F0, $F2, $F0, $F1, $F2, $F3, $00, $00	; $00	Main menu
 	.byte $FC, $FE, $FC, $FD, $FE, $FF, $00, $00	; $01
 	.byte $FC, $FE, $F8, $F9, $FA, $FB, $00, $00	; $02
 	.byte $FC, $FE, $F8, $F9, $FA, $FB, $00, $00	; $03
@@ -231,14 +235,14 @@ tbl_chr_banks_per_screen:
 ; Left/Top nametable data pointers (even entries)
 ; Third byte is VRAM address high byte
 ; Fourth byte is unused (kept for alignment)
-rom_8178:
+tbl_rle_data_ptr_even:
 	.word nam_main_menu_top_rle				; $00
     .byte $20, $20
 ; ----------------
 ; Right/Bottom nametable data pointers (odd entries)
 ; Third byte is VRAM address high byte
 ; Fourth byte is unused (kept for alignment)
-rom_817C:
+tbl_rle_data_ptr_odd:
 	.word nam_main_menu_btm_rle
     .byte $28, $28
 
@@ -323,26 +327,27 @@ sub_rom_04_81D2:
 	ldx zp_55
 	lda rom_8230,X
 	sta zp_05
+
 	ldy #$00
 	@8201:
-	lda (zp_14),Y
-	bpl @820A
+		lda (zp_14),Y
+		bpl @820A
 
-        lda (zp_ptr1_lo),Y
-        jmp @8213
+			lda (zp_ptr1_lo),Y
+			jmp @8213
 
-	@820A:
-	lda (zp_ptr1_lo),Y
-	sec
-	sbc zp_05
-	bpl @8213
+		@820A:
+		lda (zp_ptr1_lo),Y
+		sec
+		sbc zp_05
+		bpl @8213
 
-	    lda #$FF
+			lda #$FF
 
-	@8213:
-	sta ram_0600,Y
-	iny
-	cpy #$20
+		@8213:
+		sta ram_0600,Y
+		iny
+		cpy #$20
 	bne @8201
 
 	lda #$3F
@@ -1296,7 +1301,7 @@ rom_9CF9:
 
 ; Requests the engine to play a music track depending on the current screen
 sub_choose_music_track:
-	ldx zp_50
+	ldx zp_tmp_idx
 	lda @tbl_bg_music,X
 	sta ram_req_song
 	rts

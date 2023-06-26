@@ -84,10 +84,14 @@ zp_4D = $4D     ;
 zp_4E = $4E     ;
 zp_4F = $4F     ;
 
-zp_50 = $50     ;
-zp_51 = $51     ;
-zp_52 = $52     ;
-zp_53 = $53     ;
+; Used as a temporary index for various things
+zp_tmp_idx = $50    ;
+; Used to pass PPU addresses between subroutines
+zp_ppu_ptr_hi = $51 ;
+zp_ppu_ptr_lo = $52 ;
+; Used to avoid running certain routines more than once per frame
+; (e.g. controller reading routines)
+zp_last_execution_frame = $53   ;
 zp_54 = $54     ;
 zp_55 = $55     ;
 zp_56 = $56     ;
@@ -435,6 +439,14 @@ ram_sfx_cur_note_idx = $7F5     ;
 ;
 ; -----------------------------------------------------------------------------
 
+;VPHB SINN
+;(V) NMI enable
+;(P) PPU master/slave
+;(H) Sprite height
+;(B) Background tile select
+;(S) Sprite tile select
+;(I) Increment mode
+;(NN) Nametable select
 PpuControl_2000  = $2000    ;
 PpuMask_2001     = $2001    ;
 PpuStatus_2002   = $2002    ;

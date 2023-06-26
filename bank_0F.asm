@@ -1109,9 +1109,9 @@ sub_rom_E6D5:
 	stx mmc3_bank_select
 	sta mmc3_bank_data
 	lda PpuStatus_2002
-	lda zp_51
+	lda zp_ppu_ptr_hi
 	sta PpuAddr_2006
-	lda zp_52
+	lda zp_ppu_ptr_lo
 	sta PpuAddr_2006
 	lda #$00
 	sta PpuScroll_2005
@@ -1211,13 +1211,10 @@ sub_rom_E792:
 sub_rom_E7C8:
 	lda a:zp_40		; ???
 	jsr sub_trampoline	; The sub will pull from the stack and jump, so this is
-						; basically a JMP
-
-; -----------------------------------------------------------------------------
-
-; Potentially Unused
+						; basically a JMP with parameter from the table below
+; ----------------
 rom_E7CE:
-	.word sub_rom_E7DC
+	.word sub_prg_banks_4_5
 	.word sub_rom_EA13
 	.word sub_rom_E7F5
 	.word sub_rom_E866
@@ -1227,10 +1224,10 @@ rom_E7CE:
 
 ; -----------------------------------------------------------------------------
 
-; Potentially unused
 ; Bank $04 in $8000-$9FFF
 ; Bank $05 in $A000-$BFFF
-sub_rom_E7DC:
+; Then jumps to $B000 (first routine in bottom half of bank 5)
+sub_prg_banks_4_5:
 	lda #$04
 	ldx #$86
 	stx mmc3_bank_select

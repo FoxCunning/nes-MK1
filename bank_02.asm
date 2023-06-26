@@ -139,7 +139,7 @@ tbl_track_ptrs:
 	.word track_silence		; $09
 	.word track_silence		; $0A
 	.word track_silence		; $0B
-	.word sfx_8A4E			; $0C	"Siren" sound (e.g. after menu selection)
+	.word sfx_8A4E			; $0C	"Siren" sound
 	.word sfx_9736			; $0D	A weird three-note jingle
 	.word sfx_9750			; $0E	Pause
 	.word sfx_9736			; $0F	Same as $0D, but here it's used after choosing to continue
@@ -176,7 +176,7 @@ tbl_track_ptrs:
 	.word mus_9353			; $2E
 	.word mus_94C4			; $2F
 	.word mus_96B1			; $30
-	.word sfx_8A4E			; $31
+	.word sfx_8A4E			; $31	"Siren" sound but as music (e.g. after menu selection)
 	.word mus_victory_jingle; $32
 
 ; -----------------------------------------------------------------------------
@@ -208,53 +208,23 @@ rom_8702:
 
 ; -----------------------------------------------------------------------------
 
-; Square 0
-rom_8703:
-	.byte $F5, $02, $F6, $0F, $F9, $00, $FA, $00
-	.byte $FB, $FF
-	.byte $F8, $02, $83, $2D, $2B, $A4, $2D, $8C
-	.byte $00, $00, $F6, $01, $F9, $00, $FA, $00
-	.byte $F8, $00, $98, $17, $FF, $FF
 
-; Square 1
-rom_8721:
-	.byte $F6, $0F, $F9, $00, $FA, $00, $F8, $00
-	.byte $FB, $FF
-	.byte $83, $39, $37, $A4, $39, $8C, $00, $00
-	.byte $F6, $01, $F9, $00, $FA, $00, $F8, $00
-	.byte $BC, $15, $FF, $FF
-
-; Triangle
-rom_873D:
-	.byte $F6, $0F, $F9, $00, $FA, $00, $F8, $00
-	.byte $FB, $FF
-	.byte $83, $2B, $29, $A4, $28, $8C, $00, $00
-	.byte $FF
-
-; Noise
-rom_874E:
-	.byte $F6, $00, $F9, $00, $FA, $00, $F8, $00
-	.byte $FB, $FF
-	.byte $83, $24, $24, $24, $24, $8C, $00, $00
-	.byte $00, $00, $F9, $00, $FA, $00, $F8, $00
-	.byte $A4, $2D, $FF, $FF
-
-; DMC?
+; Silence
 rom_876A:
 	.byte $FF
 
 ; ----------------
 
-; Menu intro jingle
+; Menu intro 1
 mus_menu_jingle:
 	.byte $00
-	.word rom_8703
+	.word rom_876A
 	.byte $01
-	.word rom_8721
+	.word rom_876A
 	.byte $02
-	.word rom_873D
+	.word rom_876A
 	.byte $03
-	.word rom_874E
+	.word rom_876A
 	.byte $04
 	.word rom_876A
 	.byte $FF
@@ -269,11 +239,11 @@ mus_player_select:
 
 ; Square 0
 rom_88E5:
-	.byte $F5, $02, $F6, $0B, $F9, $00, $FA, $00
-	.byte $F8, $00
+	.byte $F5, $02, $F6, $0B, $F9, $FF, $FA, $FF
+	.byte $F8, $09
 	.byte $FB, $FF
 	@rom_88EF:
-	.byte $F6, $0B, $F9, $00, $FA, $00, $F8, $00
+	.byte $F6, $0B, $F9, $FF, $FA, $FF, $F8, $09
 	.byte $88, $21, $2D, $2B, $2D, $00, $2D, $2B
 	.byte $2D, $21, $2D, $2B, $2D, $00, $2D, $2B
 	.byte $2D
@@ -284,10 +254,10 @@ rom_88E5:
 
 ; Square 1
 rom_890C:
-	.byte $F6, $0B, $F9, $00, $FA, $00, $F8, $00
+	.byte $F6, $0B, $F9, $FF, $FA, $FF, $F8, $09
 	.byte $FB, $FF
 	@rom_8914:
-	.byte $F9, $00, $FA, $00, $F8, $00, $88, $2D
+	.byte $F9, $FF, $FA, $FF, $F8, $09, $88, $2D
 	.byte $84, $2B, $2D, $30, $2D, $88, $2D, $2D
 	.byte $2D, $2B, $2D, $2D, $84, $2B, $2D, $30
 	.byte $2D, $88, $2D
@@ -298,7 +268,7 @@ rom_890C:
 
 ; Triangle
 rom_8933:
-	.byte $F6, $0A, $F9, $00, $FA, $00, $F8, $00
+	.byte $F6, $0A, $F9, $00, $FA, $FF, $F8, $FF
 	.byte $FB, $FF
 	.byte $88, $21, $2D, $2B, $2D, $00, $2D, $2B
 	.byte $2D
@@ -309,10 +279,10 @@ rom_8933:
 
 ; Noise
 rom_8948:
-	.byte $F6, $00, $F9, $00, $FA, $00, $F8, $00
+	.byte $F6, $00, $F9, $FF, $FA, $FF, $F8, $03
 	.byte $FB, $FF
-	.byte $88, $24, $24, $24, $24, $24, $24, $24
-	.byte $84, $24, $24
+	.byte $88, $04, $04, $04, $04, $04, $04, $04
+	.byte $84, $04, $04
 	.byte $F4
 	.word rom_8948
 	.byte $FF

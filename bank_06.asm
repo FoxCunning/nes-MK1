@@ -62,7 +62,7 @@ rom_8004:
     .byte $05
 	.word rom_817B
     .byte $02
-	.word rom_817C
+	.word tbl_rle_data_ptr_odd
     .byte $0B
 	.word rom_817D
 	.byte $2A
@@ -182,7 +182,7 @@ rom_8177:
 	.byte $1B, $1B, $02, $02
 rom_817B:
 	.byte $00
-rom_817C:
+tbl_rle_data_ptr_odd:
 	.byte $00
 rom_817D:
 	.byte $0B, $0B, $17, $17, $17, $17, $17, $17
