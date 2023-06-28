@@ -326,112 +326,117 @@ ram_06CD = $06CD    ;
 ; ----------------
 ; Will contain 1 after the APU and sound engine have been initialised
 ; Nothing will play while this is set to zero
-ram_snd_initialised = $0700    ;
+ram_snd_initialised = $06F0    ;
 ; Up to eight song/sfx indices to play ($FF = nothing is playing)
-ram_snd_stack = $0701    ; Size=8
-; ram_0709 = $0709    ; Unused
-; APU channel being currently processed: $00-$04 for music, $10-$14 for sfx
-ram_cur_apu_channel = $070A    ;
+ram_snd_stack = $06F1   ; Size=8
+ram_cur_apu_channel = $06FA ;
 ; The four APU channels are used both for music and sfx, and each will have
 ; variables in RAM at different offsets. Music starts at offset 0, using 118
 ; bytes of RAM, so sound effects start from offset $76.
 ; This way, we can reuse the same base addresses, for example $70C,X
 ; would be $70D for music square channel 0, and $783 for sfx square channel 0
-ram_cur_channel_offset = $070B    ;
+ram_cur_channel_offset = $06FB    ;
 ; The four APU channels are used both for music and sfx, and each will have
 ; variables in RAM at different offsets. Music starts at offset 0, using 118
 ; bytes of RAM, so sound effects start from offset $76.
 ; This way, we can reuse the same base addresses, for example $70C,X
 ; would be $70D for music square channel 0, and $783 for sfx square channel 0
 ; This is an offset for pointers, so it is 2-byte aligned: 0, 2, 4, 6, 8, 10...
-ram_cur_chan_ptr_offset = $070C    ;
+ram_cur_chan_ptr_offset = $06FC    ;
+
 ; ----------------
+
 ; This value will be added to note period index
-ram_note_transpose_value = $070D    ; Size=4
+ram_note_transpose_value = $0700    ; Size=3
 ; ----------------
 ; Index of the arpeggio, or $FF is no arpeggio is active
-ram_arpeggio_idx = $0713    ; Size=4
+ram_arpeggio_idx = $0703    ; Size=4
 ; Pointer to arpeggio data
-ram_arpeggio_ptr_lo = $0717 ;
+ram_arpeggio_ptr_lo = $0707 ;
 ; Pointer to arpeggio data
-ram_arpeggio_ptr_hi = $0718 ;
+ram_arpeggio_ptr_hi = $0708 ;
 ; ----------------
 ; Backup pointer, used to jump back to track after calling a subsegment
-ram_track_ptr_backup_lo = $071F    ;
+ram_track_ptr_backup_lo = $070F    ;
 ; Backup pointer, used to jump back to track after calling a subsegment
-ram_track_ptr_backup_hi = $0720    ;
+ram_track_ptr_backup_hi = $0710    ;
 ; Pointer to the track data for each channel
-ram_track_ptr_lo = $0729    ;
+ram_track_ptr_lo = $0719    ;
 ; Pointer to the track data for each channel
-ram_track_ptr_hi = $072A    ;
+ram_track_ptr_hi = $071A    ;
 ; Music/SFX speed value (interval in frames between events)
-ram_track_speed = $0733     ;
+;ram_track_speed = $0723     ;
 ; Number of frames this note should last
-ram_cur_note_duration = $0734   ; Size=5
+ram_cur_note_duration = $0723   ; Size=5
 ; Frame counter, starts from track speed and counts down to zero
 ; Events are only processed when this reaches zero
 ; For example, at speed 4 a note with duration 2 lasts 8 frames
-ram_track_speed_counter = $0739 ; Use pointer offset to index
+ram_track_speed_counter = $0728 ; Use pointer offset to index
 ; "Ticks" left for current note to play (total note frames = ticks * speed)
-ram_note_ticks_left = $073A    ; Use pointer offset to index
+ram_note_ticks_left = $0729    ; Use pointer offset to index
 ; Base value for the period register, before applying envelopes and effects
-ram_base_period_lo = $0743   ;
+ram_base_period_lo = $0732   ;
 ; Base value for the period register, before applying envelopes and effects
-ram_base_period_hi = $0744   ;
+ram_base_period_hi = $0733   ;
 ; Modified note period, after applying envelopes and effects
-ram_note_period_lo = $074D  ;
+ram_note_period_lo = $073C  ;
 ; Modified note period, after applying envelopes and effects
-ram_note_period_hi = $074E  ;
+ram_note_period_hi = $073D  ;
 ; ----------------
 ; Index of duty envelope, one per channel
-ram_vol_env_idx = $0757             ; Size=5
+ram_vol_env_idx = $0746             ; Size=5
 ; Ticks left for current value of instrument's volume evenlope
-ram_cur_vol_env_duration = $075C    ; Size=5
+ram_cur_vol_env_duration = $074B    ; Size=5
 ; Pointer to current position in volume envelope (one per channel)
-ram_vol_env_ptr_lo = $0761    ;
+ram_vol_env_ptr_lo = $0750    ;
 ; Pointer to current position in volume envelope (one per channel)
-ram_vol_env_ptr_hi = $0762    ;
+ram_vol_env_ptr_hi = $0751    ;
 ; ----------------
 ; Index of duty envelope, one per channel (only used for Square wave channels)
-ram_duty_env_idx = $076B            ; Size=2
+ram_duty_env_idx = $075A            ; Size=2
 ; Ticks left for current value of instrument's duty evenlope
-ram_cur_duty_env_duration = $076D   ; Size=2
-ram_duty_env_ptr_lo = $076F    ;
-ram_duty_env_ptr_hi = $0770    ;
+ram_cur_duty_env_duration = $075C   ; Size=2
+ram_duty_env_ptr_lo = $075E    ;
+ram_duty_env_ptr_hi = $075F    ;
 ; ----------------
 ; Pitch evelope indices, one per channel
-ram_pitch_env_idx = $0773           ; Size=3
+ram_pitch_env_idx = $0762           ; Size=3
 ; Ticks left for current value of instrument's pitch evenlope
-ram_cur_pitch_env_duration = $0776  ; Size=3
+ram_cur_pitch_env_duration = $0765  ; Size=3
 ; ----------------
 ; Pointer to the current position in the pitch envelope
-ram_pitch_env_ptr_lo = $0779    ; Ptrs=3
+ram_pitch_env_ptr_lo = $0768    ; Ptrs=3
 ; Pointer to the current position in the pitch envelope
-ram_pitch_env_ptr_hi = $077A    ; Ptrs=3
+ram_pitch_env_ptr_hi = $0769    ; Ptrs=3
 ; Index of the note currently being played
-ram_cur_note_idx = $077F    ; Size=4
+ram_cur_note_idx = $076E    ; Size=4
+; APU channel being currently processed: $00-$04 for music, $10-$14 for sfx
+; Music/SFX speed value (interval in frames between events)
+ram_track_speed = $772  ;
+
 ; ----------------
+
 ; Pointer to the track data for each channel (SFX 0)
-ram_sfx0_data_ptr_lo = $079F    ;
+ram_sfx0_data_ptr_lo = $0799    ;
 ; Pointer to the track data for each channel (SFX 0)
-ram_sfx0_ptr_data_hi = $07A0    ;
+ram_sfx0_ptr_data_hi = $079A    ;
 ; Pointer to the track data for each channel (SFX 1)
-ram_sfx1_data_ptr_lo = $07A1    ;
+ram_sfx1_data_ptr_lo = $079B    ;
 ; Pointer to the track data for each channel (SFX 1)
-ram_sfx1_data_ptr_hi = $07A2    ;
+ram_sfx1_data_ptr_hi = $079C    ;
 ; Pointer to the track data for each channel (SFX 2)
-ram_sfx2_data_ptr_lo = $07A3    ;
+ram_sfx2_data_ptr_lo = $079D    ;
 ; Pointer to the track data for each channel (SFX 2)
-ram_sfx2_data_ptr_hi = $07A4    ;
+ram_sfx2_data_ptr_hi = $079E    ;
 ; Pointer to the track data for each channel (SFX 3)
-ram_sfx3_data_ptr_lo = $07A5    ;
+ram_sfx3_data_ptr_lo = $079F    ;
 ; Pointer to the track data for each channel (SFX 3)
-ram_sfx3_data_ptr_hi = $07A6    ;
+ram_sfx3_data_ptr_hi = $07A0    ;
 ; ----------------
-ram_sfx_vol_env_duration = $07D2    ;
-ram_sfx_duty_env_duration = $07E3   ;
-ram_sfx_pitch_env_duration = $07EC  ;
-ram_sfx_cur_note_idx = $7F5     ;
+ram_sfx_vol_env_duration = $07CB    ;
+ram_sfx_duty_env_duration = $07DC   ;
+ram_sfx_pitch_env_duration = $07E5  ;
+
 
 ; -----------------------------------------------------------------------------
 ;

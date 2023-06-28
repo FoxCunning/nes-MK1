@@ -1289,7 +1289,7 @@ sub_process_all_sound:
 	; Process SFX channels ($10-$13)
 	lda #$10
 	sta ram_cur_apu_channel
-	lda #$76
+	lda #$80
 	sta ram_cur_channel_offset
 	sta ram_cur_chan_ptr_offset
 	@AB3A:
@@ -1373,13 +1373,13 @@ sub_init_new_track:
 	;and #$7F
 	;clc
 	anc #$7F
-	adc #$76
+	adc #$80
 	sta ram_cur_channel_offset
 	txa
 	; and #$7F Useless: we are shifting left and clearing carry, so bit 7 is lost
 	asl A
 	clc
-	adc #$76
+	adc #$80
 	sta ram_cur_chan_ptr_offset
 
 	@header_track_data_ptr:
@@ -1398,7 +1398,7 @@ sub_init_new_track:
 		lda ram_cur_apu_channel
 		bpl :+
 			; SFX offset
-			ldy #$76
+			ldy #$80
 		:
 		lda ram_cur_apu_channel
 		and #$0F
@@ -1467,7 +1467,7 @@ sub_play_cur_channel:
 			cpy #$05
 			bmi :+
 
-				ldy #$76
+				ldy #$80
 				jmp @AC84
 
 			:
@@ -1828,7 +1828,7 @@ sub_cmd_track_speed:
 	cpx #$05
 	bmi :+
 	
-		ldy #$76	; Add offset for SFX channels
+		ldy #$80	; Add offset for SFX channels
 :
 	sta ram_track_speed,Y
 	jsr sub_advance_track_ptr
@@ -1967,7 +1967,7 @@ sub_cmd_stop_playing:
 	asl A
 	tax
 	clc
-	adc #$76	; Add offset for SFX channels
+	adc #$80	; Add offset for SFX channels
 	tay
 	lda #$FF
 	sta ram_note_period_hi,X
@@ -2466,8 +2466,8 @@ sub_sound_output:
 ; -----------------------------------------------------------------------------
 
 sub_sq0_output:
-	ldx #$76		; SFX indices
-	ldy #$76
+	ldx #$80		; SFX indices
+	ldy #$80
 	lda ram_sfx0_data_ptr_lo
 	ora ram_sfx0_ptr_data_hi
 	bne :+
@@ -2521,8 +2521,8 @@ sub_sq0_output:
 ; -----------------------------------------------------------------------------
 
 sub_sq1_output:
-	ldx #$77		; SFX indices
-	ldy #$78
+	ldx #$81		; SFX indices
+	ldy #$82
 	lda ram_sfx1_data_ptr_lo
 	ora ram_sfx1_data_ptr_hi
 	bne :+
@@ -2570,8 +2570,8 @@ sub_sq1_output:
 ; -----------------------------------------------------------------------------
 
 sub_trg_output:
-	ldx #$78		; SFX indices
-	ldy #$7A
+	ldx #$82		; SFX indices
+	ldy #$84
 	lda ram_sfx2_data_ptr_lo
 	ora ram_sfx2_data_ptr_hi
 	bne :+
@@ -2627,8 +2627,8 @@ sub_trg_output:
 ; -----------------------------------------------------------------------------
 
 sub_noise_output:
-	ldx #$79		; SFX indices
-	ldy #$7C
+	ldx #$83		; SFX indices
+	ldy #$86
 	lda ram_sfx3_data_ptr_lo
 	ora ram_sfx3_data_ptr_hi
 	bne :+
