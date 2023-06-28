@@ -497,7 +497,7 @@ sub_rom_B2BD:
 ; ----------------
 	@B2C4:
 	sta zp_last_execution_frame
-	jsr sub_rom_B2F1
+	jsr sub_player_select_input
 	jsr sub_rom_B363
 	jsr sub_rom_B556
 	lda zp_5C
@@ -531,14 +531,17 @@ sub_rom_B2E0:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B2F1:
+sub_player_select_input:
+	; First run: controller 1
 	ldx #$00
 	stx zp_07
-	jsr sub_rom_B2FC
+	jsr @player_select_input
+
+	; Second run: controller 2
 	ldx #$01
 	stx zp_07
 ; ----------------
-sub_rom_B2FC:
+	@player_select_input:
 	lda zp_63,X
 	bpl @B316
 
