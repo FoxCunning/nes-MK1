@@ -225,7 +225,7 @@ tbl_chr_banks_per_screen:
 	.byte $FC, $FE, $F8, $F9, $FA, $FB, $00, $00	; $02
 	.byte $FC, $FE, $F8, $F9, $FA, $FB, $00, $00	; $03
 	.byte $FC, $FE, $FC, $FD, $FE, $FF, $00, $00	; $04
-	.byte $FC, $FE, $FC, $FD, $FE, $FF, $00, $00	; $05
+	.byte $FC, $FE, $FC, $FD, $FE, $FF, $00, $00	; $05	High scores
 	.byte $D8, $DA, $D8, $D9, $DA, $DB, $00, $00	; $06
 	.byte $FC, $FE, $F8, $F9, $FA, $FB, $00, $00	; $07
 	.byte $BC, $BE, $BC, $BD, $BE, $BF, $00, $00	; $08	Titles screen
@@ -236,7 +236,7 @@ tbl_chr_banks_per_screen:
 ; Third byte is VRAM address high byte
 ; Fourth byte is unused (kept for alignment)
 tbl_rle_data_ptr_even:
-	.word nam_main_menu_top_rle				; $00
+	.word nam_main_menu_top_rle		; $00
     .byte $20, $20
 ; ----------------
 ; Right/Bottom nametable data pointers (odd entries)
@@ -246,12 +246,12 @@ tbl_rle_data_ptr_odd:
 	.word nam_main_menu_btm_rle
     .byte $28, $28
 
-    .word nam_option_menu_rle				; $01
+    .word nam_option_menu_rle		; $01
     .byte $20, $20
 	.word nam_option_menu_2_rle
     .byte $28, $28
 
-    .word rom_player_select_rle				; $02
+    .word rom_player_select_rle		; $02
     .byte $20, $20
 	.word rom_vs_screen_2_rle
     .byte $28, $28
@@ -261,9 +261,9 @@ tbl_rle_data_ptr_odd:
 	.word rom_vs_screen_2_rle
     .byte $28, $28
 
-    .word rom_9757				; $04
+    .word rom_high_scores_rle		; $04	Fake "top winning streaks"
     .byte $20, $20
-	.word rom_9757
+	.word rom_high_scores_rle
     .byte $28, $28
 
     .word rom_9591				; $05
@@ -1150,7 +1150,7 @@ rom_968C:
 
 ; -----------------------------------------------------------------------------
 
-rom_9757:
+rom_high_scores_rle:
 	.byte $20, $00, $44, $42, $8A, $01, $02, $03
 	.byte $04, $05, $06, $07, $00, $08, $09, $02
 	.byte $03, $8C, $09, $03, $04, $00, $06, $07
@@ -1251,7 +1251,7 @@ rom_9757:
 	.byte $BB, $06, $FF, $82, $EE, $BB, $06, $FF
 	.byte $82, $EE, $BB, $06, $FF, $82, $EE, $BB
 	.byte $06, $FF, $82, $EE, $BB, $06, $AF, $81
-	.byte $EE, $08, $FF, $81, $0F, $FF, $FF, $FF
+	.byte $EE, $08, $FF, $FF
 
 ; -----------------------------------------------------------------------------
 
