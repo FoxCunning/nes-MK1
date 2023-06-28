@@ -130,7 +130,7 @@ tbl_track_ptrs:
 	.word track_silence		; $00
 	.word sfx_97A7			; $01	A glitchy sound that sometimes plays when a match starts
 	.word sfx_9712			; $02	Any hit
-	.word sfx_9785			; $03	Cursor move and point counter at end of match
+	.word sfx_bleep			; $03	Cursor move and point counter at end of match
 	.word sfx_96DF			; $04	Projectile/special attack
 	.word sfx_96CE			; $05	Bounce/land after jump
 	.word track_silence		; $06
@@ -139,7 +139,7 @@ tbl_track_ptrs:
 	.word track_silence		; $09
 	.word track_silence		; $0A
 	.word track_silence		; $0B
-	.word sfx_8A4E			; $0C	"Siren" sound
+	.word sfx_select		; $0C	"Siren" sound (selection confirmed)
 	.word sfx_9736			; $0D	A weird three-note jingle
 	.word sfx_9750			; $0E	Pause
 	.word sfx_9736			; $0F	Same as $0D, but here it's used after choosing to continue
@@ -176,7 +176,7 @@ tbl_track_ptrs:
 	.word mus_9353			; $2E
 	.word mus_94C4			; $2F
 	.word mus_96B1			; $30
-	.word sfx_8A4E			; $31	"Siren" sound but as music (e.g. after menu selection)
+	.word sfx_select			; $31	"Siren" sound but as music (e.g. after menu selection)
 	.word mus_victory_jingle; $32
 
 ; -----------------------------------------------------------------------------
@@ -331,23 +331,11 @@ mus_8A1A:
 
 ; -----------------------------------------------------------------------------
 
-; Square 0
-rom_8A2A:
-	.byte $F5, $02, $F6, $00, $F9, $00, $FA, $00
-	.byte $FB, $FF
-	.byte $F8, $00, $A4, $1D, $FF
-
 ; Square 1
 rom_8A37:
-	.byte $F6, $01, $F9, $00, $FA, $00, $F8, $00
+	.byte $F6, $01, $F9, $09, $FA, $FF, $F8, $1D
 	.byte $FB, $FF
-	.byte $A4, $21, $FF
-
-; Triangle
-rom_8A42:
-	.byte $F6, $00, $F9, $00, $FA, $00, $F8, $00
-	.byte $FB, $FF
-	.byte $A4, $2F, $FF
+	.byte $81, $21, $82, $26, $FF
 
 ; Silent channel
 rom_8A4D:
@@ -356,13 +344,13 @@ rom_8A4D:
 ; ----------------
 
 ; "Siren" sound
-sfx_8A4E:
+sfx_select:
 	.byte $00
-	.word rom_8A2A
+	.word rom_8A4D
 	.byte $01
 	.word rom_8A37
 	.byte $02
-	.word rom_8A42
+	.word rom_8A4D
 	.byte $03
 	.word rom_8A4D
 	.byte $04
@@ -678,17 +666,17 @@ sfx_9771:
 
 ; -----------------------------------------------------------------------------
 
-; Square 0
+; Square 1
 rom_9778:
-	.byte $F5, $04, $F6, $00, $F9, $00, $FA, $00
+	.byte $F5, $04, $F6, $00, $F8, $1E, $F9, $09, $FA, $FF
 	.byte $FB, $FF
-	.byte $F8, $00, $83, $39, $FF
+	.byte $81, $30, $81, $39, $FF
 
 ; ----------------
 
-; Cursor movement blip
-sfx_9785:
-	.byte $80
+; Cursor movement blip / points counter
+sfx_bleep:
+	.byte $81
 	.word rom_9778
 	.byte $FF
 
