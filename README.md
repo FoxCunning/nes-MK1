@@ -4,3 +4,4 @@ This is a hack of the Hummer Team's bootleg "Mortal Kombat 2" cartridge (which w
 - Improved graphics
 - New sound engine
 - Improved music and sound effects
+- Bug fixes
