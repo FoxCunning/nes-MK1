@@ -17,7 +17,7 @@ your_destiny_ch0:
 ; -------- FRAME 00 --------
 	@frame_00:
 	.byte $82		; Note length = 2
-	.byte $00		; (Rest), 2 ticks
+	.byte $01		; (Hold), 2 ticks
 	.byte $F8, $09	; VOL ENV Pluck
 	.byte $F9, $02	; DUTY ENV Pluck
 	.byte $FA, $FF	; PITCH ENV Pluck
@@ -54,7 +54,7 @@ your_destiny_ch1:
 ; -------- FRAME 00 --------
 	@frame_00:
 	.byte $82		; Note length = 2
-	.byte $00		; (Rest), 2 ticks
+	.byte $01		; (Hold), 2 ticks
 	.byte $F8, $09	; VOL ENV Pluck
 	.byte $F9, $02	; DUTY ENV Pluck
 	.byte $FA, $FF	; PITCH ENV Pluck

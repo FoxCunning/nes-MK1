@@ -6,7 +6,7 @@ __version__ = "1.1"
 import sys
 from typing import List, Optional
 
-NOTES = ["(Rest)", "(Rest)", "(Rest)", "(Rest)", "(Rest)", "(Rest)", "(Rest)", "(Rest)", "(Rest)",
+NOTES = ["(Rest)", "(Hold)", "(Rest)", "(Rest)", "(Rest)", "(Rest)", "(Rest)", "(Rest)", "(Rest)",
          "A-0", "A#0", "B-0",
          "C-1", "C#1", "D-1", "D#1", "E-1", "F-1", "F#1", "G-1", "G#1", "A-1", "A#1", "B-1",
          "C-2", "C#2", "D-2", "D#2", "E-2", "F-2", "F#2", "G-2", "G#2", "A-2", "A#2", "B-2",
@@ -182,6 +182,7 @@ class Channel:
     EVENT_NOTELEN = 0x80  # Change the duration of the next notes (max 111)
 
     EVENT_REST = 0x00  # Zero volume for specified amount of ticks
+    EVENT_HOLD = 0x01  # Reload the duration counter without changing pitch or restarting envelopes
 
     # noinspection SpellCheckingInspection
     EVENT_ENDSEG = 0xF1  # Ends a segment
@@ -198,14 +199,11 @@ class Channel:
     EVENT_ARPEGGIO = 0xFB   # Set arpeggio
 
     EVENT_MUTE = 0xFE  # *UNIMPLEMENTED* Mute channel for specified amount of ticks
-
-    EVENT_HOLD = 0xFE  # *UNIMPLEMENTED* reload the duration counter with the specified value
     EVENT_DELTA = 0xFE  # *UNIMPLEMENTED* set delta counter (only affects triangle and noise channels)
     EVENT_END = 0xFF  # End of song/SFX
 
     # noinspection SpellCheckingInspection
     EVENT_VOLSLIDE = 0xFE  # *UNIMPLEMENTED* volume slide
-
     EVENT_TIMBRE = 0xFE  # *UNIMPLEMENTED* set duty cycle without changing volume
     # noinspection SpellCheckingInspection
     EVENT_NOTESLIDE_UP = 0xFE  # *UNIMPLEMENTED* note slide up
@@ -851,14 +849,14 @@ def main():
 
                     # If not interrupted, keep counting ticks
                     else:
-                        if channels[c].current_event == -1:  # "..." not preceded by a note: create a rest
-                            channels[c].start_event(Channel.EVENT_REST)
+                        if channels[c].current_event == -1:  # "..." not preceded by a note: create a hold
+                            channels[c].start_event(Channel.EVENT_HOLD)
 
                         else:
                             if delayed_cut > -1:
                                 channels[c].current_duration += delayed_cut
                                 channels[c].finalise_event()
-                                channels[c].start_event(Channel.EVENT_REST, note_duration - delayed_cut)
+                                channels[c].start_event(Channel.EVENT_HOLD, note_duration - delayed_cut)
 
                             else:
                                 # Count ticks

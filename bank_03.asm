@@ -1510,6 +1510,7 @@ sub_skip_track_data:
 ; Processes a new note or rest that was just read from sound track data
 ; Parameters:
 ; A = value from track data ($00-$5F)
+; X = track data pointer offset
 sub_new_note_or_rest:
 	bne :+
 
@@ -1518,10 +1519,19 @@ sub_new_note_or_rest:
 		jmp sub_stop_envelopes
 		; ------------
 		; Unreachable ?
-		rts
+		;rts
 ; ----------------
-	; Non-zero = new note
+	; 1 = note hold
 	:
+	cmp #$01
+	bne :+
+		; Do not change pitch and note index
+		; Do not restart envelope
+		; Frames left will be updated by calling routine
+		; Just advance data pointer
+		jmp sub_advance_track_ptr
+	:
+	; >1 = note
 	pha
 
 	lda ram_cur_apu_channel
@@ -1540,8 +1550,9 @@ sub_new_note_or_rest:
 	jsr sub_apply_note_pitch
 
 	jsr sub_start_all_envelopes
-	jsr sub_advance_track_ptr
-	rts
+
+	jmp sub_advance_track_ptr
+	;rts
 
 ; -----------------------------------------------------------------------------
 
