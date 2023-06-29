@@ -129,13 +129,13 @@ tbl_pitches:
 tbl_track_ptrs:
 	.word track_silence		; $00
 	.word sfx_97A7			; $01	A glitchy sound that sometimes plays when a match starts
-	.word sfx_9712			; $02	Any hit
+	.word sfx_hit			; $02	Any hit
 	.word sfx_bleep			; $03	Cursor move and point counter at end of match
-	.word sfx_96DF			; $04	Projectile/special attack
-	.word sfx_96CE			; $05	Bounce/land after jump
+	.word sfx_projectile	; $04	Projectile/special attack
+	.word sfx_bounce		; $05	Bounce/land after jump
 	.word track_silence		; $06
-	.word sfx_96F0			; $07	Kick swing
-	.word sfx_96F0			; $08	Punch swing
+	.word sfx_kick			; $07	Kick swing
+	.word sfx_kick			; $08	Punch swing
 	.word track_silence		; $09
 	.word track_silence		; $0A
 	.word track_silence		; $0B
@@ -176,7 +176,7 @@ tbl_track_ptrs:
 	.word mus_9353			; $2E
 	.word mus_94C4			; $2F
 	.word mus_96B1			; $30
-	.word sfx_select			; $31	"Siren" sound but as music (e.g. after menu selection)
+	.word sfx_select		; $31	"Siren" sound but as music (e.g. after menu selection)
 	.word mus_victory_jingle; $32
 
 ; -----------------------------------------------------------------------------
@@ -335,7 +335,7 @@ mus_8A1A:
 rom_8A37:
 	.byte $F6, $01, $F9, $09, $FA, $FF, $F8, $1D
 	.byte $FB, $FF
-	.byte $81, $21, $82, $26, $FF
+	.byte $81, $21, $82, $26, $00, $FF
 
 ; Silent channel
 rom_8A4D:
@@ -533,13 +533,13 @@ mus_96B1:
 
 ; Square 1
 rom_96C1:
-	.byte $F5, $02, $F6, $01, $F9, $00, $FA, $00
-	.byte $FB, $FF
-	.byte $F8, $00, $BC, $15, $FF
+	.byte $F5, $02, $F6, $01, $F8, $09, $F9, $00
+	.byte $FA, $FF, $FB, $FF
+	.byte $8C, $09, $00, $FF
 
 ; ----------------
 
-sfx_96CE:
+sfx_bounce:
 	.byte $81
 	.word rom_96C1
 	.byte $FF
@@ -548,13 +548,13 @@ sfx_96CE:
 
 ; Noise
 rom_96D2:
-	.byte $F5, $03, $F6, $01, $F9, $00, $FA, $00
-	.byte $FB, $FF
-	.byte $F8, $00, $A0, $2D, $FF
+	.byte $F5, $03, $F6, $01, $F8, $03, $F9, $FF
+	.byte $FA, $05, $FB, $FF
+	.byte $A0, $2D, $00, $FF
 
 ; ----------------
 
-sfx_96DF:
+sfx_projectile:
 	.byte $83
 	.word rom_96D2
 	.byte $FF
@@ -563,13 +563,13 @@ sfx_96DF:
 
 ; Noise
 rom_96E3:
-	.byte $F5, $03, $F6, $01, $F9, $00, $FA, $00
-	.byte $FB, $FF
+	.byte $F5, $03, $F6, $01, $F8, $03, $F9, $FF
+	.byte $FA, $05, $FB, $FF
 	.byte $F8, $01, $A0, $2F, $FF
 
 ; ----------------
 
-sfx_96F0:
+sfx_kick:
 	.byte $83
 	.word rom_96E3
 	.byte $FF
@@ -599,7 +599,7 @@ rom_9705:
 
 ; ----------------
 
-sfx_9712:
+sfx_hit:
 	.byte $83
 	.word rom_9705
 	.byte $FF
@@ -608,8 +608,8 @@ sfx_9712:
 
 ; Square 0
 rom_9716:
-	.byte $F5, $04, $F6, $00, $F9, $00, $FA, $00
-	.byte $FB, $FF
+	.byte $F5, $04, $F6, $00, $F8, $09, $F9, $00
+	.byte $FA, $FF, $FB, $FF
 	.byte $F8, $00, $83, $2D, $30, $95, $39, $FF
 ; Square 1
 rom_9726:
@@ -630,10 +630,10 @@ sfx_9736:
 
 ; Square 1
 rom_973D:
-	.byte $F5, $01, $F6, $11, $F9, $00, $FA, $00
-	.byte $FB, $FF
+	.byte $F5, $01, $F6, $11, $F8, $09, $F9, $00
+	.byte $FA, $FF, $FB, $FF
 	.byte $F8, $00, $83, $28, $00, $24, $00, $28
-	.byte $00, $24, $FF
+	.byte $00, $24, $00, $FF
 
 ; ----------------
 
@@ -646,12 +646,12 @@ sfx_9750:
 
 ; Square 0
 rom_9754:
-	.byte $F5, $04, $F6, $00, $F9, $00, $FA, $00
-	.byte $FB, $FF
+	.byte $F5, $04, $F6, $00, $F8, $09, $F9, $00
+	.byte $FA, $FF, $FB, $FF
 	.byte $F8, $00, $81, $24, $89, $21, $FF
 ; Square 1
 rom_9763:
-	.byte $F6, $00, $F9, $00, $FA, $00, $F8, $00
+	.byte $F6, $00, $F9, $00, $FA, $FF, $F8, $00
 	.byte $FB, $FF
 	.byte $81, $00, $24, $89, $21, $FF
 
@@ -668,9 +668,9 @@ sfx_9771:
 
 ; Square 1
 rom_9778:
-	.byte $F5, $04, $F6, $00, $F8, $1E, $F9, $09, $FA, $FF
+	.byte $F5, $04, $F6, $00, $F8, $0E, $F9, $09, $FA, $FF
 	.byte $FB, $FF
-	.byte $81, $30, $81, $39, $FF
+	.byte $81, $30, $81, $3A, $00, $FF
 
 ; ----------------
 
@@ -700,8 +700,8 @@ sfx_9796_unused:
 
 ; Noise
 rom_979A:
-	.byte $F5, $03, $F6, $01, $F9, $00, $FA, $00
-	.byte $FB, $FF
+	.byte $F5, $03, $F6, $01, $F8, $00, $F9, $00
+	.byte $FA, $FF, $FB, $FF
 	.byte $F8, $00, $85, $17, $FF
 
 ; ----------------

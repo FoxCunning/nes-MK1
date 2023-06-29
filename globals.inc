@@ -393,26 +393,25 @@ ram_vol_env_ptr_lo = $0750    ;
 ram_vol_env_ptr_hi = $0751    ;
 ; ----------------
 ; Index of duty envelope, one per channel (only used for Square wave channels)
-ram_duty_env_idx = $075A            ; Size=2
+ram_duty_env_idx = $075A    ; Size=2
 ; Ticks left for current value of instrument's duty evenlope
-ram_cur_duty_env_duration = $075C   ; Size=2
-ram_duty_env_ptr_lo = $075E    ;
-ram_duty_env_ptr_hi = $075F    ;
+ram_duty_env_ptr_lo = $075C ;
+ram_duty_env_ptr_hi = $075D ;
 ; ----------------
 ; Pitch evelope indices, one per channel
-ram_pitch_env_idx = $0762           ; Size=3
+ram_pitch_env_idx = $0760   ; Size=3
 ; Ticks left for current value of instrument's pitch evenlope
-ram_cur_pitch_env_duration = $0765  ; Size=3
+ram_cur_pitch_env_duration = $0763  ; Size=3
 ; ----------------
 ; Pointer to the current position in the pitch envelope
-ram_pitch_env_ptr_lo = $0768    ; Ptrs=3
+ram_pitch_env_ptr_lo = $0766    ; Ptrs=3
 ; Pointer to the current position in the pitch envelope
-ram_pitch_env_ptr_hi = $0769    ; Ptrs=3
+ram_pitch_env_ptr_hi = $0767    ; Ptrs=3
 ; Index of the note currently being played
-ram_cur_note_idx = $076E    ; Size=4
+ram_cur_note_idx = $076C    ; Size=4
 ; APU channel being currently processed: $00-$04 for music, $10-$14 for sfx
 ; Music/SFX speed value (interval in frames between events)
-ram_track_speed = $772  ;
+ram_track_speed = $770  ;
 
 ; ----------------
 
@@ -434,8 +433,8 @@ ram_sfx3_data_ptr_lo = $079F    ;
 ram_sfx3_data_ptr_hi = $07A0    ;
 ; ----------------
 ram_sfx_vol_env_duration = $07CB    ;
-ram_sfx_duty_env_duration = $07DC   ;
-ram_sfx_pitch_env_duration = $07E5  ;
+ram_sfx_duty_env_idx = $07DA        ; Size=2
+ram_sfx_pitch_env_duration = $07E3  ;
 
 
 ; -----------------------------------------------------------------------------

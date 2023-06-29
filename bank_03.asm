@@ -1226,8 +1226,8 @@ sub_apu_init:
 	ldx #$02
 	:
 		dex
-		sta ram_cur_duty_env_duration,X
-		sta ram_sfx_duty_env_duration,X
+		sta ram_duty_env_idx,X
+		sta ram_sfx_duty_env_idx,X
 	bne :-
 
 	; Clear the sound stack by putting $FF in all eight slots
@@ -1277,7 +1277,7 @@ sub_process_all_sound:
 	sta ram_cur_chan_ptr_offset
 	@AB14:
 		jsr sub_play_cur_channel
-		jsr sub_apply_envelopes
+		jsr sub_advance_envelopes
 		inc ram_cur_apu_channel
 		inc ram_cur_channel_offset
 		inc ram_cur_chan_ptr_offset
@@ -1294,7 +1294,7 @@ sub_process_all_sound:
 	sta ram_cur_chan_ptr_offset
 	@AB3A:
 		jsr sub_play_cur_channel
-		jsr sub_apply_envelopes
+		jsr sub_advance_envelopes
 		inc ram_cur_apu_channel
 		inc ram_cur_channel_offset
 		inc ram_cur_chan_ptr_offset
@@ -1424,10 +1424,8 @@ sub_init_new_track:
 		cpy #$02	; Triangle channel skips duty envelope only
 		bpl :+
 
-		lda #$00
-		sta ram_duty_env_idx,X
 		lda #$FF
-		sta ram_cur_duty_env_duration,X
+		sta ram_duty_env_idx,X
 	:
 	pla
 	tay
@@ -1821,15 +1819,19 @@ sub_cmd_track_speed:
 	sta zp_ptr2_lo
 	lda ram_track_ptr_hi,X
 	sta zp_ptr2_hi
+
 	; Read next byte
 	ldy #$00
 	lda (zp_ptr2_lo),Y
+
+	; Offset is either zero (music) or $80 (SFX)
+	; So it doesn't matter on which channel this happens
 	ldx ram_cur_apu_channel
 	cpx #$05
 	bmi :+
 	
 		ldy #$80	; Add offset for SFX channels
-:
+	:
 	sta ram_track_speed,Y
 	jsr sub_advance_track_ptr
 	jmp sub_get_next_track_byte
@@ -1920,14 +1922,14 @@ sub_cmd_set_duty_env:
 		; Skip Triangle and Noise channels
 		jsr sub_advance_track_ptr
 		jmp sub_get_next_track_byte
-:
+	:
 	jsr sub_track_read_next_byte
 	cmp #$FF
 	bne :+
 		
 		; If the index is $FF, disable the envelope
 		sta ram_cur_vol_env_duration,X
-:	
+	:	
 	sta ram_duty_env_idx,X
 	jmp sub_get_next_track_byte
 
@@ -1989,7 +1991,7 @@ sub_stop_envelopes:
 		bpl :+
 
 			; Stop duty envelope for square wave channels
-			sta ram_cur_duty_env_duration,Y
+			sta ram_duty_env_idx,Y
 		:
 		bne :+
 			; Mute triangle channel
@@ -2111,10 +2113,10 @@ sub_start_duty_envelope:
 		lda tbl_duty_env_ptrs+1,X
 		sta ram_duty_env_ptr_hi,Y
 		sta zp_ptr2_hi
-		ldx ram_cur_channel_offset
-		ldy #$00
-		lda (zp_ptr2_lo),Y
-		sta ram_cur_duty_env_duration,X
+		;ldx ram_cur_channel_offset
+		;ldy #$00
+		;lda (zp_ptr2_lo),Y
+		;sta ram_cur_duty_env_duration,X
 
 	@skip_duty_env_start:
 	rts
@@ -2231,7 +2233,7 @@ sub_track_read_next_byte:
 ; -----------------------------------------------------------------------------
 
 ; Processes the next event in each envelope for the current channel
-sub_apply_envelopes:
+sub_advance_envelopes:
 	; This could be removed by simply eliminating all RTS except the last
 	jsr sub_next_volume_envelope
 	jsr sub_next_duty_envelope
@@ -2316,70 +2318,50 @@ sub_next_volume_envelope:
 
 ; -----------------------------------------------------------------------------
 
-; Moves to the next entry in a duty envelope table and reads its duration
+; Moves to the next entry in a duty envelope table
 sub_next_duty_envelope:
 	lda ram_cur_apu_channel
 	and #$0F
 	tax
-	cpx #$02
+	cpx #$02	; Only for square wave channels
 	bpl @skip_duty_env
 
-		@next_duty_env:
-		ldx ram_cur_channel_offset
-		lda ram_cur_duty_env_duration,X
-		tay
-		cpy #$FF
+		; First, make sure this channel is using a duty envelope
+		ldx ram_cur_chan_ptr_offset
+		lda ram_duty_env_idx,X
+		cmp #$FF
 		beq @skip_duty_env
 
-			ldx ram_cur_channel_offset
-			lda ram_cur_duty_env_duration,X
-			bne @duty_env_still_running
+			; Add one to the pointer
+			lda #$01
+			clc
+			adc ram_duty_env_ptr_lo,X
+			sta ram_duty_env_ptr_lo,X
+			sta zp_ptr2_lo
+			; Take care of the high byte
+			lda #$00
+			adc ram_duty_env_ptr_hi,X
+			sta ram_duty_env_ptr_hi,X
+			sta zp_ptr2_hi
 
-				ldx ram_cur_chan_ptr_offset
-				lda #$02
+			; Read the next byte
+			ldy #$00
+			lda (zp_ptr2_lo),Y
+			cmp #$FF	; End of envelope: check for loops
+			bne @skip_duty_env	; Otherwise, we are done
+
+				iny
+				lda (zp_ptr2_lo),Y
+				; The last value is how many bytes to move back
+				; Note: this is expected to be an signed, negative 8-bit value
 				clc
 				adc ram_duty_env_ptr_lo,X
 				sta ram_duty_env_ptr_lo,X
 				sta zp_ptr2_lo
-				lda #$00
-				adc ram_duty_env_ptr_hi,X
-				sta ram_duty_env_ptr_hi,X
-				sta zp_ptr2_hi
-				ldx ram_cur_channel_offset
-				ldy #$00
-				lda (zp_ptr2_lo),Y
-				sta ram_cur_duty_env_duration,X
-				tay
-				cpy #$FF
-				bne @next_duty_env
-
-				ldx ram_cur_chan_ptr_offset
-				ldy #$01
-				lda (zp_ptr2_lo),Y
-				; and #$FE
-				asl A
-				bpl @B095
-
-					clc
-					adc ram_duty_env_ptr_lo,X
-					sta ram_duty_env_ptr_lo,X
-					sta zp_ptr2_lo
-					bcs @B090
-
-						dec ram_duty_env_ptr_hi,X
-					@B090:
-					lda ram_duty_env_ptr_hi,X
-					sta zp_ptr2_hi
-					
-				@B095:
-				ldx ram_cur_channel_offset
-				ldy #$00
-				lda (zp_ptr2_lo),Y
-				sta ram_cur_duty_env_duration,X
-				jmp @next_duty_env
-
-			@duty_env_still_running:
-			dec ram_cur_duty_env_duration,X
+				bcs :+
+					dec ram_duty_env_ptr_hi,X
+					dec zp_ptr2_hi
+				:
 	@skip_duty_env:
 	rts
 
@@ -2691,27 +2673,27 @@ sub_get_duty_envelope:
 	tya
 	pha
 
-	lda ram_cur_duty_env_duration,X
-	tay
-	cpy #$FF
-	bne @B276
+	lda ram_duty_env_idx,X
+	cmp #$FF
+	bne :+
 
-		; A duration of $FF disables the envelope
+		; An index of $FF disables the envelope
 		lda #$00
-		jmp @B287
+		jmp @duty_env_done
 
-	@B276:
+	:
 	pla
 	pha
 
+	; Read current value
 	tay
 	lda ram_duty_env_ptr_lo,Y
 	sta zp_ptr2_lo
 	lda ram_duty_env_ptr_hi,Y
 	sta zp_ptr2_hi
-	ldy #$01
+	ldy #$00
 	lda (zp_ptr2_lo),Y
-	@B287:
+	@duty_env_done:
 	sta zp_ptr2_lo
 
 	pla

@@ -54,13 +54,23 @@ class FmtMacro:
         self.data: List[int] = []
         # Add a byte for arpeggio flags
         # TODO Do the same for pitch envelopes
-        if self.type == 1:
+        if self.type == 1:      # Arpeggio
             self.data.append(0 if self.flag == 0 else 0x80)
 
             # Arpeggios are not RLE-encoded
             self.data = self.data + self.values
             self.data.append(0x7F)  # Special termination token for arpeggios
-        else:
+
+        elif self.type == 4:    # Duty
+            # No data compression for Duty: duration is always one frame
+            self.data = self.values
+            self.data.append(0xFF)
+            if self.loop_offset > -1:
+                self.data.append(0xFF - (len(self.data) - self.loop_offset))
+            else:
+                self.data.append(0xFF)
+
+        else:                   # Volume / Pitch
             # Encode other envelopes with some simplified RLE algorithm
             count = 0   # Count of repeated bytes
             index = 0   # Keep count of where we are for loop and release offsets
@@ -546,9 +556,10 @@ def main():
 
     channels = [pulse0, pulse1, triangle, noise, dmc]
     pulse0.instant_event(Channel.EVENT_SETSPEED, speed)
-    pulse1.instant_event(Channel.EVENT_SETSPEED, speed)
-    triangle.instant_event(Channel.EVENT_SETSPEED, speed)
-    noise.instant_event(Channel.EVENT_SETSPEED, speed)
+    # Track speed applies to all channels
+    # pulse1.instant_event(Channel.EVENT_SETSPEED, speed)
+    # triangle.instant_event(Channel.EVENT_SETSPEED, speed)
+    # noise.instant_event(Channel.EVENT_SETSPEED, speed)
 
     # ---- Read frames (A.K.A. order) and then find the start of the song (pattern 0)
     pattern_line = 0
@@ -582,7 +593,7 @@ def main():
             # Found a new song or end of file, stop here
             break
 
-        elif line[0] == "P":
+        elif line[0] == "P":    # "PATTERN"
             pattern_length = 0
             pulse0.add_pattern()
             pulse1.add_pattern()
@@ -590,7 +601,7 @@ def main():
             noise.add_pattern()
             dmc.add_pattern()
 
-        elif line[0] == "R":
+        elif line[0] == "R":    # "ROW"
             split = line.split(':')
 
             # Process row for all channels
@@ -619,6 +630,33 @@ def main():
 
             # First, scan all channels for global effects
             for c in range(5):
+                if r == 0:
+                    # Add a comment at the start of a new frame and end of the previous one to the ASM output
+                    # NOTE Since we are "unrolling" the song, it will be impossible to always calculate the exact
+                    # split point, since events may start in one frame but end in the next
+                    if f > 0:
+                        channels[c].asm += \
+                            f"\n; ---- FRAME {f - 1:02X} END (${channels[c].byte_count:04X} bytes) ----\n"
+
+                    channels[c].asm += f"\n; -------- FRAME {f:02X} --------\n"
+                    channels[c].asm += f"\t@frame_{f:02X}:\n"
+
+                    if f > 0:
+                        channels[c].frame_size.append(channels[c].byte_count)
+                    # Start byte count for the new frame
+                    channels[c].byte_count = 0
+
+                # If this is the first channel, first hunt for speed changes on the others
+                if c == 0:
+                    for oc in range(1, 5):
+                        p = channels[oc].frames[f]
+                        row = channels[oc].patterns[p][r]
+                        for fx in row.fx:
+                            if fx[0] == 'F':
+                                value = int(fx[1:], 16)
+                                channels[0].instant_event(Channel.EVENT_SETSPEED, value)
+                                break
+
                 # Get the pattern index for this channel
                 p = channels[c].frames[f]
                 channels[c].current_pattern = p
@@ -660,36 +698,20 @@ def main():
                         # print(f"  Channel {c}, frame {f}, pattern ${p:02X}, row ${r:02X}: {fx}")
                         skip_frame = True
 
-                    elif fx[0] == 'F':
+                    elif fx[0] == 'F' and c == 0:   # Only do this on the first channel (it applies to others too)
                         # print("* Found SPEED/TEMPO:")
                         # print(f"  Channel {c}, frame {f}, pattern ${p:02X}, row ${r:02X}: {fx}")
                         # Set speed for all channels
                         value = int(fx[1:], 16)
-                        for ch in range(5):
-                            channels[ch].row_duration = value
+                        # for ch in range(5):
+                        #    channels[ch].row_duration = value
+                        channels[0].instant_event(Channel.EVENT_SETSPEED, value)
 
                     elif fx[0] == 'Z':
                         delta_counter = int(fx[1:], 16)
 
             # Now search for notes and "interrupting" events
             for c in range(5):
-
-                if r == 0:
-                    # Add a comment at the start of a new frame and end of the previous one to the ASM output
-                    # NOTE Since we are "unrolling" the song, it will be impossible to always calculate the exact
-                    # split point, since events may start in one frame but end in the next
-                    if f > 0:
-                        channels[c].asm += \
-                            f"\n; ---- FRAME {f - 1:02X} END (${channels[c].byte_count:04X} bytes) ----\n"
-
-                    channels[c].asm += f"\n; -------- FRAME {f:02X} --------\n"
-                    channels[c].asm += f"\t@frame_{f:02X}:\n"
-
-                    if f > 0:
-                        channels[c].frame_size.append(channels[c].byte_count)
-                    # Start byte count for the new frame
-                    channels[c].byte_count = 0
-
                 p = channels[c].frames[f]
                 channels[c].current_pattern = p
                 row = channels[c].patterns[p][r]

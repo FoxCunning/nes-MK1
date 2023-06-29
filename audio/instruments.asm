@@ -33,6 +33,9 @@ tbl_vol_env_ptrs:
 	.word @vol_env_1D
 	.word @vol_env_1E
 	.word @vol_env_1F
+	.word @vol_env_20
+	.word @vol_env_21
+	.word @vol_env_22
 
 ; -----------------
 
@@ -233,6 +236,22 @@ tbl_vol_env_ptrs:
 	.byte $01, $05, $02, $02, $03, $01, $01, $00
 	.byte $FF, $00
 
+; -----------------
+
+	@vol_env_20:
+	.byte $07, $05, $07, $04, $07, $03, $07, $02
+	.byte $07, $01, $01, $00, $FF, $00
+
+; -----------------
+
+	@vol_env_21:
+	.byte $01, $06, $FF, $00
+
+; -----------------
+
+	@vol_env_22:
+	.byte $01, $02, $FF, $00
+
 ; ------------------------------------------------------------------------------
 
 tbl_arp_ptrs:
@@ -312,6 +331,8 @@ tbl_pitch_env_ptrs:
 	.word @pitch_env_02
 	.word @pitch_env_03
 	.word @pitch_env_04
+	.word @pitch_env_05
+	.word @pitch_env_06
 
 ; -----------------
 
@@ -344,6 +365,18 @@ tbl_pitch_env_ptrs:
 	.byte $03, $00, $01, $01, $03, $00, $01, $FF
 	.byte $03, $00, $FF, $F8
 
+; -----------------
+
+	@pitch_env_05:
+	.byte $01, $01, $02, $02, $01, $01, $01, $FF
+	.byte $02, $FE, $01, $FF, $FF, $F8
+
+; -----------------
+
+	@pitch_env_06:
+	.byte $01, $02, $02, $04, $01, $02, $01, $FE
+	.byte $02, $FC, $01, $FE, $FF, $F8
+
 tbl_duty_env_ptrs:
 	.word @duty_env_00
 	.word @duty_env_01
@@ -355,54 +388,66 @@ tbl_duty_env_ptrs:
 	.word @duty_env_07
 	.word @duty_env_08
 	.word @duty_env_09
+	.word @duty_env_0A
+	.word @duty_env_0B
 
 ; -----------------
 
 	@duty_env_00:
-	.byte $01, $00, $01, $01, $FF, $00
+	.byte $00, $01, $FF, $FF
 
 ; -----------------
 
 	@duty_env_01:
-	.byte $01, $00, $01, $01, $FF, $00
+	.byte $00, $01, $FF, $FF
 
 ; -----------------
 
 	@duty_env_02:
-	.byte $01, $00, $FF, $00
+	.byte $00, $FF, $FF
 
 ; -----------------
 
 	@duty_env_03:
-	.byte $01, $01, $01, $02, $FF, $00
+	.byte $01, $02, $FF, $FF
 
 ; -----------------
 
 	@duty_env_04:
-	.byte $02, $02, $01, $03, $FF, $00
+	.byte $02, $02, $03, $FF, $FF
 
 ; -----------------
 
 	@duty_env_05:
-	.byte $02, $01, $03, $02, $02, $01, $01, $02
-	.byte $FF, $00
+	.byte $01, $01, $02, $02, $02, $01, $01, $02
+	.byte $FF, $FF
 
 ; -----------------
 
 	@duty_env_06:
-	.byte $02, $01, $01, $02, $FF, $00
+	.byte $01, $01, $02, $FF, $FF
 
 ; -----------------
 
 	@duty_env_07:
-	.byte $01, $01, $01, $02, $FF, $00
+	.byte $01, $02, $FF, $FF
 
 ; -----------------
 
 	@duty_env_08:
-	.byte $01, $00, $01, $01, $FF, $00
+	.byte $00, $01, $FF, $FF
 
 ; -----------------
 
 	@duty_env_09:
-	.byte $01, $00, $FF, $00
+	.byte $00, $FF, $FF
+
+; -----------------
+
+	@duty_env_0A:
+	.byte $02, $FF, $FF
+
+; -----------------
+
+	@duty_env_0B:
+	.byte $02, $FF, $FF

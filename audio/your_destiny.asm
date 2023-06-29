@@ -49,7 +49,7 @@ your_destiny_ch0:
 
 your_destiny_ch1:
 ; Channel 1
-	.byte $F5, $07	; SPEED = 7
+	;.byte $F5, $07	; SPEED = 7
 
 ; -------- FRAME 00 --------
 	@frame_00:
@@ -86,7 +86,7 @@ your_destiny_ch1:
 
 your_destiny_ch2:
 ; Channel 2
-	.byte $F5, $07	; SPEED = 7
+	;.byte $F5, $07	; SPEED = 7
 
 ; -------- FRAME 00 --------
 	@frame_00:
@@ -116,7 +116,7 @@ your_destiny_ch2:
 
 your_destiny_ch3:
 ; Channel 3
-	.byte $F5, $07	; SPEED = 7
+	;.byte $F5, $07	; SPEED = 7
 
 ; -------- FRAME 00 --------
 	@frame_00:
