@@ -97,38 +97,52 @@ sub_next_packed_byte:
 
 sub_rom_04_805A:
 	jsr sub_wait_vblank
+
+	; Disable NMI and rendering, VRAM set increment to horizontal
 	lda #$00
 	sta PpuControl_2000
 	sta PpuMask_2001
+
+	; Change mirroring and IRQ handler
 	lda #$0C
-	sta ram_0410
+	sta ram_routine_pointer_idx
 	lda #$01
 	sta mmc3_mirroring
+
 	lda #$00
-	jsr sub_rom_E249
+	jsr sub_clear_nametable
 	lda #$01
-	jsr sub_rom_E249
-	lda #$02
-	jsr sub_rom_E249
-	jsr sub_rom_E264
-	jsr sub_rom_80A0
+	jsr sub_clear_nametable
+	;lda #$02	; Pointless: already cleared because of mirroring
+	;jsr sub_clear_nametable
+
+	jsr sub_hide_all_sprites
+	jsr sub_load_screen_data
+
 	lda zp_tmp_idx
 	asl A
 	tay
 	lda rom_81C0+0,Y
-	sta ram_0410
+	sta ram_routine_pointer_idx
 	lda rom_81C0+1,Y
-	sta zp_56
-	jsr sub_rom_80F5
+	sta zp_palette_idx
+
+	jsr sub_clear_palettes
 	jsr sub_choose_music_track
+
 	lda #$00
 	sta zp_57
 	sta zp_55
+
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_80A0:
+; Loads an RLE-compressed nametable into the PPU, then switches CHR banks
+; Parameters:
+; zp_tmp_idx = Index of nametable data to unpack and CHR banks list
+sub_load_screen_data:
+	; Top or Left
 	lda zp_tmp_idx
 	asl A
 	asl A
@@ -141,6 +155,8 @@ sub_rom_80A0:
 	lda tbl_rle_data_ptr_even+2,X
 	sta zp_14
 	jsr sub_unpack_nametable
+
+	; Buttom or Right
 	lda zp_tmp_idx
 	asl A
 	asl A
@@ -153,38 +169,42 @@ sub_rom_80A0:
 	lda tbl_rle_data_ptr_odd+2,X
 	sta zp_14
 	jsr sub_unpack_nametable
+
+	; CHR Banks
 	lda zp_tmp_idx
 	asl A
 	asl A
 	asl A
 	tax
 	lda tbl_chr_banks_per_screen+0,X
-	sta zp_96
+	sta zp_chr_bank_0
 	lda tbl_chr_banks_per_screen+1,X
-	sta zp_97
+	sta zp_chr_bank_1
 	lda tbl_chr_banks_per_screen+2,X
-	sta zp_58
+	sta zp_chr_bank_2
 	lda tbl_chr_banks_per_screen+3,X
-	sta zp_59
+	sta zp_chr_bank_3
 	lda tbl_chr_banks_per_screen+4,X
-	sta zp_5A
+	sta zp_chr_bank_4
 	lda tbl_chr_banks_per_screen+5,X
-	sta zp_5B
+	sta zp_chr_bank_5
+
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_80F5:
+; Writes $0E to all palette entries
+sub_clear_palettes:
 	ldx #$20
 	lda #$3F
 	sta PpuAddr_2006
 	lda #$00
 	sta PpuAddr_2006
 	lda #$0E
-	@8103:
+	:
         sta PpuData_2007
         dex
-	bne @8103
+	bne :-
 
 	rts
 
@@ -288,6 +308,8 @@ tbl_rle_data_ptr_odd:
 
 ; -----------------------------------------------------------------------------
 
+; Byte 0: index of IRQ handler routine pointer
+; Byte 1: index of palette pointer
 rom_81C0:
     .byte $0C, $00
     .byte $0E, $01
@@ -303,13 +325,14 @@ rom_81C0:
 .export sub_rom_04_81D2
 
 sub_rom_04_81D2:
-	lda zp_56
+	lda zp_palette_idx
 	asl A
 	tay
 	lda rom_823D+0,Y
 	sta zp_ptr1_lo
 	lda rom_823D+1,Y
 	sta zp_ptr1_hi
+
 	lda zp_57
 	asl A
 	tay
@@ -317,6 +340,7 @@ sub_rom_04_81D2:
 	sta zp_14
 	lda rom_8239+1,Y
 	sta zp_15
+
 	lda zp_44
 	bne @822F
 
@@ -360,6 +384,7 @@ sub_rom_04_81D2:
 	lda #$01
 	sta zp_45
 	inc zp_55
+
 	@822F:
 	rts
 
@@ -372,10 +397,15 @@ rom_8230:
 ; -----------------------------------------------------------------------------
 
 rom_8239:
-	.word palette_82E7, palette_8307
+	.word palette_82E7
+	.word palette_8307
 ; ----------------
 rom_823D:
-	.word palette_8247, palette_8267, palette_8287, palette_82A7, palette_82C7
+	.word palette_8247
+	.word palette_8267
+	.word palette_8287
+	.word palette_82A7
+	.word palette_82C7
 
 ; -----------------------------------------------------------------------------
 
@@ -883,10 +913,7 @@ rom_player_select_rle:
 	.byte $AF, $02, $FF, $86, $00, $77, $DD, $77
 	.byte $DD, $AA, $03, $FF, $84, $55, $33, $CC
 	.byte $AA, $04, $FF, $84, $F5, $F3, $FC, $FA
-	.byte $0A, $FF
-	; Glitchy! The next byte should be $FF (and also the last)
-	; .byte $81, $0F, $FF, $FF, $FF
-	.byte $FF
+	.byte $0A, $FF, $FF
 
 ; -----------------------------------------------------------------------------
 
@@ -973,9 +1000,7 @@ rom_901A:
 	.byte $22, $CC, $FF, $77, $11, $44, $55, $11
 	.byte $88, $22, $CC, $B7, $A1, $24, $05, $41
 	.byte $58, $92, $EC, $BB, $AA, $22, $00, $44
-	.byte $55, $99, $EE, $10, $FF
-	; .byte $81, $0F, $FF, $FF, $FF
-	.byte $FF
+	.byte $55, $99, $EE, $10, $FF, $FF
 
 ; -----------------------------------------------------------------------------
 
@@ -1007,7 +1032,6 @@ rom_vs_screen_2_rle:
 	.byte $FF, $86, $0F, $7F, $DD, $77, $DF, $AF
 	.byte $03, $FF, $84, $55, $33, $CC, $AA, $04
 	.byte $FF, $84, $F5, $F3, $FC, $FA, $0A, $FF
-	; .byte $81, $0F, $FF, $FF, $FF
 	.byte $FF
 
 ; -----------------------------------------------------------------------------
@@ -1115,8 +1139,7 @@ rom_9591:
 	.byte $04, $00, $81, $CC, $02, $FF, $81, $33
 	.byte $04, $00, $81, $CC, $02, $FF, $81, $33
 	.byte $04, $00, $81, $CC, $02, $FF, $81, $F3
-	.byte $04, $F0, $81, $FC, $11, $FF, $81, $0F
-	.byte $FF, $FF, $FF
+	.byte $04, $F0, $81, $FC, $11, $FF, $FF
 
 ; -----------------------------------------------------------------------------
 
@@ -1145,8 +1168,7 @@ rom_968C:
 	.byte $04, $00, $81, $CC, $02, $FF, $81, $33
 	.byte $04, $00, $81, $CC, $02, $FF, $81, $33
 	.byte $04, $00, $81, $CC, $02, $FF, $81, $F3
-	.byte $04, $F0, $81, $FC, $11, $FF, $81, $0F
-	.byte $FF, $FF, $FF
+	.byte $04, $F0, $81, $FC, $11, $FF, $FF
 
 ; -----------------------------------------------------------------------------
 

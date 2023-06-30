@@ -12,7 +12,7 @@
 .export sub_rom_00_8000
 
 sub_rom_00_8000:
-	lda ram_0410
+	lda ram_routine_pointer_idx
 	asl A
 	sta zp_7B
 	jsr sub_rom_801F

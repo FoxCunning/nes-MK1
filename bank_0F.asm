@@ -59,16 +59,16 @@ reset:
 	lda #$00
 	sta ram_042D
 	lda #$0C
-	sta ram_0410
+	sta ram_routine_pointer_idx
 	jsr sub_rom_E22A
 	lda #$00
-	jsr sub_rom_E249
+	jsr sub_clear_nametable
 	lda #$01
-	jsr sub_rom_E249
+	jsr sub_clear_nametable
 	lda #$03
 	sta ram_042C
-	jsr sub_rom_E249
-	jsr sub_rom_E264
+	jsr sub_clear_nametable
+	jsr sub_hide_all_sprites
 	; $8000-$9FFF = Bank $02
 	lda #$86
 	sta a:zp_FC		; Why?
@@ -92,7 +92,7 @@ reset:
 	lda #$00
 	sta zp_28
 	lda #$01
-	sta a:zp_F6		; Also why?
+	sta a:zp_mmc3_irq_ready		; Also why?
 	lda #$88
 	sta ram_0409
 	lda #$13
@@ -110,7 +110,7 @@ reset:
 	lda #$00
 	sta ram_0435
 	lda #$4C
-	sta ram_0423
+	sta ram_irq_trampoline
 	cli
 	lda #$88
 	sta zp_02
@@ -126,7 +126,7 @@ reset:
 	dec a:zp_F7
 	lda #$01
 	sta a:zp_FD
-	jsr sub_rom_E7C8
+	jsr sub_state_machine_start
 	jsr sub_rom_E902
 	jsr sub_rom_E8CB
 	; $8000-$9FFF = Bank $02
@@ -155,7 +155,7 @@ irq:
 	pha
 	tya
 	pha
-	jsr ram_0423
+	jsr ram_irq_trampoline
 	pla
 	tay
 	pla
@@ -190,7 +190,7 @@ nmi:
 		jsr sub_rom_E272
 
 	@E14C:
-	lda zp_40
+	lda zp_machine_state_0
 	cmp #$01
 	bne @E155
 
@@ -206,12 +206,12 @@ nmi:
 	sta PpuControl_2000
 	lda zp_04
 	sta PpuMask_2001
-	lda a:zp_F6		; ...?
+	lda a:zp_mmc3_irq_ready		; ...?
 	beq @E186
 	
 		lda ram_0416
 		sta ram_0418
-		jsr sub_rom_E318
+		jsr sub_select_irq_handler
 		lda ram_041C
 		sta mmc3_irq_latch
 		sta mmc3_irq_reload
@@ -221,29 +221,29 @@ nmi:
 	nop
 	lda #$80
 	sta mmc3_bank_select
-	lda a:zp_96		; !!!
+	lda a:zp_chr_bank_0		; !!!
 	sta mmc3_bank_data
 	lda #$81
 	sta mmc3_bank_select
-	lda a:zp_97		; Also here
+	lda a:zp_chr_bank_1		; Also here
 	sta mmc3_bank_data
-	lda zp_40
+	lda zp_machine_state_0
 	bne @E1CC
 
 		ldx #$82
-		lda zp_58
+		lda zp_chr_bank_2
 		stx mmc3_bank_select
 		sta mmc3_bank_data
 		ldx #$83
-		lda zp_59
+		lda zp_chr_bank_3
 		stx mmc3_bank_select
 		sta mmc3_bank_data
 		ldx #$84
-		lda zp_5A
+		lda zp_chr_bank_4
 		stx mmc3_bank_select
 		sta mmc3_bank_data
 		ldx #$85
-		lda zp_5B
+		lda zp_chr_bank_5
 		stx mmc3_bank_select
 		sta mmc3_bank_data
 		jmp @E1F2
@@ -340,9 +340,12 @@ sub_rom_E22A:
 	rts
 
 ; -----------------------------------------------------------------------------
-.export sub_rom_E249
+.export sub_clear_nametable
 
-sub_rom_E249:
+; Fills a nametable with $FF (including attribute table area)
+; Parameters:
+; A = index of nametable to clear (0: $2000-$23FF, 1: $2400-$27FF etc.)
+sub_clear_nametable:
 	asl A
 	asl A
 	clc
@@ -352,29 +355,29 @@ sub_rom_E249:
 	stx PpuAddr_2006
 	ldy #$03
 	lda #$FF
-	@E25A:
+	:
 	sta PpuData_2007
 	dex
-	bne @E25A
+	bne :-
 	
 	dey
-	bpl @E25A
+	bpl :-
 
 	rts
 
 ; -----------------------------------------------------------------------------
-.export sub_rom_E264
+.export sub_hide_all_sprites
 
-sub_rom_E264:
+sub_hide_all_sprites:
 	lda #$F8
 	ldx #$00
-	@E268:
-	sta ram_0300,X
+	:
+	sta ram_oam_data_copy,X
 	inx
 	inx
 	inx
 	inx
-	bne @E268
+	bne :-
 
 	rts
 
@@ -385,32 +388,32 @@ sub_rom_E272:
 	ora zp_02
 	and #$7F
 	sta PpuControl_2000
+
 	ldy #$00
 	ldx #$00
 	@E27F:
-	lda PpuStatus_2002
-	lda zp_44
-	sta PpuAddr_2006
-	lda zp_43
-	sta PpuAddr_2006
-	@E28C:
-	lda ram_0600,X
-	sta PpuData_2007
-	iny
-	inx
-	cpy zp_46
-	bcc @E28C
+		lda PpuStatus_2002
+		lda zp_44
+		sta PpuAddr_2006
+		lda zp_43
+		sta PpuAddr_2006
+		:
+			lda ram_0600,X
+			sta PpuData_2007
+			iny
+			inx
+			cpy zp_46
+		bcc :-
 
-	lda zp_43
-	clc
-	adc #$20
-	sta zp_43
-	bcc @E2A3
-
-	inc zp_44
-	@E2A3:
-	ldy #$00
-	dec zp_45
+		lda zp_43
+		clc
+		adc #$20
+		sta zp_43
+		bcc :+
+			inc zp_44
+		:
+		ldy #$00
+		dec zp_45
 	bne @E27F
 
 	lda #$00
@@ -506,113 +509,135 @@ sub_trampoline:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_E318:
-	lda #$4C
-	sta ram_0423
-	lda ram_0410
+; Selects a new IRQ handler for MMC3 interrupts
+; The change will be effective starting from the next vblank
+; Parameters:
+; ram_routine_pointer_idx = index of routine that will handle MMC3 IRQs
+sub_select_irq_handler:
+	lda #$4C	; Op code for JMP
+	sta ram_irq_trampoline
+	lda ram_routine_pointer_idx
 	asl A
 	tax
-	lda rom_E32F+0,X
-	sta ram_0424
-	lda rom_E32F+1,X
-	sta ram_0425
+	lda tbl_irq_handler_ptrs+0,X
+	sta ram_irq_ptr_lo
+	lda tbl_irq_handler_ptrs+1,X
+	sta ram_irq_ptr_hi
 	rts
 
 ; -----------------------------------------------------------------------------
 
-rom_E32F:
-	.word sub_rom_E357, sub_rom_E35A, sub_rom_E36C, sub_rom_E377
-	.word sub_rom_E382, sub_rom_E38D, sub_rom_E398, sub_rom_E407
-	.word sub_rom_E407, sub_rom_E407, sub_rom_E357, sub_rom_E357
-	.word sub_rom_E6CC, sub_rom_E6D5, sub_rom_E734, sub_rom_E75B
-	.word sub_rom_E789, sub_rom_E789, sub_rom_E789, sub_rom_E789
+tbl_irq_handler_ptrs:
+	.word sub_irq_handler_00		; $00
+	.word sub_irq_handler_01		; $01
+	.word sub_irq_handler_02		; $02
+	.word sub_irq_handler_03		; $03
+	.word sub_irq_handler_04		; $04
+	.word sub_irq_handler_05		; $05
+	.word sub_irq_handler_06		; $06
+	.word sub_irq_handler_07		; $07
+	.word sub_irq_handler_07		; $08
+	.word sub_irq_handler_07		; $09
+	.word sub_irq_handler_00		; $0A
+	.word sub_irq_handler_00		; $0B
+	.word sub_irq_handler_0C		; $0C
+	.word sub_irq_handler_0D		; $0D
+	.word sub_irq_handler_0E		; $0E
+	.word sub_irq_handler_0F		; $0F
+	.word sub_irq_handler_10		; $10
+	.word sub_irq_handler_10		; $11
+	.word sub_irq_handler_10		; $12
+	.word sub_irq_handler_10		; $13
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_E357:
+sub_irq_handler_00:
 	jmp sub_rom_E408
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_E35A:
+sub_irq_handler_01:
 	lda ram_0435
-	bne @E362
+	bne :+
 
-	jmp sub_rom_E480
-	@E362:
+		jmp sub_rom_E480
+
+	:
 	cmp #$01
-	bne @E369
+	bne :+
 
-	jmp sub_rom_E4A6
-	@E369:
+		jmp sub_rom_E4A6
+
+	:
 	jmp sub_rom_E4DF
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_E36C:
+sub_irq_handler_02:
 	lda ram_0435
-	bne @E374
+	bne :+
 	
-	jmp sub_rom_E4F1
-	@E374:
+		jmp sub_rom_E4F1
+	:
 	jmp sub_rom_E50A
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_E377:
+sub_irq_handler_03:
 	lda ram_0435
-	bne @E37F
+	bne :+
 
-	jmp sub_rom_E568
-	@E37F:
+		jmp sub_rom_E568
+	:
 	jmp sub_rom_E582
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_E382:
+sub_irq_handler_04:
 	lda ram_0435
-	bne @E38A
+	bne :+
 
-	jmp sub_rom_E598
-	@E38A:
+		jmp sub_rom_E598
+	:
 	jmp sub_rom_E5B2
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_E38D:
+sub_irq_handler_05:
 	lda ram_0435
-	bne @E395
-	jmp sub_rom_E5C8
-	@E395:
+	bne :+
+		jmp sub_rom_E5C8
+	:
 	jmp sub_rom_E5E2
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_E398:
+sub_irq_handler_06:
 	sta mmc3_irq_disable
 	ldx zp_03
 	lda a:zp_7A		; Why??
 	cmp #$03
 	bcc @E3C0
 
-	cmp #$04
-	bne @E3AF
+		cmp #$04
+		bne @E3AF
 
-	lda ram_0414
-	cmp #$C0
-	beq @E3C0
+			lda ram_0414
+			cmp #$C0
+			beq @E3C0
 
-	@E3AF:
-	lda zp_frame_counter
-	and #$01
-	bne @E3C0
-	inc ram_0414
-	bne @E3C0
+		@E3AF:
+		lda zp_frame_counter
+		and #$01
+		bne @E3C0
+		inc ram_0414
+		bne @E3C0
 
-	txa
-	eor #$03
-	tax
-	stx zp_03
+		txa
+		eor #$03
+		tax
+		stx zp_03
+
 	@E3C0:
 	lda PpuStatus_2002
 	stx PpuControl_2000
@@ -640,14 +665,14 @@ sub_rom_E398:
 	lda ram_0421
 	beq @E406
 
-	ora #$F0
-	sta ram_0421
+		ora #$F0
+		sta ram_0421
 	@E406:
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_E407:
+sub_irq_handler_07:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1061,16 +1086,16 @@ sub_rom_E6A7:
 	lda #$00
 	sta ram_0435
 	lda ram_0421
-	beq @E6CB
+	beq :+
 
-	ora #$F0
-	sta ram_0421
-	@E6CB:
+		ora #$F0
+		sta ram_0421
+	:
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_E6CC:
+sub_irq_handler_0C:
 	sta mmc3_irq_disable
 	lda #$00
 	sta ram_0435
@@ -1078,7 +1103,7 @@ sub_rom_E6CC:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_E6D5:
+sub_irq_handler_0D:
 	sta mmc3_irq_disable
 	ldy #$12
 	@E6DA:
@@ -1121,14 +1146,14 @@ sub_rom_E6D5:
 	rts
 
 ; -----------------------------------------------------------------------------
-sub_rom_E734:
+sub_irq_handler_0E:
 	lda ram_0435
-	beq @E744
-	lda PpuStatus_2002
-	lda #$88
-	sta PpuControl_2000
-	jmp sub_rom_E6CC
-	@E744:
+	beq :+
+		lda PpuStatus_2002
+		lda #$88
+		sta PpuControl_2000
+		jmp sub_irq_handler_0C
+	:
 	sta mmc3_irq_disable
 	sta mmc3_irq_enable
 	lda #$0E
@@ -1137,11 +1162,12 @@ sub_rom_E734:
 	lda #$89
 	sta PpuControl_2000
 	inc ram_0435
+
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_E75B:
+sub_irq_handler_0F:
 	sta mmc3_irq_disable
 	ldx #$82
 	lda #$54
@@ -1159,12 +1185,12 @@ sub_rom_E75B:
 	lda #$57
 	stx mmc3_bank_select
 	sta mmc3_bank_data
-	jmp sub_rom_E6CC
+	jmp sub_irq_handler_0C
 
 ; -----------------------------------------------------------------------------
 
 ; Potentially unused
-sub_rom_E789:
+sub_irq_handler_10:
 	sta mmc3_irq_disable
 	lda #$00
 	sta ram_0435
@@ -1208,8 +1234,9 @@ sub_rom_E792:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_E7C8:
-	lda a:zp_40		; ???
+sub_state_machine_start:
+	;lda a:zp_machine_state_0		; ???
+	lda zp_machine_state_0
 	jsr sub_trampoline	; The sub will pull from the stack and jump, so this is
 						; basically a JMP with parameter from the table below
 ; ----------------
@@ -1217,13 +1244,14 @@ rom_E7CE:
 	.word sub_prg_banks_4_5
 	.word sub_rom_EA13
 	.word sub_rom_E7F5
-	.word sub_rom_E866
+	.word sub_clear_machine_states
 	.word sub_rom_E889
 	.word sub_rom_E893
 	.word sub_rom_E89B
 
 ; -----------------------------------------------------------------------------
 
+; Called if Machine State 0 is 0
 ; Bank $04 in $8000-$9FFF
 ; Bank $05 in $A000-$BFFF
 ; Then jumps to $B000 (first routine in bottom half of bank 5)
@@ -1236,29 +1264,32 @@ sub_prg_banks_4_5:
 	ldx #$87
 	stx mmc3_bank_select
 	sta mmc3_bank_data
-	jmp sub_rom_05_B000
-	rts	; Unreachable
+	jmp sub_state_machine_0
+	; Unreachable
+	;rts
 
 ; -----------------------------------------------------------------------------
 
 ; Potentially unused
-sub_rom_E7F4:
-	rts
+;sub_rom_E7F4:
+;	rts
 
 ; -----------------------------------------------------------------------------
 
+; Called if State Machine 0 is 2
 sub_rom_E7F5:
 	lda #$00
-	sta a:zp_4F
-	sta a:zp_40
+	sta a:zp_machine_state_2
+	sta a:zp_machine_state_0
+
 	ldx ram_040C
 	lda a:zp_F2,X	; WHY?!
 	bpl @E80B
 
-	@E805:
-	lda #$04
-	sta a:zp_4E		; ???
-	rts
+		@E805:
+		lda #$04
+		sta a:zp_machine_state_1		; ???
+		rts
 ; ----------------
 	@E80B:
 	lda a:zp_F2		; ???
@@ -1266,31 +1297,32 @@ sub_rom_E7F5:
 	and #$80
 	beq @E805
 
-	lda #$03
-	sta a:zp_4E		; ???
-	lda ram_0100
-	asl A
-	asl A
-	clc
-	adc a:zp_5F		; ???
-	tax
-	inc a:zp_61		; ???
-	lda a:zp_61		; ???
-	cmp rom_E849,X
-	bcc @E848
+		lda #$03
+		sta a:zp_machine_state_1		; ???
+		lda ram_0100
+		asl A
+		asl A
+		clc
+		adc a:zp_5F		; ???
+		tax
+		inc a:zp_61		; ???
+		lda a:zp_61		; ???
+		cmp rom_E849,X
+		bcc :+
 
-	lda #$00
-	sta a:zp_61		; ???
-	inc a:zp_5F		; ???
-	lda a:zp_5F		; ???
-	cmp #$04
-	bcc @E848
+			lda #$00
+			sta a:zp_61		; ???
+			inc a:zp_5F		; ???
+			lda a:zp_5F		; ???
+			cmp #$04
+			bcc :+
 
-	lda #$00
-	sta a:zp_4F		; ???
-	lda #$06
-	sta a:zp_4E		; ???
-	@E848:
+				; New machine state: 2,0,6
+				lda #$00
+				sta a:zp_machine_state_2		; ???
+				lda #$06
+				sta a:zp_machine_state_1		; ???
+	:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1303,7 +1335,7 @@ rom_E849:
 ; Potentially unused
 sub_rom_E851:
 	lda #$00
-	sta a:zp_40	; ???
+	sta a:zp_machine_state_0	; ???
 	lda #$36	; Useless: immediately overwritten
 	; This would change CHR A12 inversion and then crash the game
 	lda #$04
@@ -1315,12 +1347,16 @@ sub_rom_E851:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_E866:
+; Sets all state machine variables to zero
+sub_clear_machine_states:
 	lda #$00
-	sta a:zp_4F	; ???
-	lda #$00
-	sta a:zp_4E	; ???
-	sta a:zp_40	; ???
+	;;sta a:zp_machine_state_2	; ???
+	sta zp_machine_state_2
+	sta zp_machine_state_1
+	sta zp_machine_state_0
+	;;lda #$00
+	;sta a:zp_machine_state_1	; ???
+	;sta a:zp_machine_state_0	; ???
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1328,7 +1364,7 @@ sub_rom_E866:
 ; Potentially unused
 sub_rom_E874:
 	lda #$00
-	sta a:zp_40	; ???
+	sta a:zp_machine_state_0	; ???
 	lda #$02
 	; Like the sub at $E851, this would crash the game
 	lda #$04
@@ -1342,7 +1378,7 @@ sub_rom_E874:
 
 sub_rom_E889:
 	lda #$06
-	sta ram_0410
+	sta ram_routine_pointer_idx
 	ldx #$02
 	lda #$01
 	rts
@@ -1351,7 +1387,7 @@ sub_rom_E889:
 
 sub_rom_E893:
 	lda #$00
-	sta a:zp_40	; ???
+	sta a:zp_machine_state_0	; ???
 	lda #$00
 	rts
 
@@ -1380,13 +1416,13 @@ sub_rom_E89B:
 	bne @E8C5
 
 		lda #$02
-		sta a:zp_40	; ???
+		sta a:zp_machine_state_0	; ???
 	@E8C4:
 	rts
 ; ----------------
 	@E8C5:
 	lda #$03
-	sta a:zp_40	; ???
+	sta a:zp_machine_state_0	; ???
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1454,8 +1490,8 @@ sub_rom_E902:
 
 	@E92B:
 	dex
-	lda ram_0300,X
-	sta ram_0200,X
+	lda ram_oam_data_copy,X
+	sta ram_oam_data,X
 	lda ram_0320,X
 	sta ram_0220,X
 	lda ram_0340,X
@@ -1477,7 +1513,7 @@ sub_rom_E902:
 ; ----------------
 	@E960:
 	dex
-	lda ram_0300,X
+	lda ram_oam_data_copy,X
 	sta ram_0280,X
 	lda ram_0320,X
 	sta ram_02A0,X
@@ -1486,7 +1522,7 @@ sub_rom_E902:
 	lda ram_0360,X
 	sta ram_02E0,X
 	lda ram_0380,X
-	sta ram_0200,X
+	sta ram_oam_data,X
 	lda ram_03A0,X
 	sta ram_0220,X
 	lda ram_03C0,X
@@ -1505,12 +1541,12 @@ sub_rom_E902:
 
 	@E99C:
 	dex
-	lda ram_0300,X
+	lda ram_oam_data_copy,X
 	sta ram_0240,X
 	lda ram_0320,X
 	sta ram_0260,X
 	lda ram_0340,X
-	sta ram_0200,X
+	sta ram_oam_data,X
 	lda ram_0360,X
 	sta ram_0220,X
 	lda ram_0380,X
@@ -1528,7 +1564,7 @@ sub_rom_E902:
 ; ----------------
 	@E9D1:
 	dex
-	lda ram_0300,X
+	lda ram_oam_data_copy,X
 	sta ram_02C0,X
 	lda ram_0320,X
 	sta ram_02E0,X
@@ -1541,7 +1577,7 @@ sub_rom_E902:
 	lda ram_03A0,X
 	sta ram_0260,X
 	lda ram_03C0,X
-	sta ram_0200,X
+	sta ram_oam_data,X
 	lda ram_03E0,X
 	sta ram_0220,X
 	txa
@@ -1565,19 +1601,20 @@ sub_rom_EA06:
 
 ; -----------------------------------------------------------------------------
 
+; Called if Machine State 0 is 1
 sub_rom_EA13:
 	lda #$2F
 	sta ram_041C
 	lda a:zp_5E	; ???
 	beq @EA2A
 
-	lda a:zp_controller1_new	; ???
-	and #$10	; Start Button
-	beq @EA53
+		lda a:zp_controller1_new	; ???
+		and #$10	; Start Button
+		beq @EA53
 
-	lda #$09
-	sta a:zp_7A	; ???
-	rts
+			lda #$09
+			sta a:zp_7A	; ???
+			rts
 ; ----------------
 	@EA2A:
 	lda a:zp_controller1_new	; ???
@@ -1619,7 +1656,7 @@ sub_rom_EA5B:
 	ldx #$00
 	lda #$F8
 	@EA5F:
-	sta ram_0300,X
+	sta ram_oam_data_copy,X
 	inx
 	inx
 	inx
@@ -1627,7 +1664,7 @@ sub_rom_EA5B:
 	bne @EA5F
 	
 	lda #$0E
-	sta ram_0300
+	sta ram_oam_data_copy
 	sta ram_0304
 	sta ram_0308
 	sta ram_030C
@@ -1659,7 +1696,7 @@ sub_rom_EA5B:
 	lda #$C5
 	sta ram_0311
 	lda #$DA
-	sta a:zp_97
+	sta a:zp_chr_bank_1
 	rts
 
 ; -----------------------------------------------------------------------------

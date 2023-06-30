@@ -34,7 +34,7 @@ sub_rom_C019:
 	and #$7F
 	tax
 	lda rom_C0A8,X
-	sta ram_0410
+	sta ram_routine_pointer_idx
 	lda #$00
 	sta PpuControl_2000
 	sta zp_02
@@ -73,7 +73,7 @@ sub_rom_C019:
 	lda zp_F3
 	and #$7F
 	sta zp_A4
-	ldx ram_0410
+	ldx ram_routine_pointer_idx
 	lda rom_C0C0,X
 	sta zp_4A
 	txa
@@ -397,9 +397,9 @@ sub_rom_C21E:
 
 	inx
 	@C24D:
-	stx zp_40
+	stx zp_machine_state_0
 	lda #$0B
-	sta ram_0410
+	sta ram_routine_pointer_idx
 	lda #$00
 	sta zp_scroll_y
 	jsr sub_rom_C272
@@ -426,7 +426,7 @@ sub_rom_C272:
 	@C278:
 	lda #$F8
 	@C27A:
-	sta ram_0300,X
+	sta ram_oam_data_copy,X
 	inx
 	inx
 	inx
@@ -438,17 +438,17 @@ sub_rom_C272:
 
 sub_rom_C284:
 	jsr sub_rom_D440
-	bcc @C29D
+	bcc :+
 
-	lda #$00
-	sta PpuMask_2001
-	sta zp_40
-	sta ram_067D
-	sta ram_067C
-	sta zp_7A
-	lda #$1F
-	sta ram_req_sfx
-	@C29D:
+		lda #$00
+		sta PpuMask_2001
+		sta zp_machine_state_0
+		sta ram_067D
+		sta ram_067C
+		sta zp_7A
+		lda #$1F
+		sta ram_req_sfx
+	:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1052,7 +1052,7 @@ sub_rom_C610:
 	lda zp_88,Y
 	sec
 	sbc zp_ED,Y
-	sta ram_0300,X
+	sta ram_oam_data_copy,X
 	tya
 	eor #$01
 	tay
@@ -2520,7 +2520,7 @@ sub_rom_CFB2:
 	inx
 	inx
 	stx zp_35
-	ldy ram_0410
+	ldy ram_routine_pointer_idx
 	tya
 	asl A
 	tay
@@ -2707,7 +2707,7 @@ sub_rom_D09F:
 	lda zp_ptr1_lo
 	sec
 	sbc #$80
-	ldx ram_0410
+	ldx ram_routine_pointer_idx
 	cmp rom_D0C5,X
 	bcs @D0C4
 
@@ -3508,7 +3508,7 @@ sub_rom_D6A0:
 	lda #$F8
 	ldx #$00
 	@D6A4:
-	sta ram_0200,X
+	sta ram_oam_data,X
 	inx
 	inx
 	inx
@@ -4031,7 +4031,7 @@ sub_rom_D9AF:
 	ldy #$00
 	lda #$F8
 	@D9B6:
-	sta ram_0300,X
+	sta ram_oam_data_copy,X
 	inx
 	inx
 	inx
@@ -4054,7 +4054,7 @@ sub_rom_D9AF:
 	iny
 	lda (zp_3B),Y
 	ldx zp_7C
-	sta zp_96,X
+	sta zp_chr_bank_0,X
 	sta ram_0429
 	iny
 	lda (zp_3B),Y
@@ -4116,7 +4116,7 @@ sub_rom_D9AF:
 
 	@DA36:
 	lda zp_0B
-	sta ram_0300,X
+	sta ram_oam_data_copy,X
 	lda zp_08
 	sta ram_0303,X
 	inx
@@ -4184,7 +4184,7 @@ sub_rom_D9AF:
 	@DA9D:
 	tya
 	@DA9E:
-	ldy ram_0410
+	ldy ram_routine_pointer_idx
 	cpy #$06
 	bne @DAA7
 

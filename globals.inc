@@ -69,7 +69,7 @@ zp_3C = $3C     ;
 zp_3D = $3D     ;
 zp_3E = $3E     ;
 
-zp_40 = $40     ;
+zp_machine_state_0 = $40    ;
 zp_43 = $43     ;
 zp_44 = $44     ;
 zp_45 = $45     ;
@@ -81,8 +81,8 @@ zp_4A = $4A     ;
 zp_4B = $4B     ;
 zp_4C = $4C     ;
 zp_4D = $4D     ;
-zp_4E = $4E     ;
-zp_4F = $4F     ;
+zp_machine_state_1 = $4E    ;
+zp_machine_state_2 = $4F    ;
 
 ; Used as a temporary index for various things
 zp_tmp_idx = $50    ;
@@ -94,12 +94,12 @@ zp_ppu_ptr_lo = $52 ;
 zp_last_execution_frame = $53   ;
 zp_54 = $54     ;
 zp_55 = $55     ;
-zp_56 = $56     ;
+zp_palette_idx = $56     ;
 zp_57 = $57     ;
-zp_58 = $58     ;
-zp_59 = $59     ;
-zp_5A = $5A     ;
-zp_5B = $5B     ;
+zp_chr_bank_2 = $58     ;
+zp_chr_bank_3 = $59     ;
+zp_chr_bank_4 = $5A     ;
+zp_chr_bank_5 = $5B     ;
 zp_5C = $5C     ;
 zp_5D = $5D     ;
 zp_5E = $5E     ;
@@ -139,8 +139,8 @@ zp_90 = $90     ;
 zp_91 = $91     ;
 zp_92 = $92     ;
 zp_94 = $94     ;
-zp_96 = $96     ;
-zp_97 = $97     ;
+zp_chr_bank_0 = $96     ;
+zp_chr_bank_1 = $97     ;
 zp_99 = $99     ;
 zp_9A = $9A     ;
 zp_9B = $9B     ;
@@ -180,7 +180,8 @@ zp_F2 = $F2     ;
 zp_F3 = $F3     ;
 zp_F4 = $F4     ;
 zp_F5 = $F5     ;
-zp_F6 = $F6     ;
+; After this has been set to 1, IRQ handling subroutines will be used
+zp_mmc3_irq_ready = $F6     ;
 zp_F7 = $F7     ;
 zp_FC = $FC     ;
 zp_FD = $FD     ;
@@ -198,7 +199,8 @@ zp_ptr2_hi = $FF     ;
 
 ram_0100 = $0100    ;
 
-ram_0200 = $0200    ;
+; OAM data ready to be transferred to the PPU
+ram_oam_data = $0200    ;
 ram_0220 = $0220    ;
 ram_0240 = $0240    ;
 ram_0260 = $0260    ;
@@ -207,7 +209,8 @@ ram_02A0 = $02A0    ;
 ram_02C0 = $02C0    ;
 ram_02E0 = $02E0    ;
 
-ram_0300 = $0300    ;
+; Local copy of OAM data to be written/modified before being sent to the PPU
+ram_oam_data_copy = $0300    ;
 ram_0301 = $0301    ;
 ram_0302 = $0302    ;
 ram_0303 = $0303    ;
@@ -261,7 +264,9 @@ ram_040C = $040C    ;
 ram_040D = $040D    ;
 ram_040E = $040E    ;
 ram_040F = $040F    ;
-ram_0410 = $0410    ;
+; Index for tables of pointers
+; Used choose an IRQ handling routine and others
+ram_routine_pointer_idx = $0410 ;
 ram_0411 = $0411    ;
 ram_0414 = $0414    ;
 ram_0416 = $0416    ;
@@ -272,9 +277,13 @@ ram_0421 = $0421    ;
 ram_041A = $041A    ;
 ram_041C = $041C    ;
 ram_0422 = $0422    ;
-ram_0423 = $0423    ;
-ram_0424 = $0424    ;
-ram_0425 = $0425    ;
+; This location will contain a jump to the variable MMC3 IRQ handler
+; Routines can change the pointer to a different routine
+ram_irq_trampoline = $0423  ;
+; The subroutine at this address will be called by the IRQ handler
+ram_irq_ptr_lo = $0424  ;
+; The subroutine at this address will be called by the IRQ handler
+ram_irq_ptr_hi = $0425  ;
 ram_0429 = $0429    ;
 ram_042A = $042A    ;
 ram_042C = $042C    ;
@@ -443,15 +452,28 @@ ram_sfx_pitch_env_duration = $07E3  ;
 ;
 ; -----------------------------------------------------------------------------
 
+; Descriptions mostly taken from NES Dev Wiki (https://www.nesdev.org/wiki/)
+
 ;VPHB SINN
 ;(V) NMI enable
 ;(P) PPU master/slave
 ;(H) Sprite height
 ;(B) Background tile select
+; ----
 ;(S) Sprite tile select
 ;(I) Increment mode
 ;(NN) Nametable select
 PpuControl_2000  = $2000    ;
+;BGRs bMmG
+;(B) Emphasise Blue
+;(G) Emphasise Green (red on PAL/Dendy)
+;(R) Emphasise Red (green on PAL/Dendy)
+;(s) 1: Show sprites
+; ----
+;(b) 1: Show background
+;(M) 1: Show sprites in leftmost 8 pixels of screen, 0: Hide
+;(m) 1: Show background in leftmost 8 pixels of screen, 0: Hide
+;(G) Greyscale (0: normal colour, 1: produce a greyscale display)
 PpuMask_2001     = $2001    ;
 PpuStatus_2002   = $2002    ;
 
@@ -463,10 +485,12 @@ PpuAddr_2006     = $2006    ;
 PpuData_2007     = $2007    ;
 
 ;DDLC VVVV
-;Duty (D), envelope loop / length counter halt (L), constant volume (C), volume/envelope (V)
+;Duty (D), envelope loop / length counter halt (L), constant volume (C)
+;Volume/envelope (V)
 Sq0Duty_4000     = $4000    ;
 ;EPPP NSSS
-;Sweep unit: enabled (E), period (P), negate (N), shift (S)
+;Sweep unit: enabled (E), period (P)
+;Negate (N), shift (S)
 Sq0Sweep_4001    = $4001    ;
 ;TTTT TTTT
 ;Timer low (T)
@@ -475,10 +499,12 @@ Sq0Timer_4002    = $4002    ;
 ;Length counter load (L), timer high (T)
 Sq0Length_4003   = $4003    ;
 ;DDLC VVVV
-;Duty (D), envelope loop / length counter halt (L), constant volume (C), volume/envelope (V)
+;Duty (D), envelope loop / length counter halt (L), constant volume (C)
+;Volume/envelope (V)
 Sq1Duty_4004     = $4004    ;
 ;EPPP NSSS
-;Sweep unit: enabled (E), period (P), negate (N), shift (S)
+;Sweep unit: enabled (E), period (P)
+;Negate (N), shift (S)
 Sq1Sweep_4005    = $4005    ;
 ;TTTT TTTT
 ;Timer low (T)
@@ -496,7 +522,8 @@ TrgTimer_400A    = $400A    ;
 ;Length counter load (L), timer high (T)
 TrgLength_400B   = $400B    ;
 ;--LC VVVV
-;Envelope loop / length counter halt (L), constant volume (C), volume/envelope (V)
+;Envelope loop / length counter halt (L), constant volume (C)
+;Volume/envelope (V)
 NoiseVolume_400C = $400C    ;
 ;L--- PPPP
 ;Loop noise (L), noise period (P)
@@ -521,7 +548,8 @@ SpriteDma_4014   = $4014    ;
 
 ;Read:
 ;IF-D NT21
-;DMC interrupt (I), frame interrupt (F), DMC active (D), length counter > 0 (N/T/2/1)
+;DMC interrupt (I), frame interrupt (F), DMC active (D)
+;Length counter > 0 (N/T/2/1)
 ;
 ;Write:
 ;---D NT21

@@ -9,25 +9,42 @@
 
 
 ; -----------------------------------------------------------------------------
-.export sub_rom_05_B000
+.export sub_state_machine_0
 
-sub_rom_05_B000:
-	lda zp_4E           ; This will be the index of the pointer to use
-	jsr sub_trampoline    ; The sub will use the following table of pointers
-                        ; to jump to one of those locations
+; Called when Machine State 0 is 0
+; Branches depending on Machine State 1
+sub_state_machine_0:
+	lda zp_machine_state_1	; This will be the index of the pointer to use
+	jsr sub_trampoline		; The sub will use the following table of pointers
+                        	; to jump to one of those locations
 ; ----------------
-	.word sub_rom_B013, sub_rom_B174, sub_rom_B24F, sub_rom_B8BC
-	.word sub_rom_B6D8, sub_rom_B7FE, sub_rom_BF1E
+	.word sub_state_machine_0_0
+	.word sub_rom_B174
+	.word sub_rom_B24F
+	.word sub_rom_B8BC
+	.word sub_rom_B6D8
+	.word sub_rom_B7FE
+	.word sub_rom_BF1E
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B013:
-	lda zp_4F
+; Called when Machine State is 0,0
+sub_state_machine_0_0:
+	lda zp_machine_state_2
 	jsr sub_trampoline    ; Same trick again
 ; ----------------
-	.word sub_rom_BF92, sub_rom_BFB9, sub_titles_loop, sub_rom_BFEA
-	.word sub_rom_B030, sub_rom_B079, sub_rom_B086, sub_rom_B0A5
-	.word sub_main_menu_loop, sub_rom_B107, sub_rom_B114, sub_rom_B13A
+	.word sub_rom_BF92
+	.word sub_rom_BFB9
+	.word sub_titles_loop
+	.word sub_rom_BFEA
+	.word sub_rom_B030
+	.word sub_rom_B079
+	.word sub_rom_B086
+	.word sub_rom_B0A5
+	.word sub_main_menu_loop
+	.word sub_rom_B107
+	.word sub_rom_B114
+	.word sub_rom_B13A
 
 ; -----------------------------------------------------------------------------
 
@@ -48,7 +65,7 @@ sub_rom_B030:
 	lda #$1E
 	sta zp_04
 	lda #$0D
-	sta ram_0410
+	sta ram_routine_pointer_idx
 	lda #$ED
 	sta ram_041C
 	lda #$00
@@ -62,7 +79,7 @@ sub_rom_B030:
 	sta zp_ppu_ptr_hi
 	lda rom_B170+1
 	sta zp_ppu_ptr_lo
-	inc zp_4F
+	inc zp_machine_state_2
 	lda #$00
 	sta zp_5E
 	rts
@@ -78,7 +95,7 @@ sub_rom_B079:
 	rts
 ; ----------------
 	@B083:
-	inc zp_4F
+	inc zp_machine_state_2
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -101,7 +118,7 @@ sub_rom_B086:
 	sta ram_041C
 	lda #$07
 	sta zp_54
-	inc zp_4F
+	inc zp_machine_state_2
 	@B0A4:
 	rts
 
@@ -126,7 +143,7 @@ sub_rom_B0A5:
 	sta zp_scroll_y
 	lda #$0A
 	sta zp_54
-	inc zp_4F
+	inc zp_machine_state_2
 	@B0C3:
 	rts
 
@@ -137,6 +154,7 @@ rom_B0C4:
 
 ; -----------------------------------------------------------------------------
 
+; Called when Machine State is 0,0,8
 sub_main_menu_loop:
 	lda zp_frame_counter
 	cmp zp_last_execution_frame
@@ -154,7 +172,7 @@ sub_main_menu_loop:
 		bpl :+
 
 			lda #$0B
-			sta zp_4F
+			sta zp_machine_state_2
 			rts
 ; ----------------
 	:
@@ -174,10 +192,10 @@ sub_main_menu_loop:
 
 	; ---- End of loop: a button was pressed
 
-	lda #$31	; This will stop music and plays the "selection" sound instead
+	lda #$31	; This will stop music and play the "selection" sound instead
 	sta ram_req_song
 
-	inc zp_4F
+	inc zp_machine_state_2
 	lda #$05
 	sta zp_55
 	rts
@@ -188,12 +206,12 @@ sub_rom_B107:
 	jsr sub_rom_04_81D2
 	lda zp_55
 	cmp #$09
-	bcs @B111
+	bcs :+
 
-	rts
+		rts
 ; ----------------
-	@B111:
-	inc zp_4F
+	:
+	inc zp_machine_state_2
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -208,10 +226,10 @@ sub_rom_B114:
 	@B11B:
 	sta zp_last_execution_frame
 	lda #$0C
-	sta ram_0410
+	sta ram_routine_pointer_idx
 	lda #$00
 	sta PpuMask_2001
-	sta zp_4F
+	sta zp_machine_state_2
 	lda zp_63
 	bne @B137
 
@@ -219,9 +237,9 @@ sub_rom_B114:
 	sta zp_63
 	lda #$84
 	sta zp_64
-	inc zp_4E
+	inc zp_machine_state_1
 	@B137:
-	inc zp_4E
+	inc zp_machine_state_1
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -236,9 +254,9 @@ sub_rom_B13A:
 ; ----------------
 	@B144:
 	lda #$00
-	sta zp_4F
+	sta zp_machine_state_2
 	lda #$05
-	sta zp_4E
+	sta zp_machine_state_1
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -275,11 +293,15 @@ rom_B170:
 
 ; -----------------------------------------------------------------------------
 
+; Called when Machine State is 0,1
 sub_rom_B174:
-	lda zp_4F
+	lda zp_machine_state_2
 	jsr sub_trampoline
 ; ----------------
-	.word sub_rom_B183, sub_rom_B079, sub_rom_B1B2, sub_rom_B107
+	.word sub_rom_B183
+	.word sub_rom_B079
+	.word sub_rom_B1B2
+	.word sub_rom_B107
 	.word sub_rom_B1E2
 
 ; -----------------------------------------------------------------------------
@@ -306,7 +328,7 @@ sub_rom_B183:
 	ldx ram_042C
 	lda rom_B24A,X
 	sta ram_041C
-	inc zp_4F
+	inc zp_machine_state_2
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -336,7 +358,7 @@ sub_rom_B1B2:
 		sta ram_041C
 		jmp sub_rom_B1B2
 	:
-	inc zp_4F
+	inc zp_machine_state_2
 	lda #$05
 	sta zp_55
 	rts
@@ -353,14 +375,14 @@ sub_rom_B1E2:
 	:
 	sta zp_last_execution_frame
 	lda #$0C
-	sta ram_0410
+	sta ram_routine_pointer_idx
 	lda #$00
 	sta PpuMask_2001
-	sta zp_4F
+	sta zp_machine_state_2
 	lda #$00
-	sta zp_4E
+	sta zp_machine_state_1
 	lda #$04
-	sta zp_4F
+	sta zp_machine_state_2
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -394,7 +416,7 @@ sub_rom_B223:
 	asl A
 	tax
 	lda rom_B23E+0,X
-	sta ram_0300
+	sta ram_oam_data_copy
 	lda rom_B23E+1,X
 	sta ram_0303
 	lda #$59
@@ -417,11 +439,14 @@ rom_B24A:
 ; -----------------------------------------------------------------------------
 
 sub_rom_B24F:
-	lda zp_4F
+	lda zp_machine_state_2
 	jsr sub_trampoline
 ; ----------------
 ; Indirect jump pointers
-	.word sub_rom_B25C, sub_rom_B2AD, sub_rom_B2BD, sub_rom_B2E0
+	.word sub_rom_B25C
+	.word sub_rom_B2AD
+	.word sub_rom_B2BD
+	.word sub_rom_B2E0
 
 ; -----------------------------------------------------------------------------
 
@@ -445,10 +470,10 @@ sub_rom_B25C:
 	lda #$1E
 	sta zp_04
 	lda #$0C
-	sta ram_0410
+	sta ram_routine_pointer_idx
 	lda #$80
 	sta ram_041C
-	inc zp_4F
+	inc zp_machine_state_2
 	lda #$00
 	sta zp_5C
 	sta zp_5D
@@ -481,7 +506,7 @@ sub_rom_B2AD:
 	rts
 ; ----------------
 	@B2B7:
-	inc zp_4F
+	inc zp_machine_state_2
 	jsr sub_rom_B363
 	rts
 
@@ -507,7 +532,7 @@ sub_rom_B2BD:
 	cmp #$09
 	bne @B2DF
 
-	inc zp_4F
+	inc zp_machine_state_2
 	lda #$05
 	sta zp_55
 	@B2DF:
@@ -525,8 +550,8 @@ sub_rom_B2E0:
 ; ----------------
 	@B2EA:
 	lda #$00
-	sta zp_4F
-	inc zp_4E
+	sta zp_machine_state_2
+	inc zp_machine_state_1
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -628,7 +653,7 @@ sub_rom_B36E:
 	tay
 	lda #$F8
 	@B381:
-	sta ram_0300,Y
+	sta ram_oam_data_copy,Y
 	iny
 	iny
 	iny
@@ -708,7 +733,7 @@ sub_rom_B393:
 	lda zp_0F
 	sta ram_0302,X
 	lda zp_15
-	sta ram_0300,X
+	sta ram_oam_data_copy,X
 	inx
 	inx
 	inx
@@ -990,7 +1015,7 @@ rom_B6CF:
 ; -----------------------------------------------------------------------------
 
 sub_rom_B6D8:
-	lda zp_4F
+	lda zp_machine_state_2
 	jsr sub_trampoline
 ; ----------------
 ; Jump pointers
@@ -1014,10 +1039,10 @@ sub_rom_B6E9:
 	lda #$1E
 	sta zp_04
 	lda #$0C
-	sta ram_0410
+	sta ram_routine_pointer_idx
 	lda #$80
 	sta ram_041C
-	inc zp_4F
+	inc zp_machine_state_2
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1032,7 +1057,7 @@ sub_rom_B712:
 	@B71C:
 	lda #$0A
 	sta zp_54
-	inc zp_4F
+	inc zp_machine_state_2
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1055,7 +1080,7 @@ sub_rom_B723:
 
 	lda #$0F
 	sta ram_req_sfx
-	inc zp_4F
+	inc zp_machine_state_2
 	lda #$05
 	sta zp_55
 	rts
@@ -1076,16 +1101,16 @@ sub_rom_B723:
 	and #$80
 	bne @B767
 
-	inc zp_4F
-	inc zp_4F
+	inc zp_machine_state_2
+	inc zp_machine_state_2
 	lda #$05
 	sta zp_55
 	rts
 ; ----------------
 	@B767:
-	inc zp_4F
-	inc zp_4F
-	inc zp_4F
+	inc zp_machine_state_2
+	inc zp_machine_state_2
+	inc zp_machine_state_2
 	lda #$03
 	sta zp_54
 	lda #$8A
@@ -1105,9 +1130,9 @@ sub_rom_B776:
 ; ----------------
 	@B780:
 	lda #$00
-	sta zp_4F
+	sta zp_machine_state_2
 	lda #$02
-	sta zp_4E
+	sta zp_machine_state_1
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1122,9 +1147,9 @@ sub_rom_B789:
 ; ----------------
 	@B793:
 	lda #$00
-	sta zp_4F
+	sta zp_machine_state_2
 	lda #$03
-	sta zp_4E
+	sta zp_machine_state_1
 	lda ram_040C
 	eor #$01
 	tax
@@ -1189,7 +1214,7 @@ rom_B7E8:
 ; -----------------------------------------------------------------------------
 
 sub_rom_B7FE:
-	lda zp_4F
+	lda zp_machine_state_2
 	jsr sub_trampoline
 ; ----------------
 ; Jump pointers
@@ -1213,9 +1238,9 @@ sub_rom_B80D:
 	lda #$1E
 	sta zp_04
 	lda #$0C
-	sta ram_0410
+	sta ram_routine_pointer_idx
 	sta ram_041C
-	inc zp_4F
+	inc zp_machine_state_2
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1231,7 +1256,7 @@ sub_rom_B834:
 	@B83E:
 	lda #$09
 	sta zp_54
-	inc zp_4F
+	inc zp_machine_state_2
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1248,7 +1273,7 @@ sub_rom_B845:
 	lda zp_controller1_new
 	beq @B857
 
-	inc zp_4F
+	inc zp_machine_state_2
 	jmp @B861
 
 	@B857:
@@ -1260,7 +1285,7 @@ sub_rom_B845:
 	bpl @B863
 
 	@B861:
-	inc zp_4F
+	inc zp_machine_state_2
 	@B863:
 	rts
 
@@ -1281,11 +1306,11 @@ sub_rom_B864:
 	lda #$00
 	sta mmc3_mirroring
 	lda #$00
-	sta zp_4F
+	sta zp_machine_state_2
 	lda #$00
-	sta zp_4E
+	sta zp_machine_state_1
 	lda #$01
-	sta zp_40
+	sta zp_machine_state_0
 	lda #$01
 	sta zp_5E
 	lda zp_62
@@ -1316,9 +1341,9 @@ sub_rom_B8A5:
 ; ----------------
 	@B8AF:
 	lda #$00
-	sta zp_4F
+	sta zp_machine_state_2
 	lda #$00
-	sta zp_4E
+	sta zp_machine_state_1
 	sta zp_63
 	sta zp_64
 	rts
@@ -1326,7 +1351,7 @@ sub_rom_B8A5:
 ; -----------------------------------------------------------------------------
 
 sub_rom_B8BC:
-	lda zp_4F
+	lda zp_machine_state_2
 	jsr sub_trampoline
 ; ----------------
 ; Jump pointers
@@ -1345,7 +1370,7 @@ sub_rom_B8CB:
 	lda zp_63,X
 	bmi @B8E2
 
-	inc zp_4F
+	inc zp_machine_state_2
 	lda #$00
 	sta zp_61
 	sta zp_5F
@@ -1386,7 +1411,7 @@ sub_rom_B8CB:
 	@B917:
 	ora #$80
 	sta zp_63,X
-	inc zp_4F
+	inc zp_machine_state_2
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1425,7 +1450,7 @@ sub_rom_B926:
 	@B953:
 	sty ram_0680
 	@B956:
-	jsr sub_rom_E264
+	jsr sub_hide_all_sprites
 	lda #$00
 	sta zp_57
 	sta zp_55
@@ -1441,9 +1466,9 @@ sub_rom_B926:
 	lda ram_0680
 	sta zp_02
 	lda #$0C
-	sta ram_0410
+	sta ram_routine_pointer_idx
 	sta ram_041C
-	inc zp_4F
+	inc zp_machine_state_2
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1457,7 +1482,7 @@ sub_rom_B982:
 	rts
 ; ----------------
 	@B98C:
-	inc zp_4F
+	inc zp_machine_state_2
 	lda #$04
 	sta zp_54
 	rts
@@ -1489,7 +1514,7 @@ sub_rom_B993:
 	@B9AE:
 	lda #$00
 	sta zp_54
-	inc zp_4F
+	inc zp_machine_state_2
 	@B9B4:
 	rts
 
@@ -1510,12 +1535,12 @@ sub_rom_B9B5:
 	lda #$00
 	sta mmc3_mirroring
 	lda #$00
-	sta zp_4F
+	sta zp_machine_state_2
 	lda #$00
-	sta zp_4E
+	sta zp_machine_state_1
 	jsr sub_rom_BE9F
 	lda #$01
-	sta zp_40
+	sta zp_machine_state_0
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -2123,7 +2148,7 @@ rom_BF0C:
 ; -----------------------------------------------------------------------------
 
 sub_rom_BF1E:
-	lda zp_4F
+	lda zp_machine_state_2
 	jsr sub_trampoline
 ; ----------------
 ; Jump pointers
@@ -2156,9 +2181,9 @@ sub_rom_BF29:
 	@BF55:
 	sty zp_02
 	lda #$0C
-	sta ram_0410
+	sta ram_routine_pointer_idx
 	sta ram_041C
-	inc zp_4F
+	inc zp_machine_state_2
 	lda #$14
 	sta zp_54
 	rts
@@ -2174,7 +2199,7 @@ sub_rom_BF66:
 	rts
 ; ----------------
 	@BF70:
-	inc zp_4F
+	inc zp_machine_state_2
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -2194,26 +2219,29 @@ sub_rom_BF73:
 	ldy #$00
 	sty zp_55
 	iny
-	sty zp_4F
+	sty zp_machine_state_2
 	rts
 ; ----------------
 	@BF89:
 	lda #$00
-	sta zp_4F
-	sta zp_4E
-	sta zp_40
+	sta zp_machine_state_2
+	sta zp_machine_state_1
+	sta zp_machine_state_0
 	rts
 
 ; -----------------------------------------------------------------------------
 
+; Called when Machine State i 0,0,0
 sub_rom_BF92:
 	lda #$08
 	sta zp_tmp_idx
 	jsr sub_rom_04_805A
-	jsr sub_rom_E264
+	jsr sub_hide_all_sprites
+
 	lda #$00
 	sta zp_scroll_x
 	sta zp_scroll_y
+
 	lda #$88
 	sta PpuControl_2000
 	sta zp_02
@@ -2223,7 +2251,8 @@ sub_rom_BF92:
 	sta zp_04
 	lda #$7C
 	sta ram_041C
-	inc zp_4F
+	inc zp_machine_state_2
+
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -2237,13 +2266,14 @@ sub_rom_BFB9:
 		rts
 ; ----------------
 	:
-	inc zp_4F
+	inc zp_machine_state_2
 	lda #$03	; Wait timer for titles screen
 	sta zp_54
 	rts
 
 ; -----------------------------------------------------------------------------
 
+; Called when Machine State is 0,0,2
 ; Fades out the titles on controller press, or when the timer expires
 sub_titles_loop:
 	lda zp_frame_counter
@@ -2267,7 +2297,7 @@ sub_titles_loop:
 	@BFE3:
 	lda #$00
 	sta zp_54
-	inc zp_4F
+	inc zp_machine_state_2
 
 	@BFE9:
 	rts
@@ -2283,7 +2313,7 @@ sub_rom_BFEA:
 		rts
 ; ----------------
 	:
-	inc zp_4F
+	inc zp_machine_state_2
 	rts
 
 ; -----------------------------------------------------------------------------
