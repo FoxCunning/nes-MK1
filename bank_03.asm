@@ -1407,17 +1407,19 @@ sub_init_new_track:
 		sta ram_track_speed_counter,X
 		sta ram_note_ticks_left,X
 		ldx ram_cur_channel_offset
-		lda #$00
-		sta ram_vol_env_idx,X
+		;lda #$00
+		;sta ram_vol_env_idx,X
 		lda #$FF
+		sta ram_vol_env_idx,X
 		sta ram_cur_vol_env_duration,X
 		cpy #$03	; DMC and noise channels skip pitch, transpose and duty
 		bpl :+
 
-		lda #$00
-		sta ram_pitch_env_idx,X
+		;lda #$00
+		;sta ram_pitch_env_idx,X
 		lda #$FF
 		sta ram_cur_pitch_env_duration,X
+		sta ram_pitch_env_idx,X
 
 		lda #$00
 		sta ram_note_transpose_value,X
@@ -1426,6 +1428,7 @@ sub_init_new_track:
 
 		lda #$FF
 		sta ram_duty_env_idx,X
+		sta ram_arpeggio_idx,X
 	:
 	pla
 	tay
@@ -2377,14 +2380,14 @@ sub_next_pitch_envelope:
 
 		@next_pitch_env:
 		ldx ram_cur_channel_offset
-		lda ram_cur_pitch_env_duration,X
-		tay
-		cpy #$FF
+		lda ram_pitch_env_idx,X
+		cmp #$FF
 		beq @skip_pitch_env
 
 			lda ram_cur_pitch_env_duration,X
 			bne @pitch_env_still_running
 
+				; Advance pointer 2 bytes to get to the next entry
 				ldx ram_cur_chan_ptr_offset
 				lda #$02
 				clc
@@ -2395,38 +2398,39 @@ sub_next_pitch_envelope:
 				adc ram_pitch_env_ptr_hi,X
 				sta ram_pitch_env_ptr_hi,X
 				sta zp_ptr2_hi
+
+				; Read next entry's duration
 				ldx ram_cur_channel_offset
 				ldy #$00
 				lda (zp_ptr2_lo),Y
 				sta ram_cur_pitch_env_duration,X
-				tay
-				cpy #$FF
+				cmp #$FF
 				bne @next_pitch_env
 
-				ldx ram_cur_chan_ptr_offset
-				ldy #$01
-				lda (zp_ptr2_lo),Y
-				; and #$FE
-				asl A
-				bpl @B105
+					; Duration byte = $FF (end of data), read last byte
+					ldx ram_cur_chan_ptr_offset
+					ldy #$01
+					lda (zp_ptr2_lo),Y
+					asl A
+					bpl @B105
 
-					clc
-					adc ram_pitch_env_ptr_lo,X
-					sta ram_pitch_env_ptr_lo,X
-					sta zp_ptr2_lo
-					bcs @B100
+						clc
+						adc ram_pitch_env_ptr_lo,X
+						sta ram_pitch_env_ptr_lo,X
+						sta zp_ptr2_lo
+						bcs :+
 
-						dec ram_pitch_env_ptr_hi,X
-					@B100:
-					lda ram_pitch_env_ptr_hi,X
-					sta zp_ptr2_hi
+							dec ram_pitch_env_ptr_hi,X
+						:
+						lda ram_pitch_env_ptr_hi,X
+						sta zp_ptr2_hi
 
-				@B105:
-				ldx ram_cur_channel_offset
-				ldy #$00
-				lda (zp_ptr2_lo),Y
-				sta ram_cur_pitch_env_duration,X
-				jmp @next_pitch_env
+					@B105:
+					ldx ram_cur_channel_offset
+					ldy #$00
+					lda (zp_ptr2_lo),Y
+					sta ram_cur_pitch_env_duration,X
+					jmp @next_pitch_env
 
 			@pitch_env_still_running:
 			dec ram_cur_pitch_env_duration,X

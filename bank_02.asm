@@ -564,7 +564,7 @@ sfx_projectile:
 ; Noise
 rom_96E3:
 	.byte $F5, $03, $F6, $01, $F8, $03, $F9, $FF
-	.byte $FA, $05, $FB, $FF
+	.byte $FA, $FF, $FB, $FF
 	.byte $F8, $01, $A0, $2F, $FF
 
 ; ----------------
@@ -578,7 +578,7 @@ sfx_kick:
 
 ; Unused SFX Noise channel
 rom_96F4:
-	.byte $F5, $03, $F6, $01, $F9, $00, $FA, $00
+	.byte $F5, $03, $F6, $01, $F9, $00, $FA, $FF
 	.byte $FB, $FF
 	.byte $F8, $00, $B2, $17, $FF
 
@@ -592,9 +592,10 @@ sfx_9701_unused:
 	
 ; -----------------------------------------------------------------------------
 
+; Noise
 rom_9705:
-	.byte $F5, $03, $F6, $01, $F9, $00, $FA, $00
-	.byte $FB, $FF
+	.byte $F5, $03, $F6, $01, $F9, $00, $F8, $03
+	.byte $FA, $FF, $FB, $FF
 	.byte $F8, $00, $8C, $29, $FF
 
 ; ----------------
@@ -700,7 +701,7 @@ sfx_9796_unused:
 
 ; Noise
 rom_979A:
-	.byte $F5, $03, $F6, $01, $F8, $00, $F9, $00
+	.byte $F5, $03, $F6, $01, $F8, $04, $F9, $00
 	.byte $FA, $FF, $FB, $FF
 	.byte $F8, $00, $85, $17, $FF
 
