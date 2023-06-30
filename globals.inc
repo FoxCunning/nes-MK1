@@ -338,20 +338,20 @@ ram_06CD = $06CD    ;
 ram_snd_initialised = $06F0    ;
 ; Up to eight song/sfx indices to play ($FF = nothing is playing)
 ram_snd_stack = $06F1   ; Size=8
-ram_cur_apu_channel = $06FA ;
+ram_cur_apu_channel = $06F9 ;
 ; The four APU channels are used both for music and sfx, and each will have
 ; variables in RAM at different offsets. Music starts at offset 0, using 118
 ; bytes of RAM, so sound effects start from offset $76.
 ; This way, we can reuse the same base addresses, for example $70C,X
 ; would be $70D for music square channel 0, and $783 for sfx square channel 0
-ram_cur_channel_offset = $06FB    ;
+ram_cur_channel_offset = $06FA    ;
 ; The four APU channels are used both for music and sfx, and each will have
 ; variables in RAM at different offsets. Music starts at offset 0, using 118
 ; bytes of RAM, so sound effects start from offset $76.
 ; This way, we can reuse the same base addresses, for example $70C,X
 ; would be $70D for music square channel 0, and $783 for sfx square channel 0
 ; This is an offset for pointers, so it is 2-byte aligned: 0, 2, 4, 6, 8, 10...
-ram_cur_chan_ptr_offset = $06FC    ;
+ram_cur_chan_ptr_offset = $06FB    ;
 
 ; ----------------
 
@@ -388,9 +388,9 @@ ram_base_period_lo = $0732   ;
 ; Base value for the period register, before applying envelopes and effects
 ram_base_period_hi = $0733   ;
 ; Modified note period, after applying envelopes and effects
-ram_note_period_lo = $073C  ;
+ram_note_period_lo = $073A  ;
 ; Modified note period, after applying envelopes and effects
-ram_note_period_hi = $073D  ;
+ram_note_period_hi = $073B  ;
 ; ----------------
 ; Index of duty envelope, one per channel
 ram_vol_env_idx = $0746             ; Size=5
