@@ -3,6 +3,7 @@
 out/**
 **/*.nes
 **/.idea/**
+**/.vscode/**
 **/*.bak
-_debug.txt
+*debug.txt
 _listing.txt
