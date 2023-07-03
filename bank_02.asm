@@ -165,19 +165,22 @@ tbl_track_ptrs:
 	.word track_silence		; $22
 	.word mus_player_unused	; $23
 	.word mus_8A1A			; $24
-	.word mus_8D5F			; $25
-	.word mus_8EE8			; $26
-	.word mus_9162			; $27
-	.word mus_9353			; $28
-	.word mus_94C4			; $29
-	.word mus_96B1			; $2A
-	.word mus_8D5F			; $2B
-	.word mus_8EE8			; $2C
-	.word mus_9162			; $2D
-	.word mus_9353			; $2E
-	.word mus_94C4			; $2F
-	.word mus_96B1			; $30
-	.word sfx_select		; $31	"Siren" sound but as music (e.g. after menu selection)
+	; ---- Stage background music starts here
+	.word mus_goros_lair		; $25	Goro's Lair
+	.word mus_pit				; $26	The Pit
+	.word mus_courtyard			; $27	Courtyard
+	.word mus_palace_gates		; $28	Palace Gates
+	.word mus_warrior_shrine	; $29	Warrior Shrine
+	.word mus_throne_room		; $2A	Throne Room
+	; ----
+	.word mus_goros_lair		; $2B
+	.word mus_pit				; $2C
+	.word mus_courtyard			; $2D
+	.word mus_palace_gates		; $2E
+	.word mus_warrior_shrine	; $2F
+	.word mus_throne_room		; $30
+	; ----
+	.word sfx_select		; $31	"Siren" sound but as music (e.g. menu selection)
 	.word mus_victory_jingle; $32
 
 ; -----------------------------------------------------------------------------
@@ -412,7 +415,7 @@ rom_8D5E:
 
 ; ----------------
 
-mus_8D5F:
+mus_goros_lair:
 	.byte $00
 	.word rom_8D5E
 	.byte $01
@@ -433,7 +436,7 @@ rom_8EE7:
 
 ; ----------------
 
-mus_8EE8:
+mus_pit:
 	.byte $00
 	.word rom_8EE7
 	.byte $01
@@ -448,24 +451,8 @@ mus_8EE8:
 
 ; -----------------------------------------------------------------------------
 
-; Silent channel
-rom_9161:
-	.byte $FF
-
-; ----------------
-
-mus_9162:
-	.byte $00
-	.word rom_9161
-	.byte $01
-	.word rom_9161
-	.byte $02
-	.word rom_9161
-	.byte $03
-	.word rom_9161
-	.byte $04
-	.word rom_9161
-	.byte $FF
+mus_courtyard:
+.include "audio/courtyard.asm"
 
 ; -----------------------------------------------------------------------------
 
@@ -475,7 +462,7 @@ rom_9319:
 
 ; ----------------
 
-mus_9353:
+mus_palace_gates:
 	.byte $00
 	.word rom_9319
 	.byte $01
@@ -496,7 +483,7 @@ rom_94C3:
 
 ; ----------------
 
-mus_94C4:
+mus_warrior_shrine:
 	.byte $00
 	.word rom_94C3
 	.byte $01
@@ -517,7 +504,7 @@ rom_96B0:
 
 ; ----------------
 
-mus_96B1:
+mus_throne_room:
 	.byte $00
 	.word rom_96B0
 	.byte $01

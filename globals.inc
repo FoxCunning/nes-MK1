@@ -352,7 +352,9 @@ ram_cur_channel_offset = $06FA    ;
 ; would be $70D for music square channel 0, and $783 for sfx square channel 0
 ; This is an offset for pointers, so it is 2-byte aligned: 0, 2, 4, 6, 8, 10...
 ram_cur_chan_ptr_offset = $06FB    ;
-
+; When this flag is 1, the current track segment will forcibly on the next frame
+; One bit per channel ($00-$0F)
+ram_track_skip_flag = $06FC     ; Size=1
 ; ----------------
 
 ; This value will be added to note period index

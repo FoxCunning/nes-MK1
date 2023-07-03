@@ -73,13 +73,16 @@ sub_rom_C019:
 	lda zp_F3
 	and #$7F
 	sta zp_A4
+
+	; Select stage music
 	ldx ram_routine_pointer_idx
 	lda rom_C0C0,X
 	sta zp_4A
 	txa
 	clc
-	adc #$25
+	adc #$25	; Stage music offset
 	sta ram_req_song
+
 	lda #$00
 	sta ram_0435
 	sta ram_042D
