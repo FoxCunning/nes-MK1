@@ -131,12 +131,9 @@ channel_00:
 	.byte $84	; Duration = 4
 	.byte $2D	; A-3
 	.byte $F8, $0A	; Volume Envelope = "Pluck (Quiet)"
-	.byte $89	; Duration = 9
+	.byte $8A	; Duration = 10
 	.byte $2D	; A-3
 	.byte $F7	; SKIP
-	.byte $A1	; Duration = 33
-	.byte $01	; HOLD
-	.byte $F1	; RETURN
 	; Pattern duration: 64.
 
 	@pattern_04:
@@ -292,8 +289,9 @@ channel_00:
 	.byte $F8, $0A	; Volume Envelope = "Pluck (Quiet)"
 	.byte $8A	; Duration = 10
 	.byte $2D	; A-3
-	.byte $F1	; RETURN
+	.byte $F7	; SKIP
 	; Should loop back to order 1
+	; Pattern duration: 32.
 
 ; -----------------------------------------------------------------------------
 ;						SQUARE WAVE 1 CHANNEL
