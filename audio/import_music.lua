@@ -583,9 +583,9 @@ local function read_rows(title)
     
     -- Temporary patterns, one per channel
     local pattern = {}
-    for pn = 0, 4 do
-        pattern[pn] = {}
-        pattern[pn].rows = {}
+    for cn = 0, 4 do
+        pattern[cn] = {}
+        pattern[cn].rows = {}
     end
 
     for ln = start, #Lines do
@@ -594,11 +594,16 @@ local function read_rows(title)
 
         if line == nil or line == "\n" or line:sub(1, 1) == "#" then
             -- End of rows
+            Channels[0].patterns[p] = pattern[0]
+            Channels[1].patterns[p] = pattern[1]
+            Channels[2].patterns[p] = pattern[2]
+            Channels[3].patterns[p] = pattern[3]
+            Channels[4].patterns[p] = pattern[4]
             break
         end
 
         if line:sub(1, 7) == "PATTERN" then
-            -- "Save" current pattern
+            -- "Save" current patterns
             Channels[0].patterns[p] = pattern[0]
             Channels[1].patterns[p] = pattern[1]
             Channels[2].patterns[p] = pattern[2]
@@ -607,9 +612,9 @@ local function read_rows(title)
 
             -- Move to next pattern
             p = p + 1
-            for pn = 0, 4 do
-                pattern[pn] = {}
-                pattern[pn].rows = {}
+            for cn = 0, 4 do
+                pattern[cn] = {}
+                pattern[cn].rows = {}
             end
             
         elseif line:sub(1, 3) == "ROW" then

@@ -18,20 +18,29 @@ channel_00:
 	.byte $F0	; CALL
 	.word @pattern_00
 	.byte $F0	; CALL
-	.word @pattern_00
+	.word @pattern_01
 	.byte $F0	; CALL
-	.word @pattern_00
+	.word @pattern_01
 	.byte $F0	; CALL
-	.word @pattern_00
+	.word @pattern_02
 	.byte $F0	; CALL
-	.word @pattern_00
+	.word @pattern_03
+	.byte $F0	; CALL
+	.word @pattern_02
+	.byte $F0	; CALL
+	.word @pattern_03
+	.byte $F0	; CALL
+	.word @pattern_04
+	.byte $F0	; CALL
+	.word @pattern_05
 	.byte $F4	; JUMP
 	.word @order_00
 
 	@pattern_00:
 	.byte $C0	; Duration = 64
 	.byte $01	; HOLD
-	.byte $F1	; RETURN	; Pattern duration: 64.
+	.byte $F1	; RETURN
+	; Pattern duration: 64.
 
 	@pattern_01:
 	.byte $92	; Duration = 18
@@ -51,7 +60,8 @@ channel_00:
 	.byte $F8, $0A	; Volume Envelope = "Pluck (Quiet)"
 	.byte $8A	; Duration = 10
 	.byte $2D	; A-3
-	.byte $F1	; RETURN	; Pattern duration: 64.
+	.byte $F1	; RETURN
+	; Pattern duration: 64.
 
 	@pattern_02:
 	.byte $F8, $11	; Volume Envelope = "Synth 2"
@@ -89,7 +99,8 @@ channel_00:
 	.byte $33	; D#4
 	.byte $84	; Duration = 4
 	.byte $00	; REST
-	.byte $F1	; RETURN	; Pattern duration: 64.
+	.byte $F1	; RETURN
+	; Pattern duration: 64.
 
 	@pattern_03:
 	.byte $F8, $12	; Volume Envelope = "Bamboo Echo"
@@ -124,51 +135,166 @@ channel_00:
 	.byte $F7	; SKIP
 	.byte $A1	; Duration = 33
 	.byte $01	; HOLD
-	.byte $F1	; RETURN	; Pattern duration: 64.
+	.byte $F1	; RETURN
+	; Pattern duration: 64.
 
 	@pattern_04:
+	.byte $F5, $03	; SPEED = 3
 	.byte $F8, $11	; Volume Envelope = "Synth 2"
 	.byte $F9, $06	; Duty Envelope = "Synth 2"
 	.byte $FA, $02	; Pitch Envelope = "Synth 2"
 	.byte $FB, $FF	; Arpeggio = "Synth 2"
 	.byte $81	; Duration = 1
 	.byte $32	; D-4
+	.byte $F5, $04	; SPEED = 4
 	.byte $33	; D#4
+	.byte $F5, $03	; SPEED = 3
 	.byte $32	; D-4
+	.byte $F5, $04	; SPEED = 4
 	.byte $33	; D#4
+	.byte $F5, $03	; SPEED = 3
 	.byte $32	; D-4
+	.byte $F5, $04	; SPEED = 4
 	.byte $33	; D#4
+	.byte $F5, $03	; SPEED = 3
 	.byte $32	; D-4
+	.byte $F5, $04	; SPEED = 4
 	.byte $33	; D#4
+	.byte $F5, $03	; SPEED = 3
 	.byte $32	; D-4
+	.byte $F5, $04	; SPEED = 4
 	.byte $31	; C#4
+	.byte $F5, $03	; SPEED = 3
 	.byte $30	; C-4
+	.byte $F5, $04	; SPEED = 4
 	.byte $2F	; B-3
+	.byte $F5, $03	; SPEED = 3
 	.byte $2E	; A#3
+	.byte $F5, $04	; SPEED = 4
 	.byte $2D	; A-3
+	.byte $F5, $03	; SPEED = 3
 	.byte $2C	; G#3
+	.byte $F5, $04	; SPEED = 4
 	.byte $2B	; G-3
+	.byte $F5, $03	; SPEED = 3
 	.byte $2A	; F#3
+	.byte $F5, $04	; SPEED = 4
 	.byte $2B	; G-3
+	.byte $F5, $03	; SPEED = 3
 	.byte $2A	; F#3
+	.byte $F5, $04	; SPEED = 4
 	.byte $2B	; G-3
+	.byte $F5, $03	; SPEED = 3
 	.byte $2A	; F#3
+	.byte $F5, $04	; SPEED = 4
 	.byte $2B	; G-3
+	.byte $F5, $03	; SPEED = 3
 	.byte $2A	; F#3
+	.byte $F5, $04	; SPEED = 4
 	.byte $2B	; G-3
+	.byte $F5, $03	; SPEED = 3
 	.byte $2A	; F#3
+	.byte $F5, $04	; SPEED = 4
 	.byte $29	; F-3
+	.byte $F5, $03	; SPEED = 3
 	.byte $28	; E-3
+	.byte $F5, $04	; SPEED = 4
 	.byte $27	; D#3
+	.byte $F5, $03	; SPEED = 3
 	.byte $26	; D-3
+	.byte $F5, $04	; SPEED = 4
 	.byte $25	; C#3
+	.byte $F5, $03	; SPEED = 3
 	.byte $24	; C-3
+	.byte $F5, $04	; SPEED = 4
 	.byte $23	; B-2
+	.byte $F5, $03	; SPEED = 3
 	.byte $22	; A#2
+	.byte $F5, $04	; SPEED = 4
 	.byte $21	; A-2
-	.byte $9E	; Duration = 30
+	.byte $F5, $03	; SPEED = 3
 	.byte $20	; G#2
-	.byte $F1	; RETURN	; Pattern duration: 64.
+	.byte $F5, $04	; SPEED = 4
+	.byte $01	; HOLD
+	.byte $F5, $03	; SPEED = 3
+	.byte $01	; HOLD
+	.byte $F5, $04	; SPEED = 4
+	.byte $01	; HOLD
+	.byte $F5, $03	; SPEED = 3
+	.byte $01	; HOLD
+	.byte $F5, $04	; SPEED = 4
+	.byte $01	; HOLD
+	.byte $F5, $03	; SPEED = 3
+	.byte $01	; HOLD
+	.byte $F5, $04	; SPEED = 4
+	.byte $01	; HOLD
+	.byte $F5, $03	; SPEED = 3
+	.byte $01	; HOLD
+	.byte $F5, $04	; SPEED = 4
+	.byte $01	; HOLD
+	.byte $F5, $03	; SPEED = 3
+	.byte $01	; HOLD
+	.byte $F5, $04	; SPEED = 4
+	.byte $01	; HOLD
+	.byte $F5, $03	; SPEED = 3
+	.byte $01	; HOLD
+	.byte $F5, $04	; SPEED = 4
+	.byte $01	; HOLD
+	.byte $F5, $03	; SPEED = 3
+	.byte $01	; HOLD
+	.byte $F5, $04	; SPEED = 4
+	.byte $01	; HOLD
+	.byte $F5, $03	; SPEED = 3
+	.byte $01	; HOLD
+	.byte $F5, $04	; SPEED = 4
+	.byte $01	; HOLD
+	.byte $F5, $03	; SPEED = 3
+	.byte $01	; HOLD
+	.byte $F5, $04	; SPEED = 4
+	.byte $01	; HOLD
+	.byte $F5, $03	; SPEED = 3
+	.byte $01	; HOLD
+	.byte $F5, $04	; SPEED = 4
+	.byte $01	; HOLD
+	.byte $F5, $03	; SPEED = 3
+	.byte $01	; HOLD
+	.byte $F5, $04	; SPEED = 4
+	.byte $01	; HOLD
+	.byte $F5, $03	; SPEED = 3
+	.byte $01	; HOLD
+	.byte $F5, $04	; SPEED = 4
+	.byte $01	; HOLD
+	.byte $F5, $03	; SPEED = 3
+	.byte $01	; HOLD
+	.byte $F5, $04	; SPEED = 4
+	.byte $01	; HOLD
+	.byte $F5, $03	; SPEED = 3
+	.byte $01	; HOLD
+	.byte $F5, $04	; SPEED = 4
+	.byte $01	; HOLD
+	.byte $F1	; RETURN
+	; Pattern duration: 64.
+
+	@pattern_05:
+	.byte $F5, $07	; SPEED = 7
+	.byte $F8, $11	; Volume Envelope = "Synth 2"
+	.byte $F9, $06	; Duty Envelope = "Synth 2"
+	.byte $FA, $02	; Pitch Envelope = "Synth 2"
+	.byte $FB, $FF	; Arpeggio = "Synth 2"
+	.byte $92	; Duration = 18
+	.byte $1E	; F#2
+	.byte $F8, $09	; Volume Envelope = "Pluck"
+	.byte $F9, $02	; Duty Envelope = "Pluck"
+	.byte $FA, $FF	; Pitch Envelope = "Pluck"
+	.byte $84	; Duration = 4
+	.byte $2D	; A-3
+	.byte $F8, $0A	; Volume Envelope = "Pluck (Quiet)"
+	.byte $89	; Duration = 9
+	.byte $2D	; A-3
+	.byte $A1	; Duration = 33
+	.byte $01	; HOLD
+	.byte $F1	; RETURN
+	; Pattern duration: 64.
 
 ; -----------------------------------------------------------------------------
 ;						SQUARE WAVE 1 CHANNEL
@@ -178,15 +304,23 @@ channel_01:
 	.byte $F5, $07	; Speed = 7
 	@order_01:
 	.byte $F0	; CALL
-	.word @pattern_01
-	.byte $F0	; CALL
-	.word @pattern_01
-	.byte $F0	; CALL
-	.word @pattern_01
-	.byte $F0	; CALL
-	.word @pattern_01
-	.byte $F0	; CALL
 	.word @pattern_00
+	.byte $F0	; CALL
+	.word @pattern_01
+	.byte $F0	; CALL
+	.word @pattern_01
+	.byte $F0	; CALL
+	.word @pattern_02
+	.byte $F0	; CALL
+	.word @pattern_01
+	.byte $F0	; CALL
+	.word @pattern_02
+	.byte $F0	; CALL
+	.word @pattern_01
+	.byte $F0	; CALL
+	.word @pattern_03
+	.byte $F0	; CALL
+	.word @pattern_04
 	.byte $F4	; JUMP
 	.word @order_01
 
@@ -197,7 +331,8 @@ channel_01:
 	.byte $FB, $FF	; Arpeggio = "Pulse Bass"
 	.byte $C0	; Duration = 64
 	.byte $0E	; D-1
-	.byte $F1	; RETURN	; Pattern duration: 64.
+	.byte $F1	; RETURN
+	; Pattern duration: 64.
 
 	@pattern_01:
 	.byte $F8, $05	; Volume Envelope = "Synth Lead"
@@ -234,7 +369,8 @@ channel_01:
 	.byte $F8, $0A	; Volume Envelope = "Pluck (Quiet)"
 	.byte $8A	; Duration = 10
 	.byte $32	; D-4
-	.byte $F1	; RETURN	; Pattern duration: 64.
+	.byte $F1	; RETURN
+	; Pattern duration: 64.
 
 	@pattern_02:
 	.byte $F8, $14	; Volume Envelope = "Synth 2 Echo"
@@ -272,7 +408,8 @@ channel_01:
 	.byte $36	; F#4
 	.byte $86	; Duration = 6
 	.byte $00	; REST
-	.byte $F1	; RETURN	; Pattern duration: 64.
+	.byte $F1	; RETURN
+	; Pattern duration: 64.
 
 	@pattern_03:
 	.byte $83	; Duration = 3
@@ -318,7 +455,8 @@ channel_01:
 	.byte $21	; A-2
 	.byte $9B	; Duration = 27
 	.byte $20	; G#2
-	.byte $F1	; RETURN	; Pattern duration: 64.
+	.byte $F1	; RETURN
+	; Pattern duration: 64.
 
 	@pattern_04:
 	.byte $83	; Duration = 3
@@ -337,7 +475,14 @@ channel_01:
 	.byte $F8, $0A	; Volume Envelope = "Pluck (Quiet)"
 	.byte $AA	; Duration = 42
 	.byte $32	; D-4
-	.byte $F1	; RETURN	; Pattern duration: 64.
+	.byte $F1	; RETURN
+	; Pattern duration: 64.
+
+	@pattern_05:
+	.byte $C0	; Duration = 64
+	.byte $01	; HOLD
+	.byte $F1	; RETURN
+	; Pattern duration: 64.
 
 ; -----------------------------------------------------------------------------
 ;						TRIANGLE WAVE CHANNEL
@@ -347,15 +492,23 @@ channel_02:
 	.byte $F5, $07	; Speed = 7
 	@order_02:
 	.byte $F0	; CALL
-	.word @pattern_01
-	.byte $F0	; CALL
-	.word @pattern_01
-	.byte $F0	; CALL
-	.word @pattern_01
-	.byte $F0	; CALL
-	.word @pattern_01
-	.byte $F0	; CALL
 	.word @pattern_00
+	.byte $F0	; CALL
+	.word @pattern_01
+	.byte $F0	; CALL
+	.word @pattern_01
+	.byte $F0	; CALL
+	.word @pattern_01
+	.byte $F0	; CALL
+	.word @pattern_01
+	.byte $F0	; CALL
+	.word @pattern_01
+	.byte $F0	; CALL
+	.word @pattern_01
+	.byte $F0	; CALL
+	.word @pattern_02
+	.byte $F0	; CALL
+	.word @pattern_01
 	.byte $F4	; JUMP
 	.word @order_02
 
@@ -395,7 +548,8 @@ channel_02:
 	.byte $1A	; D-2
 	.byte $F3, $05	; DELAYED CUT = 5
 	.byte $1A	; D-2
-	.byte $F1	; RETURN	; Pattern duration: 64.
+	.byte $F1	; RETURN
+	; Pattern duration: 64.
 
 	@pattern_01:
 	.byte $FA, $FF	; Pitch Envelope = "Tri Kick -> Bass"
@@ -453,7 +607,8 @@ channel_02:
 	.byte $1A	; D-2
 	.byte $F3, $02	; DELAYED CUT = 2
 	.byte $1A	; D-2
-	.byte $F1	; RETURN	; Pattern duration: 64.
+	.byte $F1	; RETURN
+	; Pattern duration: 64.
 
 	@pattern_02:
 	.byte $FA, $FF	; Pitch Envelope = "Tri Kick -> Bass"
@@ -484,17 +639,26 @@ channel_02:
 	.byte $1A	; D-2
 	.byte $F3, $02	; DELAYED CUT = 2
 	.byte $1A	; D-2
-	.byte $F1	; RETURN	; Pattern duration: 64.
+	.byte $F1	; RETURN
+	; Pattern duration: 64.
 
 	@pattern_03:
 	.byte $C0	; Duration = 64
 	.byte $01	; HOLD
-	.byte $F1	; RETURN	; Pattern duration: 64.
+	.byte $F1	; RETURN
+	; Pattern duration: 64.
 
 	@pattern_04:
 	.byte $C0	; Duration = 64
 	.byte $01	; HOLD
-	.byte $F1	; RETURN	; Pattern duration: 64.
+	.byte $F1	; RETURN
+	; Pattern duration: 64.
+
+	@pattern_05:
+	.byte $C0	; Duration = 64
+	.byte $01	; HOLD
+	.byte $F1	; RETURN
+	; Pattern duration: 64.
 
 ; -----------------------------------------------------------------------------
 ;						        NOISE CHANNEL
@@ -504,15 +668,23 @@ channel_03:
 	.byte $F5, $07	; Speed = 7
 	@order_03:
 	.byte $F0	; CALL
-	.word @pattern_02
-	.byte $F0	; CALL
-	.word @pattern_02
-	.byte $F0	; CALL
-	.word @pattern_01
-	.byte $F0	; CALL
-	.word @pattern_01
-	.byte $F0	; CALL
 	.word @pattern_00
+	.byte $F0	; CALL
+	.word @pattern_01
+	.byte $F0	; CALL
+	.word @pattern_01
+	.byte $F0	; CALL
+	.word @pattern_01
+	.byte $F0	; CALL
+	.word @pattern_01
+	.byte $F0	; CALL
+	.word @pattern_01
+	.byte $F0	; CALL
+	.word @pattern_01
+	.byte $F0	; CALL
+	.word @pattern_02
+	.byte $F0	; CALL
+	.word @pattern_01
 	.byte $F4	; JUMP
 	.word @order_03
 
@@ -659,7 +831,8 @@ channel_03:
 	.byte $F8, $00	; Volume Envelope = "Kick Noise Enhance"
 	.byte $FB, $02	; Arpeggio = "Kick Noise Enhance"
 	.byte $06	; 9-#
-	.byte $F1	; RETURN	; Pattern duration: 64.
+	.byte $F1	; RETURN
+	; Pattern duration: 64.
 
 	@pattern_01:
 	.byte $83	; Duration = 3
@@ -795,7 +968,8 @@ channel_03:
 	.byte $FB, $03	; Arpeggio = "Snare Noise Enhance"
 	.byte $08	; 7-#
 	.byte $08	; 7-#
-	.byte $F1	; RETURN	; Pattern duration: 64.
+	.byte $F1	; RETURN
+	; Pattern duration: 64.
 
 	@pattern_02:
 	.byte $86	; Duration = 6
@@ -865,14 +1039,23 @@ channel_03:
 	.byte $FB, $03	; Arpeggio = "Snare Noise Enhance"
 	.byte $08	; 7-#
 	.byte $08	; 7-#
-	.byte $F1	; RETURN	; Pattern duration: 64.
+	.byte $F1	; RETURN
+	; Pattern duration: 64.
 
 	@pattern_03:
 	.byte $C0	; Duration = 64
 	.byte $01	; E-#
-	.byte $F1	; RETURN	; Pattern duration: 64.
+	.byte $F1	; RETURN
+	; Pattern duration: 64.
 
 	@pattern_04:
 	.byte $C0	; Duration = 64
 	.byte $01	; E-#
-	.byte $F1	; RETURN	; Pattern duration: 64.
+	.byte $F1	; RETURN
+	; Pattern duration: 64.
+
+	@pattern_05:
+	.byte $C0	; Duration = 64
+	.byte $01	; E-#
+	.byte $F1	; RETURN
+	; Pattern duration: 64.
