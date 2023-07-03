@@ -22,7 +22,7 @@ NOISE = [
 ]
 
 # noinspection SpellCheckingInspection
-EVENTS = ["CALL SEGMENT", "END SEGMENT", "LOOP START", "LOOP END", "JUMP", "SPEED", "TRANSPOSE", "SKIP",
+EVENTS = ["CALL SEGMENT", "END SEGMENT", "DELAY NOTE", "DELAYED CUT", "JUMP", "SPEED", "TRANSPOSE", "SKIP",
           "VOL ENV", "DUTY ENV", "PITCH ENV", "ARPEGGIO", "NOP", "UNUSED", "SKIP", "STOP"]
 
 
@@ -196,6 +196,11 @@ class Channel:
 
     # noinspection SpellCheckingInspection
     EVENT_ENDSEG = 0xF1  # Ends a segment
+
+    # noinspection SpellCheckingInspection
+    EVENT_DELAYNOTE = 0xF2
+    # noinspection SpellCheckingInspection
+    EVENT_DELAYEDCUT = 0xF3
 
     EVENT_JUMP = 0xF4  # Jump to specified address
 
@@ -721,18 +726,12 @@ def main():
                 # resume the interrupted note/rest
                 fx_list = []
 
-                # The delayed cut event is not "interrupting", but we'll need to keep in mind that the note will need
-                # to be cut short
-                delayed_cut = -1
-
-                # How many frames to wait before triggering this line, basically this will be added to the previous
-                # event's duration and subtracted from the new event's starting duration
-                event_delay = 0
-
                 # Process effects first
                 for fx in row.fx:
                     if fx[0] == '.':  # NO FX
                         continue
+
+                    # Any event that is not in this list will be ignored
 
                     elif fx[0] == '4':  # VIBRATO
                         # Invert speed and intensity to avoid having to shift bytes in the game
@@ -741,29 +740,25 @@ def main():
                         v = fx[0] + fx[2] + fx[1]
                         fx_list.append(v)
 
-                    elif fx[0] == 'A':  # VOLUME SLIDE
-                        fx_list.append(fx)
+                    # elif fx[0] == 'A':  # VOLUME SLIDE
+                    #    fx_list.append(fx)
 
-                    elif fx[0] == 'G':  # DELAYED EVENT
-                        event_delay = int(fx[1:], 16)
-
-                    elif fx[0] == 'P':  # FINE PITCH
-                        fx_list.append(fx)
+                    # elif fx[0] == 'P':  # FINE PITCH
+                    #    fx_list.append(fx)
 
                     elif fx[0] == 'Q':  # NOTE SLIDE UP
                         fx_list.append(fx)
 
-                    elif fx[0] == 'R':  # NOTE SLIDE DOWN
+                    # elif fx[0] == 'R':  # NOTE SLIDE DOWN
+                    #    fx_list.append(fx)
+
+                    # elif fx[0] == 'V':  # TIMBRE CONTROL
+                    #    fx_list.append(fx)
+
+                    elif fx[0] == 'G':   # DELAY NOTE
                         fx_list.append(fx)
 
-                    elif fx[0] == 'S':  # DELAYED CUT
-                        if fx[1:] == "00":
-                            # Experimental: turn 'S00' into an instant note cut
-                            row.event = "---"
-                        else:
-                            delayed_cut = int(fx[1:], 16)
-
-                    elif fx[0] == 'V':  # TIMBRE CONTROL
+                    elif fx[0] == 'S':   # DELAYED CUT
                         fx_list.append(fx)
 
                 # Now hunt for notes, or calculate duration
@@ -791,7 +786,6 @@ def main():
                     # effects, and then resume it
                     if interrupted:
                         # If this line is delayed, add the delay to the previous event
-                        channels[c].current_duration += event_delay
                         channels[c].finalise_event()
 
                     # Apply Delta counter effect in triangle channel
@@ -860,52 +854,29 @@ def main():
                         # TODO Handle other events
 
                     # Resume note/rest if needed
-                    if interrupted:
-                        if delayed_cut > -1:
-                            # Hold the rest of the playing note for the remaining ticks, then start a rest
-                            channels[c].instant_event(Channel.EVENT_HOLD, delayed_cut)
-                            channels[c].start_event(Channel.EVENT_REST, note_duration - delayed_cut)
-                        else:
-                            # Otherwise, just resume the playing note
-                            channels[c].start_event(Channel.EVENT_HOLD, note_duration - event_delay)
+                    if channels[c].current_event == -1:  # "..." not preceded by a note: create a hold
+                        channels[c].start_event(Channel.EVENT_HOLD)
 
-                    # If not interrupted, keep counting ticks
                     else:
-                        if channels[c].current_event == -1:  # "..." not preceded by a note: create a hold
-                            channels[c].start_event(Channel.EVENT_HOLD)
+                        # Count ticks
+                        channels[c].current_duration += note_duration
+                        # If this would go over 255, finalise the event and create a new HOLD with the rest
+                        if channels[c].current_duration > 0x6F:
+                            remaining = channels[c].current_duration - 0x6F
+                            channels[c].current_duration = 0x6F
 
-                        else:
-                            if delayed_cut > -1:
-                                channels[c].current_duration += delayed_cut
-                                channels[c].finalise_event()
-                                channels[c].start_event(Channel.EVENT_HOLD, note_duration - delayed_cut)
-
-                            else:
-                                # Count ticks
-                                channels[c].current_duration += note_duration
-                                # If this would go over 255, finalise the event and create a new HOLD with the rest
-                                if channels[c].current_duration > 0xFF:
-                                    remaining = channels[c].current_duration - 0xFF
-                                    channels[c].current_duration = 0xFF
-
-                                    channels[c].finalise_event()
-                                    channels[c].start_event(Channel.EVENT_HOLD, remaining)
+                            channels[c].finalise_event()
+                            channels[c].start_event(Channel.EVENT_HOLD, remaining)
 
                 elif row.event == "---":  # ---- Musical rest --------------------------------------------------------
 
                     # Finish previous event, if any
                     if channels[c].current_event != Channel.EVENT_NO_EVENT:
-                        channels[c].current_duration += event_delay
                         channels[c].finalise_event()
 
                     # note_duration = channels[c].row_duration - event_delay
 
-                    if delayed_cut > -1:
-                        note_duration = delayed_cut
-                    else:
-                        note_duration = channels[c].row_duration
-
-                    note_duration -= event_delay
+                    note_duration = channels[c].row_duration
 
                     # Check if we need to change the volume
                     volume = row.volume
@@ -967,25 +938,15 @@ def main():
                             value = int(fx[1:], 16)
                             channels[c].instant_event(Channel.EVENT_VIBRATO, value)
 
-                        # TODO Handle other events
-
                     channels[c].start_event(Channel.EVENT_REST, note_duration)
 
                 else:  # ---- New note ------------------------------------------------------------
 
                     # Finish previous event, if any
                     if channels[c].current_event != Channel.EVENT_NO_EVENT:
-                        channels[c].current_duration += event_delay
                         channels[c].finalise_event()
 
-                    # note_duration = channels[c].row_duration - event_delay
-
-                    if delayed_cut > -1:
-                        note_duration = delayed_cut
-                    else:
-                        note_duration = channels[c].row_duration
-
-                    note_duration -= event_delay
+                    note_duration = channels[c].row_duration
 
                     # Channel "interrupting" events, but since this is a new note there is nothing to interrupt,
                     # just process all events before the note
@@ -1076,19 +1037,27 @@ def main():
                             value = int(fx[1:], 16)
                             channels[c].instant_event(Channel.EVENT_VIBRATO, value)
 
-                        # TODO Handle other events
+                        elif fx[0] == 'G':
+                            value = int(fx[1:], 16)
+                            if value > speed:
+                                print(f"!!!WARNING: Note delay '{fx}' longer than speed ({speed}) - \tPattern ${p}, "
+                                      f"row ${r}.")
+                            channels[c].instant_event(Channel.EVENT_DELAYNOTE, value)
+
+                        elif fx[0] == 'S':
+                            value = int(fx[1:], 16)
+                            channels[c].instant_event(Channel.EVENT_DELAYEDCUT, value)
 
                     # Now start a new note event
                     event = row.noise_id() if c == 3 else row.note_id()
                     channels[c].start_event(event, note_duration)
 
                     # If there was a cut, finalise the note and start a rest after the note with the remaining ticks
-                    if (note_duration + event_delay) != channels[c].row_duration:
+                    if note_duration != channels[c].row_duration:
                         channels[c].finalise_event()
                         channels[c].start_event(Channel.EVENT_REST, channels[c].row_duration - note_duration)
 
     # Finalise all outstanding events and add a "song end" event if needed
-    # TODO Use a channel disable event instead of song end if HALT was used
     for c in range(4):
         channels[c].finalise_event()
         if halt is False:
