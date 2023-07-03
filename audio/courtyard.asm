@@ -17,6 +17,7 @@ channel_00:
 	@order_00:
 	.byte $F0	; CALL
 	.word @pattern_00
+	@loop:
 	.byte $F0	; CALL
 	.word @pattern_01
 	.byte $F0	; CALL
@@ -34,7 +35,7 @@ channel_00:
 	.byte $F0	; CALL
 	.word @pattern_05
 	.byte $F4	; JUMP
-	.word @order_00
+	.word @loop
 
 	@pattern_00:
 	.byte $C0	; Duration = 64
@@ -289,12 +290,10 @@ channel_00:
 	.byte $84	; Duration = 4
 	.byte $2D	; A-3
 	.byte $F8, $0A	; Volume Envelope = "Pluck (Quiet)"
-	.byte $89	; Duration = 9
+	.byte $8A	; Duration = 10
 	.byte $2D	; A-3
-	.byte $A1	; Duration = 33
-	.byte $01	; HOLD
 	.byte $F1	; RETURN
-	; Pattern duration: 64.
+	; Should loop back to order 1
 
 ; -----------------------------------------------------------------------------
 ;						SQUARE WAVE 1 CHANNEL
@@ -305,6 +304,7 @@ channel_01:
 	@order_01:
 	.byte $F0	; CALL
 	.word @pattern_00
+	@loop:
 	.byte $F0	; CALL
 	.word @pattern_01
 	.byte $F0	; CALL
@@ -322,7 +322,7 @@ channel_01:
 	.byte $F0	; CALL
 	.word @pattern_04
 	.byte $F4	; JUMP
-	.word @order_01
+	.word @loop
 
 	@pattern_00:
 	.byte $F8, $07	; Volume Envelope = "Pulse Bass"
@@ -493,6 +493,7 @@ channel_02:
 	@order_02:
 	.byte $F0	; CALL
 	.word @pattern_00
+	@loop:
 	.byte $F0	; CALL
 	.word @pattern_01
 	.byte $F0	; CALL
@@ -510,7 +511,7 @@ channel_02:
 	.byte $F0	; CALL
 	.word @pattern_01
 	.byte $F4	; JUMP
-	.word @order_02
+	.word @loop
 
 	@pattern_00:
 	.byte $F3, $05	; DELAYED CUT = 5
@@ -669,6 +670,7 @@ channel_03:
 	@order_03:
 	.byte $F0	; CALL
 	.word @pattern_00
+	@loop:
 	.byte $F0	; CALL
 	.word @pattern_01
 	.byte $F0	; CALL
@@ -686,7 +688,7 @@ channel_03:
 	.byte $F0	; CALL
 	.word @pattern_01
 	.byte $F4	; JUMP
-	.word @order_03
+	.word @loop
 
 	@pattern_00:
 	.byte $F8, $00	; Volume Envelope = "Kick Noise Enhance"
