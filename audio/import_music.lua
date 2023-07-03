@@ -397,6 +397,10 @@ local function convert_fx(text)
 
         name = "TRANSPOSE"
 
+    elseif fx == "." then
+
+        -- Empty, do nothing
+
     else
 
         print(string.format("!!!WARNING: Unimplemented/unrecognised effect: %s", text))
@@ -645,21 +649,23 @@ local function read_rows(title)
                 local row = pattern.rows[rn]
 
                 -- Move all speed effects to channel 0
+                --[[ Unfortunately, this only works if they happen to be at the same pattern index
                 if cn > 0 then
                     -- Hunt for speed effects
                     for fn = 1, #row.fx do
                         local fx = row.fx[fn]
 
-                        if fx[1] == 'F' then
+                        if fx:sub(1, 1) == 'F' then
                             -- When a Speed effect is found (Fxx) on any channel:
                             -- Check if Channel 0 already had a Txx event on that row
                             if contains_fx(0, pn, rn, 'F') == false then
                                 -- If not, add it there
-                                table.insert(Channels[0].patterns[pn].row[rn].fx, fx[1])
+                                table.insert(Channels[0].patterns[pn].rows[rn].fx, 1, fx)
                             end
                         end
                     end
                 end
+                --]]
 
                 -- Add a "hold note" command on rows that have effects but no note or rest
                 if row.note == 0xFE and row.fx[1] ~= "..." then
@@ -690,7 +696,7 @@ local function read_rows(title)
 
     end
 
-    --[[ DEBUG dump
+    -- [[ DEBUG dump
     local dbg = io.open("debug.txt", "w")
     if dbg == nil then return end
     for cn = 0, 4 do
@@ -823,9 +829,9 @@ elseif track_name ~= "" then
         -- Process order for channel: each entry is a call to a subsection (i.e. pattern)
         -- TODO Do not use order if --loop was used
         asm = asm .. string.format("\t@order_%02X:\n", cn)
-        for on = 0, #Order[cn].patterns do
+        for on = 0, #Order do
             asm = asm .. string.format("\t.byte $%02X\t; CALL\n", CMD_CALL)
-            asm = asm .. string.format("\t.word @pattern_%02X\n", Order[cn].patterns[on])
+            asm = asm .. string.format("\t.word @pattern_%02X\n", Order[on].patterns[cn])
         end
 
         -- After last call, add jump back to channel label
@@ -916,7 +922,7 @@ elseif track_name ~= "" then
             end
 
             -- Add "return" command at end of each pattern
-            asm = asm .. string.format("\t.byte $%02X\t; RETURN", CMD_RETURN)
+            asm = asm .. string.format("\t.byte $%02X\t; RETURN\n", CMD_RETURN)
             -- Add pattern's total duration as a comment for debugging
             asm = asm .. string.format("\t; Pattern duration: %s.\n", pattern_duration)
         end
