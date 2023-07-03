@@ -1275,7 +1275,7 @@ sub_process_all_sound:
 	sta ram_cur_apu_channel
 	sta ram_cur_channel_offset
 	sta ram_cur_chan_ptr_offset
-	@AB14:
+	:
 		jsr sub_play_cur_channel
 		jsr sub_advance_envelopes
 		inc ram_cur_apu_channel
@@ -1284,7 +1284,7 @@ sub_process_all_sound:
 		inc ram_cur_chan_ptr_offset
 	ldx ram_cur_apu_channel
 	cpx #$05
-	bne @AB14
+	bne :-
 
 	; Process SFX channels ($10-$13)
 	lda #$10
@@ -1292,7 +1292,7 @@ sub_process_all_sound:
 	lda #$80
 	sta ram_cur_channel_offset
 	sta ram_cur_chan_ptr_offset
-	@AB3A:
+	:
 		jsr sub_play_cur_channel
 		jsr sub_advance_envelopes
 		inc ram_cur_apu_channel
@@ -1301,7 +1301,7 @@ sub_process_all_sound:
 		inc ram_cur_chan_ptr_offset
 	ldx ram_cur_apu_channel
 	cpx #$15
-	bne @AB3A
+	bne :-
 
 	rts
 
@@ -1352,7 +1352,7 @@ sub_init_new_track:
 	sta zp_ptr2_hi
 	
 	ldy #$00
-	@next_track_header:
+	@next_track_header_byte:
 	lda (zp_ptr2_lo),Y
 	sta ram_cur_apu_channel
 	tax
@@ -1403,36 +1403,37 @@ sub_init_new_track:
 		lda ram_cur_apu_channel
 		and #$0F
 		tay
+		; Y = APU channel (0-4)
 		lda #$00
 		sta ram_track_speed_counter,X
 		sta ram_note_ticks_left,X
 		ldx ram_cur_channel_offset
-		;lda #$00
-		;sta ram_vol_env_idx,X
+
 		lda #$FF
 		sta ram_vol_env_idx,X
+		cpy #$04	; DMC skips arpeggios
+		bpl :+
+			sta ram_arpeggio_idx,X
+		:
 		sta ram_cur_vol_env_duration,X
 		cpy #$03	; DMC and noise channels skip pitch, transpose and duty
 		bpl :+
 
-		;lda #$00
-		;sta ram_pitch_env_idx,X
-		lda #$FF
-		sta ram_cur_pitch_env_duration,X
-		sta ram_pitch_env_idx,X
+			;lda #$FF
+			sta ram_cur_pitch_env_duration,X
+			sta ram_pitch_env_idx,X
 
-		lda #$00
-		sta ram_note_transpose_value,X
-		cpy #$02	; Triangle channel skips duty envelope only
-		bpl :+
+			lda #$00
+			sta ram_note_transpose_value,X
+			cpy #$02	; Triangle channel skips duty envelope only
+			bpl :+
 
-		lda #$FF
-		sta ram_duty_env_idx,X
-		sta ram_arpeggio_idx,X
+				lda #$FF
+				sta ram_duty_env_idx,X
 	:
 	pla
 	tay
-	jmp @next_track_header
+	jmp @next_track_header_byte
 
 ; -----------------------------------------------------------------------------
 
@@ -1445,6 +1446,15 @@ sub_play_cur_channel:
 	ora ram_track_ptr_hi,X
 	beq @skip_playing_channel
 
+		; Check for a pending "skip" event on this channel
+		lda ram_track_skip_flag
+		and tbl_chan_set_mask,X
+		beq :+
+			jsr sub_cmd_end_seg
+			ldx ram_cur_chan_ptr_offset
+		:
+		; This is the "outer" counter,
+		; which counts down from "song speed" to zero
 		lda ram_track_speed_counter,X
 		bne @decrease_speed_counter	; Skip processing if are still waiting
 
@@ -1502,9 +1512,12 @@ sub_cmd_note_duration:
 
 ; -----------------------------------------------------------------------------
 
-sub_skip_track_data:
-	jsr sub_advance_track_ptr
-	rts
+; Immediately ends the current segment, and signals other channels to do
+; the same on the next tick
+sub_cmd_skip_segment:
+	lda $0F
+	sta ram_track_skip_flag
+	jmp sub_cmd_end_seg
 
 ; -----------------------------------------------------------------------------
 
@@ -1528,7 +1541,7 @@ sub_new_note_or_rest:
 	bne :+
 		; Do not change pitch and note index
 		; Do not restart envelope
-		; Frames left will be updated by calling routine
+		; Frames left will be updated by the calling routine
 		; Just advance data pointer
 		jmp sub_advance_track_ptr
 	:
@@ -1722,20 +1735,34 @@ sub_process_track_command:
 tbl_track_cmd_ptrs:
 	.word sub_cmd_call_seg			; $F0
 	.word sub_cmd_end_seg			; $F1
-	.word sub_cmd_f2				; $F2	Not used
-	.word sub_cmd_f3				; $F3	Not used
+	.word sub_cmd_note_delay		; $F2	TODO
+	.word sub_cmd_delayed_cut		; $F3	TODO
 	.word sub_cmd_track_jump		; $F4
 	.word sub_cmd_track_speed		; $F5
 	.word sub_cmd_transpose			; $F6
-	.word sub_get_next_track_byte	; $F7	(this byte is skipped)
+	.word sub_cmd_skip_segment		; $F7	WIP
 	.word sub_cmd_set_vol_env		; $F8
 	.word sub_cmd_set_duty_env		; $F9
 	.word sub_cmd_set_pitch_env		; $FA
 	.word sub_cmd_set_arpeggio		; $FB
-	.word sub_skip_track_data		; $FC	(does nothing)
+	.word sub_get_next_track_byte	; $FC	TODO
 	.word sub_cmd_note_duration		; $FD	Not used ($8x in track data directly)
 	.word sub_get_next_track_byte	; $FE	(this byte is skipped)
 	.word sub_cmd_stop_playing		; $FF
+
+; -----------------------------------------------------------------------------
+
+; These bit masks are used to set or clear flags for each channel
+; Two bytes per entry: set (OR) or check (AND), clear (AND)
+; Index using channel pointer offset
+tbl_chan_set_mask:
+	.byte $08, $F7	; 0 (Sq0)
+	.byte $04, $FB	; 1 (Sq1)
+	.byte $02, $FD	; 2 (Tri)
+	.byte $01, $FE	; 3 (Noise)
+
+; Use this mask to clear a channel's skip flag
+tbl_chan_clr_mask = tbl_chan_set_mask+1
 
 ; -----------------------------------------------------------------------------
 
@@ -1757,35 +1784,44 @@ sub_cmd_call_seg:
 
 ; -----------------------------------------------------------------------------
 
-; Restores the track data pointer
+; Restores the track data pointer, clears skip mask for current channel
+; and processes the next byte of track data from the new location
 sub_cmd_end_seg:
 	ldx ram_cur_chan_ptr_offset
 
+	; Clear the skip mask in case this was a forced skip
+	lda tbl_chan_clr_mask,X
+	and ram_track_skip_flag
+	sta ram_track_skip_flag
+
+	; Restore track data pointer
 	lda ram_track_ptr_backup_lo,X
 	sta ram_track_ptr_lo,X
 	lda ram_track_ptr_backup_hi,X
 	sta ram_track_ptr_hi,X
 
+	; Clear backup data pointer (the "return" address)
 	lda #$00
 	sta ram_track_ptr_backup_lo,X
 	sta ram_track_ptr_backup_hi,X
 	
+	; Immediately process next byte from new location
 	jmp sub_get_next_track_byte
 
 ; -----------------------------------------------------------------------------
 
-; Not used
-sub_cmd_f2:
-	; Disabled
-
+; Delays the next note for the given amount of frames
+sub_cmd_note_delay:
+	; TODO
+	jsr sub_advance_track_ptr
 	jmp sub_get_next_track_byte
 
 ; -----------------------------------------------------------------------------
 
-; Not used
-sub_cmd_f3:
-	; Disabled
-
+; Stops playing the next note after the given amount of frames
+sub_cmd_delayed_cut:
+	; TODO
+	jsr sub_advance_track_ptr
 	jmp sub_get_next_track_byte
 
 ; -----------------------------------------------------------------------------
