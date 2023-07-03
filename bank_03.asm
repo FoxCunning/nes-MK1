@@ -1515,7 +1515,7 @@ sub_cmd_note_duration:
 ; Immediately ends the current segment, and signals other channels to do
 ; the same on the next tick
 sub_cmd_skip_segment:
-	lda $0F
+	lda #$0F
 	sta ram_track_skip_flag
 	jmp sub_cmd_end_seg
 
