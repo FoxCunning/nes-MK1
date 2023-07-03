@@ -1722,8 +1722,8 @@ sub_process_track_command:
 tbl_track_cmd_ptrs:
 	.word sub_cmd_call_seg			; $F0
 	.word sub_cmd_end_seg			; $F1
-	.word sub_cmd_start_loop		; $F2	Not used
-	.word sub_cmd_end_loop			; $F3	Not used
+	.word sub_cmd_f2				; $F2	Not used
+	.word sub_cmd_f3				; $F3	Not used
 	.word sub_cmd_track_jump		; $F4
 	.word sub_cmd_track_speed		; $F5
 	.word sub_cmd_transpose			; $F6
@@ -1775,7 +1775,7 @@ sub_cmd_end_seg:
 ; -----------------------------------------------------------------------------
 
 ; Not used
-sub_cmd_start_loop:
+sub_cmd_f2:
 	; Disabled
 
 	jmp sub_get_next_track_byte
@@ -1783,7 +1783,7 @@ sub_cmd_start_loop:
 ; -----------------------------------------------------------------------------
 
 ; Not used
-sub_cmd_end_loop:
+sub_cmd_f3:
 	; Disabled
 
 	jmp sub_get_next_track_byte

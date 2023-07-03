@@ -44,6 +44,7 @@ tbl_pitches:
 	.word $03F8 ; $15	A1
 	.word $03BF	; $16	A#1
 	.word $0389	; $17	B1
+	
 	.word $0356	; $18	C2
 	.word $0326	; $19	C#2
 	.word $02F9 ; $1A	D2

@@ -152,12 +152,12 @@ end
 --
 
 
-map = {}
+local map = {}
 Output = {}
 
 print("Converting debug symbols...")
 
-line_no = 0
+local line_no = 0
 for line in io.lines("_debug.txt") do
 
     if line_no == 0 then
