@@ -1450,8 +1450,21 @@ sub_play_cur_channel:
 		lda ram_track_skip_flag
 		and tbl_chan_set_mask,X
 		beq :+
-			jsr sub_cmd_end_seg
-			ldx ram_cur_chan_ptr_offset
+			; Clear the skip mask for the channel
+			lda tbl_chan_clr_mask,X
+			and ram_track_skip_flag
+			sta ram_track_skip_flag
+
+			; Restore track data pointer
+			lda ram_track_ptr_backup_lo,X
+			sta ram_track_ptr_lo,X
+			lda ram_track_ptr_backup_hi,X
+			sta ram_track_ptr_hi,X
+
+			; Clear backup data pointer (the "return" address)
+			lda #$00
+			sta ram_track_ptr_backup_lo,X
+			sta ram_track_ptr_backup_hi,X
 		:
 		; This is the "outer" counter,
 		; which counts down from "song speed" to zero
