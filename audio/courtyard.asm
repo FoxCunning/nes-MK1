@@ -476,12 +476,6 @@ channel_01:
 	.byte $F1	; RETURN
 	; Pattern duration: 64.
 
-	@pattern_05:
-	.byte $C0	; Duration = 64
-	.byte $01	; HOLD
-	.byte $F1	; RETURN
-	; Pattern duration: 64.
-
 ; -----------------------------------------------------------------------------
 ;						TRIANGLE WAVE CHANNEL
 ; -----------------------------------------------------------------------------
@@ -641,23 +635,6 @@ channel_02:
 	.byte $F1	; RETURN
 	; Pattern duration: 64.
 
-	@pattern_03:
-	.byte $C0	; Duration = 64
-	.byte $01	; HOLD
-	.byte $F1	; RETURN
-	; Pattern duration: 64.
-
-	@pattern_04:
-	.byte $C0	; Duration = 64
-	.byte $01	; HOLD
-	.byte $F1	; RETURN
-	; Pattern duration: 64.
-
-	@pattern_05:
-	.byte $C0	; Duration = 64
-	.byte $01	; HOLD
-	.byte $F1	; RETURN
-	; Pattern duration: 64.
 
 ; -----------------------------------------------------------------------------
 ;						        NOISE CHANNEL
@@ -836,7 +813,7 @@ channel_03:
 
 	@pattern_01:
 	.byte $83	; Duration = 3
-	.byte $01	; E-#
+	.byte $01	; HOLD
 	.byte $F8, $0B	; Volume Envelope = "Bongo"
 	.byte $FB, $07	; Arpeggio = "Bongo"
 	.byte $81	; Duration = 1
@@ -1039,23 +1016,5 @@ channel_03:
 	.byte $FB, $03	; Arpeggio = "Snare Noise Enhance"
 	.byte $08	; 7-#
 	.byte $08	; 7-#
-	.byte $F1	; RETURN
-	; Pattern duration: 64.
-
-	@pattern_03:
-	.byte $C0	; Duration = 64
-	.byte $01	; E-#
-	.byte $F1	; RETURN
-	; Pattern duration: 64.
-
-	@pattern_04:
-	.byte $C0	; Duration = 64
-	.byte $01	; E-#
-	.byte $F1	; RETURN
-	; Pattern duration: 64.
-
-	@pattern_05:
-	.byte $C0	; Duration = 64
-	.byte $01	; E-#
 	.byte $F1	; RETURN
 	; Pattern duration: 64.
