@@ -1465,6 +1465,9 @@ sub_play_cur_channel:
 			lda #$00
 			sta ram_track_ptr_backup_lo,X
 			sta ram_track_ptr_backup_hi,X
+
+			; Force reading next track data
+			beq @force_next_read
 		:
 		; This is the "outer" counter,
 		; which counts down from "song speed" to zero
@@ -1474,6 +1477,7 @@ sub_play_cur_channel:
 			lda ram_note_ticks_left,X
 			bne :+
 
+				@force_next_read:
 				; Current note just finished playing, get the next
 				jsr sub_get_next_track_byte
 				ldx ram_cur_chan_ptr_offset
