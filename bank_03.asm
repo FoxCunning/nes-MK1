@@ -1402,12 +1402,16 @@ sub_init_new_track:
 		:
 		lda ram_cur_apu_channel
 		and #$0F
-		tay
-		; Y = APU channel (0-4)
+		tay		; Y = APU channel (0-4)
+		
 		lda #$00
 		sta ram_track_speed_counter,X
 		sta ram_note_ticks_left,X
+		
 		ldx ram_cur_channel_offset
+
+		sta ram_delayed_cut_counter,X
+		sta ram_note_delay_counter,X
 
 		lda #$FF
 		sta ram_vol_env_idx,X
@@ -1491,16 +1495,18 @@ sub_play_cur_channel:
 			:
 			dec ram_note_ticks_left,X
 
+			; Set Y to offset for track speed byte
 			ldy ram_cur_apu_channel
 			cpy #$05
 			bmi :+
 
+				; Set offset for SFX speed counters
 				ldy #$80
-				jmp @AC84
+				jmp @reload_counter
 
 			:
 			ldy #$00
-			@AC84:
+			@reload_counter:
 			; Reload the counter for the next event/tick
 			lda ram_track_speed,Y
 			sta ram_track_speed_counter,X
@@ -1508,6 +1514,16 @@ sub_play_cur_channel:
 		@decrease_speed_counter:
 		; If the speed timer has not expired, just decrease it
 		dec ram_track_speed_counter,X	; X = current channel POINTER index
+
+		; Check if we need to trigger a delayed cut
+		ldx ram_cur_channel_offset
+		lda ram_delayed_cut_counter,X
+		beq @skip_playing_channel
+
+			lda #$00
+			dcp ram_delayed_cut_counter,X
+			bne @skip_playing_channel
+				jsr sub_stop_envelopes
 
 	@skip_playing_channel:
 	rts
@@ -1757,7 +1773,7 @@ tbl_track_cmd_ptrs:
 	.word sub_cmd_track_jump		; $F4
 	.word sub_cmd_track_speed		; $F5
 	.word sub_cmd_transpose			; $F6
-	.word sub_cmd_skip_segment		; $F7	WIP
+	.word sub_cmd_skip_segment		; $F7
 	.word sub_cmd_set_vol_env		; $F8
 	.word sub_cmd_set_duty_env		; $F9
 	.word sub_cmd_set_pitch_env		; $FA
@@ -1837,9 +1853,26 @@ sub_cmd_note_delay:
 
 ; Stops playing the next note after the given amount of frames
 sub_cmd_delayed_cut:
-	; TODO
+	; Next byte = frame count
+	ldx ram_cur_chan_ptr_offset
+
+	; Prepare pointer to track data
+	lda ram_track_ptr_lo,X
+	sta zp_ptr2_lo
+	lda ram_track_ptr_hi,X
+	sta zp_ptr2_hi
+	; Read next byte
+	ldy #$00
+	lda (zp_ptr2_lo),Y
+	
+	ldx ram_cur_channel_offset
+	adc #$01
+	sta ram_delayed_cut_counter,X
+
+	; All done, process next byte
 	jsr sub_advance_track_ptr
 	jmp sub_get_next_track_byte
+	
 
 ; -----------------------------------------------------------------------------
 
@@ -2031,6 +2064,8 @@ sub_cmd_stop_playing:
 	sta ram_note_period_hi,X
 	sta ram_note_period_hi,Y
 ; ----------------
+; Immediately stops the pitch/volume/duty envelopes for the current channel,
+; effectively muting it
 sub_stop_envelopes:
 	ldy ram_cur_channel_offset
 	lda ram_cur_apu_channel
@@ -2423,7 +2458,8 @@ sub_next_duty_envelope:
 
 ; -----------------------------------------------------------------------------
 
-; Moves to the next entry in a duty envelope table and reads its duration
+; Updates the pitch envelope current value's duration and, if needed, moves
+; the pointer to the next entry the envelope's table
 sub_next_pitch_envelope:
 	lda ram_cur_apu_channel
 	and #$0F
@@ -2452,38 +2488,44 @@ sub_next_pitch_envelope:
 				sta ram_pitch_env_ptr_hi,X
 				sta zp_ptr2_hi
 
-				; Read next entry's duration
+				; Read new entry's duration
 				ldx ram_cur_channel_offset
 				ldy #$00
 				lda (zp_ptr2_lo),Y
 				sta ram_cur_pitch_env_duration,X
-				cmp #$FF
-				bne @next_pitch_env
+				cmp #$FF	; If it's not the special termination marker, we're done
+				bne @skip_pitch_env
 
 					; Duration byte = $FF (end of data), read last byte
 					ldx ram_cur_chan_ptr_offset
-					ldy #$01
+					iny	;ldy #$01
 					lda (zp_ptr2_lo),Y
 					asl A
-					bpl @B105
+					bmi :+
+						; A zero (or positive) value signals the end of the envelope
+						lda #$FF
+						ldx ram_cur_channel_offset
+						sta ram_pitch_env_idx,X
+						rts
+					:
+					; A negative value indicates a loop offset
+					clc
+					adc ram_pitch_env_ptr_lo,X
+					sta ram_pitch_env_ptr_lo,X
+					sta zp_ptr2_lo
+					bcs :+
+						dec ram_pitch_env_ptr_hi,X
+					:
+					lda ram_pitch_env_ptr_hi,X
+					sta zp_ptr2_hi
 
-						clc
-						adc ram_pitch_env_ptr_lo,X
-						sta ram_pitch_env_ptr_lo,X
-						sta zp_ptr2_lo
-						bcs :+
-
-							dec ram_pitch_env_ptr_hi,X
-						:
-						lda ram_pitch_env_ptr_hi,X
-						sta zp_ptr2_hi
-
-					@B105:
+					; After moving the pointer back to the loop point,
+					; read the byte there and store it as the new duration
 					ldx ram_cur_channel_offset
-					ldy #$00
+					dey ;ldy #$00
 					lda (zp_ptr2_lo),Y
 					sta ram_cur_pitch_env_duration,X
-					jmp @next_pitch_env
+					; jmp @next_pitch_env
 
 			@pitch_env_still_running:
 			dec ram_cur_pitch_env_duration,X
@@ -2494,8 +2536,7 @@ sub_next_pitch_envelope:
 
 ; Applies envelopes, notes and effects to all channels
 sub_sound_output:
-	; Why process them one by one?
-	; Just remove all RTS and there is no need for JSR
+	; TODO Just remove all RTS and there is no need for JSR
 	jsr sub_sq0_output
 	jsr sub_sq1_output
 	jsr sub_trg_output

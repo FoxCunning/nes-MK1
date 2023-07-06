@@ -423,7 +423,12 @@ ram_cur_note_idx = $076C    ; Size=4
 ; APU channel being currently processed: $00-$04 for music, $10-$14 for sfx
 ; Music/SFX speed value (interval in frames between events)
 ram_track_speed = $770  ;
-
+; When this counter reaches zero, the current note is prematurely cut
+; (i.e. all envelopes stop, note index becomes zero)
+ram_delayed_cut_counter = $0774 ;
+; Starts envelopes for the note "cached" in the delayed note index byte
+; when this counter reaches zero
+ram_note_delay_counter = $0778  ;
 ; ----------------
 
 ; Pointer to the track data for each channel (SFX 0)
