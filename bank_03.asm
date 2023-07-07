@@ -2345,8 +2345,7 @@ sub_next_volume_envelope:
 	ldx ram_cur_channel_offset
 
 	lda ram_cur_vol_env_duration,X
-	tay						; This is not needed,
-	cpy #$FF				; why not just do a cmp?
+	cmp #$FF
 	beq @skip_volume_env	; Duration = $FF disables the envelope entirely
 
 		ldx ram_cur_channel_offset	; Why? It's already in X
@@ -2373,31 +2372,30 @@ sub_next_volume_envelope:
 			cpy #$FF
 			bne @next_volume_env
 
-			; Found $FF at end of envelope data
-			ldx ram_cur_chan_ptr_offset
-			ldy #$01	; Read next byte (which is the last)
-			lda (zp_ptr2_lo),Y
-			;and #$FE	; Make the number even (a x2 multiplier would have been better)
-			asl A
-			bpl @B022
+				; Found $FF at end of envelope data
+				ldx ram_cur_chan_ptr_offset
+				iny ;ldy #$01	; Read next byte (which is the last)
+				lda (zp_ptr2_lo),Y
+				asl A	; Since each entry is two bytes long, the offset is multiplied x2
+				bpl @read_new_vol_env_duration
 
-				; A negative value will move the pointer back
-				clc
-				adc ram_vol_env_ptr_lo,X
-				sta ram_vol_env_ptr_lo,X
-				sta zp_ptr2_lo
-				bcs @B01D
-					dec ram_vol_env_ptr_hi,X
-				@B01D:
-				lda ram_vol_env_ptr_hi,X
-				sta zp_ptr2_hi
+					; A negative value will move the pointer back
+					clc
+					adc ram_vol_env_ptr_lo,X
+					sta ram_vol_env_ptr_lo,X
+					sta zp_ptr2_lo
+					bcs :+
+						dec ram_vol_env_ptr_hi,X
+					:
+					lda ram_vol_env_ptr_hi,X
+					sta zp_ptr2_hi
 
-			@B022:
-			ldx ram_cur_channel_offset
-			ldy #$00
-			lda (zp_ptr2_lo),Y
-			sta ram_cur_vol_env_duration,X
-			jmp @next_volume_env
+				@read_new_vol_env_duration:
+				ldx ram_cur_channel_offset
+				ldy #$00
+				lda (zp_ptr2_lo),Y	; If we didn't change the pointer, this will re-read $FF
+				sta ram_cur_vol_env_duration,X
+				rts
 
 		@vol_env_still_running:
 		; Current value still running, or we just started a new one:
