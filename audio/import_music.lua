@@ -385,10 +385,10 @@ local function convert_fx(text)
     elseif fx == 'T' then
 
         cmd = CMD_TRANSPOSE
-        p1 = tonumber(text:sub(2, 3), 16)
-        p2 = (p1 & 0x0F)
+        p1 = tonumber(text:sub(2, 3), 16)   -- Frame delay
+        p2 = (p1 & 0x0F)                    -- Semitones
 
-        if (p1 & 0x80) ~= 0 then
+        if (p1 & 0x08) ~= 0 then
             -- Negative transpoose
             p2 = 0x100 - p2
         end

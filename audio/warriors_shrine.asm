@@ -157,13 +157,13 @@ mus29_channel_00:
 	.byte $32	; D-4
 	.byte $F6, $04, $01	; TRANSPOSE = 4, 1
 	.byte $32	; D-4
-	.byte $F6, $03, $FE	; TRANSPOSE = 3, 254
+	.byte $F6, $03, $FE	; TRANSPOSE = 3, -2
 	.byte $32	; D-4
-	.byte $F6, $03, $FF	; TRANSPOSE = 3, 255
+	.byte $F6, $03, $FF	; TRANSPOSE = 3, -1
 	.byte $2E	; A#3
-	.byte $F6, $03, $FE	; TRANSPOSE = 3, 254
+	.byte $F6, $03, $FE	; TRANSPOSE = 3, -2
 	.byte $2B	; G-3
-	.byte $F6, $03, $FF	; TRANSPOSE = 3, 255
+	.byte $F6, $03, $FF	; TRANSPOSE = 3, -1
 	.byte $27	; D#3
 	.byte $F1	; RETURN
 	; Pattern duration: 64.
@@ -471,22 +471,22 @@ mus29_channel_01:
 	.byte $32	; D-4
 	.byte $F6, $04, $01	; TRANSPOSE = 4, 1
 	.byte $32	; D-4
-	.byte $F6, $03, $FE	; TRANSPOSE = 3, 254
+	.byte $F6, $03, $FE	; TRANSPOSE = 3, -2
 	.byte $32	; D-4
 	.byte $F1	; RETURN
 	; Pattern duration: 64.
 
 	@pattern_04:
-	.byte $F6, $03, $FF	; TRANSPOSE = 3, 255
+	.byte $F6, $03, $FF	; TRANSPOSE = 3, -1
 	.byte $F8, $0A	; Volume Envelope = "Pluck (Quiet)"
 	.byte $F9, $02	; Duty Envelope = "Pluck (Quiet)"
 	.byte $FA, $FF	; Pitch Envelope = "Pluck (Quiet)"
 	.byte $FB, $FF	; Arpeggio = "Pluck (Quiet)"
 	.byte $81	; Duration = 1
 	.byte $2E	; A#3
-	.byte $F6, $03, $FE	; TRANSPOSE = 3, 254
+	.byte $F6, $03, $FE	; TRANSPOSE = 3, -2
 	.byte $2B	; G-3
-	.byte $F6, $03, $FF	; TRANSPOSE = 3, 255
+	.byte $F6, $03, $FF	; TRANSPOSE = 3, -1
 	.byte $27	; D#3
 	.byte $26	; D-3
 	.byte $27	; D#3

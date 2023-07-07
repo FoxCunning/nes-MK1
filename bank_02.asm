@@ -141,10 +141,10 @@ tbl_track_ptrs:
 	.word track_silence		; $0A
 	.word track_silence		; $0B
 	.word sfx_select		; $0C	"Siren" sound (selection confirmed)
-	.word sfx_9736			; $0D	A weird three-note jingle
-	.word sfx_9750			; $0E	Pause
-	.word sfx_9736			; $0F	Same as $0D, but here it's used after choosing to continue
-	.word sfx_9771			; $10	Countdown for continue screen
+	.word sfx_happy_jingle			; $0D	A weird three-note jingle
+	.word sfx_pause			; $0E	Pause
+	.word sfx_happy_jingle			; $0F	Same as $0D, but here it's used after choosing to continue
+	.word sfx_countdown			; $10	Countdown for continue screen
 	.word track_silence		; $11
 	.word track_silence		; $12
 	.word track_silence		; $13
@@ -243,11 +243,11 @@ mus_player_select:
 
 ; Square 0
 rom_88E5:
-	.byte $F5, $02, $F6, $0B, $F9, $FF, $FA, $FF
+	.byte $F5, $02, $F9, $FF, $FA, $FF
 	.byte $F8, $09
 	.byte $FB, $FF
 	@rom_88EF:
-	.byte $F6, $0B, $F9, $FF, $FA, $FF, $F8, $09
+	.byte $F9, $FF, $FA, $FF, $F8, $09
 	.byte $88, $21, $2D, $2B, $2D, $00, $2D, $2B
 	.byte $2D, $21, $2D, $2B, $2D, $00, $2D, $2B
 	.byte $2D
@@ -258,7 +258,7 @@ rom_88E5:
 
 ; Square 1
 rom_890C:
-	.byte $F6, $0B, $F9, $FF, $FA, $FF, $F8, $09
+	.byte $F9, $FF, $FA, $FF, $F8, $09
 	.byte $FB, $FF
 	@rom_8914:
 	.byte $F9, $FF, $FA, $FF, $F8, $09, $88, $2D
@@ -272,7 +272,7 @@ rom_890C:
 
 ; Triangle
 rom_8933:
-	.byte $F6, $0A, $F9, $00, $FA, $FF, $F8, $FF
+	.byte $F9, $00, $FA, $FF, $F8, $FF
 	.byte $FB, $FF
 	.byte $88, $21, $2D, $2B, $2D, $00, $2D, $2B
 	.byte $2D
@@ -283,7 +283,7 @@ rom_8933:
 
 ; Noise
 rom_8948:
-	.byte $F6, $00, $F9, $FF, $FA, $FF, $F8, $03
+	.byte $F9, $FF, $FA, $FF, $F8, $03
 	.byte $FB, $FF
 	.byte $88, $04, $04, $04, $04, $04, $04, $04
 	.byte $84, $04, $04
@@ -337,7 +337,7 @@ mus_8A1A:
 
 ; Square 1
 rom_8A37:
-	.byte $F6, $01, $F9, $09, $FA, $FF, $F8, $1D
+	.byte $F9, $09, $FA, $FF, $F8, $1D
 	.byte $FB, $FF
 	.byte $81, $21, $82, $26, $00, $FF
 
@@ -365,25 +365,25 @@ sfx_select:
 
 ; Square 0
 rom_8A5E:
-	.byte $F5, $02, $F6, $0F, $F9, $07, $FA, $00
+	.byte $F5, $02, $F9, $07, $FA, $00
 	.byte $FB, $FF
 	.byte $F8, $02, $8C, $2B, $B0, $2D, $FF
 
 ; Square 1
 rom_8A6D:
-	.byte $F6, $0F, $F9, $12, $FA, $00, $F8, $00
+	.byte $F9, $12, $FA, $00, $F8, $00
 	.byte $FB, $FF
 	.byte $8C, $2B, $B0, $2D, $FF
 
 ; Triangle
 rom_8A7A:
-	.byte $F6, $0F, $F9, $00, $FA, $00, $F8, $00
+	.byte $F9, $00, $FA, $00, $F8, $00
 	.byte $FB, $FF
 	.byte $8C, $29, $B0, $28, $FF
 
 ; Noise
 rom_8A87:
-	.byte $F6, $00, $F9, $00, $FA, $00, $F8, $00
+	.byte $F9, $00, $FA, $00, $F8, $00
 	.byte $FB, $FF
 	.byte $83, $24, $24, $24, $24, $86, $24, $24
 	.byte $24, $24, $24, $24, $24, $FF
@@ -505,7 +505,7 @@ mus_throne_room:
 
 ; Square 1
 rom_96C1:
-	.byte $F5, $02, $F6, $01, $F8, $09, $F9, $00
+	.byte $F5, $02, $F8, $09, $F9, $00
 	.byte $FA, $FF, $FB, $FF
 	.byte $8C, $09, $00, $FF
 
@@ -520,9 +520,9 @@ sfx_bounce:
 
 ; Noise
 rom_96D2:
-	.byte $F5, $03, $F6, $01, $F8, $03, $F9, $FF
+	.byte $F5, $03, $F8, $03, $F9, $FF
 	.byte $FA, $05, $FB, $FF
-	.byte $A0, $2D, $00, $FF
+	.byte $84, $0D, $FF
 
 ; ----------------
 
@@ -535,9 +535,9 @@ sfx_projectile:
 
 ; Noise
 rom_96E3:
-	.byte $F5, $03, $F6, $01, $F8, $03, $F9, $FF
+	.byte $F5, $03, $F8, $03, $F9, $FF
 	.byte $FA, $FF, $FB, $FF
-	.byte $F8, $01, $A0, $2F, $FF
+	.byte $82, $0F, $06, $FF
 
 ; ----------------
 
@@ -550,7 +550,7 @@ sfx_kick:
 
 ; Unused SFX Noise channel
 rom_96F4:
-	.byte $F5, $03, $F6, $01, $F9, $00, $FA, $FF
+	.byte $F5, $03, $F9, $00, $FA, $FF
 	.byte $FB, $FF
 	.byte $F8, $00, $B2, $17, $FF
 
@@ -566,9 +566,9 @@ sfx_9701_unused:
 
 ; Noise
 rom_9705:
-	.byte $F5, $03, $F6, $01, $F9, $00, $F8, $03
+	.byte $F5, $03, $F9, $00, $F8, $03
 	.byte $FA, $FF, $FB, $FF
-	.byte $F8, $00, $8C, $29, $FF
+	.byte $84, $09, $FF
 
 ; ----------------
 
@@ -581,18 +581,18 @@ sfx_hit:
 
 ; Square 0
 rom_9716:
-	.byte $F5, $04, $F6, $00, $F8, $09, $F9, $00
+	.byte $F5, $04, $F8, $09, $F9, $00
 	.byte $FA, $FF, $FB, $FF
 	.byte $F8, $00, $83, $2D, $30, $95, $39, $FF
 ; Square 1
 rom_9726:
-	.byte $F6, $00, $F9, $00, $FA, $00, $F8, $00
+	.byte $F9, $00, $FA, $00, $F8, $00
 	.byte $FB, $FF
 	.byte $81, $00, $83, $2D, $30, $95, $39, $FF
 
 ; ----------------
 
-sfx_9736:
+sfx_happy_jingle:
 	.byte $80
 	.word rom_9716
 	.byte $81
@@ -603,14 +603,15 @@ sfx_9736:
 
 ; Square 1
 rom_973D:
-	.byte $F5, $01, $F6, $11, $F8, $09, $F9, $00
+	.byte $F5, $01, $F8, $09, $F9, $00
 	.byte $FA, $FF, $FB, $FF
 	.byte $F8, $00, $83, $28, $00, $24, $00, $28
 	.byte $00, $24, $00, $FF
 
 ; ----------------
 
-sfx_9750:
+; Pause "jingle"
+sfx_pause:
 	.byte $81
 	.word rom_973D
 	.byte $FF
@@ -619,18 +620,19 @@ sfx_9750:
 
 ; Square 0
 rom_9754:
-	.byte $F5, $04, $F6, $00, $F8, $09, $F9, $00
+	.byte $F5, $04, $F8, $09, $F9, $00
 	.byte $FA, $FF, $FB, $FF
 	.byte $F8, $00, $81, $24, $89, $21, $FF
 ; Square 1
 rom_9763:
-	.byte $F6, $00, $F9, $00, $FA, $FF, $F8, $00
+	.byte $F9, $00, $FA, $FF, $F8, $00
 	.byte $FB, $FF
 	.byte $81, $00, $24, $89, $21, $FF
 
 ; ----------------
 
-sfx_9771:
+; Countdown sound used in continue screen
+sfx_countdown:
 	.byte $80
 	.word rom_9754
 	.byte $81
@@ -641,7 +643,7 @@ sfx_9771:
 
 ; Square 1
 rom_9778:
-	.byte $F5, $04, $F6, $00, $F8, $0E, $F9, $09, $FA, $FF
+	.byte $F5, $04, $F8, $0E, $F9, $09, $FA, $FF
 	.byte $FB, $FF
 	.byte $81, $30, $81, $3A, $00, $FF
 
@@ -657,7 +659,7 @@ sfx_bleep:
 
 ; Potentially unused SFX noise channel
 rom_9789:
-	.byte $F5, $03, $F6, $01, $F9, $00, $FA, $00
+	.byte $F5, $03, $F9, $00, $FA, $00
 	.byte $FB, $FF
 	.byte $F8, $00, $84, $2F, $FF
 
@@ -673,13 +675,13 @@ sfx_9796_unused:
 
 ; Noise
 rom_979A:
-	.byte $F5, $03, $F6, $01, $F8, $04, $F9, $00
+	.byte $F5, $03, $F8, $04, $F9, $00
 	.byte $FA, $FF, $FB, $FF
 	.byte $F8, $00, $85, $17, $FF
 
 ; ----------------
 
-
+; This glitchy sound sometimes plays just before a match begins
 sfx_97A7:
 	.byte $83
 	.word rom_979A

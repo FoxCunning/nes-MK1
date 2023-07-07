@@ -1475,7 +1475,21 @@ sub_play_cur_channel:
 		; Force reading next track data
 		beq @force_next_read
 	:
-
+	; Check for delayed transpose
+	ldx ram_cur_channel_offset
+	lda ram_transpose_counter,X
+	beq :+
+		; Counter not zero: decrease
+		lda #$00
+		dcp ram_transpose_counter,X
+		bne :+
+			; Zero value reached: transpose note
+			lda ram_note_transpose_value,X
+			clc
+			adc ram_cur_note_idx,X
+			ldx ram_cur_apu_channel
+			jsr sub_apply_note_pitch
+	:
 	; Check for pending delayed notes
 	ldx ram_cur_channel_offset
 	lda ram_note_delay_counter,X
@@ -1495,6 +1509,8 @@ sub_play_cur_channel:
 	lda ram_track_speed_counter,X
 	bne @decrease_speed_counter	; Skip processing if are still waiting
 		
+		; This is the "inner" counter, used to check when it's
+		; time to read the next note or command
 		lda ram_note_ticks_left,X
 		bne :+
 
@@ -1732,14 +1748,15 @@ sub_apply_note_pitch:
 	cpx #$04
 	beq @dmc_skip_save_note
 
-		; Save note index for Square and Triangle channels
+		; Save note index
 		ldx ram_cur_channel_offset
 		sta ram_cur_note_idx,X
 
 	@dmc_skip_save_note:
 	ldx ram_cur_channel_offset
-	clc
-	adc ram_note_transpose_value,X
+	; This is not how we want to apply the transpose value
+	;clc
+	;adc ram_note_transpose_value,X
 	asl A
 	tay
 	ldx ram_cur_chan_ptr_offset
@@ -1791,8 +1808,8 @@ sub_process_track_command:
 tbl_track_cmd_ptrs:
 	.word sub_cmd_call_seg			; $F0
 	.word sub_cmd_end_seg			; $F1
-	.word sub_cmd_note_delay		; $F2	TODO
-	.word sub_cmd_delayed_cut		; $F3	TODO
+	.word sub_cmd_note_delay		; $F2
+	.word sub_cmd_delayed_cut		; $F3
 	.word sub_cmd_track_jump		; $F4
 	.word sub_cmd_track_speed		; $F5
 	.word sub_cmd_transpose			; $F6
@@ -1965,27 +1982,42 @@ sub_cmd_track_speed:
 
 ; -----------------------------------------------------------------------------
 
+; Next two bytes are semitones to transpose and frame delay
 sub_cmd_transpose:
 	lda ram_cur_apu_channel
 	and #$0F
-	tax
-	cpx #$03
+	;tax
+	;cpx #$03	; Skip the effect for channels that can't use it
+	cmp #$03
 	bpl :+
-
+		; Prepare pointer in zero page
 		ldx ram_cur_chan_ptr_offset
 		lda ram_track_ptr_lo,X
 		sta zp_ptr2_lo
 		lda ram_track_ptr_hi,X
 		sta zp_ptr2_hi
+		; Read frame delay
 		ldy #$00
 		lda (zp_ptr2_lo),Y
 		ldx ram_cur_channel_offset
+		sta ram_transpose_counter,X
+		; Read semitones
+		iny
+		lda (zp_ptr2_lo),Y
 		sta ram_note_transpose_value,X
-:
-	jsr sub_advance_track_ptr
-	jmp sub_get_next_track_byte	; Why? This line could just be removed
+	:
+	; Advance pointer two bytes
+	ldx ram_cur_chan_ptr_offset
+	lda ram_track_ptr_lo,X
+	clc
+	adc #$02
+	sta ram_track_ptr_lo,X
+	bcc :+
+		inc ram_track_ptr_hi,X
+	:
+	;jmp sub_get_next_track_byte	No need to jump: it's right there!
 
-; -----------------------------------------------------------------------------
+; ----------------
 
 ; Reads (and processes) the next value from track data
 sub_get_next_track_byte:

@@ -429,6 +429,8 @@ ram_delayed_cut_counter = $0774 ;
 ; Starts envelopes for the note "cached" in the delayed note index byte
 ; when this counter reaches zero
 ram_note_delay_counter = $0778  ;
+; Frame counter before current note is transposed
+ram_transpose_counter = $0771   ;
 ; Index of the note that is being delayed
 ram_delayed_note_idx = $077C    ;
 ; ----------------
