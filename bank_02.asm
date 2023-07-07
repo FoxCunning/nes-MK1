@@ -477,24 +477,8 @@ mus_palace_gates:
 
 ; -----------------------------------------------------------------------------
 
-; Silent channel
-rom_94C3:
-	.byte $FF
-
-; ----------------
-
 mus_warrior_shrine:
-	.byte $00
-	.word rom_94C3
-	.byte $01
-	.word rom_94C3
-	.byte $02
-	.word rom_94C3
-	.byte $03
-	.word rom_94C3
-	.byte $04
-	.word rom_94C3
-	.byte $FF
+.include "audio/warriors_shrine.asm"
 
 ; -----------------------------------------------------------------------------
 

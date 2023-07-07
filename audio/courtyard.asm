@@ -1,18 +1,18 @@
 	.byte $00
-	.word channel_00
+	.word mus27_channel_00
 	.byte $01
-	.word channel_01
+	.word mus27_channel_01
 	.byte $02
-	.word channel_02
+	.word mus27_channel_02
 	.byte $03
-	.word channel_03
+	.word mus27_channel_03
 	.byte $FF
 
 ; -----------------------------------------------------------------------------
 ;						SQUARE WAVE 0 CHANNEL
 ; -----------------------------------------------------------------------------
 
-channel_00:
+mus27_channel_00:
 	.byte $F5, $07	; Speed = 7
 	@order_00:
 	.byte $F0	; CALL
@@ -297,7 +297,7 @@ channel_00:
 ;						SQUARE WAVE 1 CHANNEL
 ; -----------------------------------------------------------------------------
 
-channel_01:
+mus27_channel_01:
 	.byte $F5, $07	; Speed = 7
 	@order_01:
 	.byte $F0	; CALL
@@ -480,7 +480,7 @@ channel_01:
 ;						TRIANGLE WAVE CHANNEL
 ; -----------------------------------------------------------------------------
 
-channel_02:
+mus27_channel_02:
 	.byte $F5, $07	; Speed = 7
 	@order_02:
 	.byte $F0	; CALL
@@ -640,7 +640,7 @@ channel_02:
 ;						        NOISE CHANNEL
 ; -----------------------------------------------------------------------------
 
-channel_03:
+mus27_channel_03:
 	.byte $F5, $07	; Speed = 7
 	@order_03:
 	.byte $F0	; CALL
