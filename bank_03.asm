@@ -1448,82 +1448,96 @@ sub_play_cur_channel:
 
 	lda ram_track_ptr_lo,X
 	ora ram_track_ptr_hi,X
+	; Don't do anything if the data pointer is zero
+	bne :+
+		rts
+	:
+	; Check for a pending "skip" event on this channel
+	lda ram_track_skip_flag
+	and tbl_chan_set_mask,X
+	beq :+
+		; Clear the skip mask for the channel
+		lda tbl_chan_clr_mask,X
+		and ram_track_skip_flag
+		sta ram_track_skip_flag
+
+		; Restore track data pointer
+		lda ram_track_ptr_backup_lo,X
+		sta ram_track_ptr_lo,X
+		lda ram_track_ptr_backup_hi,X
+		sta ram_track_ptr_hi,X
+
+		; Clear backup data pointer (the "return" address)
+		lda #$00
+		sta ram_track_ptr_backup_lo,X
+		sta ram_track_ptr_backup_hi,X
+
+		; Force reading next track data
+		beq @force_next_read
+	:
+
+	; Check for pending delayed notes
+	ldx ram_cur_channel_offset
+	lda ram_note_delay_counter,X
+	beq :+
+		lda #$00
+		dcp ram_note_delay_counter,X
+		bne :+
+			; Counter reached zero: trigger delayed note
+			lda ram_delayed_note_idx,X
+			jsr sub_apply_note_pitch
+			jsr sub_start_all_envelopes
+	:
+	ldx ram_cur_chan_ptr_offset
+
+	; This is the "outer" counter, which constantly
+	; counts down from "song speed value" to zero
+	lda ram_track_speed_counter,X
+	bne @decrease_speed_counter	; Skip processing if are still waiting
+		
+		lda ram_note_ticks_left,X
+		bne :+
+
+			; Current note just finished playing, get the next
+			@force_next_read:
+			jsr sub_get_next_track_byte
+			ldx ram_cur_chan_ptr_offset
+			ldy ram_cur_channel_offset
+			lda ram_cur_note_duration,Y
+			sta ram_note_ticks_left,X
+			ldx ram_cur_chan_ptr_offset
+		:
+		dec ram_note_ticks_left,X
+
+		; Set Y to offset for track speed byte
+		ldy ram_cur_apu_channel
+		cpy #$05
+		bmi :+
+
+			; Set offset for SFX speed counters
+			ldy #$80
+			jmp @reload_counter
+
+		:
+		ldy #$00
+		@reload_counter:
+		; Reload the counter for the next event/tick
+		lda ram_track_speed,Y
+		sta ram_track_speed_counter,X
+
+	@decrease_speed_counter:
+	; If the speed timer has not expired, just decrease it
+	dec ram_track_speed_counter,X	; X = current channel POINTER index
+
+	; Check if we need to trigger a delayed cut
+	ldx ram_cur_channel_offset
+	lda ram_delayed_cut_counter,X
 	beq @skip_playing_channel
 
-		; Check for a pending "skip" event on this channel
-		lda ram_track_skip_flag
-		and tbl_chan_set_mask,X
-		beq :+
-			; Clear the skip mask for the channel
-			lda tbl_chan_clr_mask,X
-			and ram_track_skip_flag
-			sta ram_track_skip_flag
-
-			; Restore track data pointer
-			lda ram_track_ptr_backup_lo,X
-			sta ram_track_ptr_lo,X
-			lda ram_track_ptr_backup_hi,X
-			sta ram_track_ptr_hi,X
-
-			; Clear backup data pointer (the "return" address)
-			lda #$00
-			sta ram_track_ptr_backup_lo,X
-			sta ram_track_ptr_backup_hi,X
-
-			; Force reading next track data
-			beq @force_next_read
-		:
-		; This is the "outer" counter,
-		; which counts down from "song speed" to zero
-		lda ram_track_speed_counter,X
-		bne @decrease_speed_counter	; Skip processing if are still waiting
-
-			lda ram_note_ticks_left,X
-			bne :+
-
-				@force_next_read:
-				; Current note just finished playing, get the next
-				jsr sub_get_next_track_byte
-				ldx ram_cur_chan_ptr_offset
-				ldy ram_cur_channel_offset
-				lda ram_cur_note_duration,Y
-				sta ram_note_ticks_left,X
-				; This will only get the arpeggio index and type flag,
-				; unless it's disabled/inactive on this channel
-				jsr sub_start_arpeggio
-				ldx ram_cur_chan_ptr_offset
-			:
-			dec ram_note_ticks_left,X
-
-			; Set Y to offset for track speed byte
-			ldy ram_cur_apu_channel
-			cpy #$05
-			bmi :+
-
-				; Set offset for SFX speed counters
-				ldy #$80
-				jmp @reload_counter
-
-			:
-			ldy #$00
-			@reload_counter:
-			; Reload the counter for the next event/tick
-			lda ram_track_speed,Y
-			sta ram_track_speed_counter,X
-
-		@decrease_speed_counter:
-		; If the speed timer has not expired, just decrease it
-		dec ram_track_speed_counter,X	; X = current channel POINTER index
-
-		; Check if we need to trigger a delayed cut
-		ldx ram_cur_channel_offset
-		lda ram_delayed_cut_counter,X
-		beq @skip_playing_channel
-
-			lda #$00
-			dcp ram_delayed_cut_counter,X
-			bne @skip_playing_channel
-				jsr sub_stop_envelopes
+		lda #$00
+		dcp ram_delayed_cut_counter,X
+		bne @skip_playing_channel
+			jmp sub_stop_envelopes	;jsr sub_stop_envelopes
 
 	@skip_playing_channel:
 	rts
@@ -1579,8 +1593,18 @@ sub_new_note_or_rest:
 		jmp sub_advance_track_ptr
 	:
 	; >1 = note
-	pha
+	sta zp_ptr2_lo	;pha	; Preserve note index
 
+	; Should we delay this note?
+	ldx ram_cur_channel_offset
+	lda ram_note_delay_counter,X
+	beq :+
+		; Delay counter is set: delay the note
+		lda zp_ptr2_lo
+		sta ram_delayed_note_idx,X
+		jmp sub_advance_track_ptr
+	:
+	; No delay counter: play the note immediately
 	lda ram_cur_apu_channel
 	and #$0F
 	tax
@@ -1592,14 +1616,12 @@ sub_new_note_or_rest:
 		lda #$80
 		sta TrgLinear_4008
 	:
-	pla	; Retrieve note index
+	lda zp_ptr2_lo	;pla	; Retrieve note index
 
 	jsr sub_apply_note_pitch
-
 	jsr sub_start_all_envelopes
 
 	jmp sub_advance_track_ptr
-	;rts
 
 ; -----------------------------------------------------------------------------
 
@@ -1699,6 +1721,7 @@ sub_apply_arpeggio_noise:
 ; in the base note pitch for the current channel
 ; Also saves the note index (except for DMC)
 ; Parameters:
+; A = note index ($09-$5F)
 ; X = APU channel index (0-4)
 ; Returns:
 ; X = ram_cur_chan_ptr_offset
@@ -1845,7 +1868,22 @@ sub_cmd_end_seg:
 
 ; Delays the next note for the given amount of frames
 sub_cmd_note_delay:
-	; TODO
+	; Next byte = frame count
+	ldx ram_cur_chan_ptr_offset
+
+	; Prepare pointer to track data
+	lda ram_track_ptr_lo,X
+	sta zp_ptr2_lo
+	lda ram_track_ptr_hi,X
+	sta zp_ptr2_hi
+	; Read next byte
+	ldy #$00
+	lda (zp_ptr2_lo),Y
+
+	ldx ram_cur_channel_offset
+	sta ram_note_delay_counter,X
+
+	; All done, process following data until the note being delayed is found
 	jsr sub_advance_track_ptr
 	jmp sub_get_next_track_byte
 
@@ -2120,9 +2158,11 @@ sub_start_all_envelopes:
 	ora #$80
 	sta ram_note_period_hi,X
 
+	; TODO Remove these, just execute them sequentially
 	jsr sub_start_volume_envelope
 	jsr sub_start_duty_envelope
 	jsr sub_start_pitch_envelope
+	jsr sub_start_arpeggio
 	rts
 
 ; -----------------------------------------------------------------------------

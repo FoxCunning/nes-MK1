@@ -429,6 +429,8 @@ ram_delayed_cut_counter = $0774 ;
 ; Starts envelopes for the note "cached" in the delayed note index byte
 ; when this counter reaches zero
 ram_note_delay_counter = $0778  ;
+; Index of the note that is being delayed
+ram_delayed_note_idx = $077C    ;
 ; ----------------
 
 ; Pointer to the track data for each channel (SFX 0)
