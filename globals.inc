@@ -214,10 +214,10 @@ ram_02C0 = $02C0    ;
 ram_02E0 = $02E0    ;
 
 ; Local copy of OAM data to be written/modified before being sent to the PPU
-ram_oam_data_copy = $0300    ;
-ram_0301 = $0301    ;
-ram_0302 = $0302    ;
-ram_0303 = $0303    ;
+ram_oam_copy_ypos = $0300   ;
+ram_oam_copy_tileid = $0301 ;
+ram_oam_copy_attr = $0302   ;
+ram_oam_copy_xpos = $0303   ;
 ram_0304 = $0304    ;
 ram_0305 = $0305    ;
 ram_0306 = $0306    ;
@@ -291,7 +291,8 @@ ram_irq_ptr_lo = $0424  ;
 ram_irq_ptr_hi = $0425  ;
 ram_0429 = $0429    ;
 ram_042A = $042A    ;
-ram_042C = $042C    ;
+; Easy to Very Hard (0-4)
+ram_difficulty_setting = $042C    ;
 ram_042D = $042D    ;
 ram_0435 = $0435    ;
 ram_0436 = $0436    ;

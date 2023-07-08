@@ -1099,7 +1099,7 @@ rom_A9AB:
 ; -----------------------------------------------------------------------------
 
 sub_rom_A9EB:
-	ldx ram_042C
+	ldx ram_difficulty_setting
 	lda zp_frame_counter
 	and rom_A9F8,X
 	beq @A9F7

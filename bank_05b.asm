@@ -11,25 +11,25 @@
 ; -----------------------------------------------------------------------------
 .export sub_state_machine_0
 
-; Called when Machine State 0 is 0
+; Called when Machine State is 0,?,?
 ; Branches depending on Machine State 1
 sub_state_machine_0:
 	lda zp_machine_state_1	; This will be the index of the pointer to use
 	jsr sub_trampoline		; The sub will use the following table of pointers
                         	; to jump to one of those locations
 ; ----------------
-	.word sub_state_machine_0_0
-	.word sub_rom_B174
-	.word sub_rom_B24F
-	.word sub_rom_B8BC
-	.word sub_rom_B6D8
-	.word sub_rom_B7FE
-	.word sub_rom_BF1E
+	.word sub_main_menu_states	; 0,0
+	.word sub_option_menu_states			; 0,1
+	.word sub_rom_B24F			; 0,2
+	.word sub_rom_B8BC			; 0,3
+	.word sub_rom_B6D8			; 0,4
+	.word sub_rom_B7FE			; 0,5
+	.word sub_rom_BF1E			; 0,6
 
 ; -----------------------------------------------------------------------------
 
-; Called when Machine State is 0,0
-sub_state_machine_0_0:
+; Called when Machine State is 0,0,?
+sub_main_menu_states:
 	lda zp_machine_state_2
 	jsr sub_trampoline    ; Same trick again
 ; ----------------
@@ -43,8 +43,8 @@ sub_state_machine_0_0:
 	.word sub_menu_screen_shake		; 0,0,7
 	.word sub_main_menu_loop		; 0,0,8
 	.word sub_menu_fade_out			; 0,0,9
-	.word sub_rom_B114		; 0,0,A
-	.word sub_rom_B13A		; 0,0,B
+	.word sub_eval_menu_choice		; 0,0,A
+	.word sub_faded_to_high_scores	; 0,0,B
 
 ; -----------------------------------------------------------------------------
 
@@ -244,7 +244,7 @@ sub_menu_fade_out:
 ; -----------------------------------------------------------------------------
 
 ; Machine state = 0,0,A
-sub_rom_B114:
+sub_eval_menu_choice:
 	lda zp_frame_counter
 	cmp zp_last_execution_frame
 	bne :+
@@ -279,7 +279,7 @@ sub_rom_B114:
 ; -----------------------------------------------------------------------------
 
 ; Machine state = 0,0,B
-sub_rom_B13A:
+sub_faded_to_high_scores:
 	jsr sub_rom_cycle_palettes
 	lda zp_palette_fade_idx
 	cmp #$09
@@ -315,7 +315,7 @@ sub_get_controller1_main_menu:
 	lda zp_plr1_selection	; This will be either 0 (left option) or 1 (right option)
 	sta zp_05
 
-	jsr sub_rom_04_810A
+	jsr sub_ctrl_to_idx
 	bmi :+
 		sta zp_plr1_selection
 		lda #$03	; Cursor bleep SFX
@@ -331,23 +331,24 @@ tbl_menu_cursor_ptrs:
 
 ; -----------------------------------------------------------------------------
 
-; Called when Machine State is 0,1
-sub_rom_B174:
+; Called when Machine State is 0,1,?
+sub_option_menu_states:
 	lda zp_machine_state_2
 	jsr sub_trampoline
 ; ----------------
-	.word sub_rom_B183
-	.word sub_menu_fade_in
-	.word sub_rom_B1B2
-	.word sub_menu_fade_out
-	.word sub_rom_B1E2
+	.word sub_init_options_menu	; 0,1,0
+	.word sub_menu_fade_in		; 0,1,1
+	.word sub_options_menu_loop	; 0,1,2
+	.word sub_menu_fade_out		; 0,1,3
+	.word sub_back_to_main		; 0,1,4
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B183:
+sub_init_options_menu:
 	lda #$01
 	sta zp_tmp_idx
 	jsr sub_setup_new_screen
+
 	; Switch to vertical mirroring
 	lda #$00
 	sta mmc3_mirroring
@@ -356,122 +357,144 @@ sub_rom_B183:
 	sta PpuControl_2000
 	sta zp_02
 	
-	cli		; Enable MMC3 interrupts
+	cli
 	jsr sub_wait_vblank
 	lda #$1E
 	sta zp_04
-	lda ram_042C
+
+	lda ram_difficulty_setting
 	sta zp_plr2_selection
-	jsr sub_rom_B223
-	ldx ram_042C
-	lda rom_B24A,X
+	jsr sub_show_option_menu_cursor
+
+	; Set the latch depending on chosen setting to "highlight" the appropriate
+	; area of the screen (by switching nametables)
+	ldx ram_difficulty_setting
+	lda tbl_option_menu_latches,X
 	sta ram_irq_latch_value
+
 	inc zp_machine_state_2
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B1B2:
+sub_options_menu_loop:
 	lda zp_frame_counter
 	cmp zp_last_execution_frame
 	bne :+
-    
+		; Only execute once per frame
 		rts
 ; ----------------
 	:
 	sta zp_last_execution_frame
+
 	jsr sub_get_controller1_options_menu
-	jsr sub_rom_B223
+	jsr sub_show_option_menu_cursor
 	lda zp_controller1_new
-	and #$D0
-	beq sub_rom_B1B2
+	and #$D0	; A, B or START
+	beq sub_options_menu_loop
 
 	lda zp_plr2_selection
 	cmp #$05
 	bcs :+
 
 		ldx zp_plr2_selection
-		stx ram_042C
-		lda rom_B24A,X
+		stx ram_difficulty_setting
+		lda tbl_option_menu_latches,X
 		sta ram_irq_latch_value
-		jmp sub_rom_B1B2
+		jmp sub_options_menu_loop
 	:
 	inc zp_machine_state_2
 	lda #$05
 	sta zp_palette_fade_idx
+
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B1E2:
+sub_back_to_main:
 	lda zp_frame_counter
 	cmp zp_last_execution_frame
 	bne :+
-
+		; Only execute once per frame
 		rts
 ; ----------------
 	:
 	sta zp_last_execution_frame
+	
+	; Switch to state 0,0,4 (main menu init)
 	lda #$0C
 	sta ram_routine_pointer_idx
 	lda #$00
 	sta PpuMask_2001
 	sta zp_machine_state_2
-	lda #$00
+	;lda #$00
 	sta zp_machine_state_1
 	lda #$04
 	sta zp_machine_state_2
+
 	rts
 
 ; -----------------------------------------------------------------------------
 
 ; Handles controller 1 input for options menu
+; Returns:
+; zp_plr2_selection = selection index (0-5)
 sub_get_controller1_options_menu:
-	lda #$01
-	asl A
-	tax
-	lda rom_04_9CAD+0,X
+	;lda #$01
+	;asl A
+	;tax
+	;lda rom_04_9CAD+0,X
+	lda rom_04_9CAD+2
 	sta zp_ptr1_lo
-	lda rom_04_9CAD+1,X
+	;lda rom_04_9CAD+1,X
+	lda rom_04_9CAD+3
 	sta zp_ptr1_hi
+
 	lda zp_controller1_new
 	sta zp_06
 	lda zp_plr2_selection
 	sta zp_05
-	jsr sub_rom_04_810A
+	jsr sub_ctrl_to_idx
 	bmi :+
-
+		; If index is valid, save new selection
 		sta zp_plr2_selection
-		lda #$03
+		lda #$03	; Cursor bleep SFX
 		sta ram_req_sfx
 	:
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B223:
+; Shows/updates the cursor sprite for the options menu
+sub_show_option_menu_cursor:
 	lda zp_plr2_selection
 	asl A
 	tax
-	lda rom_B23E+0,X
-	sta ram_oam_data_copy
-	lda rom_B23E+1,X
-	sta ram_0303
+	lda tbl_options_menu_cursor_pos+0,X
+	sta ram_oam_copy_ypos
+	lda tbl_options_menu_cursor_pos+1,X
+	sta ram_oam_copy_xpos
 	lda #$59
-	sta ram_0301
+	sta ram_oam_copy_tileid
 	lda #$01
-	sta ram_0302
+	sta ram_oam_copy_attr
 	rts
 
 ; -----------------------------------------------------------------------------
 
-rom_B23E:
-	.byte $64, $54, $74, $54, $84, $54, $94, $54
-	.byte $A4, $54, $C4, $64
+; Two bytes per entry: Y position, X position
+tbl_options_menu_cursor_pos:
+	.byte $64, $54
+	.byte $74, $54
+	.byte $84, $54
+	.byte $94, $54
+	.byte $A4, $54
+	.byte $C4, $64
 
 ; -----------------------------------------------------------------------------
 
-rom_B24A:
+; Aligned to menu options to "highlight" the selected one
+tbl_option_menu_latches:
 	.byte $60, $70, $80, $90, $A0
 
 ; -----------------------------------------------------------------------------
@@ -639,7 +662,7 @@ sub_fighter_selection_input:
 	sta zp_06
 	lda zp_05
 	sta zp_05
-	jsr sub_rom_04_810A
+	jsr sub_ctrl_to_idx
 	sta zp_05
 	ldx zp_07
 	lda zp_05
@@ -691,7 +714,7 @@ sub_rom_B36E:
 	tay
 	lda #$F8
 	@B381:
-	sta ram_oam_data_copy,Y
+	sta ram_oam_copy_ypos,Y
 	iny
 	iny
 	iny
@@ -763,15 +786,15 @@ sub_rom_B393:
 	lda zp_ptr2_lo
 	sta zp_09
 	@B3E3:
-	sta ram_0303,X
+	sta ram_oam_copy_xpos,X
 	lda rom_B452,Y
 	beq @B3FC
 
-	sta ram_0301,X
+	sta ram_oam_copy_tileid,X
 	lda zp_0F
-	sta ram_0302,X
+	sta ram_oam_copy_attr,X
 	lda zp_ptr2_hi
-	sta ram_oam_data_copy,X
+	sta ram_oam_copy_ypos,X
 	inx
 	inx
 	inx
@@ -2217,7 +2240,7 @@ sub_rom_BF29:
 	lda #$1E
 	sta zp_04
 	ldy #$80
-	lda ram_042C
+	lda ram_difficulty_setting
 	cmp #$02
 	bcs @BF55
 
