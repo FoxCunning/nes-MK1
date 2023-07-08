@@ -213,17 +213,18 @@ sub_clear_palettes:
 	rts
 
 ; -----------------------------------------------------------------------------
-.export sub_rom_04_810A
+.export sub_ctrl_to_idx
 
-sub_rom_04_810A:
+; Turns controller input data to an index offset used for navigating menus
+; Returns $FF when input is not valid (e.g. no D-Pad direction pressed)
+sub_ctrl_to_idx:
 	lda zp_06
-	and #$0F
-	bne @8113
-
+	and #$0F	; Mask D-Pad input only
+	bne :+
         lda #$FF
         rts
 ; ----------------
-	@8113:
+	:
 	tax
 	lda zp_05
 	asl A
@@ -245,11 +246,11 @@ sub_rom_04_810A:
 ; Trailing zeroes are just padding to keep 8-byte alignment for easy indexing
 tbl_chr_banks_per_screen:
 	.byte $F0, $F2, $F0, $F1, $F2, $F3, $00, $00	; $00	Main menu
-	.byte $FC, $FE, $FC, $FD, $FE, $FF, $00, $00	; $01
+	.byte $FC, $FE, $FC, $FD, $FE, $FF, $00, $00	; $01	Options menu
 	.byte $FC, $FE, $F8, $F9, $FA, $FB, $00, $00	; $02
 	.byte $FC, $FE, $F8, $F9, $FA, $FB, $00, $00	; $03
 	.byte $FC, $FE, $FC, $FD, $FE, $FF, $00, $00	; $04
-	.byte $FC, $FE, $FC, $FD, $FE, $FF, $00, $00	; $05	High scores
+	.byte $FC, $FE, $FC, $FD, $FE, $FF, $00, $00	; $05	(Fake) high scores
 	.byte $D8, $DA, $D8, $D9, $DA, $DB, $00, $00	; $06
 	.byte $FC, $FE, $F8, $F9, $FA, $FB, $00, $00	; $07
 	.byte $BC, $BE, $BC, $BD, $BE, $BF, $00, $00	; $08	Titles screen
@@ -285,7 +286,7 @@ tbl_rle_data_ptr_odd:
 	.word rom_vs_screen_2_rle
     .byte $28, $28
 
-    .word rom_high_scores_rle		; $04	Fake "top winning streaks"
+    .word rom_high_scores_rle	; $04	Fake "top winning streaks"
     .byte $20, $20
 	.word rom_high_scores_rle
     .byte $28, $28

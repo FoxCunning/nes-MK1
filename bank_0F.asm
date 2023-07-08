@@ -72,7 +72,7 @@ reset:
 	lda #$01
 	jsr sub_clear_nametable
 	lda #$03
-	sta ram_042C
+	sta ram_difficulty_setting
 	jsr sub_clear_nametable
 
 	jsr sub_hide_all_sprites
@@ -386,7 +386,7 @@ sub_hide_all_sprites:
 	lda #$F8
 	ldx #$00
 	:
-	sta ram_oam_data_copy,X
+	sta ram_oam_copy_ypos,X
 	inx
 	inx
 	inx
@@ -1249,7 +1249,7 @@ sub_rom_E792:
 ; -----------------------------------------------------------------------------
 
 sub_state_machine_start:
-	;lda a:zp_machine_state_0		; ???
+	;lda a:zp_machine_state_0
 	lda zp_machine_state_0
 	jsr sub_trampoline	; The sub will pull from the stack and jump, so this is
 						; basically a JMP with parameter from the table below
@@ -1331,7 +1331,7 @@ sub_rom_E7F5:
 			cmp #$04
 			bcc :+
 
-				; New machine state: 2,0,6
+				; New machine state: 2,6,0
 				lda #$00
 				sta a:zp_machine_state_2		; ???
 				lda #$06
@@ -1504,7 +1504,7 @@ sub_rom_E902:
 
 	@E92B:
 	dex
-	lda ram_oam_data_copy,X
+	lda ram_oam_copy_ypos,X
 	sta ram_oam_data,X
 	lda ram_0320,X
 	sta ram_0220,X
@@ -1527,7 +1527,7 @@ sub_rom_E902:
 ; ----------------
 	@E960:
 	dex
-	lda ram_oam_data_copy,X
+	lda ram_oam_copy_ypos,X
 	sta ram_0280,X
 	lda ram_0320,X
 	sta ram_02A0,X
@@ -1555,7 +1555,7 @@ sub_rom_E902:
 
 	@E99C:
 	dex
-	lda ram_oam_data_copy,X
+	lda ram_oam_copy_ypos,X
 	sta ram_0240,X
 	lda ram_0320,X
 	sta ram_0260,X
@@ -1578,7 +1578,7 @@ sub_rom_E902:
 ; ----------------
 	@E9D1:
 	dex
-	lda ram_oam_data_copy,X
+	lda ram_oam_copy_ypos,X
 	sta ram_02C0,X
 	lda ram_0320,X
 	sta ram_02E0,X
@@ -1669,7 +1669,7 @@ sub_rom_EA5B:
 	ldx #$00
 	lda #$F8
 	@EA5F:
-	sta ram_oam_data_copy,X
+	sta ram_oam_copy_ypos,X
 	inx
 	inx
 	inx
@@ -1677,13 +1677,13 @@ sub_rom_EA5B:
 	bne @EA5F
 	
 	lda #$0E
-	sta ram_oam_data_copy
+	sta ram_oam_copy_ypos
 	sta ram_0304
 	sta ram_0308
 	sta ram_030C
 	sta ram_0310
 	lda #$6C
-	sta ram_0303
+	sta ram_oam_copy_xpos
 	lda #$74
 	sta ram_0307
 	lda #$7C
@@ -1693,13 +1693,13 @@ sub_rom_EA5B:
 	lda #$8C
 	sta ram_0313
 	lda #$03
-	sta ram_0302
+	sta ram_oam_copy_attr
 	sta ram_0306
 	sta ram_030A
 	sta ram_030E
 	sta ram_0312
 	lda #$D0
-	sta ram_0301
+	sta ram_oam_copy_tileid
 	lda #$C1
 	sta ram_0305
 	lda #$D5

@@ -429,7 +429,7 @@ sub_rom_C272:
 	@C278:
 	lda #$F8
 	@C27A:
-	sta ram_oam_data_copy,X
+	sta ram_oam_copy_ypos,X
 	inx
 	inx
 	inx
@@ -1051,16 +1051,16 @@ sub_rom_C610:
 	sec
 	sbc zp_EB,Y
 	@C641:
-	sta ram_0303,X
+	sta ram_oam_copy_xpos,X
 	lda zp_88,Y
 	sec
 	sbc zp_ED,Y
-	sta ram_oam_data_copy,X
+	sta ram_oam_copy_ypos,X
 	tya
 	eor #$01
 	tay
 	asl A
-	sta ram_0302,X
+	sta ram_oam_copy_attr,X
 	lda zp_A3,Y
 	tay
 	lda rom_C669,Y
@@ -1069,7 +1069,7 @@ sub_rom_C610:
 
 	ora #$80
 	@C663:
-	sta ram_0301,X
+	sta ram_oam_copy_tileid,X
 	@C666:
 	rts
 
@@ -4034,7 +4034,7 @@ sub_rom_D9AF:
 	ldy #$00
 	lda #$F8
 	@D9B6:
-	sta ram_oam_data_copy,X
+	sta ram_oam_copy_ypos,X
 	inx
 	inx
 	inx
@@ -4114,14 +4114,14 @@ sub_rom_D9AF:
 	@DA2F:
 	pla
 	@DA30:
-	sta ram_0301,X
+	sta ram_oam_copy_tileid,X
 	jmp @DA64
 
 	@DA36:
 	lda zp_0B
-	sta ram_oam_data_copy,X
+	sta ram_oam_copy_ypos,X
 	lda zp_08
-	sta ram_0303,X
+	sta ram_oam_copy_xpos,X
 	inx
 	inx
 	inx
@@ -4157,12 +4157,12 @@ sub_rom_D9AF:
 	sta zp_3D
 	lda rom_01_B000+1,Y
 	sta zp_3E
-	lda ram_0301,X
+	lda ram_oam_copy_tileid,X
 	and #$07
 	tay
 	lda rom_DAB4,Y
 	pha
-	lda ram_0301,X
+	lda ram_oam_copy_tileid,X
 	and #$7F
 	lsr A
 	lsr A
@@ -4193,7 +4193,7 @@ sub_rom_D9AF:
 
 	ora #$20
 	@DAA7:
-	sta ram_0302,X
+	sta ram_oam_copy_attr,X
 	pla
 	tay
 	lda #$FB
