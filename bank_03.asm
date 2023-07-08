@@ -1183,8 +1183,8 @@ rom_AA3D:
 
 ; Initialises the APU registers, clears RAM used by sound routines
 sub_apu_init:
-	; Disable DMC, enable everything else
-	lda #$0F
+	; Enable all channels
+	lda #$1F
 	sta ApuStatus_4015
 	; Silence all channels
 	lda #$00
@@ -1347,13 +1347,13 @@ sub_init_new_track:
 	tax
 	; Get pointer from pointers table
 	lda tbl_track_ptrs+0,X
-	sta zp_ptr2_lo
+	sta zp_sndptr_lo
 	lda tbl_track_ptrs+1,X
-	sta zp_ptr2_hi
+	sta zp_sndptr_hi
 	
 	ldy #$00
 	@next_track_header_byte:
-	lda (zp_ptr2_lo),Y
+	lda (zp_sndptr_lo),Y
 	sta ram_cur_apu_channel
 	tax
 	cpx #$FF	; $FF = End of header
@@ -1386,10 +1386,10 @@ sub_init_new_track:
 	ldx ram_cur_chan_ptr_offset
 	; Prepare pointer to track data
 	iny
-	lda (zp_ptr2_lo),Y
+	lda (zp_sndptr_lo),Y
 	sta ram_track_ptr_lo,X
 	iny
-	lda (zp_ptr2_lo),Y
+	lda (zp_sndptr_lo),Y
 	sta ram_track_ptr_hi,X
 	iny
 	tya
@@ -1609,14 +1609,14 @@ sub_new_note_or_rest:
 		jmp sub_advance_track_ptr
 	:
 	; >1 = note
-	sta zp_ptr2_lo	;pha	; Preserve note index
+	sta zp_sndptr_lo	;pha	; Preserve note index
 
 	; Should we delay this note?
 	ldx ram_cur_channel_offset
 	lda ram_note_delay_counter,X
 	beq :+
 		; Delay counter is set: delay the note
-		lda zp_ptr2_lo
+		lda zp_sndptr_lo
 		sta ram_delayed_note_idx,X
 		jmp sub_advance_track_ptr
 	:
@@ -1632,7 +1632,7 @@ sub_new_note_or_rest:
 		lda #$80
 		sta TrgLinear_4008
 	:
-	lda zp_ptr2_lo	;pla	; Retrieve note index
+	lda zp_sndptr_lo	;pla	; Retrieve note index
 
 	jsr sub_apply_note_pitch
 	jsr sub_start_all_envelopes
@@ -1645,7 +1645,7 @@ sub_new_note_or_rest:
 ; If arpeggio is inactive or disabled, nothing is changed
 ; Does not save note index
 ; Parameters:
-; zp_ptr2_lo = arpeggio value
+; zp_sndptr_lo = arpeggio value
 ; X = index for byte channel data
 ; Y = index for word/pointer channel data
 sub_apply_arpeggio_pitch:
@@ -1670,11 +1670,11 @@ sub_apply_arpeggio_pitch:
 			; Absolute arpeggio: add to base note index
 			lda ram_cur_note_idx,X
 			clc
-			adc zp_ptr2_lo
+			adc zp_sndptr_lo
 			jmp @apply_note_pitch
 		:
 		; Fixed arpeggio: override base note index
-		lda zp_ptr2_lo
+		lda zp_sndptr_lo
 
 		; A = note index
 		@apply_note_pitch:
@@ -1697,7 +1697,7 @@ sub_apply_arpeggio_pitch:
 ; If arpeggio is inactive or disabled, nothing is changed
 ; Does not save note index
 ; Parameters:
-; zp_ptr2_lo = arpeggio value
+; zp_sndptr_lo = arpeggio value
 ; X = index for byte channel data
 ; Y = index for word/pointer channel data
 sub_apply_arpeggio_noise:
@@ -1719,11 +1719,11 @@ sub_apply_arpeggio_noise:
 			; Absolute arpeggio: add to base noise period
 			lda ram_base_period_lo,Y
 			clc
-			adc zp_ptr2_lo
+			adc zp_sndptr_lo
 			jmp @apply_noise_period
 		:
 		; Fixed arpeggio: override base noise period
-		lda zp_ptr2_lo
+		lda zp_sndptr_lo
 
 		@apply_noise_period:
 		sta ram_base_period_lo,Y
@@ -1798,11 +1798,11 @@ sub_process_track_command:
 	tax
 
 	lda tbl_track_cmd_ptrs+0,X
-	sta zp_ptr2_lo
+	sta zp_sndptr_lo
 	lda tbl_track_cmd_ptrs+1,X
-	sta zp_ptr2_hi
+	sta zp_sndptr_hi
 	
-	jmp (zp_ptr2_lo)
+	jmp (zp_sndptr_lo)
 ; ----------------
 
 tbl_track_cmd_ptrs:
@@ -1890,12 +1890,12 @@ sub_cmd_note_delay:
 
 	; Prepare pointer to track data
 	lda ram_track_ptr_lo,X
-	sta zp_ptr2_lo
+	sta zp_sndptr_lo
 	lda ram_track_ptr_hi,X
-	sta zp_ptr2_hi
+	sta zp_sndptr_hi
 	; Read next byte
 	ldy #$00
-	lda (zp_ptr2_lo),Y
+	lda (zp_sndptr_lo),Y
 
 	ldx ram_cur_channel_offset
 	sta ram_note_delay_counter,X
@@ -1913,12 +1913,12 @@ sub_cmd_delayed_cut:
 
 	; Prepare pointer to track data
 	lda ram_track_ptr_lo,X
-	sta zp_ptr2_lo
+	sta zp_sndptr_lo
 	lda ram_track_ptr_hi,X
-	sta zp_ptr2_hi
+	sta zp_sndptr_hi
 	; Read next byte
 	ldy #$00
-	lda (zp_ptr2_lo),Y
+	lda (zp_sndptr_lo),Y
 	
 	ldx ram_cur_channel_offset
 	adc #$01
@@ -1940,15 +1940,15 @@ sub_cmd_track_jump:
 sub_track_jump_entry2:
 	; Prepare pointer to track data
 	lda ram_track_ptr_lo,X
-	sta zp_ptr2_lo
+	sta zp_sndptr_lo
 	lda ram_track_ptr_hi,X
-	sta zp_ptr2_hi
+	sta zp_sndptr_hi
 	; Read next two bytes as the new pointer
 	ldy #$00
-	lda (zp_ptr2_lo),Y
+	lda (zp_sndptr_lo),Y
 	sta ram_track_ptr_lo,X
 	iny
-	lda (zp_ptr2_lo),Y
+	lda (zp_sndptr_lo),Y
 	sta ram_track_ptr_hi,X
 	; Start processing data from the new location
 	jmp sub_get_next_track_byte
@@ -1960,13 +1960,13 @@ sub_cmd_track_speed:
 
 	; Prepare data pointer
 	lda ram_track_ptr_lo,X
-	sta zp_ptr2_lo
+	sta zp_sndptr_lo
 	lda ram_track_ptr_hi,X
-	sta zp_ptr2_hi
+	sta zp_sndptr_hi
 
 	; Read next byte
 	ldy #$00
-	lda (zp_ptr2_lo),Y
+	lda (zp_sndptr_lo),Y
 
 	; Offset is either zero (music) or $80 (SFX)
 	; So it doesn't matter on which channel this happens
@@ -1993,17 +1993,17 @@ sub_cmd_transpose:
 		; Prepare pointer in zero page
 		ldx ram_cur_chan_ptr_offset
 		lda ram_track_ptr_lo,X
-		sta zp_ptr2_lo
+		sta zp_sndptr_lo
 		lda ram_track_ptr_hi,X
-		sta zp_ptr2_hi
+		sta zp_sndptr_hi
 		; Read frame delay
 		ldy #$00
-		lda (zp_ptr2_lo),Y
+		lda (zp_sndptr_lo),Y
 		ldx ram_cur_channel_offset
 		sta ram_transpose_counter,X
 		; Read semitones
 		iny
-		lda (zp_ptr2_lo),Y
+		lda (zp_sndptr_lo),Y
 		sta ram_note_transpose_value,X
 	:
 	; Advance pointer two bytes
@@ -2025,13 +2025,13 @@ sub_get_next_track_byte:
 
 	; Prepare data pointer
 	lda ram_track_ptr_lo,X
-	sta zp_ptr2_lo
+	sta zp_sndptr_lo
 	lda ram_track_ptr_hi,X
-	sta zp_ptr2_hi
+	sta zp_sndptr_hi
 
 	; Read next byte
 	ldy #$00
-	lda (zp_ptr2_lo),Y
+	lda (zp_sndptr_lo),Y
 	bmi :+
 
 		; Note value ($00-$7F)
@@ -2232,17 +2232,17 @@ sub_start_volume_envelope:
 		; Prepare pointer
 		lda tbl_vol_env_ptrs+0,X
 		sta ram_vol_env_ptr_lo,Y
-		sta zp_ptr2_lo
+		sta zp_sndptr_lo
 
 		lda tbl_vol_env_ptrs+1,X
 		sta ram_vol_env_ptr_hi,Y
-		sta zp_ptr2_hi
+		sta zp_sndptr_hi
 
 		ldx ram_cur_channel_offset
 
 		; Read first byte (duration)
 		ldy #$00
-		lda (zp_ptr2_lo),Y
+		lda (zp_sndptr_lo),Y
 		sta ram_cur_vol_env_duration,X
 
 	@skip_vol_env_start	:
@@ -2272,13 +2272,13 @@ sub_start_duty_envelope:
 		tax
 		lda tbl_duty_env_ptrs+0,X
 		sta ram_duty_env_ptr_lo,Y
-		sta zp_ptr2_lo
+		sta zp_sndptr_lo
 		lda tbl_duty_env_ptrs+1,X
 		sta ram_duty_env_ptr_hi,Y
-		sta zp_ptr2_hi
+		sta zp_sndptr_hi
 		;ldx ram_cur_channel_offset
 		;ldy #$00
-		;lda (zp_ptr2_lo),Y
+		;lda (zp_sndptr_lo),Y
 		;sta ram_cur_duty_env_duration,X
 
 	@skip_duty_env_start:
@@ -2309,17 +2309,17 @@ sub_start_pitch_envelope:
 
 		lda tbl_pitch_env_ptrs+0,X
 		sta ram_pitch_env_ptr_lo,Y
-		sta zp_ptr2_lo
+		sta zp_sndptr_lo
 
 		lda tbl_pitch_env_ptrs+1,X
 		sta ram_pitch_env_ptr_hi,Y
-		sta zp_ptr2_hi
+		sta zp_sndptr_hi
 
 		ldx ram_cur_channel_offset
 
 		; Read first byte (duration)
 		ldy #$00
-		lda (zp_ptr2_lo),Y
+		lda (zp_sndptr_lo),Y
 		sta ram_cur_pitch_env_duration,X
 
 	@skip_pitch_env_start:
@@ -2360,15 +2360,15 @@ sub_start_arpeggio:
 			; Prepare and save pointer
 			lda tbl_arp_ptrs+0,X
 			sta ram_arpeggio_ptr_lo,Y
-			sta zp_ptr2_lo
+			sta zp_sndptr_lo
 
 			lda tbl_arp_ptrs+1,X
 			sta ram_arpeggio_ptr_hi,Y
-			sta zp_ptr2_hi
+			sta zp_sndptr_hi
 
 			; Read first byte (type flag)
 			ldy #$00
-			lda (zp_ptr2_lo),Y
+			lda (zp_sndptr_lo),Y
 			ldx ram_cur_channel_offset
 			ora ram_arpeggio_idx,X
 			sta ram_arpeggio_idx,X
@@ -2384,12 +2384,12 @@ sub_start_arpeggio:
 sub_track_read_next_byte:
 	ldx ram_cur_chan_ptr_offset
 	lda ram_track_ptr_lo,X
-	sta zp_ptr2_lo
+	sta zp_sndptr_lo
 	lda ram_track_ptr_hi,X
-	sta zp_ptr2_hi
+	sta zp_sndptr_hi
 	jsr sub_advance_track_ptr
 	ldy #$00
-	lda (zp_ptr2_lo),Y
+	lda (zp_sndptr_lo),Y
 	ldx ram_cur_channel_offset
 	rts
 
@@ -2430,15 +2430,15 @@ sub_next_volume_envelope:
 			clc
 			adc ram_vol_env_ptr_lo,X
 			sta ram_vol_env_ptr_lo,X
-			sta zp_ptr2_lo
+			sta zp_sndptr_lo
 			lda #$00
 			adc ram_vol_env_ptr_hi,X
 			sta ram_vol_env_ptr_hi,X
-			sta zp_ptr2_hi
+			sta zp_sndptr_hi
 
 			ldx ram_cur_channel_offset
 			ldy #$00
-			lda (zp_ptr2_lo),Y
+			lda (zp_sndptr_lo),Y
 			sta ram_cur_vol_env_duration,X
 			tay					; Same as above
 			cpy #$FF
@@ -2447,7 +2447,7 @@ sub_next_volume_envelope:
 				; Found $FF at end of envelope data
 				ldx ram_cur_chan_ptr_offset
 				iny ;ldy #$01	; Read next byte (which is the last)
-				lda (zp_ptr2_lo),Y
+				lda (zp_sndptr_lo),Y
 				asl A	; Since each entry is two bytes long, the offset is multiplied x2
 				bpl @read_new_vol_env_duration
 
@@ -2455,17 +2455,17 @@ sub_next_volume_envelope:
 					clc
 					adc ram_vol_env_ptr_lo,X
 					sta ram_vol_env_ptr_lo,X
-					sta zp_ptr2_lo
+					sta zp_sndptr_lo
 					bcs :+
 						dec ram_vol_env_ptr_hi,X
 					:
 					lda ram_vol_env_ptr_hi,X
-					sta zp_ptr2_hi
+					sta zp_sndptr_hi
 
 				@read_new_vol_env_duration:
 				ldx ram_cur_channel_offset
 				ldy #$00
-				lda (zp_ptr2_lo),Y	; If we didn't change the pointer, this will re-read $FF
+				lda (zp_sndptr_lo),Y	; If we didn't change the pointer, this will re-read $FF
 				sta ram_cur_vol_env_duration,X
 				rts
 
@@ -2498,30 +2498,30 @@ sub_next_duty_envelope:
 			clc
 			adc ram_duty_env_ptr_lo,X
 			sta ram_duty_env_ptr_lo,X
-			sta zp_ptr2_lo
+			sta zp_sndptr_lo
 			; Take care of the high byte
 			lda #$00
 			adc ram_duty_env_ptr_hi,X
 			sta ram_duty_env_ptr_hi,X
-			sta zp_ptr2_hi
+			sta zp_sndptr_hi
 
 			; Read the next byte
 			ldy #$00
-			lda (zp_ptr2_lo),Y
+			lda (zp_sndptr_lo),Y
 			cmp #$FF	; End of envelope: check for loops
 			bne @skip_duty_env	; Otherwise, we are done
 
 				iny
-				lda (zp_ptr2_lo),Y
+				lda (zp_sndptr_lo),Y
 				; The last value is how many bytes to move back
 				; Note: this is expected to be an signed, negative 8-bit value
 				clc
 				adc ram_duty_env_ptr_lo,X
 				sta ram_duty_env_ptr_lo,X
-				sta zp_ptr2_lo
+				sta zp_sndptr_lo
 				bcs :+
 					dec ram_duty_env_ptr_hi,X
-					dec zp_ptr2_hi
+					dec zp_sndptr_hi
 				:
 	@skip_duty_env:
 	rts
@@ -2552,16 +2552,16 @@ sub_next_pitch_envelope:
 				clc
 				adc ram_pitch_env_ptr_lo,X
 				sta ram_pitch_env_ptr_lo,X
-				sta zp_ptr2_lo
+				sta zp_sndptr_lo
 				lda #$00
 				adc ram_pitch_env_ptr_hi,X
 				sta ram_pitch_env_ptr_hi,X
-				sta zp_ptr2_hi
+				sta zp_sndptr_hi
 
 				; Read new entry's duration
 				ldx ram_cur_channel_offset
 				ldy #$00
-				lda (zp_ptr2_lo),Y
+				lda (zp_sndptr_lo),Y
 				sta ram_cur_pitch_env_duration,X
 				cmp #$FF	; If it's not the special termination marker, we're done
 				bne @skip_pitch_env
@@ -2569,7 +2569,7 @@ sub_next_pitch_envelope:
 					; Duration byte = $FF (end of data), read last byte
 					ldx ram_cur_chan_ptr_offset
 					iny	;ldy #$01
-					lda (zp_ptr2_lo),Y
+					lda (zp_sndptr_lo),Y
 					asl A
 					bmi :+
 						; A zero (or positive) value signals the end of the envelope
@@ -2582,18 +2582,18 @@ sub_next_pitch_envelope:
 					clc
 					adc ram_pitch_env_ptr_lo,X
 					sta ram_pitch_env_ptr_lo,X
-					sta zp_ptr2_lo
+					sta zp_sndptr_lo
 					bcs :+
 						dec ram_pitch_env_ptr_hi,X
 					:
 					lda ram_pitch_env_ptr_hi,X
-					sta zp_ptr2_hi
+					sta zp_sndptr_hi
 
 					; After moving the pointer back to the loop point,
 					; read the byte there and store it as the new duration
 					ldx ram_cur_channel_offset
 					dey ;ldy #$00
-					lda (zp_ptr2_lo),Y
+					lda (zp_sndptr_lo),Y
 					sta ram_cur_pitch_env_duration,X
 					; jmp @next_pitch_env
 
@@ -2626,39 +2626,39 @@ sub_sq0_output:
 		ldy #$00
 	:
 	jsr sub_get_volume_envelope
-	lda zp_ptr2_lo
+	lda zp_sndptr_lo
 
 	pha
 	jsr sub_get_duty_envelope
 	pla
 
-	ora zp_ptr2_lo
+	ora zp_sndptr_lo
 	ora #$30
 	sta Sq0Duty_4000
 
 	jsr sub_get_pitch_envelope
 
 	lda #$00
-	sta zp_ptr2_hi
+	sta zp_sndptr_hi
 
-	lda zp_ptr2_lo
+	lda zp_sndptr_lo
 	bpl :+
 
-		dec zp_ptr2_hi
+		dec zp_sndptr_hi
 	:
 	lda ram_base_period_lo,Y
 	clc
-	adc zp_ptr2_lo
+	adc zp_sndptr_lo
 	; TODO For relative envelopes, also modify the base note period
 	sta ram_note_period_lo,Y
 	sta Sq0Timer_4002
 
 	lda ram_note_period_hi,Y
-	sta zp_ptr2_lo
+	sta zp_sndptr_lo
 	lda ram_base_period_hi,Y
-	adc zp_ptr2_hi
+	adc zp_sndptr_hi
 	tax
-	cpx zp_ptr2_lo
+	cpx zp_sndptr_lo
 	beq :+
 
 		; TODO For relative envelopes, also modify the base note period
@@ -2681,34 +2681,34 @@ sub_sq1_output:
 		ldy #$02
 :
 	jsr sub_get_volume_envelope
-	lda zp_ptr2_lo
+	lda zp_sndptr_lo
 
 	pha
 	jsr sub_get_duty_envelope
 	pla
 
-	ora zp_ptr2_lo
+	ora zp_sndptr_lo
 	ora #$30
 	sta Sq1Duty_4004
 	jsr sub_get_pitch_envelope
 	lda #$00
-	sta zp_ptr2_hi
-	lda zp_ptr2_lo
+	sta zp_sndptr_hi
+	lda zp_sndptr_lo
 	bpl :+
 
-		dec zp_ptr2_hi
+		dec zp_sndptr_hi
 :
 	lda ram_base_period_lo,Y
 	clc
-	adc zp_ptr2_lo
+	adc zp_sndptr_lo
 	sta ram_note_period_lo,Y
 	sta Sq1Timer_4006
 	lda ram_note_period_hi,Y
-	sta zp_ptr2_lo
+	sta zp_sndptr_lo
 	lda ram_base_period_hi,Y
-	adc zp_ptr2_hi
+	adc zp_sndptr_hi
 	tax
-	cpx zp_ptr2_lo
+	cpx zp_sndptr_lo
 	beq :+
 
 		sta ram_note_period_hi,Y
@@ -2733,7 +2733,7 @@ sub_trg_output:
 	; ---- Don't waste time with volume envelopes on this channel
 	;		Just assume it's on when playing a note
 	;jsr sub_get_volume_envelope
-	;lda zp_ptr2_lo
+	;lda zp_sndptr_lo
 	;beq :+
 		; This will only turn on the channel when the volume envelope is not zero
 	;	lda #$FF
@@ -2749,23 +2749,23 @@ sub_trg_output:
 
 	jsr sub_get_pitch_envelope
 	lda #$00
-	sta zp_ptr2_hi
-	lda zp_ptr2_lo
+	sta zp_sndptr_hi
+	lda zp_sndptr_lo
 	bpl :+
 
-		dec zp_ptr2_hi
+		dec zp_sndptr_hi
 	:
 	lda ram_base_period_lo,Y
 	clc
-	adc zp_ptr2_lo
+	adc zp_sndptr_lo
 	sta ram_note_period_lo,Y
 	sta TrgTimer_400A
 	lda ram_note_period_hi,Y
-	sta zp_ptr2_lo
+	sta zp_sndptr_lo
 	lda ram_base_period_hi,Y
-	adc zp_ptr2_hi
+	adc zp_sndptr_hi
 	tax
-	cpx zp_ptr2_lo
+	cpx zp_sndptr_lo
 	beq :+
 
 		sta ram_note_period_hi,Y
@@ -2787,7 +2787,7 @@ sub_noise_output:
 		ldy #$06
 	:
 	jsr sub_get_volume_envelope
-	lda zp_ptr2_lo
+	lda zp_sndptr_lo
 	ora #$30
 	sta NoiseVolume_400C
 
@@ -2804,7 +2804,7 @@ sub_noise_output:
 ; -----------------------------------------------------------------------------
 
 ; Returns:
-; zp_ptr2_lo: current value of volume envelope
+; zp_sndptr_lo: current value of volume envelope
 sub_get_volume_envelope:
 	tya
 	pha
@@ -2821,13 +2821,13 @@ sub_get_volume_envelope:
 	pha
 	tay
 	lda ram_vol_env_ptr_lo,Y
-	sta zp_ptr2_lo
+	sta zp_sndptr_lo
 	lda ram_vol_env_ptr_hi,Y
-	sta zp_ptr2_hi
+	sta zp_sndptr_hi
 	ldy #$01
-	lda (zp_ptr2_lo),Y
+	lda (zp_sndptr_lo),Y
 	@B262:
-	sta zp_ptr2_lo
+	sta zp_sndptr_lo
 
 	pla
 	tay
@@ -2836,7 +2836,7 @@ sub_get_volume_envelope:
 ; -----------------------------------------------------------------------------
 
 ; Returns:
-; zp_ptr2_lo: current value of duty envelope
+; zp_sndptr_lo: current value of duty envelope
 sub_get_duty_envelope:
 	tya
 	pha
@@ -2856,13 +2856,13 @@ sub_get_duty_envelope:
 	; Read current value
 	tay
 	lda ram_duty_env_ptr_lo,Y
-	sta zp_ptr2_lo
+	sta zp_sndptr_lo
 	lda ram_duty_env_ptr_hi,Y
-	sta zp_ptr2_hi
+	sta zp_sndptr_hi
 	ldy #$00
-	lda (zp_ptr2_lo),Y
+	lda (zp_sndptr_lo),Y
 	@duty_env_done:
-	sta zp_ptr2_lo
+	sta zp_sndptr_lo
 
 	pla
 	tay
@@ -2871,7 +2871,7 @@ sub_get_duty_envelope:
 ; -----------------------------------------------------------------------------
 
 ; Returns:
-; zp_ptr2_lo: current value of pitch envelope
+; zp_sndptr_lo: current value of pitch envelope
 sub_get_pitch_envelope:
 	tya
 	pha
@@ -2889,15 +2889,15 @@ sub_get_pitch_envelope:
 	tay
 	; Get pointer to current envelope entry
 	lda ram_pitch_env_ptr_lo,Y
-	sta zp_ptr2_lo
+	sta zp_sndptr_lo
 	lda ram_pitch_env_ptr_hi,Y
-	sta zp_ptr2_hi
+	sta zp_sndptr_hi
 	; Read value (second byte, the first is duration)
 	ldy #$01
-	lda (zp_ptr2_lo),Y
+	lda (zp_sndptr_lo),Y
 
 	@B2AC:
-	sta zp_ptr2_lo	; Use this as noise period modifier
+	sta zp_sndptr_lo	; Use this as noise period modifier
 
 	pla
 	tay
@@ -2910,7 +2910,7 @@ sub_get_pitch_envelope:
 ; Y = current channel pointer offset
 ; Returns:
 ; C = set if end of data reached, clear if not
-; zp_ptr2_lo = next value from arpeggio table (or $7F if disabled)
+; zp_sndptr_lo = next value from arpeggio table (or $7F if disabled)
 sub_get_next_arpeggio_value:
 	tya
 	pha	; Preserve Y
@@ -2920,16 +2920,16 @@ sub_get_next_arpeggio_value:
 	clc
 	adc #$01
 	sta ram_arpeggio_ptr_lo,Y
-	sta zp_ptr2_lo
+	sta zp_sndptr_lo
 	lda #$00
 	adc ram_arpeggio_ptr_hi,Y
 	sta ram_arpeggio_ptr_hi,Y
-	sta zp_ptr2_hi
+	sta zp_sndptr_hi
 
 	; Read the entry and check if it's an end of data token
 	ldy #$00
-	lda (zp_ptr2_lo),Y
-	sta zp_ptr2_lo
+	lda (zp_sndptr_lo),Y
+	sta zp_sndptr_lo
 	cmp #$7F
 	bne @arp_end
 		; End of data reached

@@ -126,13 +126,13 @@ sub_rom_C0C6:
 	sta ram_0440
 	; Bank $00 in $8000-$9FFF
 	lda #$86
-	sta zp_FC
+	sta zp_prg_bank_select_backup
 	sta mmc3_bank_select
 	lda #$00
 	sta mmc3_bank_data
 	; Bank $01 in $A000-$BFFF
 	lda #$87
-	sta zp_FC
+	sta zp_prg_bank_select_backup
 	sta mmc3_bank_select
 	lda #$01
 	sta mmc3_bank_data
@@ -215,7 +215,7 @@ sub_rom_C122:
 	jsr sub_rom_CA5C
 	; Bank $03 in $A000-$BFFF
 	lda #$87
-	sta zp_FC
+	sta zp_prg_bank_select_backup
 	sta mmc3_bank_select
 	lda #$03
 	sta mmc3_bank_data
@@ -568,7 +568,7 @@ sub_rom_C2A8:
 	tay
 	@C33D:
 	jsr sub_rom_C36B
-	ldy zp_14
+	ldy zp_ptr2_lo
 	tya
 	iny
 	and #$03
@@ -597,7 +597,7 @@ rom_C35F:
 ; -----------------------------------------------------------------------------
 
 sub_rom_C36B:
-	sty zp_14
+	sty zp_ptr2_lo
 	lda rom_C3C9,Y
 	bmi @C397
 
@@ -624,7 +624,7 @@ sub_rom_C36B:
 	dex
 	@C397:
 	ldy zp_7C
-	lda zp_14
+	lda zp_ptr2_lo
 	and #$01
 	bne @C3B0
 
@@ -705,27 +705,27 @@ sub_rom_C41A:
 	pha
 	stx zp_16
 	lda rom_C46E,X
-	sta zp_14
+	sta zp_ptr2_lo
 	ldx rom_CB0A,Y
 	lda ram_037C,X
 	clc
-	adc zp_14
+	adc zp_ptr2_lo
 	sta ram_037C,X
 	ldx zp_16
 	lda rom_C476,X
-	sta zp_14
+	sta zp_ptr2_lo
 	ldx rom_CB0A,Y
 	lda ram_0378,X
 	clc
-	adc zp_14
+	adc zp_ptr2_lo
 	sta ram_0378,X
 	ldx zp_16
 	lda rom_C47E,X
-	sta zp_14
+	sta zp_ptr2_lo
 	ldx rom_CB0A,Y
 	lda ram_0374,X
 	clc
-	adc zp_14
+	adc zp_ptr2_lo
 	sta ram_0374,X
 	pla
 	ora ram_037E,X
@@ -762,15 +762,15 @@ sub_rom_C487:
 	and #$07
 	tax
 	lda rom_C4AA,X
-	sta zp_14
+	sta zp_ptr2_lo
 	ldx rom_CB0A,Y
 	lda ram_037C,X
 	clc
-	adc zp_14
+	adc zp_ptr2_lo
 	sta ram_037C,X
 	lda ram_0378,X
 	clc
-	adc zp_14
+	adc zp_ptr2_lo
 	sta ram_0378,X
 	rts
 
@@ -818,28 +818,28 @@ sub_rom_C4B2:
 	sta zp_16
 	lda #$F8
 	@C4F5:
-	sta zp_14
+	sta zp_ptr2_lo
 	lda ram_037F,X
 	clc
-	adc zp_14
+	adc zp_ptr2_lo
 	clc
 	adc zp_16
 	sta ram_037F,X
 	lda ram_037B,X
 	sec
-	sbc zp_14
+	sbc zp_ptr2_lo
 	clc
 	adc zp_16
 	sta ram_037B,X
 	lda ram_0377,X
 	clc
-	adc zp_14
+	adc zp_ptr2_lo
 	clc
 	adc zp_16
 	sta ram_0377,X
 	lda ram_0373,X
 	sec
-	sbc zp_14
+	sbc zp_ptr2_lo
 	clc
 	adc zp_16
 	sta ram_0373,X
@@ -3494,14 +3494,14 @@ sub_rom_D68B:
 	asl A
 	tay
 	pla
-	sta zp_14
+	sta zp_ptr2_lo
 	pla
-	sta zp_15
+	sta zp_ptr2_hi
 	iny
-	lda (zp_14),Y
+	lda (zp_ptr2_lo),Y
 	sta zp_ptr1_lo
 	iny
-	lda (zp_14),Y
+	lda (zp_ptr2_lo),Y
 	sta zp_ptr1_hi
 	jmp (zp_ptr1_lo)
 
@@ -3697,13 +3697,13 @@ sub_rom_D784:
 	sta zp_05
 	; Load a new bank in $8000-$9FFF from table below
 	lda #$86
-	sta zp_FC
+	sta zp_prg_bank_select_backup
 	sta mmc3_bank_select
 	lda zp_05
 	sta mmc3_bank_data
 	; Bank $01 in $A000-$BFFF
 	lda #$87
-	sta zp_FC
+	sta zp_prg_bank_select_backup
 	sta mmc3_bank_select
 	lda #$01
 	sta mmc3_bank_data
@@ -4046,7 +4046,7 @@ sub_rom_D9AF:
 	ldy #$00
 	lda (zp_3B),Y
 	sta zp_05
-	sta zp_14
+	sta zp_ptr2_lo
 	iny
 	lda (zp_3B),Y
 	sta zp_06

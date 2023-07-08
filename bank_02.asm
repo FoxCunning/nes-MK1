@@ -144,7 +144,7 @@ tbl_track_ptrs:
 	.word sfx_happy_jingle			; $0D	A weird three-note jingle
 	.word sfx_pause			; $0E	Pause
 	.word sfx_happy_jingle			; $0F	Same as $0D, but here it's used after choosing to continue
-	.word sfx_countdown			; $10	Countdown for continue screen
+	.word sfx_countdown		; $10	Countdown for continue screen
 	.word track_silence		; $11
 	.word track_silence		; $12
 	.word track_silence		; $13

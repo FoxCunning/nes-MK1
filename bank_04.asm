@@ -39,7 +39,7 @@ sub_unpack_nametable:
 	ldy #$00
 	lda PpuStatus_2002
 
-	lda zp_14
+	lda zp_ptr2_lo
 	sta PpuAddr_2006
 	jsr sub_next_packed_byte
 	lda #$00
@@ -93,9 +93,13 @@ sub_next_packed_byte:
 	rts
 
 ; -----------------------------------------------------------------------------
-.export sub_rom_04_805A
+.export sub_setup_new_screen
 
-sub_rom_04_805A:
+; Clears screen, loads a new palette and new nametable, switches CHR banks,
+; sets a new IRQ handler, chooses a music track
+; Parameters:
+; zp_tmp_idx = index of compressed nametable, palette and IRQ handler pointers
+sub_setup_new_screen:
 	jsr sub_wait_vblank
 
 	; Disable NMI and rendering, VRAM set increment to horizontal
@@ -122,9 +126,9 @@ sub_rom_04_805A:
 	lda zp_tmp_idx
 	asl A
 	tay
-	lda rom_81C0+0,Y
+	lda tbl_palette_and_irq_ptrs+0,Y
 	sta ram_routine_pointer_idx
-	lda rom_81C0+1,Y
+	lda tbl_palette_and_irq_ptrs+1,Y
 	sta zp_palette_idx
 
 	jsr sub_clear_palettes
@@ -132,7 +136,7 @@ sub_rom_04_805A:
 
 	lda #$00
 	sta zp_57
-	sta zp_55
+	sta zp_palette_fade_idx
 
 	rts
 
@@ -153,10 +157,10 @@ sub_load_screen_data:
 	lda tbl_rle_data_ptr_even+1,X
 	sta zp_ptr1_hi
 	lda tbl_rle_data_ptr_even+2,X
-	sta zp_14
+	sta zp_ptr2_lo
 	jsr sub_unpack_nametable
 
-	; Buttom or Right
+	; Bottom or Right
 	lda zp_tmp_idx
 	asl A
 	asl A
@@ -167,7 +171,7 @@ sub_load_screen_data:
 	lda tbl_rle_data_ptr_odd+1,X
 	sta zp_ptr1_hi
 	lda tbl_rle_data_ptr_odd+2,X
-	sta zp_14
+	sta zp_ptr2_lo
 	jsr sub_unpack_nametable
 
 	; CHR Banks
@@ -310,7 +314,7 @@ tbl_rle_data_ptr_odd:
 
 ; Byte 0: index of IRQ handler routine pointer
 ; Byte 1: index of palette pointer
-rom_81C0:
+tbl_palette_and_irq_ptrs:
     .byte $0C, $00
     .byte $0E, $01
     .byte $0C, $02
@@ -322,9 +326,10 @@ rom_81C0:
     .byte $0F, $04
 
 ; -----------------------------------------------------------------------------
-.export sub_rom_04_81D2
+.export sub_rom_cycle_palettes
 
-sub_rom_04_81D2:
+; Used for fade-in/out effects
+sub_rom_cycle_palettes:
 	lda zp_palette_idx
 	asl A
 	tay
@@ -337,9 +342,9 @@ sub_rom_04_81D2:
 	asl A
 	tay
 	lda rom_8239+0,Y
-	sta zp_14
+	sta zp_ptr2_lo
 	lda rom_8239+1,Y
-	sta zp_15
+	sta zp_ptr2_hi
 
 	lda zp_44
 	bne @822F
@@ -348,13 +353,13 @@ sub_rom_04_81D2:
         and #$03
 	    bne @822F
 
-	ldx zp_55
-	lda rom_8230,X
+	ldx zp_palette_fade_idx
+	lda tbl_palette_fade_subtrahends,X
 	sta zp_05
 
 	ldy #$00
 	@8201:
-		lda (zp_14),Y
+		lda (zp_ptr2_lo),Y
 		bpl @820A
 
 			lda (zp_ptr1_lo),Y
@@ -383,22 +388,24 @@ sub_rom_04_81D2:
 	sta zp_46
 	lda #$01
 	sta zp_45
-	inc zp_55
+	inc zp_palette_fade_idx
 
 	@822F:
 	rts
 
 ; -----------------------------------------------------------------------------
 
-rom_8230:
-	.byte $40, $30, $20, $10, $00, $10, $20, $30
-	.byte $40
+tbl_palette_fade_subtrahends:
+	; Fade in
+	.byte $40, $30, $20, $10, $00
+	; Fade out
+	.byte $10, $20, $30, $40
 
 ; -----------------------------------------------------------------------------
 
 rom_8239:
-	.word palette_82E7
-	.word palette_8307
+	.word palette_mask_82E7
+	.word palette_mask_8307
 ; ----------------
 rom_823D:
 	.word palette_8247
@@ -451,7 +458,7 @@ palette_82C7:
 
 ; -----------------------------------------------------------------------------
 
-palette_82E7:
+palette_mask_82E7:
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
@@ -459,7 +466,7 @@ palette_82E7:
 
 ; -----------------------------------------------------------------------------
 
-palette_8307:
+palette_mask_8307:
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $00, $00, $00, $00, $FF, $FF, $FF, $FF
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
@@ -1331,7 +1338,7 @@ sub_choose_music_track:
 ; -----------------------------------------------------------------------------
 
 	@tbl_bg_music:
-	.byte $20	; $00	Menu intro
+	.byte $20	; $00	Menu intro jingle
 	.byte $22	; $01	Options menu (silence)
 	.byte $21	; $02	Player select (also VS screen)
 	.byte $21	; $03
@@ -1339,7 +1346,7 @@ sub_choose_music_track:
 	.byte $22	; $05
 	.byte $22	; $06
 	.byte $21	; $07
-	.byte $22	; $08	Black screen (silence)
+	.byte $22	; $08	Titles screen (silence)
 
 ; -----------------------------------------------------------------------------
 

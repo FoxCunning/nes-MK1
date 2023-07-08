@@ -23,8 +23,8 @@ zp_0F = $0F     ;
 zp_ptr1_lo = $12 ;
 ; Generically used as a pointer for indirect addressing. High byte.
 zp_ptr1_hi = $13 ;
-zp_14 = $14     ;
-zp_15 = $15     ;
+zp_ptr2_lo = $14     ;
+zp_ptr2_hi = $15     ;
 zp_16 = $16     ;
 zp_17 = $17     ;
 zp_18 = $18     ;
@@ -92,9 +92,10 @@ zp_ppu_ptr_lo = $52 ;
 ; Used to avoid running certain routines more than once per frame
 ; (e.g. controller reading routines)
 zp_last_execution_frame = $53   ;
-zp_54 = $54     ;
-zp_55 = $55     ;
-zp_palette_idx = $56     ;
+; Used as a counter that can be shared between subroutines
+zp_counter_param = $54  ;
+zp_palette_fade_idx = $55   ;
+zp_palette_idx = $56    ;
 zp_57 = $57     ;
 zp_chr_bank_2 = $58     ;
 zp_chr_bank_3 = $59     ;
@@ -108,8 +109,10 @@ zp_5F = $5F     ;
 zp_60 = $60     ;
 zp_61 = $61     ;
 zp_62 = $62     ;
-zp_63 = $63     ;
-zp_64 = $64     ;
+; Index of menu option selected by controller 1
+zp_plr1_selection = $63 ;
+; Index of menu option selected by controller 2
+zp_plr2_selection = $64 ;
 zp_65 = $65     ;
 zp_66 = $66     ;
 
@@ -183,12 +186,13 @@ zp_F5 = $F5     ;
 ; After this has been set to 1, IRQ handling subroutines will be used
 zp_mmc3_irq_ready = $F6     ;
 zp_F7 = $F7     ;
-zp_FC = $FC     ;
+; Copy of the value last written in the MMC3 Bank Select register for PRG ROM
+zp_prg_bank_select_backup = $FC ;
 zp_FD = $FD     ;
 ; Used for indirect addressing by sound routines (low byte)
-zp_ptr2_lo = $FE     ;
+zp_sndptr_lo = $FE     ;
 ; Used for indirect addressing by sound routines (high byte)
-zp_ptr2_hi = $FF     ;
+zp_sndptr_hi = $FF     ;
 
 
 ; -----------------------------------------------------------------------------
@@ -275,7 +279,8 @@ ram_0419 = $0419    ;
 ram_041F = $041F    ;
 ram_0421 = $0421    ;
 ram_041A = $041A    ;
-ram_041C = $041C    ;
+; The NMI routine will write this to the MMC3 latch register
+ram_irq_latch_value = $041C    ;
 ram_0422 = $0422    ;
 ; This location will contain a jump to the variable MMC3 IRQ handler
 ; Routines can change the pointer to a different routine
@@ -486,6 +491,11 @@ PpuControl_2000  = $2000    ;
 ;(m) 1: Show background in leftmost 8 pixels of screen, 0: Hide
 ;(G) Greyscale (0: normal colour, 1: produce a greyscale display)
 PpuMask_2001     = $2001    ;
+;VSO- ----
+;(V) vblanks
+;(S) sprite 0 hit
+;(O) sprite overflow
+; Note: read resets write pair for $2005/$2006
 PpuStatus_2002   = $2002    ;
 
 OamAddr_2003     = $2003    ;

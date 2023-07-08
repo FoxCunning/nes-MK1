@@ -33,27 +33,30 @@ sub_state_machine_0_0:
 	lda zp_machine_state_2
 	jsr sub_trampoline    ; Same trick again
 ; ----------------
-	.word sub_rom_BF92
-	.word sub_rom_BFB9
-	.word sub_titles_loop
-	.word sub_rom_BFEA
-	.word sub_rom_B030
-	.word sub_rom_B079
-	.word sub_rom_B086
-	.word sub_rom_B0A5
-	.word sub_main_menu_loop
-	.word sub_rom_B107
-	.word sub_rom_B114
-	.word sub_rom_B13A
+	.word sub_init_titles_screen	; 0,0,0
+	.word sub_titles_fade_in		; 0,0,1
+	.word sub_titles_loop			; 0,0,2
+	.word sub_titles_fade_out		; 0,0,3
+	.word sub_init_menu_screen		; 0,0,4
+	.word sub_menu_fade_in			; 0,0,5
+	.word sub_menu_slide_up			; 0,0,6
+	.word sub_menu_screen_shake		; 0,0,7
+	.word sub_main_menu_loop		; 0,0,8
+	.word sub_menu_fade_out			; 0,0,9
+	.word sub_rom_B114		; 0,0,A
+	.word sub_rom_B13A		; 0,0,B
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B030:
+; Machine state = 0,0,4
+sub_init_menu_screen:
 	lda #$00
 	sta zp_tmp_idx
-	lda #$00
+	;lda #$00
 	sta zp_66
-	jsr sub_rom_04_805A
+	jsr sub_setup_new_screen
+
+	; Set up screen split
 	lda #$00
 	sta zp_scroll_x
 	sta zp_scroll_y
@@ -66,90 +69,111 @@ sub_rom_B030:
 	sta zp_04
 	lda #$0D
 	sta ram_routine_pointer_idx
+
 	lda #$ED
-	sta ram_041C
+	sta ram_irq_latch_value
 	lda #$00
 	sta zp_5F
 	sta zp_61
 	lda #$00
-	sta zp_63
+	sta zp_plr1_selection
 	lda #$02
-	sta zp_64
-	lda rom_B170+0
+	sta zp_plr2_selection
+
+	; Move "cursor" to default selection (left)
+	lda tbl_menu_cursor_ptrs+0
 	sta zp_ppu_ptr_hi
-	lda rom_B170+1
+	lda tbl_menu_cursor_ptrs+1
 	sta zp_ppu_ptr_lo
-	inc zp_machine_state_2
+
+	inc zp_machine_state_2	; Move to next sub-state
+
 	lda #$00
 	sta zp_5E
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B079:
-	jsr sub_rom_04_81D2
-	lda zp_55
+; Machine state = 0,0,5 and 0,1,1
+; Used to fade in the Main Menu and Options Menu
+sub_menu_fade_in:
+	jsr sub_rom_cycle_palettes
+	lda zp_palette_fade_idx
 	cmp #$05
-	bcs @B083
-
-	rts
+	bcs :+
+		; Palettes still cycling
+		rts
 ; ----------------
-	@B083:
-	inc zp_machine_state_2
+	:
+	; Fade in complete
+	inc zp_machine_state_2	; Move to next sub-state
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B086:
+; Machine state = 0,0,6
+; Gradually increases the latch value, making the bottom part of the menu
+; screen slide upwards
+sub_menu_slide_up:
 	lda zp_frame_counter
 	cmp zp_last_execution_frame
-	bne @B08D
-
-	rts
+	bne :+
+		; Already executed this frame
+		rts
 ; ----------------
-	@B08D:
+	:
 	sta zp_last_execution_frame
-	dec ram_041C
-	lda ram_041C
-	cmp #$8B
-	bcs @B0A4
-
+	;dec ram_irq_latch_value
+	;lda ram_irq_latch_value
+	;cmp #$8B
+	;bcs :+
 	lda #$8C
-	sta ram_041C
-	lda #$07
-	sta zp_54
-	inc zp_machine_state_2
-	@B0A4:
+	dcp ram_irq_latch_value
+	bcc :+
+		lda #$8C
+		sta ram_irq_latch_value
+		; Prepare the counter for the screen shake effect
+		lda #$07
+		sta zp_counter_param
+		; Advance to next sub-state
+		inc zp_machine_state_2
+	:
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B0A5:
+; Machine state = 0,0,7
+; Makes the screen "shake" when the bottom half of the main menu hits the top
+sub_menu_screen_shake:
 	lda zp_frame_counter
 	cmp zp_last_execution_frame
-	bne @B0AC
-    
-	rts
+	bne :+
+		; Already executed during this frame
+		rts
 ; ----------------
-	@B0AC:
+	:
 	sta zp_last_execution_frame
-	ldx zp_54
-	lda rom_B0C4,X
+	
+	ldx zp_counter_param
+	lda @tbl_scroll_shake_values,X
 	sta zp_scroll_y
-	dec zp_54
-	bpl @B0C3
 
-	lda #$00
-	sta zp_scroll_y
-	lda #$0A
-	sta zp_54
-	inc zp_machine_state_2
-	@B0C3:
+	dec zp_counter_param
+	bpl :+
+		; Counter underflow: we have finished shaking the screen
+		lda #$00
+		sta zp_scroll_y
+		; Prepare wait counter (when expired, it will show high scores)
+		lda #$0A
+		sta zp_counter_param
+		; Advance to next sub-state
+		inc zp_machine_state_2
+	:
 	rts
 
-; -----------------------------------------------------------------------------
+; ----------------
 
-rom_B0C4:
+	@tbl_scroll_shake_values:
 	.byte $00, $02, $00, $03, $00, $04, $00, $07
 
 ; -----------------------------------------------------------------------------
@@ -159,35 +183,36 @@ sub_main_menu_loop:
 	lda zp_frame_counter
 	cmp zp_last_execution_frame
 	bne :+
-
+		; Already executed during this frame
 		rts
 ; ----------------
 	:
 	sta zp_last_execution_frame
+
 	lda zp_frame_counter
 	and #$3F
 	bne :+
 
-		dec zp_54
+		dec zp_counter_param
 		bpl :+
-
+			; Wait counter expired: show high score screen
 			lda #$0B
-			sta zp_machine_state_2
+			sta zp_machine_state_2	; 0,0,B = Fake high scores
 			rts
 ; ----------------
 	:
 	jsr sub_get_controller1_main_menu
 
-	lda zp_63
+	lda zp_plr1_selection	; 0 = left selection, 1 = right selection
 	asl A
 	tax
-	lda rom_B170+0,X
+	lda tbl_menu_cursor_ptrs+0,X
 	sta zp_ppu_ptr_hi
-	lda rom_B170+1,X
+	lda tbl_menu_cursor_ptrs+1,X
 	sta zp_ppu_ptr_lo
 
 	lda zp_controller1_new
-	and #$D0
+	and #$D0	; A, B or START
 	beq sub_main_menu_loop
 
 	; ---- End of loop: a button was pressed
@@ -197,17 +222,19 @@ sub_main_menu_loop:
 
 	inc zp_machine_state_2
 	lda #$05
-	sta zp_55
+	sta zp_palette_fade_idx
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B107:
-	jsr sub_rom_04_81D2
-	lda zp_55
+; Machine state = 0,0,9 and 0,1,3
+; Used to fade out the Main Menu and Options Menu
+sub_menu_fade_out:
+	jsr sub_rom_cycle_palettes
+	lda zp_palette_fade_idx
 	cmp #$09
 	bcs :+
-
+		; Palettes are still cycling
 		rts
 ; ----------------
 	:
@@ -216,43 +243,52 @@ sub_rom_B107:
 
 ; -----------------------------------------------------------------------------
 
+; Machine state = 0,0,A
 sub_rom_B114:
 	lda zp_frame_counter
 	cmp zp_last_execution_frame
-	bne @B11B
-
-	rts
+	bne :+
+		; Already executed on this frame
+		rts
 ; ----------------
-	@B11B:
+	:
 	sta zp_last_execution_frame
+
 	lda #$0C
 	sta ram_routine_pointer_idx
+
+	; Disable rendering and clear machine sub-state
 	lda #$00
 	sta PpuMask_2001
 	sta zp_machine_state_2
-	lda zp_63
-	bne @B137
 
-	lda #$03
-	sta zp_63
-	lda #$84
-	sta zp_64
-	inc zp_machine_state_1
-	@B137:
-	inc zp_machine_state_1
+	lda zp_plr1_selection
+	bne :+
+		; Option 0 = Tournament
+		lda #$03 	; Player 1 default selection (Kano)
+		sta zp_plr1_selection
+		lda #$84	; Player 2 default selection (Sub-Zero)
+		sta zp_plr2_selection
+
+		inc zp_machine_state_1	; 0,2,0 (because it's increased again below)
+	:
+	; Option 1 = Options Menu
+	inc zp_machine_state_1	; 0,1,0
 	rts
 
 ; -----------------------------------------------------------------------------
 
+; Machine state = 0,0,B
 sub_rom_B13A:
-	jsr sub_rom_04_81D2
-	lda zp_55
+	jsr sub_rom_cycle_palettes
+	lda zp_palette_fade_idx
 	cmp #$09
-	bcs @B144
-
-	rts
+	bcs :+
+		; Palettes still cycling
+		rts
 ; ----------------
-	@B144:
+	:
+	; Palette fade done: switch to machine state 0,5,0
 	lda #$00
 	sta zp_machine_state_2
 	lda #$05
@@ -272,15 +308,17 @@ sub_get_controller1_main_menu:
 	;lda rom_04_9CAD+1,X
 	lda rom_04_9CAD+1
 	sta zp_ptr1_hi
+
 	lda zp_controller1_new
 	sta zp_06
-	lda zp_63
+
+	lda zp_plr1_selection	; This will be either 0 (left option) or 1 (right option)
 	sta zp_05
+
 	jsr sub_rom_04_810A
 	bmi :+
-
-		sta zp_63
-		lda #$03
+		sta zp_plr1_selection
+		lda #$03	; Cursor bleep SFX
 		sta ram_req_sfx
 	:
 	rts
@@ -288,7 +326,7 @@ sub_get_controller1_main_menu:
 ; -----------------------------------------------------------------------------
 
 ; PPU pointers for "cursor" in main menu?
-rom_B170:
+tbl_menu_cursor_ptrs:
 	.byte $28, $20, $2A, $20
 
 ; -----------------------------------------------------------------------------
@@ -299,9 +337,9 @@ sub_rom_B174:
 	jsr sub_trampoline
 ; ----------------
 	.word sub_rom_B183
-	.word sub_rom_B079
+	.word sub_menu_fade_in
 	.word sub_rom_B1B2
-	.word sub_rom_B107
+	.word sub_menu_fade_out
 	.word sub_rom_B1E2
 
 ; -----------------------------------------------------------------------------
@@ -309,7 +347,7 @@ sub_rom_B174:
 sub_rom_B183:
 	lda #$01
 	sta zp_tmp_idx
-	jsr sub_rom_04_805A
+	jsr sub_setup_new_screen
 	; Switch to vertical mirroring
 	lda #$00
 	sta mmc3_mirroring
@@ -323,11 +361,11 @@ sub_rom_B183:
 	lda #$1E
 	sta zp_04
 	lda ram_042C
-	sta zp_64
+	sta zp_plr2_selection
 	jsr sub_rom_B223
 	ldx ram_042C
 	lda rom_B24A,X
-	sta ram_041C
+	sta ram_irq_latch_value
 	inc zp_machine_state_2
 	rts
 
@@ -348,19 +386,19 @@ sub_rom_B1B2:
 	and #$D0
 	beq sub_rom_B1B2
 
-	lda zp_64
+	lda zp_plr2_selection
 	cmp #$05
 	bcs :+
 
-		ldx zp_64
+		ldx zp_plr2_selection
 		stx ram_042C
 		lda rom_B24A,X
-		sta ram_041C
+		sta ram_irq_latch_value
 		jmp sub_rom_B1B2
 	:
 	inc zp_machine_state_2
 	lda #$05
-	sta zp_55
+	sta zp_palette_fade_idx
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -398,12 +436,12 @@ sub_get_controller1_options_menu:
 	sta zp_ptr1_hi
 	lda zp_controller1_new
 	sta zp_06
-	lda zp_64
+	lda zp_plr2_selection
 	sta zp_05
 	jsr sub_rom_04_810A
 	bmi :+
 
-		sta zp_64
+		sta zp_plr2_selection
 		lda #$03
 		sta ram_req_sfx
 	:
@@ -412,7 +450,7 @@ sub_get_controller1_options_menu:
 ; -----------------------------------------------------------------------------
 
 sub_rom_B223:
-	lda zp_64
+	lda zp_plr2_selection
 	asl A
 	tax
 	lda rom_B23E+0,X
@@ -457,7 +495,7 @@ sub_rom_B25C:
 	iny
 	@B263:
 	sty zp_tmp_idx
-	jsr sub_rom_04_805A
+	jsr sub_setup_new_screen
 	jsr sub_rom_B4B2
 	lda #$00
 	sta zp_scroll_x
@@ -472,7 +510,7 @@ sub_rom_B25C:
 	lda #$0C
 	sta ram_routine_pointer_idx
 	lda #$80
-	sta ram_041C
+	sta ram_irq_latch_value
 	inc zp_machine_state_2
 	lda #$00
 	sta zp_5C
@@ -480,14 +518,14 @@ sub_rom_B25C:
 	lda zp_66
 	asl A
 	tay
-	lda zp_63
+	lda zp_plr1_selection
 	and #$80
 	ora rom_B2A9+0,Y
-	sta zp_63
-	lda zp_64
+	sta zp_plr1_selection
+	lda zp_plr2_selection
 	and #$80
 	ora rom_B2A9+1,Y
-	sta zp_64
+	sta zp_plr2_selection
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -498,8 +536,8 @@ rom_B2A9:
 ; -----------------------------------------------------------------------------
 
 sub_rom_B2AD:
-	jsr sub_rom_04_81D2
-	lda zp_55
+	jsr sub_rom_cycle_palettes
+	lda zp_palette_fade_idx
 	cmp #$05
 	bcs @B2B7
 
@@ -522,7 +560,7 @@ sub_rom_B2BD:
 ; ----------------
 	@B2C4:
 	sta zp_last_execution_frame
-	jsr sub_player_select_input
+	jsr sub_fighter_selection_input
 	jsr sub_rom_B363
 	jsr sub_rom_B556
 	lda zp_5C
@@ -534,15 +572,15 @@ sub_rom_B2BD:
 
 	inc zp_machine_state_2
 	lda #$05
-	sta zp_55
+	sta zp_palette_fade_idx
 	@B2DF:
 	rts
 
 ; -----------------------------------------------------------------------------
 
 sub_rom_B2E0:
-	jsr sub_rom_04_81D2
-	lda zp_55
+	jsr sub_rom_cycle_palettes
+	lda zp_palette_fade_idx
 	cmp #$09
 	bcs @B2EA
 
@@ -556,18 +594,18 @@ sub_rom_B2E0:
 
 ; -----------------------------------------------------------------------------
 
-sub_player_select_input:
+sub_fighter_selection_input:
 	; First run: controller 1
 	ldx #$00
 	stx zp_07
-	jsr @player_select_input
+	jsr @player_selection_input
 
 	; Second run: controller 2
 	ldx #$01
 	stx zp_07
 ; ----------------
-	@player_select_input:
-	lda zp_63,X
+	@player_selection_input:
+	lda zp_plr1_selection,X
 	bpl @B316
 
 	lda #$09
@@ -576,9 +614,9 @@ sub_player_select_input:
 	and #$0F
 	beq @B352
 
-	lda zp_63,X
+	lda zp_plr1_selection,X
 	and #$7F
-	sta zp_63,X
+	sta zp_plr1_selection,X
 	lda #$00
 	sta zp_5C,X
 	sta zp_controller1_new,X
@@ -588,7 +626,7 @@ sub_player_select_input:
 
 	lda zp_controller1_new,X
 	sta zp_06
-	lda zp_63,X
+	lda zp_plr1_selection,X
 	sta zp_05
 	lda zp_tmp_idx
 	asl A
@@ -607,7 +645,7 @@ sub_player_select_input:
 	lda zp_05
 	bmi @B34A
 
-	sta zp_63,X
+	sta zp_plr1_selection,X
 	lda #$03
 	sta ram_req_sfx
 	@B34A:
@@ -682,7 +720,7 @@ sub_rom_B393:
 	sta zp_ptr1_lo
 	lda rom_B414+1,Y
 	sta zp_ptr1_hi
-	lda zp_63,X
+	lda zp_plr1_selection,X
 	bpl @B3A6
 	rts
 ; ----------------
@@ -690,10 +728,10 @@ sub_rom_B393:
 	asl A
 	tay
 	lda (zp_ptr1_lo),Y
-	sta zp_14
+	sta zp_ptr2_lo
 	iny
 	lda (zp_ptr1_lo),Y
-	sta zp_15
+	sta zp_ptr2_hi
 	ldy #$08
 	lda zp_5C,X
 	beq @B3B9
@@ -722,7 +760,7 @@ sub_rom_B393:
 	@B3DB:
 	lda #$04
 	sta zp_08
-	lda zp_14
+	lda zp_ptr2_lo
 	sta zp_09
 	@B3E3:
 	sta ram_0303,X
@@ -732,7 +770,7 @@ sub_rom_B393:
 	sta ram_0301,X
 	lda zp_0F
 	sta ram_0302,X
-	lda zp_15
+	lda zp_ptr2_hi
 	sta ram_oam_data_copy,X
 	inx
 	inx
@@ -747,10 +785,10 @@ sub_rom_B393:
 	dec zp_08
 	bne @B3E3
 
-	lda zp_15
+	lda zp_ptr2_hi
 	clc
 	adc #$08
-	sta zp_15
+	sta zp_ptr2_hi
 	dec zp_0B
 	bne @B3DB
 
@@ -850,9 +888,9 @@ sub_rom_B556:
 	asl A
 	tay
 	lda rom_B5BF+0,Y
-	sta zp_14
+	sta zp_ptr2_lo
 	lda rom_B5BF+1,Y
-	sta zp_15
+	sta zp_ptr2_hi
 	ldx #$00
 	lda zp_5C,X
 	cmp #$05
@@ -871,13 +909,13 @@ sub_rom_B556:
 
 sub_rom_B578:
 	inc zp_5C,X
-	lda zp_63,X
+	lda zp_plr1_selection,X
 	asl A
 	tay
-	lda (zp_14),Y
+	lda (zp_ptr2_lo),Y
 	sta zp_ptr1_lo
 	iny
-	lda (zp_14),Y
+	lda (zp_ptr2_lo),Y
 	sta zp_ptr1_hi
 	ldy #$00
 	lda (zp_ptr1_lo),Y
@@ -1027,7 +1065,7 @@ sub_rom_B6D8:
 sub_rom_B6E9:
 	lda #$05
 	sta zp_tmp_idx
-	jsr sub_rom_04_805A
+	jsr sub_setup_new_screen
 	lda #$00
 	sta zp_scroll_x
 	sta zp_scroll_y
@@ -1041,22 +1079,22 @@ sub_rom_B6E9:
 	lda #$0C
 	sta ram_routine_pointer_idx
 	lda #$80
-	sta ram_041C
+	sta ram_irq_latch_value
 	inc zp_machine_state_2
 	rts
 
 ; -----------------------------------------------------------------------------
 
 sub_rom_B712:
-	jsr sub_rom_04_81D2
-	lda zp_55
+	jsr sub_rom_cycle_palettes
+	lda zp_palette_fade_idx
 	cmp #$05
 	bcs @B71C
 	rts
 ; ----------------
 	@B71C:
 	lda #$0A
-	sta zp_54
+	sta zp_counter_param
 	inc zp_machine_state_2
 	rts
 
@@ -1082,7 +1120,7 @@ sub_rom_B723:
 	sta ram_req_sfx
 	inc zp_machine_state_2
 	lda #$05
-	sta zp_55
+	sta zp_palette_fade_idx
 	rts
 ; ----------------
 	@B744:
@@ -1093,7 +1131,7 @@ sub_rom_B723:
 
 	lda #$10
 	sta ram_req_sfx
-	dec zp_54
+	dec zp_counter_param
 	bpl @B775
 
 	lda zp_F2
@@ -1104,7 +1142,7 @@ sub_rom_B723:
 	inc zp_machine_state_2
 	inc zp_machine_state_2
 	lda #$05
-	sta zp_55
+	sta zp_palette_fade_idx
 	rts
 ; ----------------
 	@B767:
@@ -1112,7 +1150,7 @@ sub_rom_B723:
 	inc zp_machine_state_2
 	inc zp_machine_state_2
 	lda #$03
-	sta zp_54
+	sta zp_counter_param
 	lda #$8A
 	sta zp_02
 	@B775:
@@ -1121,8 +1159,8 @@ sub_rom_B723:
 ; -----------------------------------------------------------------------------
 
 sub_rom_B776:
-	jsr sub_rom_04_81D2
-	lda zp_55
+	jsr sub_rom_cycle_palettes
+	lda zp_palette_fade_idx
 	cmp #$09
 	bcs @B780
 
@@ -1138,8 +1176,8 @@ sub_rom_B776:
 ; -----------------------------------------------------------------------------
 
 sub_rom_B789:
-	jsr sub_rom_04_81D2
-	lda zp_55
+	jsr sub_rom_cycle_palettes
+	lda zp_palette_fade_idx
 	cmp #$09
 	bcs @B793
 
@@ -1155,7 +1193,7 @@ sub_rom_B789:
 	tax
 	lda #$80
 	sta zp_F2,X
-	sta zp_63,X
+	sta zp_plr1_selection,X
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1173,7 +1211,7 @@ sub_rom_B7A8:
 	and #$1F
 	bne @B7C2
 
-	dec zp_54
+	dec zp_counter_param
 	bne @B7C2
 
 	lda #$00
@@ -1185,7 +1223,7 @@ sub_rom_B7A8:
 ; -----------------------------------------------------------------------------
 
 sub_rom_B7C3:
-	lda zp_54
+	lda zp_counter_param
 	asl A
 	tax
 	lda rom_B7E8+0,X
@@ -1226,28 +1264,34 @@ sub_rom_B7FE:
 sub_rom_B80D:
 	lda #$04
 	sta zp_tmp_idx
-	jsr sub_rom_04_805A
+	jsr sub_setup_new_screen
+
 	lda #$00
 	sta zp_scroll_x
 	sta zp_scroll_y
+
 	lda #$88
 	sta PpuControl_2000
 	sta zp_02
+
 	cli
 	jsr sub_wait_vblank
+
 	lda #$1E
 	sta zp_04
+
 	lda #$0C
 	sta ram_routine_pointer_idx
-	sta ram_041C
+	sta ram_irq_latch_value
+
 	inc zp_machine_state_2
 	rts
 
 ; -----------------------------------------------------------------------------
 
 sub_rom_B834:
-	jsr sub_rom_04_81D2
-	lda zp_55
+	jsr sub_rom_cycle_palettes
+	lda zp_palette_fade_idx
 	cmp #$05
 	bcs @B83E
 
@@ -1255,7 +1299,7 @@ sub_rom_B834:
 ; ----------------
 	@B83E:
 	lda #$09
-	sta zp_54
+	sta zp_counter_param
 	inc zp_machine_state_2
 	rts
 
@@ -1281,7 +1325,7 @@ sub_rom_B845:
 	and #$3F
 	bne @B863
 
-	dec zp_54
+	dec zp_counter_param
 	bpl @B863
 
 	@B861:
@@ -1292,8 +1336,8 @@ sub_rom_B845:
 ; -----------------------------------------------------------------------------
 
 sub_rom_B864:
-	jsr sub_rom_04_81D2
-	lda zp_55
+	jsr sub_rom_cycle_palettes
+	lda zp_palette_fade_idx
 	cmp #$09
 	bcs @B86E
 
@@ -1332,8 +1376,8 @@ rom_B89C:
 ; -----------------------------------------------------------------------------
 
 sub_rom_B8A5:
-	jsr sub_rom_04_81D2
-	lda zp_55
+	jsr sub_rom_cycle_palettes
+	lda zp_palette_fade_idx
 	cmp #$09
 	bcs @B8AF
 
@@ -1344,8 +1388,8 @@ sub_rom_B8A5:
 	sta zp_machine_state_2
 	lda #$00
 	sta zp_machine_state_1
-	sta zp_63
-	sta zp_64
+	sta zp_plr1_selection
+	sta zp_plr2_selection
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1363,11 +1407,11 @@ sub_rom_B8BC:
 sub_rom_B8CB:
 	jsr sub_rom_BE15
 	ldx #$00
-	lda zp_63,X
+	lda zp_plr1_selection,X
 	bmi @B8E2
 
 	inx
-	lda zp_63,X
+	lda zp_plr1_selection,X
 	bmi @B8E2
 
 	inc zp_machine_state_2
@@ -1410,7 +1454,7 @@ sub_rom_B8CB:
 	lda rom_B922,Y
 	@B917:
 	ora #$80
-	sta zp_63,X
+	sta zp_plr1_selection,X
 	inc zp_machine_state_2
 	rts
 
@@ -1430,7 +1474,7 @@ sub_rom_B926:
 
 		lda #$02	; Index used for VS screen (it's the same as player select)
 		sta zp_tmp_idx
-		jsr sub_rom_04_805A
+		jsr sub_setup_new_screen
 		jsr sub_rom_BA74
 		jsr sub_rom_B9DB
 		lda #$8A
@@ -1440,10 +1484,10 @@ sub_rom_B926:
 	@B941:
 	lda #$07
 	sta zp_tmp_idx
-	jsr sub_rom_04_805A
+	jsr sub_setup_new_screen
 	jsr sub_rom_BC2B
 	ldy #$88
-	lda zp_63
+	lda zp_plr1_selection
 	bpl @B953
 
 	ldy #$8A
@@ -1453,7 +1497,7 @@ sub_rom_B926:
 	jsr sub_hide_all_sprites
 	lda #$00
 	sta zp_57
-	sta zp_55
+	sta zp_palette_fade_idx
 	sta zp_scroll_x
 	sta zp_scroll_y
 	lda #$88
@@ -1467,15 +1511,15 @@ sub_rom_B926:
 	sta zp_02
 	lda #$0C
 	sta ram_routine_pointer_idx
-	sta ram_041C
+	sta ram_irq_latch_value
 	inc zp_machine_state_2
 	rts
 
 ; -----------------------------------------------------------------------------
 
 sub_rom_B982:
-	jsr sub_rom_04_81D2
-	lda zp_55
+	jsr sub_rom_cycle_palettes
+	lda zp_palette_fade_idx
 	cmp #$05
 	bcs @B98C
 
@@ -1484,7 +1528,7 @@ sub_rom_B982:
 	@B98C:
 	inc zp_machine_state_2
 	lda #$04
-	sta zp_54
+	sta zp_counter_param
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1508,12 +1552,12 @@ sub_rom_B993:
 	and #$1F
 	bne @B9B4
 
-	dec zp_54
+	dec zp_counter_param
 	bne @B9B4
 
 	@B9AE:
 	lda #$00
-	sta zp_54
+	sta zp_counter_param
 	inc zp_machine_state_2
 	@B9B4:
 	rts
@@ -1521,8 +1565,8 @@ sub_rom_B993:
 ; -----------------------------------------------------------------------------
 
 sub_rom_B9B5:
-	jsr sub_rom_04_81D2
-	lda zp_55
+	jsr sub_rom_cycle_palettes
+	lda zp_palette_fade_idx
 	cmp #$09
 	bcs @B9BF
 
@@ -1617,18 +1661,18 @@ sub_rom_BA74:
 	asl A
 	tay
 	lda rom_BB07+0,Y
-	sta zp_14
+	sta zp_ptr2_lo
 	lda rom_BB07+1,Y
-	sta zp_15
+	sta zp_ptr2_hi
 	ldx #$00
-	lda zp_63
+	lda zp_plr1_selection
 	and #$7F
 	asl A
 	tay
-	lda (zp_14),Y
+	lda (zp_ptr2_lo),Y
 	sta zp_05
 	iny
-	lda (zp_14),Y
+	lda (zp_ptr2_lo),Y
 	sta ram_0680,X
 	jsr sub_rom_BC9A
 	lda #$29
@@ -1637,14 +1681,14 @@ sub_rom_BA74:
 	sta zp_43
 	jsr sub_rom_BABF
 	ldx #$01
-	lda zp_64
+	lda zp_plr2_selection
 	and #$7F
 	asl A
 	tay
-	lda (zp_14),Y
+	lda (zp_ptr2_lo),Y
 	sta zp_05
 	iny
-	lda (zp_14),Y
+	lda (zp_ptr2_lo),Y
 	sta ram_0680,X
 	jsr sub_rom_BC9A
 	lda #$29
@@ -1770,20 +1814,20 @@ sub_rom_BC2B:
 	asl A
 	tay
 	lda rom_BB07+0,Y
-	sta zp_14
+	sta zp_ptr2_lo
 	lda rom_BB07+1,Y
-	sta zp_15
+	sta zp_ptr2_hi
 	ldx #$00
 	stx zp_1C
-	lda zp_63
+	lda zp_plr1_selection
 	jsr sub_rom_BC57
 	ldx #$01
 	stx zp_1C
-	lda zp_63,X
+	lda zp_plr1_selection,X
 	jsr sub_rom_BC57
 	ldx #$02
 	stx zp_1C
-	lda zp_63,X
+	lda zp_plr1_selection,X
 	jsr sub_rom_BC57
 	jmp sub_rom_BCCB
 
@@ -1793,11 +1837,11 @@ sub_rom_BC57:
 	and #$7F
 	asl A
 	tay
-	lda (zp_14),Y
+	lda (zp_ptr2_lo),Y
 	sta zp_05
 	iny
 	ldx zp_1C
-	lda (zp_14),Y
+	lda (zp_ptr2_lo),Y
 	sta ram_0680,X
 	jsr sub_rom_BC9A
 	lda zp_1C
@@ -1998,9 +2042,9 @@ rom_BE01:
 sub_rom_BE15:
 	lda zp_66
 	bne @BE44
-	lda zp_63
+	lda zp_plr1_selection
 	bpl @BE1F
-	lda zp_64
+	lda zp_plr2_selection
 	@BE1F:
 	sta zp_05
 	sta ram_06C6
@@ -2028,10 +2072,10 @@ sub_rom_BE15:
 	rts
 ; ----------------
 	@BE44:
-	lda zp_63
+	lda zp_plr1_selection
 	bpl @BE4A
 
-	lda zp_64
+	lda zp_plr2_selection
 	@BE4A:
 	sta zp_05
 	sta ram_06CD
@@ -2076,10 +2120,10 @@ rom_BE91:
 ; -----------------------------------------------------------------------------
 
 sub_rom_BE9F:
-	lda zp_63
+	lda zp_plr1_selection
 	and #$80
 	sta zp_F2
-	lda zp_64
+	lda zp_plr2_selection
 	and #$80
 	sta zp_F3
 	lda zp_65
@@ -2088,13 +2132,13 @@ sub_rom_BE9F:
 	lda zp_66
 	bne @BEDC
 
-	lda zp_63
+	lda zp_plr1_selection
 	and #$7F
 	tay
 	lda rom_BF03,Y
 	ora zp_F2
 	sta zp_F2
-	lda zp_64
+	lda zp_plr2_selection
 	and #$7F
 	tay
 	lda rom_BF03,Y
@@ -2112,13 +2156,13 @@ sub_rom_BE9F:
 	rts
 ; ----------------
 	@BEDC:
-	lda zp_63
+	lda zp_plr1_selection
 	and #$7F
 	tay
 	lda rom_BF0C,Y
 	ora zp_F2
 	sta zp_F2
-	lda zp_64
+	lda zp_plr2_selection
 	and #$7F
 	tay
 	lda rom_BF0C,Y
@@ -2159,7 +2203,7 @@ sub_rom_BF1E:
 sub_rom_BF29:
 	lda #$06
 	sta zp_tmp_idx
-	jsr sub_rom_04_805A
+	jsr sub_setup_new_screen
 	lda #$00
 	sta zp_scroll_x
 	sta zp_scroll_y
@@ -2182,17 +2226,17 @@ sub_rom_BF29:
 	sty zp_02
 	lda #$0C
 	sta ram_routine_pointer_idx
-	sta ram_041C
+	sta ram_irq_latch_value
 	inc zp_machine_state_2
 	lda #$14
-	sta zp_54
+	sta zp_counter_param
 	rts
 
 ; -----------------------------------------------------------------------------
 
 sub_rom_BF66:
-	jsr sub_rom_04_81D2
-	lda zp_55
+	jsr sub_rom_cycle_palettes
+	lda zp_palette_fade_idx
 	cmp #$05
 	bcs @BF70
 
@@ -2205,19 +2249,19 @@ sub_rom_BF66:
 ; -----------------------------------------------------------------------------
 
 sub_rom_BF73:
-	jsr sub_rom_04_81D2
-	lda zp_55
+	jsr sub_rom_cycle_palettes
+	lda zp_palette_fade_idx
 	cmp #$09
 	bcs @BF7D
 
 	rts
 ; ----------------
 	@BF7D:
-	dec zp_54
+	dec zp_counter_param
 	beq @BF89
 
 	ldy #$00
-	sty zp_55
+	sty zp_palette_fade_idx
 	iny
 	sty zp_machine_state_2
 	rts
@@ -2231,11 +2275,12 @@ sub_rom_BF73:
 
 ; -----------------------------------------------------------------------------
 
-; Called when Machine State i 0,0,0
-sub_rom_BF92:
-	lda #$08
+; Called when Machine State is 0,0,0
+sub_init_titles_screen:
+	lda #$08	; Index of palette, nametable and IRQ handler pointers
 	sta zp_tmp_idx
-	jsr sub_rom_04_805A
+	jsr sub_setup_new_screen
+
 	jsr sub_hide_all_sprites
 
 	lda #$00
@@ -2245,30 +2290,34 @@ sub_rom_BF92:
 	lda #$88
 	sta PpuControl_2000
 	sta zp_02
+
 	cli
 	jsr sub_wait_vblank
 	lda #$1E
 	sta zp_04
 	lda #$7C
-	sta ram_041C
-	inc zp_machine_state_2
+	sta ram_irq_latch_value
+
+	inc zp_machine_state_2	; Move to next sub-state
 
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_BFB9:
-	jsr sub_rom_04_81D2
-	lda zp_55
+; Machine state: 0,0,1
+sub_titles_fade_in:
+	jsr sub_rom_cycle_palettes
+	lda zp_palette_fade_idx
 	cmp #$05
 	bcs :+
-
+		; Palettes are still cycling
 		rts
 ; ----------------
 	:
-	inc zp_machine_state_2
+	; Palettes have finished cycling
+	inc zp_machine_state_2	; Move to next sub-state
 	lda #$03	; Wait timer for titles screen
-	sta zp_54
+	sta zp_counter_param
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -2279,41 +2328,42 @@ sub_titles_loop:
 	lda zp_frame_counter
 	cmp zp_last_execution_frame
 	bne :+
-
+		; Already executed on this frame
 		rts
 ; ----------------
 	:
 	sta zp_last_execution_frame
-	lda zp_controller1_new
-	and #$D0
-	bne @BFE3
 
+	lda zp_controller1_new
+	and #$D0	; A, B or START
+	bne :+
 		lda zp_frame_counter
 		and #$1F
 		bne @BFE9
-		dec zp_54
+		dec zp_counter_param
 		bne @BFE9
-
-	@BFE3:
+	:
 	lda #$00
-	sta zp_54
-	inc zp_machine_state_2
+	sta zp_counter_param
+	inc zp_machine_state_2	; Move to next sub-state
 
 	@BFE9:
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_BFEA:
-	jsr sub_rom_04_81D2
-	lda zp_55
+; Machine state = 0,0,3
+sub_titles_fade_out:
+	jsr sub_rom_cycle_palettes
+	lda zp_palette_fade_idx
 	cmp #$09
 	bcs :+
-
+		; Palettes are still cycling
 		rts
 ; ----------------
 	:
-	inc zp_machine_state_2
+	; Fade out complete
+	inc zp_machine_state_2	; Move to next sub-state
 	rts
 
 ; -----------------------------------------------------------------------------

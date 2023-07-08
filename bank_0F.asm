@@ -19,22 +19,22 @@ reset:
 	cld
 	ldx #$FF
 	txs
+
 	lda #$00
 	sta PpuMask_2001
 	sta PpuControl_2000
+
 	ldx #$02
 	@E00F:
 	bit PpuStatus_2002
 	bpl @E00F
-
-	@E014:
-	lda PpuStatus_2002
-	bmi @E014
-
+	:
+		lda PpuStatus_2002
+	bmi :-
 	dex
 	bne @E00F
 
-	lda #$0F
+	lda #$1F
 	sta ApuStatus_4015
 	lda #$00
 	sta DmcFreq_4010
@@ -44,23 +44,29 @@ reset:
 	lda #$80
 	sta mmc3_ram_protect
 	lda PpuStatus_2002
-	lda #$10
-	tax
-	@E039:
-	sta PpuAddr_2006
-	sta PpuAddr_2006
-	eor #$10
-	dex
-	bne @E039
+
+	;lda #$10
+	;tax
+	lax #$10
+	:
+		sta PpuAddr_2006
+		sta PpuAddr_2006
+		eor #$10
+		dex
+	bne :-
 
 	sta mmc3_irq_disable
+
 	lda #$00
 	sta ram_0100
-	lda #$00
+	;lda #$00
 	sta ram_042D
+
 	lda #$0C
 	sta ram_routine_pointer_idx
+
 	jsr sub_rom_E22A
+
 	lda #$00
 	jsr sub_clear_nametable
 	lda #$01
@@ -68,19 +74,21 @@ reset:
 	lda #$03
 	sta ram_042C
 	jsr sub_clear_nametable
+
 	jsr sub_hide_all_sprites
-	; $8000-$9FFF = Bank $02
+	; PRG ROM $8000-$9FFF <-- Bank $02
 	lda #$86
-	sta a:zp_FC		; Why?
+	sta zp_prg_bank_select_backup	;sta a:zp_FC
 	sta mmc3_bank_select
 	lda #$02
 	sta mmc3_bank_data
-	; $A000-$BFFF = Bank $03
+	; PRG ROM $A000-$BFFF <-- Bank $03
 	lda #$87
-	sta a:zp_FC		; Again
+	sta zp_prg_bank_select_backup	;sta a:zp_FC
 	sta mmc3_bank_select
 	lda #$03
 	sta mmc3_bank_data
+
 	jsr sub_apu_init
 
 	; This will not actually play anything, maybe it was put here as a test
@@ -92,7 +100,7 @@ reset:
 	lda #$00
 	sta zp_28
 	lda #$01
-	sta a:zp_mmc3_irq_ready		; Also why?
+	sta zp_mmc3_irq_ready	;sta a:zp_mmc3_irq_ready
 	lda #$88
 	sta ram_0409
 	lda #$13
@@ -118,33 +126,39 @@ reset:
 	lda #$00
 	sta zp_04
 	sta PpuMask_2001
-	@E0DB:
-	inc zp_22
-	lda a:zp_F7		; Why all these?! Precise timing? If so, why not use NOPs?
-	beq @E0DB
 
-	dec a:zp_F7
-	lda #$01
-	sta a:zp_FD
-	jsr sub_state_machine_start
-	jsr sub_rom_E902
-	jsr sub_rom_E8CB
-	; $8000-$9FFF = Bank $02
-	lda #$86
-	sta a:zp_FC
-	sta mmc3_bank_select
-	lda #$02
-	sta mmc3_bank_data
-	; $8000-$9FFF = Bank $03
-	lda #$87
-	sta a:zp_FC
-	sta mmc3_bank_select
-	lda #$03
-	sta mmc3_bank_data
-	jsr sub_process_all_sound
-	lda #$00
-	sta a:zp_FD
-	jmp @E0DB
+	@main_loop:
+		inc zp_22
+		lda zp_F7	;lda a:zp_F7
+	beq @main_loop
+
+		dec zp_F7	;dec a:zp_F7
+		lda #$01
+		sta zp_FD	;sta a:zp_FD
+
+		jsr sub_state_machine_start
+		jsr sub_rom_E902
+		jsr sub_rom_E8CB
+
+		; PRG ROM $8000-$9FFF <-- Bank $02 (sound data)
+		lda #$86
+		sta zp_prg_bank_select_backup	;sta a:zp_prg_bank_select_backup
+		sta mmc3_bank_select
+		lda #$02
+		sta mmc3_bank_data
+		; PRG ROM $8000-$9FFF <-- Bank $03 (sound and moves code)
+		lda #$87
+		sta zp_prg_bank_select_backup	;sta a:zp_prg_bank_select_backup
+		sta mmc3_bank_select
+		lda #$03
+		sta mmc3_bank_data
+
+		jsr sub_process_all_sound
+
+		lda #$00
+		sta zp_FD	;sta a:zp_FD
+
+	jmp @main_loop
 
 ; -----------------------------------------------------------------------------
 
@@ -212,7 +226,7 @@ nmi:
 		lda ram_0416
 		sta ram_0418
 		jsr sub_select_irq_handler
-		lda ram_041C
+		lda ram_irq_latch_value
 		sta mmc3_irq_latch
 		sta mmc3_irq_reload
 		sta mmc3_irq_enable
@@ -275,7 +289,7 @@ nmi:
 		sta a:zp_F7	; Why?
 
 	@E201:
-	lda a:zp_FC		; Why?
+	lda a:zp_prg_bank_select_backup		; Why?
 	sta mmc3_bank_select
 	pla
 	tay
@@ -496,14 +510,14 @@ sub_trampoline:
 	asl A
 	tay
 	pla
-	sta zp_14
+	sta zp_ptr2_lo
 	pla
-	sta zp_15
+	sta zp_ptr2_hi
 	iny
-	lda (zp_14),Y
+	lda (zp_ptr2_lo),Y
 	sta zp_ptr1_lo
 	iny
-	lda (zp_14),Y
+	lda (zp_ptr2_lo),Y
 	sta zp_ptr1_hi
 	jmp (zp_ptr1_lo)
 
@@ -794,7 +808,7 @@ sub_rom_E4CB:
 	lda #$00
 	ldx #$08
 	@E4CF:
-	lsr zp_14
+	lsr zp_ptr2_lo
 	bcc @E4D6
 
 	clc
@@ -1241,13 +1255,13 @@ sub_state_machine_start:
 						; basically a JMP with parameter from the table below
 ; ----------------
 rom_E7CE:
-	.word sub_prg_banks_4_5
-	.word sub_rom_EA13
-	.word sub_rom_E7F5
-	.word sub_clear_machine_states
-	.word sub_rom_E889
-	.word sub_rom_E893
-	.word sub_rom_E89B
+	.word sub_prg_banks_4_5			; $00
+	.word sub_rom_EA13				; $01
+	.word sub_rom_E7F5				; $02
+	.word sub_clear_machine_states	; $03
+	.word sub_rom_E889				; $04
+	.word sub_rom_E893				; $05
+	.word sub_rom_E89B				; $06
 
 ; -----------------------------------------------------------------------------
 
@@ -1430,12 +1444,12 @@ sub_rom_E89B:
 ; Sound / music stuff
 sub_rom_E8CB:
 	lda #$86
-	sta a:zp_FC	; ???
+	sta a:zp_prg_bank_select_backup	; ???
 	sta mmc3_bank_select
 	lda #$02
 	sta mmc3_bank_data
 	lda #$87
-	sta a:zp_FC	; ???
+	sta a:zp_prg_bank_select_backup	; ???
 	sta mmc3_bank_select
 	lda #$03
 	sta mmc3_bank_data
@@ -1604,7 +1618,7 @@ sub_rom_EA06:
 ; Called if Machine State 0 is 1
 sub_rom_EA13:
 	lda #$2F
-	sta ram_041C
+	sta ram_irq_latch_value
 	lda a:zp_5E	; ???
 	beq @EA2A
 
@@ -1624,12 +1638,11 @@ sub_rom_EA13:
 	lda a:zp_7A	; ???
 	cmp #$03
 	bne @EA53
-
 	lda ram_0438
 	bne @EA53
 
 	jsr sub_rom_EA5B
-	lda #$0E
+	lda #$0E	; Pause sound
 	sta ram_req_sfx
 	lda a:zp_24	; ???
 	eor #$01
@@ -1641,8 +1654,8 @@ sub_rom_EA13:
 	rts
 ; ----------------
 	@EA53:
-	jsr sub_rom_EA57
-	rts
+	jmp sub_rom_EA57	; jsr sub_rom_EA57
+	;rts
 
 ; -----------------------------------------------------------------------------
 
