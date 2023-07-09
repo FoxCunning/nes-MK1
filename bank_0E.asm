@@ -18,10 +18,7 @@ rom_8002 = $8002	;
 sub_rom_C000:
 	lda zp_7A
 	jsr sub_rom_D68B
-
-; -----------------------------------------------------------------------------
-
-rom_C005:
+; ----------------
 	.word sub_rom_C019, sub_rom_C107, sub_rom_C117, sub_rom_C122
 	.word sub_rom_C17B, sub_rom_C186, sub_rom_C1F9, sub_rom_C21E
 	.word sub_rom_C21E, sub_rom_C284

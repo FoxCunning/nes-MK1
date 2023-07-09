@@ -498,6 +498,8 @@ tbl_option_menu_latches:
 ; -----------------------------------------------------------------------------
 
 sub_init_sound_test:
+	lda #$00
+	sta ram_0435
 	lda #$09
 	jsr sub_init_screen_common
 

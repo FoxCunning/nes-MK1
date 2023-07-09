@@ -559,9 +559,9 @@ tbl_irq_handler_ptrs:
 	.word sub_irq_handler_0E		; $0E
 	.word sub_irq_handler_0F		; $0F
 	.word sub_irq_handler_10		; $10
-	.word sub_irq_handler_10		; $11
-	.word sub_irq_handler_10		; $12
-	.word sub_irq_handler_10		; $13
+	.word sub_irq_handler_11		; $11
+	.word sub_irq_handler_11		; $12
+	.word sub_irq_handler_11		; $13
 
 ; -----------------------------------------------------------------------------
 
@@ -1203,8 +1203,55 @@ sub_irq_handler_0F:
 
 ; -----------------------------------------------------------------------------
 
-; "Idle" IRQ handler
+; Used by the sound test menu to display volume bars
 sub_irq_handler_10:
+	sta mmc3_irq_disable
+
+	lda ram_0435
+	bne :+
+		; We only need to do this set up once
+		ldx #$00
+		ldy #$04
+		@irq10_setup_loop:
+			lda #$90
+			sta ram_oam_copy_ypos+4,X
+			lda #$01
+			sta ram_oam_copy_attr+4,X
+			lda @tbl_irq10_sprite_xpos,Y
+			sta ram_oam_copy_xpos+4,X
+			; X = X + 4
+			txa
+			axs #$FC
+		dey
+		bne @irq10_setup_loop
+
+		inc ram_0435
+	:
+	; Read volume and show a sprite for each channel depending on the value
+	; TODO Change the palette depending on volume?
+	ldx #$00
+	ldy #$00
+	:
+		lda ram_apu_output_volume,Y
+		lsr
+		adc #$E0
+		sta ram_oam_copy_tileid+4,X
+
+		txa
+		axs #$FC
+	iny
+	cpy #$04
+	bne :-
+	
+	@tbl_irq10_sprite_xpos:
+	rts	; We need exactly one byte here to offset our data
+; ----------------
+	.byte $C0, $B0, $48, $38
+
+; -----------------------------------------------------------------------------
+
+; "Idle" IRQ handler
+sub_irq_handler_11:
 	sta mmc3_irq_disable
 	lda #$00
 	sta ram_0435

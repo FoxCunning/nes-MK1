@@ -1189,9 +1189,13 @@ sub_apu_init:
 	; Silence all channels
 	lda #$00
 	sta Sq0Duty_4000
+	sta ram_apu_output_volume+0
 	sta Sq1Duty_4004
+	sta ram_apu_output_volume+1
 	sta TrgLinear_4008
+	sta ram_apu_output_volume+2
 	sta NoiseVolume_400C
+	sta ram_apu_output_volume+3
 	sta DmcFreq_4010
 	; Disable sweep units
 	lda #$7F
@@ -1631,6 +1635,8 @@ sub_new_note_or_rest:
 		; Stop playing the previous note, if any
 		lda #$80
 		sta TrgLinear_4008
+		and #$0F
+		sta ram_apu_output_volume+2
 	:
 	lda zp_sndptr_lo	;pla	; Retrieve note index
 
@@ -2158,6 +2164,8 @@ sub_stop_envelopes:
 			; Mute triangle channel
 			lda #$80
 			sta TrgLinear_4008
+			and #$0F
+			sta ram_apu_output_volume+2
 	:
 	rts
 
@@ -2210,6 +2218,8 @@ sub_start_volume_envelope:
 		; Start playing triangle channel immediately
 		lda #$FF
 		sta TrgLinear_4008
+		and #$0F
+		sta ram_apu_output_volume+2
 		rts
 	:
 	cpx #$04
@@ -2635,6 +2645,8 @@ sub_sq0_output:
 	ora zp_sndptr_lo
 	ora #$30
 	sta Sq0Duty_4000
+	and #$0F
+	sta ram_apu_output_volume+0
 
 	jsr sub_get_pitch_envelope
 
@@ -2690,6 +2702,8 @@ sub_sq1_output:
 	ora zp_sndptr_lo
 	ora #$30
 	sta Sq1Duty_4004
+	and #$0F
+	sta ram_apu_output_volume+1
 	jsr sub_get_pitch_envelope
 	lda #$00
 	sta zp_sndptr_hi
@@ -2790,6 +2804,8 @@ sub_noise_output:
 	lda zp_sndptr_lo
 	ora #$30
 	sta NoiseVolume_400C
+	and #$0F
+	sta ram_apu_output_volume+3
 
 	; This will change the base period if needed
 	jsr sub_apply_arpeggio_noise

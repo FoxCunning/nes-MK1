@@ -345,6 +345,11 @@ ram_06C6 = $06C6    ;
 ram_06CD = $06CD    ;
 
 ; ----------------
+
+; One per channel
+ram_apu_output_volume = $06E0
+
+; ----------------
 ; Will contain 1 after the APU and sound engine have been initialised
 ; Nothing will play while this is set to zero
 ram_snd_initialised = $06F0    ;
