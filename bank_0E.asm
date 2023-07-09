@@ -1088,14 +1088,14 @@ rom_C669:
 
 sub_rom_C675:
 	lda #$20
-	sta zp_44
+	sta zp_nmi_ppu_ptr_hi
 	lda #$44
-	sta zp_43
+	sta zp_nmi_ppu_ptr_lo
 	lda #$01
-	sta zp_45
+	sta zp_nmi_ppu_rows
 	ldx #$0F
 	ldx #$18
-	stx zp_46
+	stx zp_nmi_ppu_cols
 	ldy #$00
 	@C689:
 	lda rom_C76C,Y
@@ -2156,13 +2156,13 @@ sub_rom_CCC3:
 	lda rom_CD09,X
 	sta ram_0604
 	lda #$01
-	sta zp_45
+	sta zp_nmi_ppu_rows
 	lda #$05
-	sta zp_46
+	sta zp_nmi_ppu_cols
 	lda #$20
-	sta zp_44
+	sta zp_nmi_ppu_ptr_hi
 	lda #$4F
-	sta zp_43
+	sta zp_nmi_ppu_ptr_lo
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -2304,13 +2304,13 @@ sub_rom_CDD5:
 	lda rom_CE40+1,X
 	sta zp_3C
 	lda #$01
-	sta zp_45
+	sta zp_nmi_ppu_rows
 	lda #$1C
-	sta zp_46
+	sta zp_nmi_ppu_cols
 	lda #$20
-	sta zp_44
+	sta zp_nmi_ppu_ptr_hi
 	ldx #$84
-	stx zp_43
+	stx zp_nmi_ppu_ptr_lo
 	ldx #$00
 	lda #$FF
 	@CDF7:
@@ -2588,13 +2588,13 @@ sub_rom_CFFE:
 
 	lda #$37
 	sta ram_0600
-	sty zp_46
+	sty zp_nmi_ppu_cols
 	lda #$01
-	sta zp_45
+	sta zp_nmi_ppu_rows
 	lda #$3F
-	sta zp_44
+	sta zp_nmi_ppu_ptr_hi
 	lda #$10
-	sta zp_43
+	sta zp_nmi_ppu_ptr_lo
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -3382,13 +3382,13 @@ sub_rom_D465:
 	lda rom_D49F,X
 	sta zp_ppu_mask_backup
 	lda #$3F
-	sta zp_44
+	sta zp_nmi_ppu_ptr_hi
 	lda #$00
-	sta zp_43
+	sta zp_nmi_ppu_ptr_lo
 	lda #$01
-	sta zp_45
+	sta zp_nmi_ppu_rows
 	lda #$20
-	sta zp_46
+	sta zp_nmi_ppu_cols
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -3989,18 +3989,18 @@ sub_rom_D935:
 	cpy #$08
 	bcc @D94D
 
-	sty zp_46
+	sty zp_nmi_ppu_cols
 	lda #$01
-	sta zp_45
+	sta zp_nmi_ppu_rows
 	lda #$3F
-	sta zp_44
+	sta zp_nmi_ppu_ptr_hi
 	ldy #$10
 	lda zp_7C
 	beq @D96A
 
 	ldy #$18
 	@D96A:
-	sty zp_43
+	sty zp_nmi_ppu_ptr_lo
 	rts
 
 ; -----------------------------------------------------------------------------

@@ -70,10 +70,14 @@ zp_3D = $3D     ;
 zp_3E = $3E     ;
 
 zp_machine_state_0 = $40    ;
-zp_43 = $43     ;
-zp_44 = $44     ;
-zp_45 = $45     ;
-zp_46 = $46     ;
+; When this pointer is valid, the NMI routine will write data to this PPU address
+zp_nmi_ppu_ptr_lo = $43 ;
+; When this pointer is valid, the NMI routine will write data to this PPU address
+zp_nmi_ppu_ptr_hi = $44 ;
+; How many rows of data to copy from $0600 to PPU
+zp_nmi_ppu_rows = $45   ;
+; How many columns of data to copy from $0600 to PPU
+zp_nmi_ppu_cols = $46   ;
 zp_47 = $47     ;
 zp_48 = $48     ;
 zp_49 = $49     ;

@@ -6,6 +6,7 @@
 .feature pc_assignment
 
 .include "globals.inc"
+.include "charmap.inc"
 
 ; -----------------------------------------------------------------------------
 .export sub_wait_vblank
@@ -380,7 +381,7 @@ sub_rom_cycle_palettes:
 	lda rom_8239+1,Y
 	sta zp_ptr2_hi
 
-	lda zp_44
+	lda zp_nmi_ppu_ptr_hi
 	bne @822F
 
         lda zp_frame_counter
@@ -414,14 +415,14 @@ sub_rom_cycle_palettes:
 	bne @8201
 
 	lda #$3F
-	sta zp_44
+	sta zp_nmi_ppu_ptr_hi
 	lda #$00
-	sta zp_43
+	sta zp_nmi_ppu_ptr_lo
 	sta zp_47
 	lda #$20
-	sta zp_46
+	sta zp_nmi_ppu_cols
 	lda #$01
-	sta zp_45
+	sta zp_nmi_ppu_rows
 	inc zp_palette_fade_idx
 
 	@822F:
@@ -1422,5 +1423,138 @@ sub_choose_music_track:
 	.byte $22	; $09	Sound test (silence)
 
 ; -----------------------------------------------------------------------------
+.export sub_select_music_to_test
 
-; Corrupted unassembled code follows as usual
+; Parameters:
+; A = controller data with left or right bit set
+; zp_plr2_selection = 0 for music, 1 for sfx, anything else is ignored
+sub_select_music_to_test:
+	ldy zp_plr2_selection
+	beq @select_music
+		cpy #$01
+		beq :+
+			; Ignore invalid options
+			rts
+		:
+		; Select sound effect
+		; TODO
+		bit @bit_01
+		beq :+
+			; Right = increase index
+			; TODO
+			rts
+		:
+		; Left = decrease index
+		; TODO
+		rts
+	@select_music:
+	bit @bit_01
+	beq @music_prev
+
+		; Right = increase index
+		lda #$0C	; There are 11 choices (0-10)
+		isc zp_plr1_selection
+		bne :+
+			dec zp_plr1_selection
+		:
+		jmp sub_show_mus_selection
+
+	@music_prev:
+
+	; Left = decrease index
+	lda #$FF
+	dcp zp_plr1_selection
+	bne :+
+		inc zp_plr1_selection
+	:
+	jmp sub_show_mus_selection
+
+	@bit_01:
+	.byte $01
+
+; -----------------------------------------------------------------------------
+
+sub_show_mus_selection:
+	; PPU Address = $2176
+	lda #$21
+	sta zp_nmi_ppu_ptr_hi
+	lda #$76
+	sta zp_nmi_ppu_ptr_lo
+	
+	lda zp_plr1_selection
+	asl
+	tax
+
+	lda tbl_num_to_char+0,X
+	sta ram_0600+0
+	lda tbl_num_to_char+1,X
+	sta ram_0600+1
+
+	; Ready to transfer data
+	lda #$01
+	sta zp_nmi_ppu_rows
+	lda #$02
+	sta zp_nmi_ppu_cols
+
+	rts
+
+; ----------------
+
+; Number conversion table
+tbl_num_to_char:
+	.byte "00", "01", "02", "03", "04", "05", "06", "07"
+	.byte "08", "09", "10"
+
+; -----------------------------------------------------------------------------
+.export sub_show_playing_song
+
+sub_show_playing_song:
+	; PPU Address = $22C8
+	lda #$22
+	sta zp_nmi_ppu_ptr_hi
+	lda #$C8
+	sta zp_nmi_ppu_ptr_lo
+
+	lda ram_req_song
+	sec
+	sbc #$20
+	asl
+	asl
+	asl
+	asl
+	tax
+
+	ldy #$00
+	:
+	lda @tbl_song_names,X
+	sta ram_0600,Y
+	inx
+	iny
+	cpy #$11
+	bne :-
+
+	; Ready to transfer data
+	lda #$01
+	sta zp_nmi_ppu_rows
+	lda #$10
+	sta zp_nmi_ppu_cols
+
+	rts
+
+; ----------------
+
+	; Each string is 16 bytes long
+	@tbl_song_names:
+	.byte "    opening     "	; $20
+	.byte "  your destiny  "	; $21
+	.byte "    silence     "	; $22
+	.byte "     unused     "	; $23
+	.byte "    silence     "	; $24
+	.byte "   goros lair   "	; $25
+	.byte "    the pit     "	; $26
+	.byte "   courtyard    "	; $27
+	.byte "  palace gates  "	; $28
+	.byte " warrior shrine "	; $29
+	.byte "  throne  room  "	; $2A
+
+; -----------------------------------------------------------------------------

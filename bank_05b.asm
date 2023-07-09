@@ -502,7 +502,8 @@ sub_init_sound_test:
 	jsr sub_init_screen_common
 
 	lda #$00
-	sta zp_plr2_selection
+	sta zp_plr1_selection	; Selected music track index
+	sta zp_plr2_selection	; Menu item selection (0-2)
 	lda #$F0
 	sta ram_oam_copy_tileid
 	jsr sub_sound_test_cursor
@@ -522,13 +523,31 @@ sub_sound_test_input_loop:
 		jsr sub_get_controller1_sound_test
 		jsr sub_sound_test_cursor
 		lda zp_controller1_new
+		bit @bit_03+1	; Check if bit 0 (right) or bit 1 (left) is set
+		beq :+
+			; Left/right to change selection
+			@bit_03:
+			and #$03
+			jmp sub_select_music_to_test
+		:
 		and #$D0	; A, B or START
 		beq sub_sound_test_input_loop
 
-		lda zp_plr1_selection
-		cmp #$02
+		lda zp_plr2_selection
 		bne :+
-			; TODO Start playing the selected song or sfx
+			; Option zero
+			; Start playing the selected song
+			ldx zp_plr1_selection
+			lda @tbl_test_mus_indices,X
+			sta ram_req_song
+			jsr sub_show_playing_song
+			jmp sub_sound_test_input_loop
+		:
+		cmp #$02
+		beq :+
+			; Option 1
+			; Start playing the selected sfx
+			; TODO
 			jmp sub_sound_test_input_loop
 		:
 		; Option 2 = exit
@@ -537,6 +556,10 @@ sub_sound_test_input_loop:
 		sta zp_palette_fade_idx
 	@sound_test_input_end:
 	rts
+
+	@tbl_test_mus_indices:
+	.byte $22, $20, $21, $23, $24, $25, $26, $27
+	.byte $28, $29, $2A
 
 ; -----------------------------------------------------------------------------
 
@@ -1045,15 +1068,15 @@ sub_rom_B578:
 	bpl @B58B
 
 	lda #$23
-	sta zp_44
+	sta zp_nmi_ppu_ptr_hi
 	lda #$C8
-	sta zp_43
+	sta zp_nmi_ppu_ptr_lo
 	lda #$00
 	sta zp_47
 	lda #$30
-	sta zp_46
+	sta zp_nmi_ppu_cols
 	lda #$01
-	sta zp_45
+	sta zp_nmi_ppu_rows
 
 	ldx #$08
 	ldy #$00
@@ -1334,16 +1357,16 @@ sub_rom_B7C3:
 	lda rom_B7E8+1,X
 	sta ram_0601
 	lda #$22
-	sta zp_44
+	sta zp_nmi_ppu_ptr_hi
 	lda #$50
-	sta zp_43
+	sta zp_nmi_ppu_ptr_lo
 	
 	ldx #$00	;lda #$00
 	stx zp_47	;sta zp_47
 	inx			;lda #$01
-	stx zp_46	;sta zp_46
+	stx zp_nmi_ppu_cols	;sta zp_46
 	inx			;lda #$02
-	stx zp_45	;sta zp_45
+	stx zp_nmi_ppu_rows	;sta zp_45
 
 	rts
 
@@ -1771,9 +1794,9 @@ sub_rom_BA74:
 	sta ram_0680,X
 	jsr sub_rom_BC9A
 	lda #$29
-	sta zp_44
+	sta zp_nmi_ppu_ptr_hi
 	lda #$46
-	sta zp_43
+	sta zp_nmi_ppu_ptr_lo
 	jsr sub_rom_BABF
 	ldx #$01
 	lda zp_plr2_selection
@@ -1787,9 +1810,9 @@ sub_rom_BA74:
 	sta ram_0680,X
 	jsr sub_rom_BC9A
 	lda #$29
-	sta zp_44
+	sta zp_nmi_ppu_ptr_hi
 	lda #$56
-	sta zp_43
+	sta zp_nmi_ppu_ptr_lo
 ; ----------------
 sub_rom_BABF:
 	lda zp_47
@@ -1800,32 +1823,32 @@ sub_rom_BABF:
 	ldx #$00
 	@BACC:
 	lda PpuStatus_2002
-	lda zp_44
+	lda zp_nmi_ppu_ptr_hi
 	sta PpuAddr_2006
-	lda zp_43
+	lda zp_nmi_ppu_ptr_lo
 	sta PpuAddr_2006
 	@BAD9:
 	lda ram_0600,X
 	sta PpuData_2007
 	iny
 	inx
-	cpy zp_46
+	cpy zp_nmi_ppu_cols
 	bcc @BAD9
 
-	lda zp_43
+	lda zp_nmi_ppu_ptr_lo
 	clc
 	adc #$20
-	sta zp_43
+	sta zp_nmi_ppu_ptr_lo
 	bcc @BAF0
 
-	inc zp_44
+	inc zp_nmi_ppu_ptr_hi
 	@BAF0:
 	ldy #$00
-	dec zp_45
+	dec zp_nmi_ppu_rows
 	bne @BACC
 
 	lda #$00
-	sta zp_44
+	sta zp_nmi_ppu_ptr_hi
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1950,22 +1973,22 @@ sub_rom_BC57:
 	asl A
 	tax
 	lda rom_BCBF+0,X
-	sta zp_44
+	sta zp_nmi_ppu_ptr_hi
 	lda rom_BCBF+1,X
-	sta zp_43
+	sta zp_nmi_ppu_ptr_lo
 	jsr sub_rom_BABF
 	lda zp_1C
 	asl A
 	asl A
 	tax
 	lda rom_BCC1+0,X
-	sta zp_44
+	sta zp_nmi_ppu_ptr_hi
 	lda rom_BCC1+1,X
-	sta zp_43
+	sta zp_nmi_ppu_ptr_lo
 	lda #$04
-	sta zp_46
+	sta zp_nmi_ppu_cols
 	lda #$06
-	sta zp_45
+	sta zp_nmi_ppu_rows
 	ldy #$00
 	sty zp_47
 	jmp sub_rom_BABF
@@ -1981,9 +2004,9 @@ sub_rom_BC9A:
 	lda rom_BB41+1,Y
 	sta zp_ptr1_hi
 	lda #$04
-	sta zp_46
+	sta zp_nmi_ppu_cols
 	lda #$06
-	sta zp_45
+	sta zp_nmi_ppu_rows
 	ldy #$00
 	sty zp_47
 	:

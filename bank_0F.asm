@@ -198,7 +198,7 @@ nmi:
 	lda a:zp_FD		; Why...?
 	bne @E155
 
-	lda zp_44
+	lda zp_nmi_ppu_ptr_hi
 	beq @E14C
 
 		jsr sub_rom_E272
@@ -407,31 +407,31 @@ sub_rom_E272:
 	ldx #$00
 	@E27F:
 		lda PpuStatus_2002
-		lda zp_44
+		lda zp_nmi_ppu_ptr_hi
 		sta PpuAddr_2006
-		lda zp_43
+		lda zp_nmi_ppu_ptr_lo
 		sta PpuAddr_2006
 		:
 			lda ram_0600,X
 			sta PpuData_2007
 			iny
 			inx
-			cpy zp_46
+			cpy zp_nmi_ppu_cols
 		bcc :-
 
-		lda zp_43
+		lda zp_nmi_ppu_ptr_lo
 		clc
 		adc #$20
-		sta zp_43
+		sta zp_nmi_ppu_ptr_lo
 		bcc :+
-			inc zp_44
+			inc zp_nmi_ppu_ptr_hi
 		:
 		ldy #$00
-		dec zp_45
+		dec zp_nmi_ppu_rows
 	bne @E27F
 
 	lda #$00
-	sta zp_44
+	sta zp_nmi_ppu_ptr_hi
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1220,26 +1220,26 @@ sub_rom_E792:
 	lda PpuStatus_2002
 	lda ram_067B
 	sta PpuAddr_2006
-	lda zp_43
+	lda zp_nmi_ppu_ptr_lo
 	sta PpuAddr_2006
 	@E7A4:
 	lda ram_0600,X
 	sta PpuData_2007
 	iny
 	inx
-	cpy zp_46
+	cpy zp_nmi_ppu_cols
 	bcc @E7A4
 
-	lda zp_43
+	lda zp_nmi_ppu_ptr_lo
 	clc
 	adc #$08
-	sta zp_43
+	sta zp_nmi_ppu_ptr_lo
 	bcc @E7BC
 
 	inc ram_067B
 	@E7BC:
 	ldy #$00
-	dec zp_45
+	dec zp_nmi_ppu_rows
 	bne @E796
 
 	lda #$00
