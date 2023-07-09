@@ -37,9 +37,9 @@ sub_rom_C019:
 	sta ram_routine_pointer_idx
 	lda #$00
 	sta PpuControl_2000
-	sta zp_02
+	sta zp_ppu_control_backup
 	sta PpuMask_2001
-	sta zp_04
+	sta zp_ppu_mask_backup
 	lda #$01
 	sta ram_040F
 	lda zp_F2
@@ -94,10 +94,10 @@ sub_rom_C019:
 	jsr sub_rom_CDD5
 	jsr sub_rom_CF4E
 	lda #$18
-	sta zp_04
+	sta zp_ppu_mask_backup
 	lda #$88
 	sta PpuControl_2000
-	sta zp_02
+	sta zp_ppu_control_backup
 	lda #$00
 	sta mmc3_mirroring
 	inc zp_7A
@@ -285,8 +285,8 @@ sub_rom_C186:
 	@C1AF:
 	ldy #$00
 	ldx #$00
-	lda zp_A5
-	cmp zp_A6
+	lda zp_plr1_damage
+	cmp zp_plr2_damage
 	bcc @C1C3
 
 	beq @C1F6
@@ -1279,10 +1279,10 @@ sub_rom_C79C:
 
 sub_rom_C7B0:
 	lda #$58
-	cmp zp_A5
+	cmp zp_plr1_damage
 	beq @C7BA
 
-	cmp zp_A6
+	cmp zp_plr2_damage
 	bne @C7BB
 
 	@C7BA:
@@ -1632,11 +1632,11 @@ sub_rom_CA19:
 
 	inc zp_A1
 	@CA35:
-	ldx zp_A5
-	cpx zp_A6
+	ldx zp_plr1_damage
+	cpx zp_plr2_damage
 	bcc @CA3D
 
-	ldx zp_A6
+	ldx zp_plr2_damage
 	@CA3D:
 	dex
 	beq @CA4E
@@ -1677,10 +1677,10 @@ sub_rom_CA5C:
 
 sub_rom_CA66:
 	lda #$58
-	cmp zp_A5
+	cmp zp_plr1_damage
 	beq @CA70
 
-	cmp zp_A6
+	cmp zp_plr2_damage
 	bne @CA7C
 
 	@CA70:
@@ -1827,7 +1827,7 @@ sub_rom_CB0C:
 	cmp #$03
 	bcs @CB5A
 
-	lda zp_A5,Y
+	lda zp_plr1_damage,Y
 	cmp #$58
 	bcs @CB5A
 
@@ -1874,7 +1874,7 @@ sub_rom_CB7F:
 	cmp #$0C
 	bcc @CBC6
 
-	ldx zp_A5,Y
+	ldx zp_plr1_damage,Y
 	cpx #$58
 	bcc @CBB7
 
@@ -2176,9 +2176,9 @@ rom_CD09:
 sub_rom_CD19:
 	jsr sub_rom_CD81
 	lda #$58
-	cmp zp_A5
+	cmp zp_plr1_damage
 	beq sub_rom_CD34
-	cmp zp_A6
+	cmp zp_plr2_damage
 	beq sub_rom_CD34
 	inc zp_A2
 	lda zp_A2
@@ -2250,8 +2250,8 @@ sub_rom_CD81:
 	cmp zp_89
 	bne @CDD2
 
-	lda zp_A5
-	cmp zp_A6
+	lda zp_plr1_damage
+	cmp zp_plr2_damage
 	bcc @CDA5
 
 	bne @CDB7
@@ -2479,8 +2479,8 @@ sub_rom_CF4E:
 	sta zp_83
 	sta zp_85
 	sta zp_8A
-	sta zp_A5
-	sta zp_A6
+	sta zp_plr1_damage
+	sta zp_plr2_damage
 	sta zp_A7
 	sta zp_A8
 	sta zp_E5
@@ -3056,7 +3056,7 @@ sub_rom_D270:
 	rts
 ; ----------------
 	@D291:
-	lda zp_02
+	lda zp_ppu_control_backup
 	ora #$04
 	sta PpuControl_2000
 	lda zp_frame_counter
@@ -3071,7 +3071,7 @@ sub_rom_D270:
 	jmp @D2EE
 
 	@D2AB:
-	lda zp_02
+	lda zp_ppu_control_backup
 	sta PpuControl_2000
 	lda zp_7A
 	cmp #$03
@@ -3171,7 +3171,7 @@ sub_rom_D270:
 ; -----------------------------------------------------------------------------
 
 sub_rom_D359:
-	lda zp_A5,X
+	lda zp_plr1_damage,X
 	cmp #$58
 	bcc @D387
 
@@ -3210,10 +3210,10 @@ sub_rom_D359:
 ; ----------------
 	@D38C:
 	dec zp_A7,X
-	inc zp_A5,X
+	inc zp_plr1_damage,X
 	lda #$20
 	sta PpuAddr_2006
-	lda zp_A5,X
+	lda zp_plr1_damage,X
 	sec
 	sbc #$01
 	lsr A
@@ -3227,7 +3227,7 @@ sub_rom_D359:
 	clc
 	adc zp_ptr1_lo
 	sta PpuAddr_2006
-	lda zp_A5
+	lda zp_plr1_damage
 	sec
 	sbc #$01
 	and #$07
@@ -3240,7 +3240,7 @@ sub_rom_D359:
 	sec
 	sbc zp_ptr1_lo
 	sta PpuAddr_2006
-	lda zp_A5,X
+	lda zp_plr1_damage,X
 	sec
 	sbc #$01
 	and #$07
@@ -3284,7 +3284,7 @@ sub_rom_D3DE:
 	lda #$00
 	sta zp_8E,X
 	sta zp_90,X
-	sta zp_A5,X
+	sta zp_plr1_damage,X
 	sta zp_A7,X
 	lda #$FF
 	sta zp_4B
@@ -3349,7 +3349,7 @@ sub_rom_D440:
 	cpx #$00
 	bne @D461
 
-	stx zp_04
+	stx zp_ppu_mask_backup
 	@D461:
 	clc
 	rts
@@ -3380,7 +3380,7 @@ sub_rom_D465:
 	bpl @D468
 
 	lda rom_D49F,X
-	sta zp_04
+	sta zp_ppu_mask_backup
 	lda #$3F
 	sta zp_44
 	lda #$00

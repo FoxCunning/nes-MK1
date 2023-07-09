@@ -93,6 +93,32 @@ sub_next_packed_byte:
 	rts
 
 ; -----------------------------------------------------------------------------
+.export sub_init_screen_common
+
+; Parameters:
+; A = screen index
+sub_init_screen_common:
+	sta zp_tmp_idx
+	jsr sub_setup_new_screen
+
+	; Reset scroll at next NMI
+	lda #$00
+	sta zp_scroll_x
+	sta zp_scroll_y
+
+	; Use bottom table for sprites
+	lda #$88
+	sta PpuControl_2000
+	sta zp_ppu_control_backup
+
+	cli
+	jsr sub_wait_vblank
+	lda #$1E
+	sta zp_ppu_mask_backup
+
+	rts
+
+; -----------------------------------------------------------------------------
 .export sub_setup_new_screen
 
 ; Clears screen, loads a new palette and new nametable, switches CHR banks,
@@ -254,6 +280,7 @@ tbl_chr_banks_per_screen:
 	.byte $D8, $DA, $D8, $D9, $DA, $DB, $00, $00	; $06
 	.byte $FC, $FE, $F8, $F9, $FA, $FB, $00, $00	; $07
 	.byte $BC, $BE, $BC, $BD, $BE, $BF, $00, $00	; $08	Titles screen
+	.byte $D8, $DA, $D8, $D9, $DA, $DB, $00, $00	; $09	Sound test
 
 ; -----------------------------------------------------------------------------
 
@@ -311,20 +338,26 @@ tbl_rle_data_ptr_odd:
 	.word nam_titles_rle
     .byte $28, $28
 
+	.word nam_sound_test_rle	; $09
+	.byte $20, $20
+	.word nam_sound_test_rle
+	.byte $28, $28
+
 ; -----------------------------------------------------------------------------
 
 ; Byte 0: index of IRQ handler routine pointer
 ; Byte 1: index of palette pointer
 tbl_palette_and_irq_ptrs:
-    .byte $0C, $00
-    .byte $0E, $01
-    .byte $0C, $02
-    .byte $0C, $02
-    .byte $0C, $01
-    .byte $0C, $01
-    .byte $0C, $01
-    .byte $0C, $02
-    .byte $0F, $04
+    .byte $0C, $00	; $00	Main menu
+    .byte $0E, $01	; $01	Options menu
+    .byte $0C, $02	; $02	Fighter selection
+    .byte $0C, $02	; $03	VS Screen?
+    .byte $0C, $01	; $04	Fake high scores screen
+    .byte $0C, $01	; $05
+    .byte $0C, $01	; $06
+    .byte $0C, $02	; $07
+    .byte $0F, $04	; $08	Titles
+	.byte $10, $01	; $09	Sound test
 
 ; -----------------------------------------------------------------------------
 .export sub_rom_cycle_palettes
@@ -1291,41 +1324,79 @@ nam_titles_rle:
 
 ; -----------------------------------------------------------------------------
 
-; Potentially unused byte
-rom_9CAC:
-	.byte $FF
+; A plain-looking sound test menu
+nam_sound_test_rle:
+.incbin "bin/sound_test.rle"
 
 ; -----------------------------------------------------------------------------
 
 .export rom_04_9CAD
 
 rom_04_9CAD:
-	.word rom_9CB5, rom_9CBD, rom_9CD5, rom_9CF9
+	.word tbl_main_menu_indices
+	.word tbl_options_menu_indices
+	.word rom_9CD5
+	.word rom_9CF9
+	.word tbl_sound_test_indices
 
 ; -----------------------------------------------------------------------------
 
-rom_9CB5:
-	.byte $00, $01, $FF, $FF, $00, $01, $FF, $FF
-rom_9CBD:
-	.byte $FF, $FF, $05, $01, $FF, $FF, $00, $02
-	.byte $FF, $FF, $01, $03, $FF, $FF, $02, $04
-	.byte $FF, $FF, $03, $05, $FF, $FF, $04, $00
+; Each entry has four indices, one per D-Pad direction (left, right, up, down)
+; When that direction is pressed, the cursor will move to the option with the
+; corresponding index
+; If the index is $FF, the cursor will not move
+
+; Indices for main menu (left=tournament, right=options)
+tbl_main_menu_indices:
+	.byte $00, $01, $FF, $FF	; $00 = Tournament
+	.byte $00, $01, $FF, $FF	; $01 = Options
+
+; Indices for options menu (top=very easy ... bottom= exit)
+tbl_options_menu_indices:
+	.byte $FF, $FF, $05, $01	; $00 = Very Easy
+	.byte $FF, $FF, $00, $02	; $01 = Easy
+	.byte $FF, $FF, $01, $03	; $02 = Medium
+	.byte $FF, $FF, $02, $04	; $03 = Hard
+	.byte $FF, $FF, $03, $05	; $04 = Very Hard
+	.byte $FF, $FF, $04, $00	; $05 = Exit
+
 rom_9CD5:
-	.byte $00, $01, $06, $03, $00, $01, $08, $04
-	.byte $05, $03, $00, $06, $02, $04, $00, $06
-	.byte $03, $05, $01, $08, $04, $02, $01, $08
-	.byte $08, $07, $03, $00, $06, $08, $03, $00
+	.byte $00, $01, $06, $03
+	.byte $00, $01, $08, $04
+	.byte $05, $03, $00, $06
+	.byte $02, $04, $00, $06
+	.byte $03, $05, $01, $08
+	.byte $04, $02, $01, $08
+	.byte $08, $07, $03, $00
+	.byte $06, $08, $03, $00
 	.byte $07, $06, $04, $01
+
 rom_9CF9:
-	.byte $03, $01, $0C, $05, $00, $02, $0D, $06
-	.byte $01, $03, $0F, $08, $02, $00, $10, $09
-	.byte $0A, $05, $FF, $0B, $04, $06, $00, $0C
-	.byte $05, $07, $01, $0D, $06, $08, $FF, $0E
-	.byte $07, $09, $02, $0F, $08, $0A, $03, $10
-	.byte $09, $04, $FF, $11, $11, $0C, $04, $FF
-	.byte $0B, $0D, $05, $00, $0C, $0E, $06, $01
-	.byte $0D, $0F, $07, $FF, $0E, $10, $08, $02
-	.byte $0F, $11, $09, $03, $10, $0B, $0A, $FF
+	.byte $03, $01, $0C, $05
+	.byte $00, $02, $0D, $06
+	.byte $01, $03, $0F, $08
+	.byte $02, $00, $10, $09
+	.byte $0A, $05, $FF, $0B
+	.byte $04, $06, $00, $0C
+	.byte $05, $07, $01, $0D
+	.byte $06, $08, $FF, $0E
+	.byte $07, $09, $02, $0F
+
+; Potentially unused
+	.byte $08, $0A, $03, $10
+	.byte $09, $04, $FF, $11
+	.byte $11, $0C, $04, $FF
+	.byte $0B, $0D, $05, $00
+	.byte $0C, $0E, $06, $01
+	.byte $0D, $0F, $07, $FF
+	.byte $0E, $10, $08, $02
+	.byte $0F, $11, $09, $03
+	.byte $10, $0B, $0A, $FF
+
+tbl_sound_test_indices:
+	.byte $FF, $FF, $00, $01	; Music track
+	.byte $FF, $FF, $00, $02	; Sound effect
+	.byte $FF, $FF, $01, $02	; Quit
 
 ; -----------------------------------------------------------------------------
 
@@ -1348,6 +1419,7 @@ sub_choose_music_track:
 	.byte $22	; $06
 	.byte $21	; $07
 	.byte $22	; $08	Titles screen (silence)
+	.byte $22	; $09	Sound test (silence)
 
 ; -----------------------------------------------------------------------------
 

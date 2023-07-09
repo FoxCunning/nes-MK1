@@ -722,10 +722,10 @@ sub_rom_A5F0:
 
 	@A601:
 	lda #$58
-	cmp zp_A5
+	cmp zp_plr1_damage
 	beq @A60B
 
-	cmp zp_A6
+	cmp zp_plr2_damage
 	bne @A60C
 
 	@A60B:

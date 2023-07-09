@@ -128,43 +128,43 @@ tbl_pitches:
 
 ; Track pointers
 tbl_track_ptrs:
-	.word track_silence		; $00
-	.word sfx_97A7			; $01	A glitchy sound that sometimes plays when a match starts
-	.word sfx_hit			; $02	Any hit
-	.word sfx_bleep			; $03	Cursor move and point counter at end of match
-	.word sfx_projectile	; $04	Projectile/special attack
-	.word sfx_bounce		; $05	Bounce/land after jump
-	.word track_silence		; $06
-	.word sfx_kick			; $07	Kick swing
-	.word sfx_kick			; $08	Punch swing
-	.word track_silence		; $09
-	.word track_silence		; $0A
-	.word track_silence		; $0B
-	.word sfx_select		; $0C	"Siren" sound (selection confirmed)
-	.word sfx_happy_jingle			; $0D	A weird three-note jingle
-	.word sfx_pause			; $0E	Pause
-	.word sfx_happy_jingle			; $0F	Same as $0D, but here it's used after choosing to continue
-	.word sfx_countdown		; $10	Countdown for continue screen
-	.word track_silence		; $11
-	.word track_silence		; $12
-	.word track_silence		; $13
-	.word track_silence		; $14
-	.word track_silence		; $15
-	.word track_silence		; $16
-	.word track_silence		; $17
-	.word track_silence		; $18
-	.word track_silence		; $19
-	.word track_silence		; $1A
-	.word track_silence		; $1B
-	.word track_silence		; $1C
-	.word track_silence		; $1D
-	.word track_silence		; $1E
-	.word track_silence		; $1F
-	.word mus_menu_jingle	; $20
-	.word mus_player_select	; $21
-	.word track_silence		; $22
-	.word mus_player_unused	; $23
-	.word mus_8A1A			; $24
+	.word track_silence			; $00
+	.word sfx_97A7				; $01	A glitchy sound that sometimes plays when a match starts
+	.word sfx_hit				; $02	Any hit
+	.word sfx_bleep				; $03	Cursor move and point counter at end of match
+	.word sfx_projectile		; $04	Projectile/special attack
+	.word sfx_bounce			; $05	Bounce/land after jump
+	.word track_silence			; $06
+	.word sfx_kick				; $07	Kick swing
+	.word sfx_kick				; $08	Punch swing
+	.word track_silence			; $09
+	.word track_silence			; $0A
+	.word track_silence			; $0B
+	.word sfx_select			; $0C	"Siren" sound (selection confirmed)
+	.word sfx_happy_jingle		; $0D	A weird three-note jingle
+	.word sfx_pause				; $0E	Pause
+	.word sfx_happy_jingle		; $0F	Same as $0D, but here it's used after choosing to continue
+	.word sfx_countdown			; $10	Countdown for continue screen
+	.word track_silence			; $11
+	.word track_silence			; $12
+	.word track_silence			; $13
+	.word track_silence			; $14
+	.word track_silence			; $15
+	.word track_silence			; $16
+	.word track_silence			; $17
+	.word track_silence			; $18
+	.word track_silence			; $19
+	.word track_silence			; $1A
+	.word track_silence			; $1B
+	.word track_silence			; $1C
+	.word track_silence			; $1D
+	.word track_silence			; $1E
+	.word track_silence			; $1F
+	.word mus_menu_jingle		; $20
+	.word mus_player_select		; $21
+	.word track_silence			; $22
+	.word mus_player_unused		; $23
+	.word mus_silence			; $24
 	; ---- Stage background music starts here
 	.word mus_goros_lair		; $25	Goro's Lair
 	.word mus_pit				; $26	The Pit
@@ -180,8 +180,8 @@ tbl_track_ptrs:
 	.word mus_warrior_shrine	; $2F
 	.word mus_throne_room		; $30
 	; ----
-	.word sfx_select		; $31	"Siren" sound but as music (e.g. menu selection)
-	.word mus_victory_jingle; $32
+	.word sfx_select			; $31	"Siren" sound but as music (e.g. menu selection)
+	.word mus_victory_jingle	; $32
 
 ; -----------------------------------------------------------------------------
 
@@ -320,7 +320,7 @@ rom_8A19:
 
 ; ----------------
 
-mus_8A1A:
+mus_silence:
 	.byte $00
 	.word rom_8A19
 	.byte $01

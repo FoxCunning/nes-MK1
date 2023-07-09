@@ -121,10 +121,10 @@ reset:
 	sta ram_irq_trampoline
 	cli
 	lda #$88
-	sta zp_02
+	sta zp_ppu_control_backup
 	sta PpuControl_2000
 	lda #$00
-	sta zp_04
+	sta zp_ppu_mask_backup
 	sta PpuMask_2001
 
 	@main_loop:
@@ -216,9 +216,9 @@ nmi:
 	sta PpuScroll_2005
 	lda zp_scroll_y
 	sta PpuScroll_2005
-	lda zp_02
+	lda zp_ppu_control_backup
 	sta PpuControl_2000
-	lda zp_04
+	lda zp_ppu_mask_backup
 	sta PpuMask_2001
 	lda a:zp_mmc3_irq_ready		; ...?
 	beq @E186
@@ -399,7 +399,7 @@ sub_hide_all_sprites:
 
 sub_rom_E272:
 	lda zp_47
-	ora zp_02
+	ora zp_ppu_control_backup
 	and #$7F
 	sta PpuControl_2000
 
@@ -747,7 +747,7 @@ sub_rom_E45B:
 	lsr A
 	sta PpuScroll_2005
 	lda PpuStatus_2002
-	lda zp_02
+	lda zp_ppu_control_backup
 	sta PpuControl_2000
 	lda #$00
 	sta ram_0435
@@ -1095,7 +1095,7 @@ sub_rom_E6A7:
 	lsr A
 	sta PpuScroll_2005
 	lda PpuStatus_2002
-	lda zp_02
+	lda zp_ppu_control_backup
 	sta PpuControl_2000
 	lda #$00
 	sta ram_0435
@@ -1203,7 +1203,7 @@ sub_irq_handler_0F:
 
 ; -----------------------------------------------------------------------------
 
-; Potentially unused
+; "Idle" IRQ handler
 sub_irq_handler_10:
 	sta mmc3_irq_disable
 	lda #$00

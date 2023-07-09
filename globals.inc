@@ -6,9 +6,9 @@
 
 zp_00 = $00     ;
 zp_01 = $01     ;
-zp_02 = $02     ;
+zp_ppu_control_backup = $02     ;
 zp_03 = $03     ;
-zp_04 = $04     ;
+zp_ppu_mask_backup = $04     ;
 zp_05 = $05     ;
 zp_06 = $06     ;
 zp_07 = $07     ;
@@ -157,8 +157,10 @@ zp_A1 = $A1     ;
 zp_A2 = $A2     ;
 zp_A3 = $A3     ;
 zp_A4 = $A4     ;
-zp_A5 = $A5     ;
-zp_A6 = $A6     ;
+; This basically represents missing health / hits taken
+zp_plr1_damage = $A5    ;
+; This basically represents missing health / hits taken
+zp_plr2_damage = $A6    ;
 zp_A7 = $A7     ;
 zp_A8 = $A8     ;
 zp_A9 = $A9     ;
@@ -291,7 +293,7 @@ ram_irq_ptr_lo = $0424  ;
 ram_irq_ptr_hi = $0425  ;
 ram_0429 = $0429    ;
 ram_042A = $042A    ;
-; Easy to Very Hard (0-4)
+; Very Easy to Very Hard (0-4)
 ram_difficulty_setting = $042C    ;
 ram_042D = $042D    ;
 ram_0435 = $0435    ;
