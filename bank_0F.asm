@@ -91,10 +91,12 @@ reset:
 
 	jsr sub_apu_init
 
-	; This will not actually play anything, maybe it was put here as a test
+	; This will not actually play anything, because the apu initialised flag is clear
+	;lda #$22
 	lda #$20
 	sta ram_req_song
-	jsr sub_play_new_song_or_sfx
+	sta ram_cur_song	; This should have the same effect
+	;jsr sub_play_new_song_or_sfx
 	inc ram_snd_initialised	; Sounds will start playing after this
 
 	lda #$00

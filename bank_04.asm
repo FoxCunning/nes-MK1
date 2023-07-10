@@ -1412,14 +1412,14 @@ sub_choose_music_track:
 
 	@tbl_bg_music:
 	.byte $20	; $00	Menu intro jingle
-	.byte $22	; $01	Options menu (silence)
+	.byte $20	; $01	Options menu
 	.byte $21	; $02	Player select (also VS screen)
 	.byte $21	; $03
-	.byte $24	; $04	High scores
+	.byte $20	; $04	High scores
 	.byte $22	; $05
 	.byte $22	; $06
 	.byte $21	; $07
-	.byte $22	; $08	Titles screen (silence)
+	.byte $20	; $08	Titles screen
 	.byte $22	; $09	Sound test (silence)
 
 ; -----------------------------------------------------------------------------
