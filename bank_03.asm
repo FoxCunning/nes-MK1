@@ -1824,7 +1824,7 @@ tbl_track_cmd_ptrs:
 	.word sub_cmd_set_duty_env		; $F9
 	.word sub_cmd_set_pitch_env		; $FA
 	.word sub_cmd_set_arpeggio		; $FB
-	.word sub_get_next_track_byte	; $FC	TODO
+	.word sub_cmd_note_slide_up		; $FC	TODO
 	.word sub_cmd_note_duration		; $FD	Not used ($8x in track data directly)
 	.word sub_get_next_track_byte	; $FE	(this byte is skipped)
 	.word sub_cmd_stop_playing		; $FF
@@ -1934,6 +1934,27 @@ sub_cmd_delayed_cut:
 	jsr sub_advance_track_ptr
 	jmp sub_get_next_track_byte
 	
+; -----------------------------------------------------------------------------
+
+; Next byte = number of semitones above current note to slide to
+sub_cmd_note_slide_up:
+	ldx ram_cur_chan_ptr_offset
+	; Prepare pointer
+	lda ram_track_ptr_lo,X
+	sta zp_sndptr_lo
+	lda ram_track_ptr_hi,X
+	sta zp_sndptr_hi
+	; Read next byte
+	ldy #$00
+	lda (zp_sndptr_lo),Y
+
+	ldx ram_cur_channel_offset
+	sta ram_note_slide_semitones,X
+	lda #$02
+	sta ram_note_slide_counter,X
+
+	jsr sub_advance_track_ptr
+	jmp sub_get_next_track_byte
 
 ; -----------------------------------------------------------------------------
 
@@ -2352,10 +2373,8 @@ sub_start_arpeggio:
 		ldy ram_cur_chan_ptr_offset
 
 		lda ram_cur_note_idx,X
-		cmp #$09
-		bcs :+
-
-			; Not a note (rest or hold), disable arpeggio
+		bne :+
+			; This is a rest: disable arpeggio
 			lda #$FF
 			sta ram_arpeggio_idx
 			rts
