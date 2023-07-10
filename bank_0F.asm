@@ -92,8 +92,7 @@ reset:
 	jsr sub_apu_init
 
 	; This will not actually play anything, because the apu initialised flag is clear
-	;lda #$22
-	lda #$20
+	lda #$22
 	sta ram_req_song
 	sta ram_cur_song	; This should have the same effect
 	;jsr sub_play_new_song_or_sfx
