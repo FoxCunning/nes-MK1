@@ -148,7 +148,7 @@ opening_ch_00:
 	.byte $22			; A#2
 	.byte $82			; Duration = 2
 	.byte $20			; G#2
-	.byte $FC, $04		; NOTE SLIDE UP = 4
+	.byte $FC, $16		; NOTE SLIDE UP = 4
 	.byte $84			; Duration = 4
 	.byte $20			; G#2
 	.byte $F8, $21		; Volume Envelope = "Opening Synth Vibrato 4"
@@ -169,7 +169,7 @@ opening_ch_00:
 	.byte $2C			; G#3
 	.byte $29			; F-3
 	.byte $27			; D#3
-	.byte $FC, $02		; NOTE SLIDE UP = 2
+	.byte $FC, $08		; NOTE SLIDE UP = 2
 	.byte $27			; D#3
 	.byte $F8, $21		; Volume Envelope = "Opening Synth Vibrato 2"
 	.byte $F9, $0B		; Duty Envelope = "Opening Synth Vibrato 2"
@@ -304,7 +304,7 @@ opening_ch_01:
 	.byte $22			; A#2
 	.byte $82			; Duration = 2
 	.byte $20			; G#2
-	.byte $FC, $04		; NOTE SLIDE UP = 4
+	.byte $FC, $16		; NOTE SLIDE UP = 4
 	.byte $84			; Duration = 4
 	.byte $20			; G#2
 	.byte $F8, $22		; Volume Envelope = "Opening Echo Vib 4"
@@ -327,7 +327,7 @@ opening_ch_01:
 	.byte $2C			; G#3
 	.byte $29			; F-3
 	.byte $27			; D#3
-	.byte $FC, $02		; NOTE SLIDE UP = 2
+	.byte $FC, $08		; NOTE SLIDE UP = 2
 	.byte $27			; D#3
 	.byte $F8, $22		; Volume Envelope = "Opening Echo Vib 2"
 	.byte $F9, $0B		; Duty Envelope = "Opening Echo Vib 2"

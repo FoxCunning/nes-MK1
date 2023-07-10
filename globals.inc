@@ -411,8 +411,7 @@ ram_note_period_lo = $073A  ;
 ; Modified note period, after applying envelopes and effects
 ram_note_period_hi = $073B  ;
 ; ----------------
-ram_note_slide_counter = $0740  ; Size=3
-ram_note_slide_semitones = $0743    ; Size=3
+ram_note_slide_counter = $0742  ; Size=4
 ; ----------------
 ; Index of duty envelope, one per channel
 ram_vol_env_idx = $0746             ; Size=5

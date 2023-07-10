@@ -1416,6 +1416,7 @@ sub_init_new_track:
 
 		sta ram_delayed_cut_counter,X
 		sta ram_note_delay_counter,X
+		sta ram_note_slide_counter,X
 
 		lda #$FF
 		sta ram_vol_env_idx,X
@@ -1478,9 +1479,9 @@ sub_play_cur_channel:
 
 		; Force reading next track data
 		beq @force_next_read
-	:
+	:	
 	; Check for delayed transpose
-	ldx ram_cur_channel_offset
+	;ldx ram_cur_channel_offset
 	lda ram_transpose_counter,X
 	beq :+
 		; Counter not zero: decrease
@@ -1936,7 +1937,7 @@ sub_cmd_delayed_cut:
 	
 ; -----------------------------------------------------------------------------
 
-; Next byte = number of semitones above current note to slide to
+; Next byte = number of frames in which to decrease note period by 5
 sub_cmd_note_slide_up:
 	ldx ram_cur_chan_ptr_offset
 	; Prepare pointer
@@ -1949,8 +1950,6 @@ sub_cmd_note_slide_up:
 	lda (zp_sndptr_lo),Y
 
 	ldx ram_cur_channel_offset
-	sta ram_note_slide_semitones,X
-	lda #$02
 	sta ram_note_slide_counter,X
 
 	jsr sub_advance_track_ptr
@@ -2633,6 +2632,26 @@ sub_next_pitch_envelope:
 
 ; -----------------------------------------------------------------------------
 
+sub_note_slide_effect:
+	lda ram_note_slide_counter,X
+	beq @no_slide	; Counter = 0 means no slide (or already done)
+
+		; Decrease counter
+		dec ram_note_slide_counter,X
+		; Decrease period by fixed amount
+		sec
+		lda ram_base_period_lo,Y
+		sbc #$05
+		sta ram_base_period_lo,Y
+		lda ram_base_period_hi,Y
+		sbc #$00
+		sta ram_base_period_hi,Y
+
+	@no_slide:
+	rts
+
+; -----------------------------------------------------------------------------
+
 ; Applies envelopes, notes and effects to all channels
 sub_sound_output:
 	; TODO Just remove all RTS and there is no need for JSR
@@ -2653,6 +2672,7 @@ sub_sq0_output:
 
 		ldx #$00	; Music indices
 		ldy #$00
+		jsr sub_note_slide_effect
 	:
 	jsr sub_get_volume_envelope
 	lda zp_sndptr_lo
@@ -2669,12 +2689,11 @@ sub_sq0_output:
 
 	jsr sub_get_pitch_envelope
 
+	; Use the pointer variable as low/high pitch nibbles
 	lda #$00
 	sta zp_sndptr_hi
-
 	lda zp_sndptr_lo
 	bpl :+
-
 		dec zp_sndptr_hi
 	:
 	lda ram_base_period_lo,Y
@@ -2710,7 +2729,8 @@ sub_sq1_output:
 
 		ldx #$01	; Music indices
 		ldy #$02
-:
+		jsr sub_note_slide_effect
+	:
 	jsr sub_get_volume_envelope
 	lda zp_sndptr_lo
 
