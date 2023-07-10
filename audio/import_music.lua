@@ -354,7 +354,7 @@ local function convert_fx(text)
     local fx = text:sub(1, 1)
 
     if fx == 'F' then
-        
+
         cmd = CMD_SPEED
         p1 = tonumber(text:sub(2, 3), 16)
         name = "SPEED"
@@ -380,6 +380,7 @@ local function convert_fx(text)
 
         cmd = CMD_NOTE_SLIDE
         p1 = tonumber(text:sub(2, 3), 16)
+        p1 = (p1 & 0x0F)
         name = "NOTE SLIDE UP"
 
     elseif fx == 'T' then
@@ -408,22 +409,36 @@ local function convert_fx(text)
     end
 
     if cmd ~= -1 then
+        -- Write command code
         asm = string.format("\t.byte $%02X", cmd)
 
+        -- Write parameter 1
         if p1 ~= nil then
             asm = asm .. string.format(", $%02X", p1)
         end
 
+        -- Write parameter 2
         if p2 ~= nil then
             asm = asm .. string.format(", $%02X", p2)
         end
 
+        -- Add more tabs if there are no parameters
+        if p1 == nil then
+            asm = asm .. "\t"
+        end
+        if p2 == nil then
+            asm = asm .. "\t"
+        end
+
+        -- Add comment: command name
         asm = asm .. "\t; " .. name
 
+        -- Add comment: parameter 1
         if p1 ~= nil then
             asm = asm .. " = " .. p1
         end
 
+        -- Add comment: parameter 2
         if p2 ~= nil then
             asm = asm .. ", " .. p2
         end
@@ -752,9 +767,13 @@ local output_file_name = arg[2]
 local export_instruments = false
 local track_name = ""
 local loop_frame_0 = false
+local short_name = output_file_name
 
 if output_file_name:find(".", 1, true) == nil then
     output_file_name = output_file_name .. ".asm"
+else
+    local dot = output_file_name:find(".", 1, true)
+    short_name = output_file_name:sub(1, dot-1)
 end
 
 if arg[3] == "-i" or arg[3] == "--instruments" then
@@ -815,8 +834,8 @@ elseif track_name ~= "" then
 
     -- Create table of pointers to channel data in ASM (channel, pointer, channel pointer...)
     for cn = 0, 3 do
-        asm = asm .. string.format("\t.byte $%02X\n\t.word channel_%02X\n",
-            cn, cn)
+        asm = asm .. string.format("\t.byte $%02X\n\t.word %s_ch_%02X\n",
+            cn, short_name, cn)
     end
     asm = asm .. "\t.byte $FF\n"
 
@@ -827,7 +846,7 @@ elseif track_name ~= "" then
         asm = asm .. "\n; -----------------------------------------------------------------------------\n"
         asm = asm .. string.format(";\t\t\t\t\t\t%s CHANNEL", Channels[cn].name)
         asm = asm .. "\n; -----------------------------------------------------------------------------\n"
-        asm = asm .. string.format("\nchannel_%02X:\n", cn)
+        asm = asm .. string.format("\n%s_ch_%02X:\n", short_name, cn)
         -- Add set speed command with track speed
         asm = asm .. string.format("\t.byte $%02X, $%02X\t; Speed = %d\n", CMD_SPEED, Speed, Speed)
 
@@ -871,10 +890,9 @@ elseif track_name ~= "" then
                         if f > -1 then
                             -- Only apply speed effects to channel 0
                             if f == CMD_SPEED and cn ~= 0 then
-                                -- Do nothing
-                            else
-                                asm = asm .. a
+                                print("!!!WARNING: Track speed change on channel" .. cn)
                             end
+                            asm = asm .. a
                         end
                     end
                 end
@@ -882,25 +900,25 @@ elseif track_name ~= "" then
                 -- 2. Dump envelope change (if needed)
                 if row.inst ~= "None" then
                     if row.vol_env ~= last_vol_env then
-                        asm = asm .. string.format("\t.byte $%02X, $%02X\t; Volume Envelope = %s\n",
+                        asm = asm .. string.format("\t.byte $%02X, $%02X\t\t; Volume Envelope = %s\n",
                             CMD_VOL_ENV, row.vol_env, row.inst)
                         last_vol_env = row.vol_env
                     end
 
                     if cn < 2 and row.dut_env ~= last_dut_env then
-                        asm = asm .. string.format("\t.byte $%02X, $%02X\t; Duty Envelope = %s\n",
+                        asm = asm .. string.format("\t.byte $%02X, $%02X\t\t; Duty Envelope = %s\n",
                             CMD_DUT_ENV, row.dut_env, row.inst)
                         last_dut_env = row.dut_env
                     end
 
                     if cn < 3 and row.pit_env ~= last_pit_env then
-                        asm = asm .. string.format("\t.byte $%02X, $%02X\t; Pitch Envelope = %s\n",
+                        asm = asm .. string.format("\t.byte $%02X, $%02X\t\t; Pitch Envelope = %s\n",
                             CMD_PIT_ENV, row.pit_env, row.inst)
                         last_pit_env = row.pit_env
                     end
 
                     if row.arp ~= last_arp then
-                        asm = asm .. string.format("\t.byte $%02X, $%02X\t; Arpeggio = %s\n",
+                        asm = asm .. string.format("\t.byte $%02X, $%02X\t\t; Arpeggio = %s\n",
                             CMD_SET_ARP, row.arp, row.inst)
                         last_arp = row.arp
                     end
@@ -909,7 +927,7 @@ elseif track_name ~= "" then
                 if row.note ~= nil and row.note >= 0 and row.note <= 0x5F then
                     -- 3. Dump note duration (if any)
                     if row.duration ~= nil and row.duration ~= last_duration then
-                        asm = asm .. string.format("\t.byte $%02X\t; Duration = %d\n",
+                        asm = asm .. string.format("\t.byte $%02X\t\t\t; Duration = %d\n",
                             0x80 + row.duration, row.duration)
                         last_duration = row.duration
                     end
@@ -919,7 +937,7 @@ elseif track_name ~= "" then
                     if cn == 3 then
                         name = Noise_Names[row.note]
                     end
-                    asm = asm .. string.format("\t.byte $%02X\t; %s\n",
+                    asm = asm .. string.format("\t.byte $%02X\t\t\t; %s\n",
                         row.note, name)
                     pattern_duration = pattern_duration + last_duration
                 end
@@ -927,7 +945,7 @@ elseif track_name ~= "" then
             end
 
             -- Add "return" command at end of each pattern
-            asm = asm .. string.format("\t.byte $%02X\t; RETURN\n", CMD_RETURN)
+            asm = asm .. string.format("\t.byte $%02X\t\t\t; RETURN\n", CMD_RETURN)
             -- Add pattern's total duration as a comment for debugging
             asm = asm .. string.format("\t; Pattern duration: %s.\n", pattern_duration)
         end
