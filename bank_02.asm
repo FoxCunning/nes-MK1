@@ -160,7 +160,7 @@ tbl_track_ptrs:
 	.word track_silence			; $1D
 	.word track_silence			; $1E
 	.word track_silence			; $1F
-	.word mus_menu_jingle		; $20
+	.word mus_opening			; $20
 	.word mus_player_select		; $21
 	.word track_silence			; $22
 	.word mus_player_unused		; $23
@@ -213,25 +213,9 @@ rom_8702:
 ; -----------------------------------------------------------------------------
 
 
-; Silence
-rom_876A:
-	.byte $FF
-
-; ----------------
-
-; Menu intro 1
-mus_menu_jingle:
-	.byte $00
-	.word rom_876A
-	.byte $01
-	.word rom_876A
-	.byte $02
-	.word rom_876A
-	.byte $03
-	.word rom_876A
-	.byte $04
-	.word rom_876A
-	.byte $FF
+; Opening/menu music
+mus_opening:
+.include "audio/opening.asm"
 
 ; -----------------------------------------------------------------------------
 
