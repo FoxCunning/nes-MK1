@@ -2320,37 +2320,36 @@ sub_start_duty_envelope:
 sub_start_pitch_envelope:
 	lda ram_cur_apu_channel
 	and #$0F
-	tax
-	cpx #$04	; All music channels (0-3) can use this envelope
-	bmi :+
-
-		rts
-; ----------------
-:
-	ldx ram_cur_channel_offset
-	ldy ram_cur_chan_ptr_offset
-
-	lda ram_pitch_env_idx,X
-	cmp #$FF
-	beq @skip_pitch_env_start
-
-		asl A
-		tax
-
-		lda tbl_pitch_env_ptrs+0,X
-		sta ram_pitch_env_ptr_lo,Y
-		sta zp_sndptr_lo
-
-		lda tbl_pitch_env_ptrs+1,X
-		sta ram_pitch_env_ptr_hi,Y
-		sta zp_sndptr_hi
+	;tax
+	;cpx #$03	; Only for channels 0-2
+	;bmi :+
+	cmp #$03
+	bcs @skip_pitch_env_start
 
 		ldx ram_cur_channel_offset
+		ldy ram_cur_chan_ptr_offset
 
-		; Read first byte (duration)
-		ldy #$00
-		lda (zp_sndptr_lo),Y
-		sta ram_cur_pitch_env_duration,X
+		lda ram_pitch_env_idx,X
+		cmp #$FF
+		beq @skip_pitch_env_start
+
+			asl A
+			tax
+
+			lda tbl_pitch_env_ptrs+0,X
+			sta ram_pitch_env_ptr_lo,Y
+			sta zp_sndptr_lo
+
+			lda tbl_pitch_env_ptrs+1,X
+			sta ram_pitch_env_ptr_hi,Y
+			sta zp_sndptr_hi
+
+			ldx ram_cur_channel_offset
+
+			; Read first byte (duration)
+			ldy #$00
+			lda (zp_sndptr_lo),Y
+			sta ram_cur_pitch_env_duration,X
 
 	@skip_pitch_env_start:
 	rts
@@ -2592,13 +2591,13 @@ sub_next_pitch_envelope:
 				lda (zp_sndptr_lo),Y
 				sta ram_cur_pitch_env_duration,X
 				cmp #$FF	; If it's not the special termination marker, we're done
-				bne @skip_pitch_env
+				bne @pitch_env_still_running
 
 					; Duration byte = $FF (end of data), read last byte
 					ldx ram_cur_chan_ptr_offset
 					iny	;ldy #$01
 					lda (zp_sndptr_lo),Y
-					asl A
+					;asl A
 					bmi :+
 						; A zero (or positive) value signals the end of the envelope
 						lda #$FF
@@ -2689,26 +2688,31 @@ sub_sq0_output:
 
 	jsr sub_get_pitch_envelope
 
-	; Use the pointer variable as low/high pitch nibbles
+	; Use the pointer variable as low/high pitch bytes
 	lda #$00
 	sta zp_sndptr_hi
+	; If the low byte is negative, set the high byte to $FF
+	; to obtain a 16-bit signed negative value
 	lda zp_sndptr_lo
 	bpl :+
 		dec zp_sndptr_hi
 	:
+	; Now add the low byte to the base period
 	lda ram_base_period_lo,Y
 	clc
 	adc zp_sndptr_lo
 	; TODO For relative envelopes, also modify the base note period
 	sta ram_note_period_lo,Y
+	; Immediately apply the new value
 	sta Sq0Timer_4002
 
+	; Check if we need to update the high byte
 	lda ram_note_period_hi,Y
-	sta zp_sndptr_lo
+	sta zp_sndptr_lo	; Save the old value here
 	lda ram_base_period_hi,Y
-	adc zp_sndptr_hi
-	tax
-	cpx zp_sndptr_lo
+	adc zp_sndptr_hi	; Add the modifier
+	tax					; Compare with the old value, using X to preserve
+	cpx zp_sndptr_lo	; the modified value in case we need to store it
 	beq :+
 
 		; TODO For relative envelopes, also modify the base note period

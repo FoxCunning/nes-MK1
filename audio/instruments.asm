@@ -339,7 +339,7 @@ tbl_pitch_env_ptrs:
 	@pitch_env_00:
 	.byte $02, $00, $01, $01, $01, $00, $01, $FF
 	.byte $02, $00, $02, $00, $02, $FF, $02, $00
-	.byte $02, $01, $FF, $FC
+	.byte $02, $01, $FF, $F8
 
 ; -----------------
 
@@ -351,7 +351,7 @@ tbl_pitch_env_ptrs:
 	@pitch_env_02:
 	.byte $0A, $00, $02, $FF, $04, $FE, $02, $FF
 	.byte $02, $00, $02, $01, $04, $02, $02, $01
-	.byte $02, $00, $FF, $F8
+	.byte $02, $00, $FF, $F0
 
 ; -----------------
 
@@ -363,19 +363,19 @@ tbl_pitch_env_ptrs:
 	@pitch_env_04:
 	.byte $0A, $00, $01, $FF, $03, $00, $01, $01
 	.byte $03, $00, $01, $01, $03, $00, $01, $FF
-	.byte $03, $00, $FF, $F8
+	.byte $03, $00, $FF, $F0
 
 ; -----------------
 
 	@pitch_env_05:
 	.byte $01, $01, $02, $02, $01, $01, $01, $FF
-	.byte $02, $FE, $01, $FF, $FF, $F8
+	.byte $02, $FE, $01, $FF, $FF, $F4
 
 ; -----------------
 
 	@pitch_env_06:
 	.byte $01, $02, $02, $04, $01, $02, $01, $FE
-	.byte $02, $FC, $01, $FE, $FF, $F8
+	.byte $02, $FC, $01, $FE, $FF, $F4
 
 tbl_duty_env_ptrs:
 	.word @duty_env_00

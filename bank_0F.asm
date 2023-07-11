@@ -1216,7 +1216,8 @@ sub_irq_handler_10:
 		@irq10_setup_loop:
 			lda #$90
 			sta ram_oam_copy_ypos+4,X
-			lda #$01
+			tya
+			sbc #$00
 			sta ram_oam_copy_attr+4,X
 			lda @tbl_irq10_sprite_xpos,Y
 			sta ram_oam_copy_xpos+4,X
