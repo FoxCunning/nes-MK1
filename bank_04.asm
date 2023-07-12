@@ -42,55 +42,56 @@ sub_unpack_nametable:
 
 	lda zp_ptr2_lo
 	sta PpuAddr_2006
-	jsr sub_next_packed_byte
+	inc zp_ptr1_lo
+	bne :+
+		inc zp_ptr1_hi
+	:
 	lda #$00
 	sta PpuAddr_2006
 
-	@8025:
-	jsr sub_next_packed_byte
+	@rle_unpack_loop:
+	inc zp_ptr1_lo
+	bne :+
+		inc zp_ptr1_hi
+	:
 	lda (zp_ptr1_lo),Y
 	bpl @rle_repeat_byte
 
 	cmp #$FF	; Stop byte
-	beq @8052
+	beq @rle_unpack_done
 
 	; Values >= $80 are the number of bytes to copy & $80
 	and #$7F
-	sta zp_08
-:
-	jsr sub_next_packed_byte
-	lda (zp_ptr1_lo),Y
-	sta PpuData_2007
-	dec zp_08
-	bne :-
+	tax	;sta zp_08
+	@rle_copy:
+		inc zp_ptr1_lo
+		bne :+
+			inc zp_ptr1_hi
+		:
+		lda (zp_ptr1_lo),Y
+		sta PpuData_2007
+	dex	;dec zp_08
+	bne @rle_copy
 
 		; Get the next byte when the counter reaches zero
-		beq @8025
+		beq @rle_unpack_loop
 
 	@rle_repeat_byte:
 	; Values < $80 are the number of times the next byte must be copied
-	sta zp_08
-	jsr sub_next_packed_byte
-	lda (zp_ptr1_lo),Y
-:
-	sta PpuData_2007
-	dec zp_08
-	bne :-
-
-	beq @8025
-
-	@8052:
-	rts
-
-; -----------------------------------------------------------------------------
-
-; Advances the pointer to the next byte
-sub_next_packed_byte:
+	tax	;sta zp_08
 	inc zp_ptr1_lo
 	bne :+
-
 		inc zp_ptr1_hi
-:
+	:
+	lda (zp_ptr1_lo),Y
+	:
+		sta PpuData_2007
+		dex	;dec zp_08
+	bne :-
+
+	beq @rle_unpack_loop
+
+	@rle_unpack_done:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -200,6 +201,9 @@ sub_load_screen_data:
 	lda tbl_rle_data_ptr_odd+2,X
 	sta zp_ptr2_lo
 	jsr sub_unpack_nametable
+
+	; Reduce music slowdown
+	jsr sub_call_sound_routines
 
 	; CHR Banks
 	lda zp_tmp_idx
