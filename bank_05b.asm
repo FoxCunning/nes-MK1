@@ -1084,7 +1084,7 @@ sub_rom_B578:
 	ldy #$00
 	@B5B2:
 		lda ram_0680,X
-		sta ram_0600,Y
+		sta ram_ppu_data_buffer,Y
 		inx
 		iny
 		cpy #$30
@@ -1355,9 +1355,9 @@ sub_rom_B7C3:
 	asl A
 	tax
 	lda rom_B7E8+0,X
-	sta ram_0600
+	sta ram_ppu_data_buffer
 	lda rom_B7E8+1,X
-	sta ram_0601
+	sta ram_ppu_data_buffer+1
 	lda #$22
 	sta zp_nmi_ppu_ptr_hi
 	lda #$50
@@ -1830,7 +1830,7 @@ sub_rom_BABF:
 	lda zp_nmi_ppu_ptr_lo
 	sta PpuAddr_2006
 	@BAD9:
-	lda ram_0600,X
+	lda ram_ppu_data_buffer,X
 	sta PpuData_2007
 	iny
 	inx
@@ -2013,7 +2013,7 @@ sub_rom_BC9A:
 	sty zp_47
 	:
 		lda (zp_ptr1_lo),Y
-		sta ram_0600,Y
+		sta ram_ppu_data_buffer,Y
 		iny
 		cpy #$18
 	bcc :-

@@ -413,7 +413,7 @@ sub_rom_E272:
 		lda zp_nmi_ppu_ptr_lo
 		sta PpuAddr_2006
 		:
-			lda ram_0600,X
+			lda ram_ppu_data_buffer,X
 			sta PpuData_2007
 			iny
 			inx
@@ -1272,7 +1272,7 @@ sub_rom_E792:
 	lda zp_nmi_ppu_ptr_lo
 	sta PpuAddr_2006
 	@E7A4:
-	lda ram_0600,X
+	lda ram_ppu_data_buffer,X
 	sta PpuData_2007
 	iny
 	inx
@@ -1792,6 +1792,13 @@ sub_call_sound_routines:
 	sta mmc3_bank_data
 	
 	rts
+
+; -----------------------------------------------------------------------------
+
+.segment "DMC"
+
+dmc_fight:
+.incbin "audio/fight.dmc"
 
 ; -----------------------------------------------------------------------------
 

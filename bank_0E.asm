@@ -1096,7 +1096,7 @@ sub_rom_C675:
 	ldy #$00
 	@C689:
 	lda rom_C76C,Y
-	sta ram_0600,Y
+	sta ram_ppu_data_buffer,Y
 	iny
 	cpy #$1A
 	bcc @C689
@@ -1166,7 +1166,7 @@ sub_rom_C6E2:
 	ldy #$04
 	@C6FF:
 	lda ram_066D,Y
-	sta ram_0600,X
+	sta ram_ppu_data_buffer,X
 	inx
 	dey
 	bpl @C6FF
@@ -1241,12 +1241,12 @@ rom_C76C:
 sub_rom_C789:
 	ldy #$05
 	@C78B:
-	lda ram_0600,X
+	lda ram_ppu_data_buffer,X
 	cmp #$B0
 	bne @C79B
 
 	lda #$FF
-	sta ram_0600,X
+	sta ram_ppu_data_buffer,X
 	inx
 	dey
 	bne @C78B
@@ -2131,14 +2131,14 @@ sub_rom_CCC3:
 	lsr A
 	tax
 	lda rom_CD09,X
-	sta ram_0600
+	sta ram_ppu_data_buffer
 	lda zp_9C
 	and #$0F
 	tax
 	lda rom_CD09,X
-	sta ram_0601
+	sta ram_ppu_data_buffer+1
 	lda #$FF
-	sta ram_0602
+	sta ram_ppu_data_buffer+2
 	lda zp_9D
 	lsr A
 	lsr A
@@ -2146,12 +2146,12 @@ sub_rom_CCC3:
 	lsr A
 	tax
 	lda rom_CD09,X
-	sta ram_0603
+	sta ram_ppu_data_buffer+3
 	lda zp_9D
 	and #$0F
 	tax
 	lda rom_CD09,X
-	sta ram_0604
+	sta ram_ppu_data_buffer+4
 	lda #$01
 	sta zp_nmi_ppu_rows
 	lda #$05
@@ -2311,7 +2311,7 @@ sub_rom_CDD5:
 	ldx #$00
 	lda #$FF
 	@CDF7:
-	sta ram_0600,X
+	sta ram_ppu_data_buffer,X
 	inx
 	cpx #$38
 	bcc @CDF7
@@ -2328,7 +2328,7 @@ sub_rom_CDD5:
 
 	clc
 	adc #$80
-	sta ram_0600,X
+	sta ram_ppu_data_buffer,X
 	@CE14:
 	iny
 	inx
@@ -2353,7 +2353,7 @@ sub_rom_CDD5:
 
 	clc
 	adc #$80
-	sta ram_0600,X
+	sta ram_ppu_data_buffer,X
 	@CE3B:
 	dex
 	dey
@@ -2577,14 +2577,14 @@ sub_rom_CFFE:
 	ldx #$00
 	@D010:
 	lda (zp_ptr1_lo),Y
-	sta ram_0600,X
+	sta ram_ppu_data_buffer,X
 	inx
 	iny
 	cpy #$08
 	bcc @D010
 
 	lda #$37
-	sta ram_0600
+	sta ram_ppu_data_buffer
 	sty zp_nmi_ppu_cols
 	lda #$01
 	sta zp_nmi_ppu_rows
@@ -3372,7 +3372,7 @@ sub_rom_D465:
 	eor #$3F
 	and ram_0640,Y
 	@D47C:
-	sta ram_0600,Y
+	sta ram_ppu_data_buffer,Y
 	dey
 	bpl @D468
 
@@ -3401,77 +3401,115 @@ rom_D49F:
 ; -----------------------------------------------------------------------------
 
 rom_D4A6:
-	.byte $D6, $D4, $DE, $D4, $E6, $D4, $EE, $D4
-	.byte $F6, $D4, $FE, $D4, $06, $D5, $0E, $D5
-	.byte $16, $D5, $1E, $D5, $26, $D5, $2E, $D5
-	.byte $36, $D5, $3E, $D5, $46, $D5, $4E, $D5
-	.byte $56, $D5, $5E, $D5, $66, $D5, $6E, $D5
-	.byte $76, $D5, $7E, $D5, $86, $D5, $8E, $D5
+	.word @rom_D4D6, @rom_D4DE, @rom_D4E6, @rom_D4EE
+	.word @rom_D4F6, @rom_D4FE, @rom_D506, @rom_D50E
+	.word @rom_D516, @rom_D51E, @rom_D526, @rom_D52E
+	.word @rom_D536, @rom_D53E, @rom_D546, @rom_D54E
+	.word @rom_D556, @rom_D55E, @rom_D566, @rom_D56E
+	.word @rom_D576, @rom_D57E, @rom_D586, @rom_D58E
+	
+	@rom_D4D6:
 	.byte $0E, $08, $2C, $20, $0E, $08, $26, $20
+	@rom_D4DE:
 	.byte $0E, $08, $18, $20, $0E, $08, $18, $36
+	@rom_D4E6:
 	.byte $0E, $08, $2C, $1C, $0E, $08, $2C, $37
+	@rom_D4EE:
 	.byte $0E, $08, $27, $17, $0E, $08, $27, $37
+	@rom_D4F6:
 	.byte $0E, $07, $27, $30, $0E, $07, $2C, $30
+	@rom_D4FE:
 	.byte $0E, $08, $27, $37, $0E, $07, $27, $37
+	@rom_D506:
 	.byte $0E, $08, $16, $30, $0E, $07, $27, $37
+	@rom_D50E:
 	.byte $0E, $07, $27, $30, $0E, $07, $27, $37
+	@rom_D516:
 	.byte $0E, $1D, $00, $10, $0E, $0D, $0C, $17
+	@rom_D51E:
 	.byte $0E, $37, $27, $07, $0E, $37, $21, $02
+	@rom_D526:
 	.byte $0E, $37, $26, $16, $0E, $37, $18, $16
+	@rom_D52E:
 	.byte $0E, $07, $27, $37, $0E, $0E, $15, $25
+	@rom_D536:
 	.byte $0E, $08, $1C, $20, $0E, $08, $25, $20
+	@rom_D53E:
 	.byte $0E, $08, $15, $20, $0E, $08, $15, $36
+	@rom_D546:
 	.byte $00, $08, $1C, $0C, $00, $08, $1C, $37
+	@rom_D54E:
 	.byte $0E, $08, $26, $16, $0E, $08, $26, $37
+	@rom_D556:
 	.byte $0E, $07, $27, $30, $0E, $07, $28, $30
+	@rom_D55E:
 	.byte $0E, $06, $26, $36, $0E, $08, $26, $36
+	@rom_D566:
 	.byte $0E, $05, $16, $30, $0E, $05, $27, $37
+	@rom_D56E:
 	.byte $0E, $07, $28, $30, $0E, $07, $28, $38
+	@rom_D576:
 	.byte $0E, $1D, $00, $10, $0E, $0D, $06, $17
+	@rom_D57E:
 	.byte $0E, $37, $27, $07, $0E, $37, $19, $09
+	@rom_D586:
 	.byte $0E, $37, $26, $0E, $0E, $37, $18, $0E
+	@rom_D58E:
 	.byte $0E, $07, $27, $37, $0E, $0E, $11, $21
 
 ; -----------------------------------------------------------------------------
 
-rom_D596:
-	.byte $B0, $D5, $C0, $D5, $D0, $D5, $E0, $D5
-	.byte $F0, $D5, $00, $D6, $10, $D6, $20, $D6
-	.byte $30, $D6, $40, $D6, $50, $D6, $60, $D6
-	.byte $70, $D6, $0E, $16, $2A, $28, $0E, $06
-	.byte $16, $26, $0E, $10, $10, $30, $0E, $00
-	.byte $10, $20, $0E, $16, $2A, $28, $0E, $18
-	.byte $28, $38, $0E, $0C, $1C, $2C, $0E, $00
-	.byte $10, $20, $0E, $16, $2A, $28, $0E, $1B
-	.byte $27, $3C, $0E, $05, $27, $3C, $0E, $00
-	.byte $10, $3C, $0E, $16, $2A, $28, $0E, $17
-	.byte $27, $3C, $0E, $17, $06, $3C, $0E, $00
-	.byte $10, $3C, $0E, $16, $2A, $28, $0E, $21
-	.byte $26, $20, $0E, $18, $28, $38, $0E, $00
-	.byte $10, $20, $0E, $16, $2A, $28, $0E, $0B
-	.byte $18, $06, $0E, $18, $28, $06, $0E, $00
-	.byte $10, $06
 
 ; -----------------------------------------------------------------------------
 
-; Potentially unused
-rom_D610:
+rom_D596:
+	.word @rom_D5B0, @rom_D5C0, @rom_D5D0, @rom_D5E0
+	.word @rom_D5F0, @rom_D600, @rom_D610, @rom_D620
+	.word @rom_D630, @rom_D640, @rom_D650, @rom_D660
+	.word @rom_D670
+
+	@rom_D5B0:
+	.byte $0E, $16, $2A, $28, $0E, $06, $16, $26
+	.byte $0E, $10, $10, $30, $0E, $00, $10, $20
+	@rom_D5C0:
+	.byte $0E, $16, $2A, $28, $0E, $18, $28, $38
+	.byte $0E, $0C, $1C, $2C, $0E, $00, $10, $20
+	@rom_D5D0:
+	.byte $0E, $16, $2A, $28, $0E, $1B, $27, $3C
+	.byte $0E, $05, $27, $3C, $0E, $00, $10, $3C
+	@rom_D5E0:
+	.byte $0E, $16, $2A, $28, $0E, $17, $27, $3C
+	.byte $0E, $17, $06, $3C, $0E, $00, $10, $3C
+	@rom_D5F0:
+	.byte $0E, $16, $2A, $28, $0E, $21, $26, $20
+	.byte $0E, $18, $28, $38, $0E, $00, $10, $20
+	@rom_D600:
+	.byte $0E, $16, $2A, $28, $0E, $0B, $18, $06
+	.byte $0E, $18, $28, $06, $0E, $00, $10, $06
+	@rom_D610:
 	.byte $0E, $06, $27, $30, $0E, $08, $18, $11
 	.byte $0E, $0B, $1B, $11, $0E, $08, $18, $28
+	@rom_D620:
 	.byte $0E, $05, $27, $30, $0E, $0B, $1B, $2C
 	.byte $0E, $07, $16, $26, $0E, $0C, $1C, $2C
+	@rom_D630:
 	.byte $0E, $05, $27, $30, $0E, $0B, $1B, $3B
 	.byte $0E, $00, $10, $20, $0E, $06, $16, $26
+	@rom_D640:
 	.byte $0E, $31, $20, $10, $0E, $3B, $20, $10
 	.byte $0E, $31, $20, $17, $0E, $06, $38, $16
+	@rom_D650:
 	.byte $0E, $3B, $2A, $10, $0E, $2C, $1C, $3C
 	.byte $0E, $26, $17, $36, $0E, $06, $38, $16
+	@rom_D660:
 	.byte $0E, $06, $27, $30, $0E, $05, $10, $2B
 	.byte $0E, $06, $16, $28, $0E, $1C, $2C, $3C
+	@rom_D670:
 	.byte $0E, $8D, $00, $3E, $0E, $20, $00, $00
 	.byte $0E, $02, $00, $90, $0E, $11, $0E, $30
 
 ; -----------------------------------------------------------------------------
+
 
 ; Potentially unused
 ; This would clear RAM between $0403-$0408
@@ -3980,7 +4018,7 @@ sub_rom_D935:
 	ldx #$00
 	@D94D:
 	lda (zp_ptr1_lo),Y
-	sta ram_0600,X
+	sta ram_ppu_data_buffer,X
 	inx
 	iny
 	cpy #$08

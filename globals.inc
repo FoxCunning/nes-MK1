@@ -308,11 +308,8 @@ ram_043E = $043E    ;
 ram_043F = $043F    ;
 ram_0440 = $0440    ;
 
-ram_0600 = $0600    ;
-ram_0601 = $0601    ;
-ram_0602 = $0602    ;
-ram_0603 = $0603    ;
-ram_0604 = $0604    ;
+; This buffer will be copied to the PPU during vblank
+ram_ppu_data_buffer = $0600 ; Size=63
 ram_063E = $063E    ;
 ram_063F = $063F    ;
 ram_0640 = $0640    ;

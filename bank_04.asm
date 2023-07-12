@@ -413,7 +413,7 @@ sub_rom_cycle_palettes:
 			lda #$FF
 
 		@8213:
-		sta ram_0600,Y
+		sta ram_ppu_data_buffer,Y
 		iny
 		cpy #$20
 	bne @8201
@@ -1490,9 +1490,9 @@ sub_show_mus_selection:
 	tax
 
 	lda tbl_num_to_char+0,X
-	sta ram_0600+0
+	sta ram_ppu_data_buffer+0
 	lda tbl_num_to_char+1,X
-	sta ram_0600+1
+	sta ram_ppu_data_buffer+1
 
 	; Ready to transfer data
 	lda #$01
@@ -1531,7 +1531,7 @@ sub_show_playing_song:
 	ldy #$00
 	:
 	lda @tbl_song_names,X
-	sta ram_0600,Y
+	sta ram_ppu_data_buffer,Y
 	inx
 	iny
 	cpy #$11
