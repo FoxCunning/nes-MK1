@@ -9,32 +9,32 @@
 
 
 ; -----------------------------------------------------------------------------
-.export sub_rom_00_8000
+.export sub_load_stage_background
 
-sub_rom_00_8000:
-	lda ram_routine_pointer_idx
+sub_load_stage_background:
+	lda ram_irq_routine_idx
 	asl A
 	sta zp_7B
-	jsr sub_rom_801F
+	jsr sub_prepare_stage_rle_pointer
 	lda #$00
 	sta zp_05
-	jsr sub_rom_8041
+	jsr sub_stage_rle_unpack
 	inc zp_7B
 	lda zp_7B
-	jsr sub_rom_801F
+	jsr sub_prepare_stage_rle_pointer
 	lda #$01
 	sta zp_05
-	jsr sub_rom_8041
-	rts
+	jmp sub_stage_rle_unpack ;jsr sub_stage_rle_unpack
+	;rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_801F:
+sub_prepare_stage_rle_pointer:
 	asl A
 	tax
-	lda rom_8098+0,X
+	lda tbl_stage_rle_ptrs+0,X
 	sta zp_ptr1_lo
-	lda rom_8098+1,X
+	lda tbl_stage_rle_ptrs+1,X
 	sta zp_ptr1_hi
 	lda zp_ptr1_lo
 	clc
@@ -47,13 +47,13 @@ sub_rom_801F:
 
 ; -----------------------------------------------------------------------------
 
-; PPU pointers to the four nametables
-rom_8039:
+; PPU pointers to the four nametables (stage backgrounds)
+tbl_stage_ppu_ptrs:
 	.word $2000, $2400, $2800, $2C00
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_8041:
+sub_stage_rle_unpack:
 	lda #$00
 	sta PpuControl_2000
 	sta PpuMask_2001
@@ -62,9 +62,9 @@ sub_rom_8041:
 	tax
 	ldy #$00
 	lda PpuStatus_2002
-	lda rom_8039+1,X
+	lda tbl_stage_ppu_ptrs+1,X
 	sta PpuAddr_2006
-	lda rom_8039+0,X
+	lda tbl_stage_ppu_ptrs+0,X
 	sta PpuAddr_2006
 	@805E:
 	lda (zp_ptr1_lo),Y
@@ -72,49 +72,60 @@ sub_rom_8041:
 	cmp #$FF
 	beq @8090
 
-	and #$7F
-	sta zp_18
-	@806A:
-	jsr sub_rom_8091
-	lda (zp_ptr1_lo),Y
-	sta PpuData_2007
-	dec zp_18
-	bne @806A
+		and #$7F
+		sta zp_18
+		@806A:
+			jsr sub_rom_8091
+			lda (zp_ptr1_lo),Y
+			sta PpuData_2007
+		dec zp_18
+		bne @806A
 
-	jsr sub_rom_8091
-	jmp @805E
+		jsr sub_rom_8091
+		jmp @805E
 
-	@807C:
-	sta zp_18
-	jsr sub_rom_8091
-	lda (zp_ptr1_lo),Y
-	@8083:
-	sta PpuData_2007
-	dec zp_18
-	bne @8083
+		@807C:
+		sta zp_18
+		jsr sub_rom_8091
+		lda (zp_ptr1_lo),Y
+		@8083:
+			sta PpuData_2007
+		dec zp_18
+		bne @8083
 
-	jsr sub_rom_8091
-	jmp @805E
+		jsr sub_rom_8091
+		jmp @805E
 
 	@8090:
 	rts
 
 ; -----------------------------------------------------------------------------
 
+; TODO Inline this
 sub_rom_8091:
 	inc zp_ptr1_lo
-	bne @8097
-
-	inc zp_ptr1_hi
-	@8097:
+	bne :+
+		inc zp_ptr1_hi
+	:
 	rts
 
 ; -----------------------------------------------------------------------------
 
-rom_8098:
-	.word rom_80B0, rom_83A4, rom_84E4, rom_86C6
-	.word rom_8834, rom_8AF2, rom_8C4B, rom_8F17
-	.word rom_90A0, rom_934D, rom_94B2, rom_974F
+tbl_stage_rle_ptrs:
+	; Left / Top nametables
+	.word rom_80B0
+	.word rom_83A4
+	.word rom_84E4
+	.word rom_86C6
+	.word rom_8834
+	.word rom_8AF2
+	; Bottom / Right nametables
+	.word rom_8C4B
+	.word rom_8F17
+	.word rom_90A0
+	.word rom_934D
+	.word rom_94B2
+	.word rom_974F
 
 ; -----------------------------------------------------------------------------
 

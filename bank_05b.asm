@@ -62,7 +62,7 @@ sub_init_menu_screen:
 	;sta mmc3_mirroring
 
 	lda #$0D
-	sta ram_routine_pointer_idx
+	sta ram_irq_routine_idx
 	lda #$ED
 	sta ram_irq_latch_value
 	
@@ -211,8 +211,11 @@ sub_main_menu_loop:
 
 	; ---- End of loop: a button was pressed
 
-	lda #$31	; This will stop music and play the "selection" sound instead
-	sta ram_req_song
+	;lda #$31	; This will stop music and play the "selection" sound instead
+	;sta ram_req_song
+	; TODO Use a DMC "gong" sample?
+	lda #$0C
+	sta ram_req_sfx	; Let's not stop the music instead
 
 	inc zp_machine_state_2
 	lda #$05
@@ -249,7 +252,7 @@ sub_eval_menu_choice:
 	sta zp_last_execution_frame
 
 	lda #$0C
-	sta ram_routine_pointer_idx
+	sta ram_irq_routine_idx
 
 	; Disable rendering and clear machine sub-state
 	lda #$00
@@ -421,7 +424,7 @@ sub_back_to_main:
 		
 		; Switch to state 0,0,4 (main menu init)
 		lda #$0C
-		sta ram_routine_pointer_idx
+		sta ram_irq_routine_idx
 		lda #$00
 		sta PpuMask_2001
 		sta zp_machine_state_2
@@ -653,7 +656,7 @@ sub_rom_B25C:
 	lda #$1E
 	sta zp_ppu_mask_backup
 	lda #$0C
-	sta ram_routine_pointer_idx
+	sta ram_irq_routine_idx
 	lda #$80
 	sta ram_irq_latch_value
 	inc zp_machine_state_2
@@ -1212,7 +1215,7 @@ sub_rom_B6E9:
 	jsr sub_init_screen_common
 
 	lda #$0C
-	sta ram_routine_pointer_idx
+	sta ram_irq_routine_idx
 	lda #$80
 	sta ram_irq_latch_value
 
@@ -1399,7 +1402,7 @@ sub_rom_B80D:
 	jsr sub_init_screen_common
 
 	lda #$0C
-	sta ram_routine_pointer_idx
+	sta ram_irq_routine_idx
 	sta ram_irq_latch_value
 
 	inc zp_machine_state_2
@@ -1631,7 +1634,7 @@ sub_rom_B926:
 	lda ram_0680
 	sta zp_ppu_control_backup
 	lda #$0C
-	sta ram_routine_pointer_idx
+	sta ram_irq_routine_idx
 	sta ram_irq_latch_value
 	inc zp_machine_state_2
 	rts
@@ -2345,7 +2348,7 @@ sub_rom_BF29:
 	@BF55:
 	sty zp_ppu_control_backup
 	lda #$0C
-	sta ram_routine_pointer_idx
+	sta ram_irq_routine_idx
 	sta ram_irq_latch_value
 	inc zp_machine_state_2
 	lda #$14

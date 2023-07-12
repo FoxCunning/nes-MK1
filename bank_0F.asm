@@ -63,7 +63,7 @@ reset:
 	sta ram_042D
 
 	lda #$0C
-	sta ram_routine_pointer_idx
+	sta ram_irq_routine_idx
 
 	jsr sub_rom_E22A
 
@@ -531,7 +531,7 @@ sub_trampoline:
 sub_select_irq_handler:
 	lda #$4C	; Op code for JMP
 	sta ram_irq_trampoline
-	lda ram_routine_pointer_idx
+	lda ram_irq_routine_idx
 	asl A
 	tax
 	lda tbl_irq_handler_ptrs+0,X
@@ -543,23 +543,23 @@ sub_select_irq_handler:
 ; -----------------------------------------------------------------------------
 
 tbl_irq_handler_ptrs:
-	.word sub_irq_handler_00		; $00
-	.word sub_irq_handler_01		; $01
-	.word sub_irq_handler_02		; $02
-	.word sub_irq_handler_03		; $03
-	.word sub_irq_handler_04		; $04
-	.word sub_irq_handler_05		; $05
+	.word sub_irq_handler_00		; $00	Goro's Lair
+	.word sub_irq_handler_01		; $01	The Pit
+	.word sub_irq_handler_02		; $02	Courtyard
+	.word sub_irq_handler_03		; $03	Palace Gates
+	.word sub_irq_handler_04		; $04	Warrior Shrine
+	.word sub_irq_handler_05		; $05	Throne Room
 	.word sub_irq_handler_06		; $06
 	.word sub_irq_handler_07		; $07
 	.word sub_irq_handler_07		; $08
 	.word sub_irq_handler_07		; $09
 	.word sub_irq_handler_00		; $0A
-	.word sub_irq_handler_00		; $0B
+	.word sub_irq_handler_00		; $0B	Vs. Screen
 	.word sub_irq_handler_0C		; $0C
 	.word sub_irq_handler_0D		; $0D
 	.word sub_irq_handler_0E		; $0E
 	.word sub_irq_handler_0F		; $0F
-	.word sub_irq_handler_10		; $10
+	.word sub_irq_handler_10		; $10	Sound test
 	.word sub_irq_handler_11		; $11
 	.word sub_irq_handler_11		; $12
 	.word sub_irq_handler_11		; $13
@@ -630,7 +630,7 @@ sub_irq_handler_05:
 sub_irq_handler_06:
 	sta mmc3_irq_disable
 	ldx zp_03
-	lda a:zp_7A		; Why??
+	lda zp_game_substate	;a:zp_7A
 	cmp #$03
 	bcc @E3C0
 
@@ -842,7 +842,7 @@ sub_rom_E4F1:
 	lda #$40
 	sta mmc3_irq_latch
 	lda PpuStatus_2002
-	lda a:zp_81		; Why?
+	lda zp_81 ;a:zp_81
 	sta PpuScroll_2005
 	ldy #$E4
 	jmp sub_rom_E41B
@@ -869,7 +869,7 @@ sub_rom_E50A:
 	inx
 	iny
 	stx mmc3_bank_select
-	lda a:zp_7A		; Why?
+	lda zp_game_substate	;a:zp_7A
 	cmp #$05
 	bcs @E54E
 
@@ -1441,7 +1441,7 @@ sub_rom_E874:
 
 sub_rom_E889:
 	lda #$06
-	sta ram_routine_pointer_idx
+	sta ram_irq_routine_idx
 	ldx #$02
 	lda #$01
 	rts
@@ -1674,7 +1674,7 @@ sub_rom_EA13:
 		beq @EA53
 
 			lda #$09
-			sta zp_7A ;a:zp_7A
+			sta zp_game_substate ;a:zp_7A
 			rts
 ; ----------------
 	@EA2A:
@@ -1682,7 +1682,7 @@ sub_rom_EA13:
 	and #$10	; Start Button
 	beq @EA4D
 
-	lda zp_7A ;a:zp_7A
+	lda zp_game_substate ;a:zp_7A
 	cmp #$03
 	bne @EA53
 	lda ram_0438
@@ -1707,7 +1707,7 @@ sub_rom_EA13:
 ; -----------------------------------------------------------------------------
 
 sub_rom_EA57:
-	jmp sub_rom_C000 ;jsr sub_rom_C000
+	jmp sub_state_machine_1 ;jsr sub_rom_C000
 	;rts
 
 ; -----------------------------------------------------------------------------
@@ -1794,11 +1794,26 @@ sub_call_sound_routines:
 	rts
 
 ; -----------------------------------------------------------------------------
-
 .segment "DMC"
+
+
+; ----------------
+.export dmc_fight
 
 dmc_fight:
 .incbin "audio/fight.dmc"
+
+; ----------------
+.export dmc_subzero
+
+dmc_subzero:
+.incbin "audio/subzero.dmc"
+
+; ----------------
+.export dmc_sonya
+
+dmc_sonya:
+.incbin "audio/sonya.dmc"
 
 ; -----------------------------------------------------------------------------
 

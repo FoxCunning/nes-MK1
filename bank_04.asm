@@ -137,7 +137,7 @@ sub_setup_new_screen:
 
 	; Change mirroring and IRQ handler
 	lda #$0C
-	sta ram_routine_pointer_idx
+	sta ram_irq_routine_idx
 	lda #$01
 	sta mmc3_mirroring
 
@@ -155,7 +155,7 @@ sub_setup_new_screen:
 	asl A
 	tay
 	lda tbl_palette_and_irq_ptrs+0,Y
-	sta ram_routine_pointer_idx
+	sta ram_irq_routine_idx
 	lda tbl_palette_and_irq_ptrs+1,Y
 	sta zp_palette_idx
 
@@ -1417,8 +1417,8 @@ sub_choose_music_track:
 	@tbl_bg_music:
 	.byte $20	; $00	Menu intro jingle
 	.byte $22	; $01	Options menu
-	.byte $21	; $02	Player select (also VS screen)
-	.byte $21	; $03
+	.byte $20	; $02	Player select
+	.byte $21	; $03	Vs. Screen
 	.byte $20	; $04	High scores
 	.byte $22	; $05
 	.byte $22	; $06

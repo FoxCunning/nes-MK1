@@ -120,7 +120,7 @@ zp_plr2_selection = $64 ;
 zp_65 = $65     ;
 zp_66 = $66     ;
 
-zp_7A = $7A     ;
+zp_game_substate = $7A     ;
 zp_7B = $7B     ;
 zp_7C = $7C     ;
 zp_7F = $7F     ;
@@ -276,7 +276,7 @@ ram_040E = $040E    ;
 ram_040F = $040F    ;
 ; Index for tables of pointers
 ; Used choose an IRQ handling routine and others
-ram_routine_pointer_idx = $0410 ;
+ram_irq_routine_idx = $0410 ;
 ram_0411 = $0411    ;
 ram_0414 = $0414    ;
 ram_0416 = $0416    ;

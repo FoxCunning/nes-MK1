@@ -13,36 +13,54 @@ rom_8002 = $8002	;
 
 
 ; -----------------------------------------------------------------------------
-.export sub_rom_C000
+.export sub_state_machine_1
 
-sub_rom_C000:
-	lda zp_7A
-	jsr sub_rom_D68B
+; This state starts right after fighter selection
+sub_state_machine_1:
+	lda zp_game_substate
+	jsr sub_game_trampoline
 ; ----------------
-	.word sub_rom_C019, sub_rom_C107, sub_rom_C117, sub_rom_C122
-	.word sub_rom_C17B, sub_rom_C186, sub_rom_C1F9, sub_rom_C21E
-	.word sub_rom_C21E, sub_rom_C284
+	.word sub_init_game_mode	; Substate 0
+	.word sub_match_fade_in		; Substate 1
+	.word sub_match_start		; Substate 2
+	.word sub_rom_C122	; Substate 3	Match ongoing
+	.word sub_rom_C17B	; Substate 4	Someone was hit
+	.word sub_rom_C186	; Substate 5	Victory pose and score
+	.word sub_rom_C1F9	; Substate 6	Evaluate result (choose either 7 or 8 for next state)
+	.word sub_rom_C21E	; Substate 7	Fade out
+	.word sub_rom_C21E	; Substate 8	Fade out (to next round)
+	.word sub_rom_C284	; Substate 9
 
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_C019:
-	lda zp_F3
+; Initialises "game mode", setting a new IRQ handler, loading nametable data
+; for the stage background, sprite data for the player(s) and music
+sub_init_game_mode:
+	; Retrieve the stage index
+	lda zp_F3	; This is player 2 fighter index, bit 7 is set for CPU opponent
 	and #$7F
 	tax
-	lda rom_C0A8,X
-	sta ram_routine_pointer_idx
+	lda tbl_stage_indices,X
+	sta ram_irq_routine_idx
+
+	; Disable rendering and NMI generation
 	lda #$00
 	sta PpuControl_2000
 	sta zp_ppu_control_backup
 	sta PpuMask_2001
 	sta zp_ppu_mask_backup
+
 	lda #$01
 	sta ram_040F
-	lda zp_F2
+
+	; Check if the two players are using the same fighter
+	; Then either add or subtract $0C to the index in order to load
+	; the alternative palette
+	lda zp_F2	; <- Player 1
 	and #$7F
 	sta zp_ptr1_lo
-	lda zp_F3
+	lda zp_F3	; <- Player 2
 	and #$7F
 	cmp zp_ptr1_lo
 	bne @C05A
@@ -57,6 +75,7 @@ sub_rom_C019:
 	@C04D:
 	clc
 	adc #$0C
+
 	@C050:
 	sta zp_ptr1_lo
 	lda zp_F3
@@ -72,7 +91,7 @@ sub_rom_C019:
 	sta zp_A4
 
 	; Select stage music
-	ldx ram_routine_pointer_idx
+	ldx ram_irq_routine_idx
 	lda rom_C0C0,X
 	sta zp_4A
 	txa
@@ -86,10 +105,12 @@ sub_rom_C019:
 	sta zp_scroll_x
 	sta ram_0438
 	sta zp_scroll_y
-	jsr sub_rom_D6A0
-	jsr sub_rom_C0C6
-	jsr sub_rom_CDD5
-	jsr sub_rom_CF4E
+
+	jsr sub_clear_oam_data
+	jsr sub_call_load_stage_bg
+	jsr sub_show_fighter_names
+	jsr sub_finish_match_init
+
 	lda #$18
 	sta zp_ppu_mask_backup
 	lda #$88
@@ -97,15 +118,15 @@ sub_rom_C019:
 	sta zp_ppu_control_backup
 	lda #$00
 	sta mmc3_mirroring
-	inc zp_7A
-	nop
+	inc zp_game_substate
+	;nop
 	lda zp_60
 	sta zp_4B
 	rts
 
 ; -----------------------------------------------------------------------------
 
-rom_C0A8:
+tbl_stage_indices:
 	.byte $00, $01, $05, $03, $04, $02, $02, $01
 	.byte $04, $01, $02, $03, $00, $01, $05, $03
 	.byte $04, $02, $02, $01, $04, $01, $02, $03
@@ -117,7 +138,10 @@ rom_C0C0:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_C0C6:
+; Loads stage background nametables from bank 0
+; $8000-$9FFF = Bank $00
+; $A000-$BFFF = Bank $01
+sub_call_load_stage_bg:
 	lda #$00
 	sta ram_043F
 	sta ram_0440
@@ -133,13 +157,15 @@ sub_rom_C0C6:
 	sta mmc3_bank_select
 	lda #$01
 	sta mmc3_bank_data
-	jsr sub_rom_00_8000
-	rts
+	jmp sub_load_stage_background ;jsr sub_rom_00_8000
+	;rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_C0EA:
-	lda zp_A3
+; If any of the fighter indices were changed to load the alt palette,
+; put it back as it was before ($00-$08 instead of $0C-$14)
+sub_rebase_fighter_indices:
+	lda zp_A3	; Player 1 fighter idx
 	@C0EC:
 	cmp #$0C
 	bcc @C0F8
@@ -150,7 +176,7 @@ sub_rom_C0EA:
 	jmp @C0EC
 
 	@C0F8:
-	lda zp_A4
+	lda zp_A4	; Player 2 fighter idx
 	@C0FA:
 	cmp #$0C
 	bcc @C106
@@ -165,27 +191,42 @@ sub_rom_C0EA:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_C107:
+sub_match_fade_in:
 	lda ram_0401
-	bne @C10F
-
-	jsr sub_rom_C69C
-	@C10F:
+	bne :+
+		jsr sub_rom_C69C
+	:
 	jsr sub_rom_D422
-	bcc @C116
-
-	inc zp_7A
-	@C116:
+	bcc :+
+		inc zp_game_substate
+	:
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_C117:
-	lda #$63
-	sta zp_9F
+sub_match_start:
+	lda zp_9F
+	bne :+
+		; "FIGHT!"
+		; Sample address
+		lda #>(dmc_fight<<2)
+		sta DmcAddress_4012
+		lda #$4D
+		sta DmcLength_4013
+		lda #$1F
+		sta ApuStatus_4015
+		lda #$0C
+		sta DmcFreq_4010
+	:
+	cmp #$63
+	beq :+
+		inc zp_9F
+		; Just Waiting...
+		rts
+	:
 	lda #$00
 	sta zp_A2
-	inc zp_7A
+	inc zp_game_substate
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -324,7 +365,7 @@ sub_rom_C186:
 	rts
 ; ----------------
 	@C1F6:
-	inc zp_7A
+	inc zp_game_substate
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -351,7 +392,7 @@ sub_rom_C207:
 
 	inx
 	@C215:
-	stx zp_7A
+	stx zp_game_substate
 	cpx #$08
 	beq @C21D
 
@@ -378,7 +419,7 @@ sub_rom_C21E:
 	cmp #$09
 	bcs @C238
 
-	lda zp_7A
+	lda zp_game_substate
 	cmp #$08
 	beq @C268
 
@@ -399,7 +440,7 @@ sub_rom_C21E:
 	@C24D:
 	stx zp_machine_state_0
 	lda #$0B
-	sta ram_routine_pointer_idx
+	sta ram_irq_routine_idx
 	lda #$00
 	sta zp_scroll_y
 	jsr sub_rom_C272
@@ -411,7 +452,7 @@ sub_rom_C21E:
 	@C268:
 	lda #$00
 	sta ram_067D
-	sta zp_7A
+	sta zp_game_substate
 	sta zp_F1
 	@C271:
 	rts
@@ -445,7 +486,7 @@ sub_rom_C284:
 		sta zp_machine_state_0
 		sta ram_067D
 		sta ram_067C
-		sta zp_7A
+		sta zp_game_substate
 		lda #$1F
 		sta ram_req_sfx
 	:
@@ -670,14 +711,20 @@ rom_C3C9:
 sub_rom_C3F9:
 	ldy zp_7C
 	lda zp_A3,Y
-	jsr sub_rom_D68B
-
-; -----------------------------------------------------------------------------
-
-rom_C401:
-	.word sub_rom_C419, sub_rom_C419, sub_rom_C419, sub_rom_C419
-	.word sub_rom_C4B2, sub_rom_C419, sub_rom_C419, sub_rom_C419
-	.word sub_rom_C419, sub_rom_C419, sub_rom_C419, sub_rom_C419
+	jsr sub_game_trampoline
+; ----------------
+	.word sub_rom_C419
+	.word sub_rom_C419
+	.word sub_rom_C419
+	.word sub_rom_C419
+	.word sub_rom_C4B2
+	.word sub_rom_C419
+	.word sub_rom_C419
+	.word sub_rom_C419
+	.word sub_rom_C419
+	.word sub_rom_C419
+	.word sub_rom_C419
+	.word sub_rom_C419
 
 ; -----------------------------------------------------------------------------
 
@@ -1265,7 +1312,7 @@ sub_rom_C79C:
 	sta zp_EF
 	sta zp_F0
 	sta zp_F1
-	dec zp_7A
+	dec zp_game_substate
 	rts
 ; ----------------
 	@C7AD:
@@ -1599,7 +1646,7 @@ sub_rom_C9F2:
 	bcc @CA18
 
 	lda #$05
-	sta zp_7A
+	sta zp_game_substate
 	jsr sub_rom_CA19
 	pla
 	pla
@@ -2112,7 +2159,7 @@ sub_rom_CCAC:
 		sta ram_req_sfx
 		lda #$00
 		sta zp_F1
-		inc zp_7A
+		inc zp_game_substate
 		rts
 ; ----------------
 	@CCC0:
@@ -2292,13 +2339,13 @@ sub_rom_CD81:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_CDD5:
+sub_show_fighter_names:
 	lda zp_A3
 	asl A
 	tax
-	lda rom_CE40,X
+	lda tbl_fighter_name_ptrs,X
 	sta zp_3B
-	lda rom_CE40+1,X
+	lda tbl_fighter_name_ptrs+1,X
 	sta zp_3C
 	lda #$01
 	sta zp_nmi_ppu_rows
@@ -2338,9 +2385,9 @@ sub_rom_CDD5:
 	lda zp_A4
 	asl A
 	tax
-	lda rom_CE40,X
+	lda tbl_fighter_name_ptrs,X
 	sta zp_3B
-	lda rom_CE40+1,X
+	lda tbl_fighter_name_ptrs+1,X
 	sta zp_3C
 	ldy #$00
 	ldx #$17
@@ -2364,42 +2411,61 @@ sub_rom_CDD5:
 ; -----------------------------------------------------------------------------
 
 ; Pointers to name strings
-rom_CE40:
-	.word rom_CE70, rom_CE77, rom_CE7D, rom_CE86
-	.word rom_CE8F, rom_CE94, rom_CE99, rom_CEA2
-	.word rom_CEA7, rom_CEB3, rom_CEBB, rom_CEC3
-
-	.word rom_CE70, rom_CE77, rom_CE7D, rom_CE86
-	.word rom_CE8F, rom_CE94, rom_CE99, rom_CEA2
-	.word rom_CEA7, rom_CEB3, rom_CEBB, rom_CEC3
+tbl_fighter_name_ptrs:
+	; Player 1
+	.word str_name_rayden
+	.word str_name_sonya
+	.word str_name_subzero
+	.word str_name_skorpion
+	.word str_name_kano
+	.word str_name_cage
+	.word str_name_liukang
+	.word str_name_goro
+	.word str_name_shangtsung
+	.word str_name_empty_7spc0
+	.word str_name_empty_7scp1
+	.word str_name_empty_3spc
+	; Player 2
+	.word str_name_rayden
+	.word str_name_sonya
+	.word str_name_subzero
+	.word str_name_skorpion
+	.word str_name_kano
+	.word str_name_cage
+	.word str_name_liukang
+	.word str_name_goro
+	.word str_name_shangtsung
+	.word str_name_empty_7spc0
+	.word str_name_empty_7scp1
+	.word str_name_empty_3spc
 
 ; -----------------------------------------------------------------------------
 
 ; Byte 0 = lengh, Bytes 1 to (length) = name
 ; TODO: Probably safe to use ASCII, otherwise custom encoding
-rom_CE70:
+str_name_rayden:
 	.byte $06, $52, $41, $59, $44, $45, $4E
-rom_CE77:
+str_name_sonya:
 	.byte $05, $53, $4F, $4E, $59, $41
-rom_CE7D:
+str_name_subzero:
 	.byte $08, $53, $55, $42, $5C, $5A, $45, $52, $4F
-rom_CE86:
+str_name_skorpion:
 	.byte $08, $53, $43, $4F, $52, $50, $49, $4F, $4E
-rom_CE8F:
+str_name_kano:
 	.byte $04, $4B, $41, $4E, $4F
-rom_CE94:
+str_name_cage:
 	.byte $04, $43, $41, $47, $45
-rom_CE99:
+str_name_liukang:
 	.byte $08, $4C, $49, $55, $5C, $4B, $41, $4E, $47
-rom_CEA2:
+str_name_goro:
 	.byte $04, $47, $4F, $52, $4F
-rom_CEA7:
+str_name_shangtsung:
 	.byte $0B, $53, $48, $41, $4E, $47, $5C, $54, $53, $55, $4E, $47
-rom_CEB3:
+str_name_empty_7spc0:
 	.byte $07, $20, $20, $20, $20, $20, $20, $20
-rom_CEBB:
+str_name_empty_7scp1:
 	.byte $07, $20, $20, $20, $20, $20, $20, $20
-rom_CEC3:
+str_name_empty_3spc:
 	.byte $03, $20, $20, $20
 
 ; Nothing seems to point to these "empty" names
@@ -2459,12 +2525,14 @@ sub_rom_CF1F:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_CF4E:
+sub_finish_match_init:
 	jsr sub_load_game_palettes
+
 	lda #$02
 	sta zp_92
 	lda #$01
 	sta zp_48
+
 	lda #$00
 	sta zp_49
 	sta zp_A2
@@ -2486,13 +2554,17 @@ sub_rom_CF4E:
 	sta ram_0411
 	sta zp_4C
 	sta zp_4D
+
 	lda #$40
 	sta zp_81
 	sta ram_0414
+
 	lda #$01
 	sta zp_8B
+
 	lda #$90
 	sta zp_82
+
 	lda #$F0
 	sta zp_84
 	lda zp_4A
@@ -2500,17 +2572,18 @@ sub_rom_CF4E:
 	sta zp_89
 	sta zp_F4
 	sta zp_F5
+
 	lda #$00
 	tax
-	@CFA4:
-	sta zp_A9,X
+	:
+		sta zp_A9,X
 	inx
 	cpx #$3C
-	bcc @CFA4
+	bcc :-
 
-	jsr sub_rom_C0EA
-	jsr sub_rom_D76D
-	rts
+	jsr sub_rebase_fighter_indices
+	jmp sub_rom_D76D ;jsr sub_rom_D76D
+	;rts
 
 ; -----------------------------------------------------------------------------
 
@@ -2521,7 +2594,8 @@ sub_load_game_palettes:
 	inx
 	stx zp_35
 
-	lda ram_routine_pointer_idx ;ldy ram_routine_pointer_idx
+	; The stage index is in the general pointer idx variable
+	lda ram_irq_routine_idx ;ldy ram_routine_pointer_idx
 	;tya
 	asl A
 	tay
@@ -2710,7 +2784,7 @@ sub_rom_D09F:
 	lda zp_ptr1_lo
 	sec
 	sbc #$80
-	ldx ram_routine_pointer_idx
+	ldx ram_irq_routine_idx
 	cmp rom_D0C5,X
 	bcs @D0C4
 
@@ -2961,6 +3035,7 @@ sub_rom_D20A:
 	ldy #$00
 	sty zp_7C
 	jsr sub_rom_D215
+
 	ldy #$01
 	sty zp_7C
 ; ----------------
@@ -3073,7 +3148,7 @@ sub_rom_D270:
 	@D2AB:
 	lda zp_ppu_control_backup
 	sta PpuControl_2000
-	lda zp_7A
+	lda zp_game_substate
 	cmp #$03
 	beq @D2BE
 
@@ -3096,7 +3171,7 @@ sub_rom_D270:
 	and #$04
 	bne @D2E1
 
-	lda zp_7A
+	lda zp_game_substate
 	cmp #$03
 	bne @D2E1
 
@@ -3114,7 +3189,7 @@ sub_rom_D270:
 	rts
 ; ----------------
 	@D2EE:
-	lda zp_7A
+	lda zp_game_substate
 	cmp #$03
 	beq @D356
 
@@ -3264,11 +3339,11 @@ sub_rom_D3DE:
 	cmp #$FF
 	bne @D3F0
 
-	jsr sub_rom_CDD5
+	jsr sub_show_fighter_names
 	lda #$00
 	sta zp_4B
 	lda #$03
-	sta zp_7A
+	sta zp_game_substate
 	rts
 ; ----------------
 	@D3F0:
@@ -3362,22 +3437,22 @@ sub_rom_D440:
 
 sub_rom_D465:
 	ldy ram_0400
-	@D468:
-	lda ram_0640,Y
-	cmp rom_D498,X
-	bcs @D474
+	:
+		lda ram_0640,Y
+		cmp rom_D498,X
+		bcs @D474
 
-	lda #$0E
-	bcc @D47C
+		lda #$0E
+		bcc @D47C
 
-	@D474:
-	lda rom_D498,X
-	eor #$3F
-	and ram_0640,Y
-	@D47C:
-	sta ram_ppu_data_buffer,Y
+		@D474:
+		lda rom_D498,X
+		eor #$3F
+		and ram_0640,Y
+		@D47C:
+		sta ram_ppu_data_buffer,Y
 	dey
-	bpl @D468
+	bpl :-
 
 	lda rom_D49F,X
 	sta zp_ppu_mask_backup
@@ -3551,7 +3626,7 @@ sub_rom_D680:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_D68B:
+sub_game_trampoline:
 	asl A
 	tay
 	pla
@@ -3568,7 +3643,7 @@ sub_rom_D68B:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_D6A0:
+sub_clear_oam_data:
 	lda #$F8
 	ldx #$00
 	@D6A4:
@@ -3624,7 +3699,7 @@ sub_rom_D6C7:
 ; -----------------------------------------------------------------------------
 
 sub_rom_D6E0:
-	lda zp_7A
+	lda zp_game_substate
 	cmp #$03
 	bne sub_rom_D718
 
@@ -3735,8 +3810,8 @@ sub_rom_D72C:
 
 sub_rom_D76D:
 	jsr sub_rom_D774
-	jsr sub_rom_D20A
-	rts
+	jmp sub_rom_D20A ;jsr sub_rom_D20A
+	;rts
 
 ; -----------------------------------------------------------------------------
 
@@ -3754,7 +3829,7 @@ sub_rom_D784:
 	jsr sub_rom_D8F0
 	ldy zp_7C
 	ldx zp_A3,Y
-	lda rom_D8D8,X
+	lda tbl_fighter_sprite_banks,X
 	sta zp_05
 	; Load a new bank in $8000-$9FFF from table below
 	lda #$86
@@ -3958,7 +4033,7 @@ sub_rom_D784:
 
 ; Bank numbers, will be mapped to $8000-$9FFF
 ; These contain animation data (sprite indices) and maybe "moves" data
-rom_D8D8:
+tbl_fighter_sprite_banks:
 	.byte $05	; Rayden
 	.byte $06	; Sonya
 	.byte $07	; Sub-Zero
@@ -4248,7 +4323,7 @@ sub_rom_D9AF:
 	@DA9D:
 	tya
 	@DA9E:
-	ldy ram_routine_pointer_idx
+	ldy ram_irq_routine_idx
 	cpy #$06
 	bne @DAA7
 

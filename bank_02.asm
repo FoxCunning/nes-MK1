@@ -165,24 +165,13 @@ rom_8A37:
 	.byte $FB, $FF
 	.byte $81, $21, $82, $26, $00, $FF
 
-; Silent channel
-rom_8A4D:
-	.byte $FF
-
 ; ----------------
 
 ; "Siren" sound
 sfx_select:
-	.byte $00
-	.word rom_8A4D
-	.byte $01
+
+	.byte $81
 	.word rom_8A37
-	.byte $02
-	.word rom_8A4D
-	.byte $03
-	.word rom_8A4D
-	.byte $04
-	.word rom_8A4D
 	.byte $FF
 
 ; -----------------------------------------------------------------------------
