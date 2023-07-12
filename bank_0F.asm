@@ -1652,39 +1652,37 @@ sub_rom_E902:
 
 ; Potentially unused
 sub_rom_EA06:
-	lda a:zp_controller1	; ???
+	lda zp_controller1 ;a:zp_controller1
 	and #$30
 	eor #$30
-	bne @EA12
-
-	jmp sub_rom_8000
-
-	@EA12:
+	bne :+
+		jmp sub_rom_8000
+	:
 	rts
 
 ; -----------------------------------------------------------------------------
 
-; Called if Machine State 0 is 1
+; Called if Machine State 0 is 1 (game)
 sub_rom_EA13:
 	lda #$2F
 	sta ram_irq_latch_value
-	lda a:zp_5E	; ???
+	lda zp_5E ;a:zp_5E
 	beq @EA2A
 
-		lda a:zp_controller1_new	; ???
+		lda zp_controller1_new ;a:zp_controller1_new
 		and #$10	; Start Button
 		beq @EA53
 
 			lda #$09
-			sta a:zp_7A	; ???
+			sta zp_7A ;a:zp_7A
 			rts
 ; ----------------
 	@EA2A:
-	lda a:zp_controller1_new	; ???
+	lda zp_controller1_new ;a:zp_controller1_new
 	and #$10	; Start Button
 	beq @EA4D
 
-	lda a:zp_7A	; ???
+	lda zp_7A ;a:zp_7A
 	cmp #$03
 	bne @EA53
 	lda ram_0438
@@ -1693,11 +1691,11 @@ sub_rom_EA13:
 	jsr sub_rom_EA5B
 	lda #$0E	; Pause sound
 	sta ram_req_sfx
-	lda a:zp_24	; ???
+	lda zp_24 ;a:zp_24
 	eor #$01
-	sta a:zp_24	; ???
+	sta zp_24 ;a:zp_24
 	@EA4D:
-	lda a:zp_24	; ???
+	lda zp_24 ;a:zp_24
 	beq @EA53
 
 	rts
@@ -1709,8 +1707,8 @@ sub_rom_EA13:
 ; -----------------------------------------------------------------------------
 
 sub_rom_EA57:
-	jsr sub_rom_C000
-	rts
+	jmp sub_rom_C000 ;jsr sub_rom_C000
+	;rts
 
 ; -----------------------------------------------------------------------------
 
@@ -1762,9 +1760,40 @@ sub_rom_EA5B:
 	rts
 
 ; -----------------------------------------------------------------------------
+.export sub_call_sound_routines
 
+sub_call_sound_routines:
+	; PRG ROM $8000-$9FFF <-- Bank $02 (sound data)
+	lda #$86
+	sta zp_prg_bank_select_backup	;sta a:zp_prg_bank_select_backup
+	sta mmc3_bank_select
+	lda #$02
+	sta mmc3_bank_data
+	; PRG ROM $8000-$9FFF <-- Bank $03 (sound and moves code)
+	lda #$87
+	sta zp_prg_bank_select_backup	;sta a:zp_prg_bank_select_backup
+	sta mmc3_bank_select
+	lda #$03
+	sta mmc3_bank_data
+
+	jsr sub_process_all_sound
+
+	; Switch back to PRG ROM Banks $04 and $05
+	lda #$86
+	sta zp_prg_bank_select_backup	;sta a:zp_prg_bank_select_backup
+	sta mmc3_bank_select
+	lda #$04
+	sta mmc3_bank_data
+	; PRG ROM $8000-$9FFF <-- Bank $03 (sound and moves code)
+	lda #$87
+	sta zp_prg_bank_select_backup	;sta a:zp_prg_bank_select_backup
+	sta mmc3_bank_select
+	lda #$05
+	sta mmc3_bank_data
+	
+	rts
 
 ; -----------------------------------------------------------------------------
 
-	.segment "VECTORS"
+.segment "VECTORS"
 	.word nmi, reset, irq
