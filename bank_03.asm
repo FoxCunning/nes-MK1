@@ -2129,14 +2129,13 @@ sub_cmd_set_pitch_env:
 
 		jsr sub_advance_track_ptr
 		jmp sub_get_next_track_byte
-:
+	:
 	jsr sub_track_read_next_byte
 	cmp #$FF
 	bne :+
-		
 		; If the index is $FF, disable the envelope
-		sta ram_cur_vol_env_duration,X
-:	
+		sta ram_cur_pitch_env_duration,X
+	:	
 	sta ram_pitch_env_idx,X
 	jmp sub_get_next_track_byte
 
