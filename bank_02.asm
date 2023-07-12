@@ -321,7 +321,7 @@ mus_silence:
 
 ; Square 1
 rom_8A37:
-	.byte $F9, $09, $FA, $FF, $F8, $1D
+	.byte $F5, $05, $F9, $02, $FA, $FF, $F8, $08
 	.byte $FB, $FF
 	.byte $81, $21, $82, $26, $00, $FF
 
@@ -349,25 +349,25 @@ sfx_select:
 
 ; Square 0
 rom_8A5E:
-	.byte $F5, $02, $F9, $07, $FA, $00
-	.byte $FB, $FF
+	.byte $F5, $02, $F8, $08, $F9, $02
+	.byte $FA, $00, $FB, $FF
 	.byte $F8, $02, $8C, $2B, $B0, $2D, $FF
 
 ; Square 1
 rom_8A6D:
-	.byte $F9, $12, $FA, $00, $F8, $00
-	.byte $FB, $FF
+	.byte $F8, $08, $F9, $02
+	.byte $FA, $00, $FB, $FF
 	.byte $8C, $2B, $B0, $2D, $FF
 
 ; Triangle
 rom_8A7A:
-	.byte $F9, $00, $FA, $00, $F8, $00
+	.byte $F9, $00, $FA, $00
 	.byte $FB, $FF
 	.byte $8C, $29, $B0, $28, $FF
 
 ; Noise
 rom_8A87:
-	.byte $F9, $00, $FA, $00, $F8, $00
+	.byte $F9, $FF, $FA, $00, $F8, $00
 	.byte $FB, $FF
 	.byte $83, $24, $24, $24, $24, $86, $24, $24
 	.byte $24, $24, $24, $24, $24, $FF
@@ -491,7 +491,7 @@ mus_throne_room:
 rom_96C1:
 	.byte $F5, $02, $F8, $09, $F9, $00
 	.byte $FA, $FF, $FB, $FF
-	.byte $8C, $09, $00, $FF
+	.byte $88, $09, $FF
 
 ; ----------------
 
@@ -504,8 +504,7 @@ sfx_bounce:
 
 ; Noise
 rom_96D2:
-	.byte $F5, $03, $F8, $03, $F9, $FF
-	.byte $FA, $05, $FB, $FF
+	.byte $F5, $03, $F8, $01, $FB, $03
 	.byte $84, $0D, $FF
 
 ; ----------------
@@ -519,9 +518,8 @@ sfx_projectile:
 
 ; Noise
 rom_96E3:
-	.byte $F5, $03, $F8, $03, $F9, $FF
-	.byte $FA, $FF, $FB, $FF
-	.byte $82, $0F, $06, $FF
+	.byte $F5, $03, $F8, $00, $FB, $02
+	.byte $82, $09, $06, $FF
 
 ; ----------------
 
@@ -550,7 +548,7 @@ sfx_9701_unused:
 
 ; Noise
 rom_9705:
-	.byte $F5, $03, $F9, $00, $F8, $03
+	.byte $F5, $03, $F8, $03
 	.byte $FA, $FF, $FB, $FF
 	.byte $84, $09, $FF
 
@@ -567,10 +565,10 @@ sfx_hit:
 rom_9716:
 	.byte $F5, $04, $F8, $09, $F9, $00
 	.byte $FA, $FF, $FB, $FF
-	.byte $F8, $00, $83, $2D, $30, $95, $39, $FF
+	.byte $83, $2D, $30, $95, $39, $FF
 ; Square 1
 rom_9726:
-	.byte $F9, $00, $FA, $00, $F8, $00
+	.byte $F9, $00, $FA, $FF, $F8, $0C
 	.byte $FB, $FF
 	.byte $81, $00, $83, $2D, $30, $95, $39, $FF
 
@@ -589,7 +587,7 @@ sfx_happy_jingle:
 rom_973D:
 	.byte $F5, $01, $F8, $09, $F9, $00
 	.byte $FA, $FF, $FB, $FF
-	.byte $F8, $00, $83, $28, $00, $24, $00, $28
+	.byte $83, $28, $00, $24, $00, $28
 	.byte $00, $24, $00, $FF
 
 ; ----------------
