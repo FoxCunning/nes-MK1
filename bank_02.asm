@@ -15,115 +15,6 @@
 .include "audio/instruments.asm"
 
 ; -----------------------------------------------------------------------------
-.export tbl_pitches
-
-; Period table (NTSC)
-tbl_pitches:
-	.word $0000	; $00	(rest)
-	.word $0000	; $01	(hold note)
-	.word $0000	; $02	N/A
-	.word $0000	; $03	N/A
-	.word $0000	; $04	N/A
-	.word $0000	; $05	N/A
-	.word $0000	; $06	N/A
-	.word $0000	; $07	N/A
-	.word $0000	; $08	N/A
-	.word $07F1	; $09	A0
-	.word $0780	; $0A	A#0
-	.word $0712	; $0B	B0
-
-	.word $06AD	; $0C	C1
-	.word $064D	; $0D	C#1
-	.word $05F3	; $0E	D1
-	.word $059D	; $0F	D#1
-	.word $054D	; $10	E1
-	.word $0500	; $11	F1
-	.word $04B8	; $12	F#1
-	.word $0475	; $13	G1
-	.word $0435	; $14	G#1
-	.word $03F8 ; $15	A1
-	.word $03BF	; $16	A#1
-	.word $0389	; $17	B1
-	
-	.word $0356	; $18	C2
-	.word $0326	; $19	C#2
-	.word $02F9 ; $1A	D2
-	.word $02CE	; $1B	D#2
-	.word $02A6	; $1C	E2
-	.word $027F	; $1D	F2
-	.word $025C	; $1E	F#2
-	.word $023A	; $1F	G2
-	.word $021A	; $20	G#2
-	.word $01FB	; $21	A2
-	.word $01DF	; $22	A#2
-	.word $01C4	; $23	B2
-
-	.word $01AB	; $24	C3
-	.word $0193	; $25	C#3
-	.word $017C	; $26	D3
-	.word $0167	; $27	D#3
-	.word $0152	; $28	E3
-	.word $013F	; $29	F3
-	.word $012D	; $2A	F#3
-	.word $011C	; $2B	G3
-	.word $010C	; $2C	G#3
-	.word $00FD	; $2D	A3
-	.word $00EF	; $2E	A#3
-	.word $00E2	; $2F	B3
-
-	.word $00D2	; $30	C4
-	.word $00C9	; $31	C#4
-	.word $00BD	; $32	D4
-	.word $00B3	; $33	D#4
-	.word $00A9	; $34	E4
-	.word $009F	; $35	F4
-	.word $0096	; $36	F#4
-	.word $008E	; $37	G4
-	.word $0086	; $38	G#4
-	.word $007E	; $39	A4
-	.word $0077	; $3A	A#4
-	.word $0070	; $3B	B4
-
-	.word $006A	; $3C	C5
-	.word $0064	; $3D	C#5
-	.word $005E	; $3E	D5
-	.word $0059	; $3F	D#5
-	.word $0054	; $40	E5
-	.word $004F	; $41	F5
-	.word $004B	; $42	F#5
-	.word $0046	; $43	G5
-	.word $0042	; $44	G#5
-	.word $003F	; $45	A5
-	.word $003B	; $46	A#5
-	.word $0038	; $47	B5
-
-	.word $0034	; $48	C6
-	.word $0031	; $49	C#6
-	.word $002F	; $4A	D6
-	.word $002C	; $4B	D#6
-	.word $0029	; $4C	E6
-	.word $0027	; $4D	F6
-	.word $0025	; $4E	F#6
-	.word $0023	; $4F	G6
-	.word $0021	; $50	G#6
-	.word $001F	; $51	A6
-	.word $001D	; $52	A#6
-	.word $001B	; $53	B6
-
-	.word $001A	; $54	C7
-	.word $0018	; $55	C#7
-	.word $0017	; $56	D7
-	.word $0015	; $57	D#7
-	.word $0014	; $58	E7
-	.word $0013	; $59	F7
-	.word $0012	; $5A	F#7
-	.word $0011	; $5B	G7
-	.word $0010	; $5C	G#7
-	.word $000F	; $5D	A7
-	.word $000E	; $5E	A#7
-	.word $000D	; $5F	B7
-
-; -----------------------------------------------------------------------------
 .export tbl_track_ptrs
 
 ; Track pointers
@@ -225,58 +116,7 @@ mus_player_select:
 
 ; -----------------------------------------------------------------------------
 
-; Square 0
-rom_88E5:
-	.byte $F5, $02, $F9, $FF, $FA, $FF
-	.byte $F8, $09
-	.byte $FB, $FF
-	@rom_88EF:
-	.byte $F9, $FF, $FA, $FF, $F8, $09
-	.byte $88, $21, $2D, $2B, $2D, $00, $2D, $2B
-	.byte $2D, $21, $2D, $2B, $2D, $00, $2D, $2B
-	.byte $2D
-	.byte $F4
-	.word @rom_88EF
-	.byte $FF
-; ----------------
-
-; Square 1
-rom_890C:
-	.byte $F9, $FF, $FA, $FF, $F8, $09
-	.byte $FB, $FF
-	@rom_8914:
-	.byte $F9, $FF, $FA, $FF, $F8, $09, $88, $2D
-	.byte $84, $2B, $2D, $30, $2D, $88, $2D, $2D
-	.byte $2D, $2B, $2D, $2D, $84, $2B, $2D, $30
-	.byte $2D, $88, $2D
-	.byte $F4
-	.word @rom_8914
-	.byte $FF
-; ----------------
-
-; Triangle
-rom_8933:
-	.byte $F9, $00, $FA, $FF, $F8, $FF
-	.byte $FB, $FF
-	.byte $88, $21, $2D, $2B, $2D, $00, $2D, $2B
-	.byte $2D
-	.byte $F4
-	.word rom_8933
-	.byte $FF
-; ----------------
-
-; Noise
-rom_8948:
-	.byte $F9, $FF, $FA, $FF, $F8, $03
-	.byte $FB, $FF
-	.byte $88, $04, $04, $04, $04, $04, $04, $04
-	.byte $84, $04, $04
-	.byte $F4
-	.word rom_8948
-	.byte $FF
-; ----------------
-
-; DMC?
+; Silent channel
 rom_895F:
 	.byte $FF
 
@@ -285,13 +125,13 @@ rom_895F:
 ; A somewhat noisy version of the player selection music
 mus_player_unused:
 	.byte $00
-	.word rom_88E5
+	.word rom_895F
 	.byte $01
-	.word rom_890C
+	.word rom_895F
 	.byte $02
-	.word rom_8933
+	.word rom_895F
 	.byte $03
-	.word rom_8948
+	.word rom_895F
 	.byte $04
 	.word rom_895F
 	.byte $FF
@@ -414,24 +254,8 @@ mus_goros_lair:
 
 ; -----------------------------------------------------------------------------
 
-; Silent channel
-rom_8EE7:
-	.byte $FF
-
-; ----------------
-
 mus_pit:
-	.byte $00
-	.word rom_8EE7
-	.byte $01
-	.word rom_8EE7
-	.byte $02
-	.word rom_8EE7
-	.byte $03
-	.word rom_8EE7
-	.byte $04
-	.word rom_8EE7
-	.byte $FF
+.include "audio/the_pit.asm"
 
 ; -----------------------------------------------------------------------------
 
@@ -466,24 +290,8 @@ mus_warrior_shrine:
 
 ; -----------------------------------------------------------------------------
 
-; Silent channel
-rom_96B0:
-	.byte $FF
-
-; ----------------
-
 mus_throne_room:
-	.byte $00
-	.word rom_96B0
-	.byte $01
-	.word rom_96B0
-	.byte $02
-	.word rom_96B0
-	.byte $03
-	.word rom_96B0
-	.byte $04
-	.word rom_96B0
-	.byte $FF
+.include "audio/throne_room.asm"
 
 ; -----------------------------------------------------------------------------
 
