@@ -3509,9 +3509,9 @@ tbl_fighter_palette_ptrs:
 	@pal_sonya:
 	.byte $0E, $08, $18, $20, $0E, $08, $18, $36
 	@pal_subzero:
-	.byte $0E, $08, $2C, $1C, $0E, $08, $2C, $37
+	.byte $0E, $0F, $2C, $1C, $0E, $0F, $2C, $37
 	@pal_skorpion:
-	.byte $0E, $08, $27, $17, $0E, $08, $27, $37
+	.byte $0E, $0F, $27, $17, $0E, $0F, $27, $37
 	@pal_kano:
 	.byte $0E, $07, $27, $30, $0E, $07, $2C, $30
 	@pal_cage:
@@ -3533,9 +3533,9 @@ tbl_fighter_palette_ptrs:
 	@pal_sonya_alt:
 	.byte $0E, $08, $15, $20, $0E, $08, $15, $36
 	@pal_subzero_alt:
-	.byte $00, $08, $1C, $0C, $00, $08, $1C, $37
+	.byte $00, $0F, $1C, $0C, $00, $0F, $1C, $37
 	@pal_skorpion_alt:
-	.byte $0E, $08, $26, $16, $0E, $08, $26, $37
+	.byte $0E, $0F, $26, $16, $0E, $0F, $26, $37
 	@pal_kano_alt:
 	.byte $0E, $07, $27, $30, $0E, $07, $28, $30
 	@pal_cage_alt:

@@ -629,14 +629,14 @@ sub_fighter_selection_states:
 	jsr sub_trampoline
 ; ----------------
 ; Indirect jump pointers
-	.word sub_rom_B25C
-	.word sub_rom_B2AD
-	.word sub_rom_B2BD
-	.word sub_rom_B2E0
+	.word sub_fighter_sel_init		; 0,2,0
+	.word sub_fighter_sel_fade_in	; 0,2,1
+	.word sub_fighter_sel_loop		; 0,2,2
+	.word sub_fighter_sel_fade_out	; 0,2,3
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B25C:
+sub_fighter_sel_init:
 	ldy #$02
 	lda zp_66
 	beq :+
@@ -683,7 +683,7 @@ sub_rom_B25C:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B2AD:
+sub_fighter_sel_fade_in:
 	jsr sub_rom_cycle_palettes
 	lda zp_palette_fade_idx
 	cmp #$05
@@ -697,7 +697,7 @@ sub_rom_B2AD:
 ; -----------------------------------------------------------------------------
 
 
-sub_rom_B2BD:
+sub_fighter_sel_loop:
 	lda zp_frame_counter
 	cmp zp_last_execution_frame
 	beq @B2DF
@@ -721,7 +721,7 @@ sub_rom_B2BD:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B2E0:
+sub_fighter_sel_fade_out:
 	jsr sub_rom_cycle_palettes
 	lda zp_palette_fade_idx
 	cmp #$09
@@ -747,7 +747,7 @@ sub_fighter_selection_input:
 	@player_selection_input:
 	lda zp_plr1_selection,X
 	bpl @B316
-
+		; CPU opponent
 		lda #$09
 		sta zp_5C,X
 		lda zp_controller1,X
@@ -779,6 +779,7 @@ sub_fighter_selection_input:
 		sta zp_06
 		lda zp_05
 		sta zp_05
+
 		jsr sub_ctrl_to_idx
 		sta zp_05
 		ldx zp_07
@@ -792,7 +793,7 @@ sub_fighter_selection_input:
 		lda zp_controller1_new,X
 		and #$C0
 		beq @B352
-
+			jsr sub_announce_player_name
 			inc zp_5C,X
 	@B352:
 	lda zp_5C,X
@@ -811,19 +812,53 @@ sub_fighter_selection_input:
 
 ; -----------------------------------------------------------------------------
 
+sub_announce_player_name:
+	lda zp_plr1_selection,X
+	asl
+	tay
+	lda @tbl_fighter_names_dmc_data+0,Y
+	cmp #$FF
+	beq :+
+		sta DmcAddress_4012
+		lda @tbl_fighter_names_dmc_data+1,Y
+		sta DmcLength_4013
+		lda #$1F
+		sta ApuStatus_4015
+		lda #$0C
+		sta DmcFreq_4010
+	:
+	rts
+
+	@tbl_fighter_names_dmc_data:
+	.byte $FF, $FF	; $00	Shang-Tsung
+	.byte $FF, $FF	; $01	Goro
+	.byte $FF, $FF	; $02	Johnny Cage
+	.byte $FF, $FF	; $03	Kano
+	.byte >(dmc_subzero<<2), $8B	; $04 Sub-zero
+	.byte >(dmc_sonya<<2), $5A		; $05	Sonya
+	.byte $FF, $FF	; $06	Rayden
+	.byte $FF, $FF	; $07	Liu Kang
+	.byte $FF, $FF	; $08	Skorpion
+
+; -----------------------------------------------------------------------------
+
+; Checks if the player (or both players) has selected a fighter
 sub_rom_B363:
 	ldx #$00
 	stx zp_07
-	jsr sub_rom_B36E
-	ldx #$01
+	jsr sub_rom_B36E	; First run for player 1
+
+	ldx #$01			; Second run for player 2
 	stx zp_07
 ; ----------------
 sub_rom_B36E:
-	lda zp_5C,X
+	lda zp_5C,X	; This will be set when that player has made a selection
 	cmp #$06
 	bcs @B377
 
 		jmp sub_rom_B393
+
+	; Flash the cursor?
 	@B377:
 	lda #$20
 	sta zp_0A

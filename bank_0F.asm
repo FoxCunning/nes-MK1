@@ -34,7 +34,7 @@ reset:
 	dex
 	bne @E00F
 
-	lda #$1F
+	lda #$0F
 	sta ApuStatus_4015
 	lda #$00
 	sta DmcFreq_4010
