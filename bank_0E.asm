@@ -2460,7 +2460,7 @@ sub_rom_CF1F:
 ; -----------------------------------------------------------------------------
 
 sub_rom_CF4E:
-	jsr sub_rom_CFB2
+	jsr sub_load_game_palettes
 	lda #$02
 	sta zp_92
 	lda #$01
@@ -2514,51 +2514,54 @@ sub_rom_CF4E:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_CFB2:
+sub_load_game_palettes:
 	ldx #$D8
 	stx zp_34
 	inx
 	inx
 	stx zp_35
-	ldy ram_routine_pointer_idx
-	tya
+
+	lda ram_routine_pointer_idx ;ldy ram_routine_pointer_idx
+	;tya
 	asl A
 	tay
-	lda rom_D596+0,Y
+	lda tbl_bg_palette_ptrs+0,Y
 	sta zp_ptr1_lo
-	lda rom_D596+1,Y
+	lda tbl_bg_palette_ptrs+1,Y
 	sta zp_ptr1_hi
+
 	ldy #$00
 	ldx #$00
-	@CFCE:
-	lda (zp_ptr1_lo),Y
-	sta ram_0640,X
+	:
+		lda (zp_ptr1_lo),Y
+		sta ram_0640,X
 	inx
 	iny
 	cpy #$10
-	bcc @CFCE
+	bcc :-
 
 	ldx #$10
-	lda zp_A3
-	jsr sub_rom_CFE4
-	ldx #$18
-	lda zp_A4
+	lda zp_A3	; Player 1 chosen fighter index
+	jsr sub_read_fighter_palette
+	;ldx #$18	; This shouldn't be necessary
+	lda zp_A4	; Player 2 chosen fighter index
 ; ----------------
-sub_rom_CFE4:
+sub_read_fighter_palette:
 	asl A
 	tay
-	lda rom_D4A6+0,Y
+	lda tbl_fighter_palette_ptrs+0,Y
 	sta zp_ptr1_lo
-	lda rom_D4A6+1,Y
+	lda tbl_fighter_palette_ptrs+1,Y
 	sta zp_ptr1_hi
+
 	ldy #$00
-	@CFF2:
-	lda (zp_ptr1_lo),Y
-	sta ram_0640,X
+	:
+		lda (zp_ptr1_lo),Y
+		sta ram_0640,X
 	inx
 	iny
 	cpy #$08
-	bcc @CFF2
+	bcc :-
 
 	rts
 
@@ -2569,9 +2572,9 @@ sub_rom_CFFE:
 	lda zp_A3
 	asl A
 	tax
-	lda rom_D4A6+0,X
+	lda tbl_fighter_palette_ptrs+0,X
 	sta zp_ptr1_lo
-	lda rom_D4A6+1,X
+	lda tbl_fighter_palette_ptrs+1,X
 	sta zp_ptr1_hi
 	ldy #$00
 	ldx #$00
@@ -3400,31 +3403,49 @@ rom_D49F:
 
 ; -----------------------------------------------------------------------------
 
-rom_D4A6:
-	.word @rom_D4D6, @rom_D4DE, @rom_D4E6, @rom_D4EE
-	.word @rom_D4F6, @rom_D4FE, @rom_D506, @rom_D50E
-	.word @rom_D516, @rom_D51E, @rom_D526, @rom_D52E
-	.word @rom_D536, @rom_D53E, @rom_D546, @rom_D54E
-	.word @rom_D556, @rom_D55E, @rom_D566, @rom_D56E
-	.word @rom_D576, @rom_D57E, @rom_D586, @rom_D58E
+tbl_fighter_palette_ptrs:
+	.word @pal_rayden			; $00 Rayden
+	.word @pal_sonya			; $01 Sonya
+	.word @pal_subzero			; $02 Sub-Zero
+	.word @pal_skorpion			; $03 Skorpion
+	.word @pal_kano				; $04 Kano
+	.word @pal_cage				; $05 Johnny Cage
+	.word @pal_liukang			; $06 Liu Kang
+	.word @pal_goro				; $07 Goro
+	.word @pal_shangtsung		; $08 Shang-Tsung
+	.word @rom_D51E	; $09 Unused?
+	.word @rom_D526	; $0A Unused?
+	.word @rom_D52E	; $0B Unused?
+	.word @pal_rayden_alt		; $0C Alt Rayden
+	.word @pal_sonya_alt		; $0D Alt Sonya
+	.word @pal_subzero_alt		; $0E Alt Sub-Zero
+	.word @pal_skorpion_alt		; $0F Alt Skorpion
+	.word @pal_kano_alt			; $10 Alt Kano
+	.word @pal_cage_alt			; $11 Alt Johnny Cage
+	.word @pal_liukang_alt		; $12 Alt Liu Kang
+	.word @pal_goro_alt			; $13 Alt Goro
+	.word @pal_shangtsung_alt	; $14 Alt Shang-Tsung
+	.word @rom_D57E	; $15 Unused?
+	.word @rom_D586	; $16 Unused?
+	.word @rom_D58E	; $17 Unused?
 	
-	@rom_D4D6:
+	@pal_rayden:
 	.byte $0E, $08, $2C, $20, $0E, $08, $26, $20
-	@rom_D4DE:
+	@pal_sonya:
 	.byte $0E, $08, $18, $20, $0E, $08, $18, $36
-	@rom_D4E6:
+	@pal_subzero:
 	.byte $0E, $08, $2C, $1C, $0E, $08, $2C, $37
-	@rom_D4EE:
+	@pal_skorpion:
 	.byte $0E, $08, $27, $17, $0E, $08, $27, $37
-	@rom_D4F6:
+	@pal_kano:
 	.byte $0E, $07, $27, $30, $0E, $07, $2C, $30
-	@rom_D4FE:
+	@pal_cage:
 	.byte $0E, $08, $27, $37, $0E, $07, $27, $37
-	@rom_D506:
+	@pal_liukang:
 	.byte $0E, $08, $16, $30, $0E, $07, $27, $37
-	@rom_D50E:
+	@pal_goro:
 	.byte $0E, $07, $27, $30, $0E, $07, $27, $37
-	@rom_D516:
+	@pal_shangtsung:
 	.byte $0E, $1D, $00, $10, $0E, $0D, $0C, $17
 	@rom_D51E:
 	.byte $0E, $37, $27, $07, $0E, $37, $21, $02
@@ -3432,23 +3453,23 @@ rom_D4A6:
 	.byte $0E, $37, $26, $16, $0E, $37, $18, $16
 	@rom_D52E:
 	.byte $0E, $07, $27, $37, $0E, $0E, $15, $25
-	@rom_D536:
+	@pal_rayden_alt:
 	.byte $0E, $08, $1C, $20, $0E, $08, $25, $20
-	@rom_D53E:
+	@pal_sonya_alt:
 	.byte $0E, $08, $15, $20, $0E, $08, $15, $36
-	@rom_D546:
+	@pal_subzero_alt:
 	.byte $00, $08, $1C, $0C, $00, $08, $1C, $37
-	@rom_D54E:
+	@pal_skorpion_alt:
 	.byte $0E, $08, $26, $16, $0E, $08, $26, $37
-	@rom_D556:
+	@pal_kano_alt:
 	.byte $0E, $07, $27, $30, $0E, $07, $28, $30
-	@rom_D55E:
+	@pal_cage_alt:
 	.byte $0E, $06, $26, $36, $0E, $08, $26, $36
-	@rom_D566:
+	@pal_liukang_alt:
 	.byte $0E, $05, $16, $30, $0E, $05, $27, $37
-	@rom_D56E:
+	@pal_goro_alt:
 	.byte $0E, $07, $28, $30, $0E, $07, $28, $38
-	@rom_D576:
+	@pal_shangtsung_alt:
 	.byte $0E, $1D, $00, $10, $0E, $0D, $06, $17
 	@rom_D57E:
 	.byte $0E, $37, $27, $07, $0E, $37, $19, $09
@@ -3459,31 +3480,37 @@ rom_D4A6:
 
 ; -----------------------------------------------------------------------------
 
-
-; -----------------------------------------------------------------------------
-
-rom_D596:
-	.word @rom_D5B0, @rom_D5C0, @rom_D5D0, @rom_D5E0
-	.word @rom_D5F0, @rom_D600, @rom_D610, @rom_D620
-	.word @rom_D630, @rom_D640, @rom_D650, @rom_D660
+tbl_bg_palette_ptrs:
+	.word @pal_goros_lair
+	.word @pal_pit
+	.word @pal_courtyard
+	.word @pal_palace_gates
+	.word @pal_warrior_shrine
+	.word @pal_throne_room
+	.word @rom_D610
+	.word @rom_D620
+	.word @rom_D630
+	.word @rom_D640
+	.word @rom_D650
+	.word @rom_D660
 	.word @rom_D670
 
-	@rom_D5B0:
+	@pal_goros_lair:
 	.byte $0E, $16, $2A, $28, $0E, $06, $16, $26
 	.byte $0E, $10, $10, $30, $0E, $00, $10, $20
-	@rom_D5C0:
+	@pal_pit:
 	.byte $0E, $16, $2A, $28, $0E, $18, $28, $38
 	.byte $0E, $0C, $1C, $2C, $0E, $00, $10, $20
-	@rom_D5D0:
+	@pal_courtyard:
 	.byte $0E, $16, $2A, $28, $0E, $1B, $27, $3C
 	.byte $0E, $05, $27, $3C, $0E, $00, $10, $3C
-	@rom_D5E0:
+	@pal_palace_gates:
 	.byte $0E, $16, $2A, $28, $0E, $17, $27, $3C
 	.byte $0E, $17, $06, $3C, $0E, $00, $10, $3C
-	@rom_D5F0:
+	@pal_warrior_shrine:
 	.byte $0E, $16, $2A, $28, $0E, $21, $26, $20
 	.byte $0E, $18, $28, $38, $0E, $00, $10, $20
-	@rom_D600:
+	@pal_throne_room:
 	.byte $0E, $16, $2A, $28, $0E, $0B, $18, $06
 	.byte $0E, $18, $28, $06, $0E, $00, $10, $06
 	@rom_D610:
@@ -3509,7 +3536,6 @@ rom_D596:
 	.byte $0E, $02, $00, $90, $0E, $11, $0E, $30
 
 ; -----------------------------------------------------------------------------
-
 
 ; Potentially unused
 ; This would clear RAM between $0403-$0408
@@ -3933,7 +3959,7 @@ sub_rom_D784:
 ; Bank numbers, will be mapped to $8000-$9FFF
 ; These contain animation data (sprite indices) and maybe "moves" data
 rom_D8D8:
-	.byte $05	; Raiden
+	.byte $05	; Rayden
 	.byte $06	; Sonya
 	.byte $07	; Sub-Zero
 	.byte $08	; Skorpion
@@ -4007,9 +4033,9 @@ sub_rom_D935:
 	lda zp_A3,X
 	asl A
 	tax
-	lda rom_D4A6+0,X
+	lda tbl_fighter_palette_ptrs+0,X
 	sta zp_ptr1_lo
-	lda rom_D4A6+1,X
+	lda tbl_fighter_palette_ptrs+1,X
 	sta zp_ptr1_hi
 	ldy #$00
 	ldx zp_7C
