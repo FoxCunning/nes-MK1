@@ -8,11 +8,11 @@
 .include "globals.inc"
 
 ; -----------------------------------------------------------------------------
-.export tbl_vol_env_ptrs
-.export tbl_arp_ptrs
-.export tbl_pitch_env_ptrs
-.export tbl_duty_env_ptrs
-.include "audio/instruments.asm"
+;.export tbl_vol_env_ptrs
+;.export tbl_arp_ptrs
+;.export tbl_pitch_env_ptrs
+;.export tbl_duty_env_ptrs
+;.include "audio/instruments.asm"
 
 ; -----------------------------------------------------------------------------
 .export tbl_track_ptrs
@@ -233,24 +233,8 @@ mus_victory_jingle:
 
 ; -----------------------------------------------------------------------------
 
-; Silent channel
-rom_8D5E:
-	.byte $FF
-
-; ----------------
-
 mus_goros_lair:
-	.byte $00
-	.word rom_8D5E
-	.byte $01
-	.word rom_8D5E
-	.byte $02
-	.word rom_8D5E
-	.byte $03
-	.word rom_8D5E
-	.byte $04
-	.word rom_8D5E
-	.byte $FF
+.include "audio/goros_lair.asm"
 
 ; -----------------------------------------------------------------------------
 
@@ -264,24 +248,8 @@ mus_courtyard:
 
 ; -----------------------------------------------------------------------------
 
-; Silent channel
-rom_9319:
-	.byte $FF
-
-; ----------------
-
 mus_palace_gates:
-	.byte $00
-	.word rom_9319
-	.byte $01
-	.word rom_9319
-	.byte $02
-	.word rom_9319
-	.byte $03
-	.word rom_9319
-	.byte $04
-	.word rom_9319
-	.byte $FF
+.include "audio/palace_gates.asm"
 
 ; -----------------------------------------------------------------------------
 
