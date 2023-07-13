@@ -822,10 +822,10 @@ sub_announce_player_name:
 		sta DmcAddress_4012
 		lda @tbl_fighter_names_dmc_data+1,Y
 		sta DmcLength_4013
-		lda #$1F
-		sta ApuStatus_4015
 		lda #$0C
 		sta DmcFreq_4010
+		lda #$1F
+		sta ApuStatus_4015
 	:
 	rts
 
@@ -834,8 +834,8 @@ sub_announce_player_name:
 	.byte $FF, $FF	; $01	Goro
 	.byte $FF, $FF	; $02	Johnny Cage
 	.byte $FF, $FF	; $03	Kano
-	.byte >(dmc_subzero<<2), $8B	; $04 Sub-zero
-	.byte >(dmc_sonya<<2), $5A		; $05	Sonya
+	.byte >(dmc_subzero<<2), $86	; $04 Sub-zero
+	.byte >(dmc_sonya<<2), $58		; $05	Sonya
 	.byte $FF, $FF	; $06	Rayden
 	.byte $FF, $FF	; $07	Liu Kang
 	.byte $FF, $FF	; $08	Skorpion

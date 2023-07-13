@@ -211,12 +211,12 @@ sub_match_start:
 		; Sample address
 		lda #>(dmc_fight<<2)
 		sta DmcAddress_4012
-		lda #$4D
+		lda #$48
 		sta DmcLength_4013
-		lda #$1F
-		sta ApuStatus_4015
 		lda #$0C
 		sta DmcFreq_4010
+		lda #$1F
+		sta ApuStatus_4015
 	:
 	cmp #$63
 	beq :+
