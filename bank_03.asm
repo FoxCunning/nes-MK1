@@ -1651,8 +1651,9 @@ sub_new_note_or_rest:
 ; Gets note pitch for arpeggio and saves it as current channel's base pitch
 ; If arpeggio is inactive or disabled, nothing is changed
 ; Does not save note index
-; Parameters:
+; Returns:
 ; zp_sndptr_lo = arpeggio value
+; Parameters:
 ; X = index for byte channel data
 ; Y = index for word/pointer channel data
 sub_apply_arpeggio_pitch:
@@ -1700,11 +1701,10 @@ sub_apply_arpeggio_pitch:
 
 ; -----------------------------------------------------------------------------
 
-; Gets noise value for arpeggio and saves it as current channel's base pitch
+; Gets noise value for arpeggio
 ; If arpeggio is inactive or disabled, nothing is changed
 ; Does not save note index
 ; Parameters:
-; zp_sndptr_lo = arpeggio value
 ; X = index for byte channel data
 ; Y = index for word/pointer channel data
 sub_apply_arpeggio_noise:
@@ -1724,10 +1724,11 @@ sub_apply_arpeggio_noise:
 		lda ram_arpeggio_idx,X
 		bmi :+
 			; Absolute arpeggio: add to base noise period
-			lda ram_base_period_lo,Y
-			clc
-			adc zp_sndptr_lo
-			jmp @apply_noise_period
+			lda ram_cur_note_idx,X
+			sec
+			sbc zp_sndptr_lo
+			and #$0F
+			bpl @apply_noise_period
 		:
 		; Fixed arpeggio: override base noise period
 		lda zp_sndptr_lo

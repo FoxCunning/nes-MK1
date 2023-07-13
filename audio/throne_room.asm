@@ -185,9 +185,9 @@ throne_room_ch_00:
 	.byte $F9, $01		; Duty Envelope = "Pulse Bass"
 	.byte $FA, $FF		; Pitch Envelope = "Pulse Bass"
 	.byte $FB, $FF		; Arpeggio = "Pulse Bass"
-	.byte $B0			; Duration = 48
+	.byte $98			; Duration = 24
 	.byte $14			; G#1
-	.byte $F1			; RETURN
+	.byte $F7			; SKIP
 	; Pattern duration: 48.
 
 	@pattern_04:
@@ -427,9 +427,9 @@ throne_room_ch_02:
 	.word @order_02
 
 	@pattern_00:
-	.byte $98			; Duration = 24
+	.byte $B0			; Duration = 48
 	.byte $01			; HOLD
-	.byte $F7			; SKIP
+	.byte $F1			; RETURN
 	; Pattern duration: 24.
 
 	@pattern_01:
