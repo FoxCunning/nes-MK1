@@ -966,5 +966,231 @@ rom_974F:
 	.byte $FF, $FF
 
 ; -----------------------------------------------------------------------------
+.export sub_update_health_bars
+; This seems to transfer data to the PPU, depending on the flags in $4B.
+sub_update_health_bars:
+	lda zp_4B
+	cmp #$FF
+	bne @D291
 
-; The rest of this bank is about 6KB of corrupted unassembled code
+		; Display the full bar at the beginning of the match
+		lda #$20
+		sta PpuAddr_2006
+		ldx #$71	; First pattern of health bar for Player 2
+		lda zp_F2
+		bpl :+
+			ldx #$64	; First pattern of health bar for Player 1
+		:
+		stx PpuAddr_2006
+		ldx #$0A
+		lda #$8A	; Full bar pattern
+		:
+			sta PpuData_2007
+		dex
+		bpl :-
+
+	rts
+; ----------------
+	@D291:
+	lda zp_ppu_control_backup
+	ora #$04
+	sta PpuControl_2000
+	lda zp_frame_counter
+	and #$01
+	bne :+
+		ldx #$00
+		jsr sub_rom_D359
+		ldx #$01
+		jsr sub_rom_D359
+	:
+	jmp @D2EE
+
+	@D2AB:
+	lda zp_ppu_control_backup
+	sta PpuControl_2000
+	lda zp_game_substate
+	cmp #$03	; Match main loop
+	beq @D2BE
+
+	cmp #$04
+	beq @D2BE
+
+	cmp #$05
+	bne @D2ED
+
+	@D2BE:
+	lda #$20
+	sta PpuAddr_2006
+	lda #$8F
+	sta PpuAddr_2006
+	lda zp_9F
+	cmp #$0F
+	bcs @D2E1
+
+	lda zp_frame_counter
+	and #$04
+	bne @D2E1
+
+	lda zp_game_substate
+	cmp #$03	; Match main loop
+	bne @D2E1
+
+	ldx #$FF
+	stx PpuData_2007
+	bne @D2EA
+
+	@D2E1:
+	ldx ram_063E
+	stx PpuData_2007
+	ldx ram_063F
+	@D2EA:
+	stx PpuData_2007
+	@D2ED:
+	rts
+; ----------------
+	@D2EE:
+	lda zp_game_substate
+	cmp #$03	; Match main loop
+	beq @D356
+
+	lda ram_040D
+	beq @D325
+
+	ldx #$20
+	stx PpuAddr_2006
+	cmp #$02
+	bcc @D316
+
+	ldx #$41
+	stx PpuAddr_2006
+	lda #$AD
+	sta PpuData_2007
+	lda #$AE
+	sta PpuData_2007
+	lda #$20
+	sta PpuAddr_2006
+	@D316:
+	ldx #$42
+	stx PpuAddr_2006
+	lda #$AD
+	sta PpuData_2007
+	lda #$AE
+	sta PpuData_2007
+	@D325:
+	lda ram_040E
+	beq @D356
+
+	ldx #$20
+	stx PpuAddr_2006
+	cmp #$02
+	bcc @D347
+
+	ldx #$5E
+	stx PpuAddr_2006
+	lda #$AD
+	sta PpuData_2007
+	lda #$AE
+	sta PpuData_2007
+	lda #$20
+	sta PpuAddr_2006
+	@D347:
+	ldx #$5D
+	stx PpuAddr_2006
+	lda #$AD
+	sta PpuData_2007
+	lda #$AE
+	sta PpuData_2007
+	@D356:
+	jmp @D2AB
+
+; -----------------------------------------------------------------------------
+
+sub_rom_D359:
+	lda zp_plr1_damage,X
+	cmp #$58
+	bcc @D387
+
+	lda zp_8E,X
+	cmp #$2E
+	beq @D375
+
+	cmp #$31
+	beq @D375
+
+	cmp #$26
+	beq @D38B
+
+	lda #$2E
+	sta zp_8E,X
+	lda #$00
+	sta zp_90,X
+	@D375:
+	lda zp_4B
+	bmi @D38B
+
+	; Play the "victory jingle"
+	lda #$32
+	sta ram_req_song
+	lda #$10
+	sta zp_92
+	sta ram_0438
+	bne @D38B
+
+	@D387:
+	lda zp_A7,X
+	bne @D38C
+
+	@D38B:
+	rts
+; ----------------
+	@D38C:
+	dec zp_A7,X
+	inc zp_plr1_damage,X
+	lda #$20
+	sta PpuAddr_2006
+	lda zp_plr1_damage,X
+	sec
+	sbc #$01
+	lsr A
+	lsr A
+	lsr A
+	sta zp_ptr1_lo
+	txa
+	bne @D3B7
+
+	lda #$64
+	clc
+	adc zp_ptr1_lo
+	sta PpuAddr_2006
+	lda zp_plr1_damage
+	sec
+	sbc #$01
+	and #$07
+	tay
+	lda @plr1_health_bar,Y
+	bne @D3CA
+
+	@D3B7:
+	lda #$7B
+	sec
+	sbc zp_ptr1_lo
+	sta PpuAddr_2006
+	lda zp_plr1_damage,X
+	sec
+	sbc #$01
+	and #$07
+	tay
+	lda @plr2_health_bar,Y
+	@D3CA:
+	sta PpuData_2007
+	rts
+
+; ----------------
+; Pattern indices for health bars
+
+	@plr1_health_bar:
+	.byte $89, $88, $87, $86, $85, $84, $83, $82
+	@plr2_health_bar:
+	.byte $91, $90, $8F, $8E, $8D, $8C, $8B, $82
+
+; -----------------------------------------------------------------------------

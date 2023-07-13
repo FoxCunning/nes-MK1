@@ -209,7 +209,15 @@ nmi:
 	cmp #$01
 	bne @E155
 
-		jsr sub_rom_D270
+		lda #$86
+		sta mmc3_bank_select
+		lda #$00
+		sta mmc3_bank_data
+		jsr sub_update_health_bars
+		lda #$86
+		sta mmc3_bank_select
+		lda #$02
+		sta mmc3_bank_data
 
 	@E155:
 	lda PpuStatus_2002
