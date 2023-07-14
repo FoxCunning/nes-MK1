@@ -1194,3 +1194,322 @@ sub_rom_D359:
 	.byte $91, $90, $8F, $8E, $8D, $8C, $8B, $82
 
 ; -----------------------------------------------------------------------------
+
+
+
+; -----------------------------------------------------------------------------
+.export sub_init_game_mode
+
+; Initialises "game mode", setting a new IRQ handler, loading nametable data
+; for the stage background, sprite data for the player(s) and music
+sub_init_game_mode:
+	; Retrieve the stage index
+	lda zp_F3	; This is player 2 fighter index, bit 7 is set for CPU opponent
+	and #$7F
+	tax
+	lda @tbl_stage_indices,X
+	sta ram_irq_routine_idx
+
+	; Disable rendering and NMI generation
+	lda #$00
+	sta PpuControl_2000
+	sta zp_ppu_control_backup
+	sta PpuMask_2001
+	sta zp_ppu_mask_backup
+
+	lda #$01
+	sta ram_040F
+
+	; Check if the two players are using the same fighter
+	; Then either add or subtract $0C to the index in order to load
+	; the alternative palette
+	lda zp_F2	; <- Player 1
+	and #$7F
+	sta zp_ptr1_lo
+	lda zp_F3	; <- Player 2
+	and #$7F
+	cmp zp_ptr1_lo
+	bne @C05A
+
+	cmp #$0C
+	bcc @C04D
+
+	sec
+	sbc #$0C
+	jmp @C050
+
+	@C04D:
+	clc
+	adc #$0C
+
+	@C050:
+	sta zp_ptr1_lo
+	lda zp_F3
+	and #$80
+	ora zp_ptr1_lo
+	sta zp_F3
+	@C05A:
+	lda zp_F2
+	and #$7F
+	sta zp_A3
+	lda zp_F3
+	and #$7F
+	sta zp_A4
+
+	; Select stage music
+	ldx ram_irq_routine_idx
+	lda @rom_C0C0,X
+	sta zp_4A
+	txa
+	clc
+	adc #$25	; Stage music offset
+	sta ram_req_song
+
+	lda #$00
+	sta ram_0435
+	sta ram_042D
+	sta zp_scroll_x
+	sta ram_0438
+	sta zp_scroll_y
+
+	jsr sub_clear_oam_data
+	jsr sub_call_load_stage_bg
+	jsr sub_show_fighter_names
+	jsr sub_finish_match_init
+
+	lda #$18
+	sta zp_ppu_mask_backup
+	lda #$88
+	sta PpuControl_2000
+	sta zp_ppu_control_backup
+	lda #$00
+	sta mmc3_mirroring
+	inc zp_game_substate
+	;nop
+	lda zp_60
+	sta zp_4B
+	rts
+
+; ----------------
+
+	@tbl_stage_indices:
+	.byte $00, $01, $05, $03, $04, $02, $02, $01
+	.byte $04, $01, $02, $03, $00, $01, $05, $03
+	.byte $04, $02, $02, $01, $04, $01, $02, $03
+
+; ----------------
+
+	@rom_C0C0:
+	.byte $DA, $D0, $DA, $DA, $DA, $DA
+
+; -----------------------------------------------------------------------------
+.export sub_call_load_stage_bg
+
+; Loads stage background nametables from bank 0
+; $8000-$9FFF = Bank $00
+; $A000-$BFFF = Bank $01
+sub_call_load_stage_bg:
+	lda #$00
+	sta ram_043F
+	sta ram_0440
+
+	; Not needed after code relocation
+	; Bank $00 in $8000-$9FFF
+	;lda #$86
+	;sta zp_prg_bank_select_backup
+	;sta mmc3_bank_select
+	;lda #$00
+	;sta mmc3_bank_data
+	; Bank $01 in $A000-$BFFF
+	;lda #$87
+	;sta zp_prg_bank_select_backup
+	;sta mmc3_bank_select
+	;lda #$01
+	;sta mmc3_bank_data
+
+	jmp sub_load_stage_background ;jsr sub_rom_00_8000
+	;rts
+
+; -----------------------------------------------------------------------------
+.export sub_rebase_fighter_indices
+
+; If any of the fighter indices were changed to load the alt palette,
+; put it back as it was before ($00-$08 instead of $0C-$14)
+sub_rebase_fighter_indices:
+	lda zp_A3	; Player 1 fighter idx
+	@C0EC:
+	cmp #$0C
+	bcc @C0F8
+
+	sec
+	sbc #$0C
+	sta zp_A3
+	jmp @C0EC
+
+	@C0F8:
+	lda zp_A4	; Player 2 fighter idx
+	@C0FA:
+	cmp #$0C
+	bcc @C106
+
+	sec
+	sbc #$0C
+	sta zp_A4
+	jmp @C0FA
+
+	@C106:
+	rts
+
+; -----------------------------------------------------------------------------
+.export sub_match_fade_in
+
+sub_match_fade_in:
+	lda ram_0401
+	bne :+
+		jsr sub_rom_C69C
+	:
+	jsr sub_rom_D422
+	bcc :+
+		inc zp_game_substate
+	:
+	rts
+
+; -----------------------------------------------------------------------------
+.export sub_match_start
+
+sub_match_start:
+	lda zp_9F
+	bne :+
+		; "FIGHT!"
+		; Sample address
+		lda #>(dmc_fight<<2)
+		sta DmcAddress_4012
+		lda #$48
+		sta DmcLength_4013
+		lda #$0C
+		sta DmcFreq_4010
+		lda #$1F
+		sta ApuStatus_4015
+	:
+	cmp #$63
+	beq :+
+		inc zp_9F
+		; Just Waiting...
+		rts
+	:
+	lda #$00
+	sta zp_A2
+	inc zp_game_substate
+	rts
+
+; -----------------------------------------------------------------------------
+
+.export sub_match_eval
+
+sub_match_eval:
+	inc zp_9E
+	ldy #$00
+	sty zp_F1
+	jsr sub_rom_C207
+	iny
+	jsr sub_rom_C207
+	rts
+
+; -----------------------------------------------------------------------------
+
+sub_rom_C207:
+	ldx #$07
+	lda ram_040D,Y
+	cmp #$02
+	bcs @C215
+
+	lda zp_5E
+	bne @C215
+
+	inx
+	@C215:
+	stx zp_game_substate
+	cpx #$08
+	beq @C21D
+
+	pla
+	pla
+	@C21D:
+	rts
+
+; -----------------------------------------------------------------------------
+.export sub_match_fade_out
+
+sub_match_fade_out:
+	lda zp_F1
+	cmp #$40
+	bcs @C227
+
+	inc zp_F1
+	rts
+; ----------------
+	@C227:
+	jsr sub_rom_D440
+	bcc @C271
+
+	lda zp_9E
+	cmp #$09
+	bcs @C238
+
+	lda zp_game_substate
+	cmp #$08
+	beq @C268
+
+	@C238:
+	ldx #$01
+	lda ram_040E
+	cmp ram_040D
+	bcs @C243
+
+	dex
+	@C243:
+	stx ram_040C
+	ldx #$02
+	lda zp_5E
+	beq @C24D
+
+	inx
+	@C24D:
+	stx zp_machine_state_0
+	lda #$0B
+	sta ram_irq_routine_idx
+	lda #$00
+	sta zp_scroll_y
+	jsr sub_rom_C272
+	lda #$00
+	sta ram_067C
+	sta ram_040D
+	sta ram_040E
+	sta zp_9E
+	@C268:
+	lda #$00
+	sta ram_067D
+	sta zp_game_substate
+	sta zp_F1
+	@C271:
+	rts
+
+; -----------------------------------------------------------------------------
+
+sub_rom_C272:
+	ldx #$00
+	beq @C278
+
+		ldx #$80
+	@C278:
+	lda #$F8
+	@C27A:
+	sta ram_oam_copy_ypos,X
+	inx
+	inx
+	inx
+	inx
+	bne @C27A
+	rts
+
+; -----------------------------------------------------------------------------

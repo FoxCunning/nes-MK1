@@ -196,7 +196,7 @@ nmi:
 	lda #$02
 	sta SpriteDma_4014
 
-	lda a:zp_FD		; Why...?
+	lda zp_FD ;a:zp_FD
 	bne @E155
 
 	lda zp_nmi_ppu_ptr_hi
@@ -229,7 +229,7 @@ nmi:
 	sta PpuControl_2000
 	lda zp_ppu_mask_backup
 	sta PpuMask_2001
-	lda a:zp_mmc3_irq_ready		; ...?
+	lda zp_mmc3_irq_ready ;a:zp_mmc3_irq_ready
 	beq @E186
 	
 		lda ram_0416
@@ -244,11 +244,11 @@ nmi:
 	nop
 	lda #$80
 	sta mmc3_bank_select
-	lda a:zp_chr_bank_0		; !!!
+	lda zp_chr_bank_0 ;a:zp_chr_bank_0
 	sta mmc3_bank_data
 	lda #$81
 	sta mmc3_bank_select
-	lda a:zp_chr_bank_1		; Also here
+	lda zp_chr_bank_1 ;a:zp_chr_bank_1
 	sta mmc3_bank_data
 	lda zp_machine_state_0
 	bne @E1CC
@@ -291,14 +291,14 @@ nmi:
 	@E1F2:
 	inc zp_frame_counter
 	jsr sub_get_controller_input
-	lda a:zp_FD		; Why?
+	lda zp_FD ;a:zp_FD
 	bne @E201
 
 		lda #$01
-		sta a:zp_F7	; Why?
+		sta zp_F7 ;a:zp_F7
 
 	@E201:
-	lda a:zp_prg_bank_select_backup		; Why?
+	lda zp_prg_bank_select_backup ;a:zp_prg_bank_select_backup
 	sta mmc3_bank_select
 	pla
 	tay
@@ -447,6 +447,13 @@ sub_rom_E272:
 
 sub_get_controller_input:
 	jsr sub_read_controllers
+	; ---- DMC-safe code ----
+	:
+		sta zp_controller_backup
+		jsr sub_read_controllers
+		cmp zp_controller_backup
+	bne :-
+	; -----------------------
 	ldx #$00
 	jsr @E2B7	; Process controller 1
 	inx					; And now do controller 2
@@ -466,16 +473,16 @@ sub_read_controllers:
 	lda #$01
 	sta Ctrl1_4016
 	; The next three writes might be unnecessary
-	lda #$00
-	sta Ctrl1_4016
-	lda #$01
-	sta Ctrl1_4016
-	nop
-	nop
-	lda #$00
-	sta Ctrl1_4016
-	nop
-	nop
+	;lda #$00
+	;sta Ctrl1_4016
+	;lda #$01
+	;sta Ctrl1_4016
+	;nop
+	;nop
+	;lda #$00
+	;sta Ctrl1_4016
+	;nop
+	;nop
 	lda #$01
 	; ----
 	lsr A	; A is now zero
@@ -703,7 +710,7 @@ sub_irq_handler_07:
 sub_rom_E408:
 	sta mmc3_irq_disable
 	lda PpuStatus_2002
-	lda a:zp_81		; Why?!
+	lda zp_81 ;a:zp_81
 	sta PpuScroll_2005
 	lda #$00
 	sta PpuScroll_2005
@@ -741,7 +748,7 @@ sub_rom_E43F:
 	lda #$1F
 	sta mmc3_irq_latch
 	lda PpuStatus_2002
-	lda a:zp_81		; And why?
+	lda zp_81 ;a:zp_81
 	sta PpuScroll_2005
 	inc ram_0435
 	rts
@@ -752,7 +759,7 @@ sub_rom_E43F:
 sub_rom_E45B:
 	sta mmc3_irq_disable
 	lda PpuStatus_2002
-	lda a:zp_81		; Again?
+	lda zp_81 ;a:zp_81
 	lsr A
 	sta PpuScroll_2005
 	lda PpuStatus_2002
@@ -784,7 +791,7 @@ sub_rom_E480:
 	@E497:
 	lda ram_043F
 	clc
-	adc a:zp_81		; Why?
+	adc zp_81 ;a:zp_81
 	sta PpuScroll_2005
 	ldy #$E0
 	jmp sub_rom_E41B
@@ -805,7 +812,7 @@ sub_rom_E4A6:
 	@E4BD:
 	lda ram_0440
 	clc
-	adc a:zp_81		; Why?
+	adc zp_81 ;a:zp_81
 	sta PpuScroll_2005
 	inc ram_0435
 	rts
@@ -836,7 +843,7 @@ sub_rom_E4CB:
 sub_rom_E4DF:
 	sta mmc3_irq_disable
 	lda PpuStatus_2002
-	lda a:zp_81		; Why?
+	lda zp_81 ;a:zp_81
 	sta PpuScroll_2005
 	lda #$00
 	sta ram_0435
@@ -927,7 +934,7 @@ sub_rom_E568:
 	lda #$63
 	sta mmc3_irq_latch
 	lda PpuStatus_2002
-	lda a:zp_81		; Why?
+	lda zp_81 ;a:zp_81
 	sta PpuScroll_2005
 	ldy #$1C
 	jmp sub_rom_E41B
@@ -938,7 +945,7 @@ sub_rom_E568:
 sub_rom_E582:
 	sta mmc3_irq_disable
 	lda PpuStatus_2002
-	lda a:zp_81		; Why?
+	lda zp_81 ;a:zp_81
 	sta PpuScroll_2005
 	lda #$00
 	sta ram_0435
@@ -953,18 +960,18 @@ sub_rom_E598:
 	lda #$40
 	sta mmc3_irq_latch
 	lda PpuStatus_2002
-	lda a:zp_81		; Why?
+	lda zp_81 ;a:zp_81
 	sta PpuScroll_2005
 	ldy #$24
 	jmp sub_rom_E41B
-	rts	; Unreachable
+	;rts	; Unreachable
 
 ; -----------------------------------------------------------------------------
 
 sub_rom_E5B2:
 	sta mmc3_irq_disable
 	lda PpuStatus_2002
-	lda a:zp_81		; Why?
+	lda zp_81 ;a:zp_81
 	sta PpuScroll_2005
 	lda #$00
 	sta ram_0435
@@ -979,7 +986,7 @@ sub_rom_E5C8:
 	lda #$48
 	sta mmc3_irq_latch
 	lda PpuStatus_2002
-	lda a:zp_81		; Why?
+	lda zp_81 ;a:zp_81
 	sta PpuScroll_2005
 	ldy #$2C
 	jmp sub_rom_E41B
@@ -990,7 +997,7 @@ sub_rom_E5C8:
 sub_rom_E5E2:
 	sta mmc3_irq_disable
 	lda PpuStatus_2002
-	lda a:zp_81		; ???
+	lda zp_81 ;a:zp_81
 	sta PpuScroll_2005
 	lda #$00
 	sta ram_0435
@@ -1000,121 +1007,120 @@ sub_rom_E5E2:
 ; -----------------------------------------------------------------------------
 
 ; Potentially unused
-sub_rom_E5F8:
-	inx
-	txa
-	and #$0F
-	sta ram_041F
-	txa
-	and #$10
-	beq @E60C
+;sub_rom_E5F8:
+;	inx
+;	txa
+;	and #$0F
+;	sta ram_041F
+;	txa
+;	and #$10
+;	beq @E60C
 
-	tya
-	sec
-	sbc ram_041F
-	jmp @E611
+;	tya
+;	sec
+;	sbc ram_041F
+;	jmp @E611
 
-	@E60C:
-	tya
-	clc
-	adc ram_041F
-	@E611:
-	tay
-	rts
+;	@E60C:
+;	tya
+;	clc
+;	adc ram_041F
+;	@E611:
+;	tay
+;	rts
 
 ; -----------------------------------------------------------------------------
 
 ; Potentially unused and harmful
-sub_rom_E613:
-	sta mmc3_irq_disable
-	sta mmc3_irq_enable
-	lda #$80
-	sta mmc3_irq_latch
-	lda PpuStatus_2002
-	lda a:zp_81		; ???
-	lsr A
-	sta PpuScroll_2005
-	lda zp_frame_counter
-	and #$0C
-	lsr A
-	lsr A
-	tax
-	lda #$82
-	sta mmc3_bank_select
-	lda sub_rom_E43F,X	; That is not data...
-	sta mmc3_bank_data
-	lda #$83
-	sta mmc3_bank_select
-	lda a:zp_99		; ???
-	sta mmc3_bank_data
-	lda #$84
-	sta mmc3_bank_select
-	lda a:zp_9A		; ???
-	sta mmc3_bank_data
-	lda #$85
-	sta mmc3_bank_select
-	lda a:zp_9B		; ???
-	sta mmc3_bank_data
-	lda zp_frame_counter
-	and #$07
-	bne @E66F
+;sub_rom_E613:
+;	sta mmc3_irq_disable
+;	sta mmc3_irq_enable
+;	lda #$80
+;	sta mmc3_irq_latch
+;	lda PpuStatus_2002
+;	lda a:zp_81		; ???
+;	lsr A
+;	sta PpuScroll_2005
+;	lda zp_frame_counter
+;	and #$0C
+;	lsr A
+;	lsr A
+;	tax
+;	lda #$82
+;	sta mmc3_bank_select
+;	lda sub_rom_E43F,X	; That is not data...
+;	sta mmc3_bank_data
+;	lda #$83
+;	sta mmc3_bank_select
+;	lda a:zp_99		; ???
+;	sta mmc3_bank_data
+;	lda #$84
+;	sta mmc3_bank_select
+;	lda a:zp_9A		; ???
+;	sta mmc3_bank_data
+;	lda #$85
+;	sta mmc3_bank_select
+;	lda a:zp_9B		; ???
+;	sta mmc3_bank_data
+;	lda zp_frame_counter
+;	and #$07
+;	bne @E66F
 
-	lda ram_0678
-	clc
-	adc #$20
-	sta ram_0678
-	bcc @E66F
+;	lda ram_0678
+;	clc
+;	adc #$20
+;	sta ram_0678
+;	bcc @E66F
 
-	inc ram_0679
-	@E66F:
-	lda PpuStatus_2002
-	lda ram_0679
-	sta PpuAddr_2006
-	lda ram_0678
-	sta PpuAddr_2006
-	inc ram_0435
-	rts
-
-; -----------------------------------------------------------------------------
-
-; Potentially unused
-sub_rom_E682:
-	sta mmc3_irq_disable
-	sta mmc3_irq_enable
-	lda #$1F
-	sta mmc3_irq_latch
-	lda PpuStatus_2002
-	lda a:zp_81		; ???
-	sta PpuScroll_2005
-	lda PpuStatus_2002
-	lda #$22
-	sta PpuAddr_2006
-	lda #$A0
-	sta PpuAddr_2006
-	inc ram_0435
-	rts
+;	inc ram_0679
+;	@E66F:
+;	lda PpuStatus_2002
+;	lda ram_0679
+;	sta PpuAddr_2006
+;	lda ram_0678
+;	sta PpuAddr_2006
+;	inc ram_0435
+;	rts
 
 ; -----------------------------------------------------------------------------
 
 ; Potentially unused
-sub_rom_E6A7:
-	sta mmc3_irq_disable
-	lda PpuStatus_2002
-	lda a:zp_81		; ???
-	lsr A
-	sta PpuScroll_2005
-	lda PpuStatus_2002
-	lda zp_ppu_control_backup
-	sta PpuControl_2000
-	lda #$00
-	sta ram_0435
-	lda ram_0421
-	beq :+
+;sub_rom_E682:
+;	sta mmc3_irq_disable
+;	sta mmc3_irq_enable
+;	lda #$1F
+;	sta mmc3_irq_latch
+;	lda PpuStatus_2002
+;	lda a:zp_81		; ???
+;	sta PpuScroll_2005
+;	lda PpuStatus_2002
+;	lda #$22
+;	sta PpuAddr_2006
+;	lda #$A0
+;	sta PpuAddr_2006
+;	inc ram_0435
+;	rts
 
-		ora #$F0
-		sta ram_0421
-	:
-	rts
+; -----------------------------------------------------------------------------
+
+; Potentially unused
+;sub_rom_E6A7:
+;	sta mmc3_irq_disable
+;	lda PpuStatus_2002
+;	lda a:zp_81		; ???
+;	lsr A
+;	sta PpuScroll_2005
+;	lda PpuStatus_2002
+;	lda zp_ppu_control_backup
+;	sta PpuControl_2000
+;	lda #$00
+;	sta ram_0435
+;	lda ram_0421
+;	beq :+
+;		ora #$F0
+;		sta ram_0421
+;	:
+;	rts
 
 ; -----------------------------------------------------------------------------
 
@@ -1709,13 +1715,24 @@ sub_rom_EA13:
 	rts
 ; ----------------
 	@EA53:
-	jmp sub_rom_EA57	; jsr sub_rom_EA57
+	;jmp sub_rom_EA57	; jsr sub_rom_EA57
 	;rts
+	lda #$86
+	sta mmc3_bank_select
+	lda #$00
+	sta mmc3_bank_data
+
+	lda #$87
+	sta mmc3_bank_select
+	lda #$01
+	sta mmc3_bank_data
+
+	jmp sub_state_machine_1
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_EA57:
-	jmp sub_state_machine_1 ;jsr sub_rom_C000
+;sub_rom_EA57:
+	;jmp sub_state_machine_1 ;jsr sub_rom_C000
 	;rts
 
 ; -----------------------------------------------------------------------------
@@ -1801,6 +1818,27 @@ sub_call_sound_routines:
 	
 	rts
 
+; -----------------------------------------------------------------------------
+.export sub_call_03_routines
+
+sub_call_03_routines:
+	lda #$87
+	sta zp_prg_bank_select_backup
+	sta mmc3_bank_select
+	lda #$03
+	sta mmc3_bank_data
+	jsr sub_rom_03_A5E4
+	jsr sub_rom_03_A000
+	lda #$87
+	sta mmc3_bank_select
+	lda #$01
+	sta mmc3_bank_data
+	rts
+
+; -----------------------------------------------------------------------------
+;
+;								DPCM Samples Area
+;
 ; -----------------------------------------------------------------------------
 .segment "DMC"
 

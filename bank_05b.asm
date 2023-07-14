@@ -22,7 +22,7 @@ sub_state_machine_0:
 	.word sub_option_menu_states		; 0,1
 	.word sub_fighter_selection_states	; 0,2
 	.word sub_rom_B8BC				; 0,3
-	.word sub_rom_B6D8				; 0,4
+	.word sub_continue_screen_state_machine				; 0,4
 	.word sub_high_scores_states		; 0,5
 	.word sub_rom_BF1E				; 0,6
 
@@ -1231,7 +1231,8 @@ rom_B6CF:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B6D8:
+; State machine for the Continue screen
+sub_continue_screen_state_machine:
 	lda zp_machine_state_2
 	jsr sub_trampoline
 ; ----------------
@@ -1241,7 +1242,7 @@ sub_rom_B6D8:
 	.word sub_rom_B723
 	.word sub_rom_B776
 	.word sub_rom_B789
-	.word sub_rom_B7A8
+	.word sub_continue_timer_expired
 
 ; -----------------------------------------------------------------------------
 
@@ -1368,7 +1369,7 @@ sub_rom_B789:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B7A8:
+sub_continue_timer_expired:
 	lda zp_frame_counter
 	cmp zp_last_execution_frame
 	bcc @B7C2
