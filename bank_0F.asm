@@ -447,16 +447,22 @@ sub_rom_E272:
 
 sub_get_controller_input:
 	jsr sub_read_controllers
-	; ---- DMC-safe code ----
 	:
-		sta zp_controller_backup
-		jsr sub_read_controllers
-		cmp zp_controller_backup
+	lda zp_controller1
+	sta zp_controller1_backup
+	lda zp_controller2
+	sta zp_controller2_backup
+	jsr sub_read_controllers
+	lda zp_controller1
+	cmp zp_controller1_backup
 	bne :-
-	; -----------------------
+	lda zp_controller2
+	cmp zp_controller2_backup
+	bne :-
+
 	ldx #$00
 	jsr @E2B7	; Process controller 1
-	inx					; And now do controller 2
+	inx			; And now do controller 2
 	; ----
 	@E2B7:
 	lda zp_controller1,X
@@ -472,46 +478,24 @@ sub_get_controller_input:
 sub_read_controllers:
 	lda #$01
 	sta Ctrl1_4016
-	; The next three writes might be unnecessary
-	;lda #$00
-	;sta Ctrl1_4016
-	;lda #$01
-	;sta Ctrl1_4016
-	;nop
-	;nop
-	;lda #$00
-	;sta Ctrl1_4016
-	;nop
-	;nop
-	lda #$01
+	; ----
+	sta zp_controller2	; Loop will end with this bit is shifted out
 	; ----
 	lsr A	; A is now zero
-	tax
 	sta Ctrl1_4016
-	jsr @E2E7	; Read controller 1
-	inx
-	; Now read controller 2
-; ----------------
-	@E2E7:
-	lda #$00
-	sta zp_05
 
-	ldy #$08	; Read all 8 buttons
-	@E2ED:
-	pha
-	lda Ctrl1_4016,X
-	sta zp_07
-	lsr A
-	lsr A		; Expansion controller bit in C
-	rol zp_05	; This will hold data read from expansion port controller
-	lsr zp_07	; Standard controller bit in C
-	pla
-	rol A		; Standard controller bit now in A
-	dey
-	bne @E2ED
+	:
+	; Read controller 1
+	lda Ctrl1_4016
+	and #$03	; Only read controller bits
+	cmp #$01	; Carry set if > 0
+	rol zp_controller1
+	; Read controller 2
+	lda Ctrl2_FrameCtr_4017
+	and #$03
+	rol zp_controller2
+	bcc :-
 
-	ora zp_05	; Join inputs from standard controller and expansion port
-	sta zp_controller1,X
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1842,7 +1826,6 @@ sub_call_03_routines:
 ; -----------------------------------------------------------------------------
 .segment "DMC"
 
-
 ; ----------------
 .export dmc_fight
 
@@ -1850,16 +1833,16 @@ dmc_fight:
 .incbin "audio/fight.dmc"
 
 ; ----------------
-.export dmc_subzero
+.export dmc_liukang
 
-dmc_subzero:
-.incbin "audio/subzero.dmc"
+dmc_liukang:
+.incbin "audio/liukang.dmc"
 
 ; ----------------
-.export dmc_sonya
+.export dmc_cage
 
-dmc_sonya:
-.incbin "audio/sonya.dmc"
+dmc_cage:
+.incbin "audio/cage.dmc"
 
 ; -----------------------------------------------------------------------------
 
