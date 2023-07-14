@@ -2179,7 +2179,7 @@ sub_cmd_stop_playing:
 	adc #$80	; Add offset for SFX channels
 	tay
 	lda #$FF
-	sta ram_note_period_hi,X
+	sta ram_note_period_lo,Y
 	sta ram_note_period_hi,Y
 ; ----------------
 ; Immediately stops the pitch/volume/duty envelopes for the current channel,

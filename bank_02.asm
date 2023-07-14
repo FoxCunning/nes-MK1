@@ -12,7 +12,7 @@
 
 ; Track pointers
 tbl_track_ptrs:
-	.word track_silence			; $00
+	.word sfx_silence			; $00
 	.word sfx_97A7				; $01	A glitchy sound that sometimes plays when a match starts
 	.word sfx_hit				; $02	Any hit
 	.word sfx_bleep				; $03	Cursor move and point counter at end of match
@@ -21,9 +21,9 @@ tbl_track_ptrs:
 	.word sfx_fight				; $06	Announcer "Fight!"
 	.word sfx_kick				; $07	Kick swing
 	.word sfx_kick				; $08	Punch swing
-	.word track_silence			; $09
-	.word track_silence			; $0A
-	.word track_silence			; $0B
+	.word sfx_silence			; $09
+	.word sfx_silence			; $0A
+	.word sfx_silence			; $0B
 	.word sfx_select			; $0C	"Siren" sound (selection confirmed)
 	.word sfx_happy_jingle		; $0D	A weird three-note jingle
 	.word sfx_pause				; $0E	Pause
@@ -36,17 +36,17 @@ tbl_track_ptrs:
 	.word sfx_kano				; $15	Announcer "Kano"
 	.word sfx_cage				; $16	Announcer "Johnny Cage"
 	.word sfx_liukang			; $17	Announcer "Liu Kang"
-	.word track_silence			; $18
-	.word track_silence			; $19
-	.word track_silence			; $1A
-	.word track_silence			; $1B
-	.word track_silence			; $1C
-	.word track_silence			; $1D
-	.word track_silence			; $1E
-	.word track_silence			; $1F
+	.word sfx_silence			; $18
+	.word sfx_silence			; $19
+	.word sfx_silence			; $1A
+	.word sfx_silence			; $1B
+	.word sfx_silence			; $1C
+	.word sfx_silence			; $1D
+	.word sfx_silence			; $1E
+	.word sfx_silence			; $1F
 	.word mus_opening			; $20
 	.word mus_player_select		; $21
-	.word track_silence			; $22
+	.word mus_and_sfx_silence	; $22
 	.word mus_player_unused		; $23
 	.word mus_silence			; $24
 	; ---- Stage background music starts here
@@ -69,7 +69,7 @@ tbl_track_ptrs:
 
 ; -----------------------------------------------------------------------------
 
-track_silence:
+mus_and_sfx_silence:
 	.byte $00
 	.word rom_8702
 	.byte $01
@@ -81,6 +81,7 @@ track_silence:
 	.byte $04
 	.word rom_8702
 	; This should mute the SFX channels too
+sfx_silence:
 	.byte $80
 	.word rom_8702
 	.byte $81
