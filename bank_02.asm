@@ -8,13 +8,6 @@
 .include "globals.inc"
 
 ; -----------------------------------------------------------------------------
-;.export tbl_vol_env_ptrs
-;.export tbl_arp_ptrs
-;.export tbl_pitch_env_ptrs
-;.export tbl_duty_env_ptrs
-;.include "audio/instruments.asm"
-
-; -----------------------------------------------------------------------------
 .export tbl_track_ptrs
 
 ; Track pointers
@@ -25,7 +18,7 @@ tbl_track_ptrs:
 	.word sfx_bleep				; $03	Cursor move and point counter at end of match
 	.word sfx_projectile		; $04	Projectile/special attack
 	.word sfx_bounce			; $05	Bounce/land after jump
-	.word track_silence			; $06
+	.word sfx_fight				; $06	Announcer "Fight!"
 	.word sfx_kick				; $07	Kick swing
 	.word sfx_kick				; $08	Punch swing
 	.word track_silence			; $09
@@ -36,13 +29,13 @@ tbl_track_ptrs:
 	.word sfx_pause				; $0E	Pause
 	.word sfx_happy_jingle		; $0F	Same as $0D, but here it's used after choosing to continue
 	.word sfx_countdown			; $10	Countdown for continue screen
-	.word track_silence			; $11
-	.word track_silence			; $12
-	.word track_silence			; $13
-	.word track_silence			; $14
-	.word track_silence			; $15
-	.word track_silence			; $16
-	.word track_silence			; $17
+	.word sfx_rayden			; $11	Announcer "Rayden"
+	.word sfx_sonya				; $12	Announcer "Sonya"
+	.word sfx_subzero			; $13	Announcer "Sub-Zero"
+	.word sfx_skorpion			; $14	Announcer "Skorpion"
+	.word sfx_kano				; $15	Announcer "Kano"
+	.word sfx_cage				; $16	Announcer "Johnny Cage"
+	.word sfx_liukang			; $17	Announcer "Liu Kang"
 	.word track_silence			; $18
 	.word track_silence			; $19
 	.word track_silence			; $1A
@@ -252,9 +245,19 @@ mus_throne_room:
 
 ; -----------------------------------------------------------------------------
 
+sfx_fight:
+	.byte $84
+	.word @sfx_fight_ch4
+	.byte $FF
+
+	@sfx_fight_ch4:
+	.byte $F5, $01, $02, $FF
+
+; -----------------------------------------------------------------------------
+
 ; Square 1
 rom_96C1:
-	.byte $F5, $02, $F8, $09, $F9, $00
+	.byte $F5, $02, $F8, $FF, $F9, $FF
 	.byte $FA, $FF, $FB, $FF
 	.byte $88, $09, $FF
 
@@ -269,7 +272,7 @@ sfx_bounce:
 
 ; Noise
 rom_96D2:
-	.byte $F5, $03, $F8, $01, $FB, $03
+	.byte $F5, $03, $F8, $FF, $FB, $FF
 	.byte $84, $0D, $FF
 
 ; ----------------
@@ -283,7 +286,7 @@ sfx_projectile:
 
 ; Noise
 rom_96E3:
-	.byte $F5, $03, $F8, $00, $FB, $02
+	.byte $F5, $03, $F8, $FF, $FB, $FF
 	.byte $82, $09, $06, $FF
 
 ; ----------------
@@ -292,28 +295,12 @@ sfx_kick:
 	.byte $83
 	.word rom_96E3
 	.byte $FF
-
-; -----------------------------------------------------------------------------
-
-; Unused SFX Noise channel
-rom_96F4:
-	.byte $F5, $03, $F9, $00, $FA, $FF
-	.byte $FB, $FF
-	.byte $F8, $00, $B2, $17, $FF
-
-; ----------------
-
-; Potentially unused SFX
-sfx_9701_unused:
-	.byte $83
-	.word rom_96F4
-	.byte $FF
 	
 ; -----------------------------------------------------------------------------
 
 ; Noise
 rom_9705:
-	.byte $F5, $03, $F8, $03
+	.byte $F5, $03, $F8, $FF
 	.byte $FA, $FF, $FB, $FF
 	.byte $84, $09, $FF
 
@@ -350,7 +337,7 @@ sfx_happy_jingle:
 
 ; Square 1
 rom_973D:
-	.byte $F5, $01, $F8, $09, $F9, $00
+	.byte $F5, $01, $F8, $FF, $F9, $FF
 	.byte $FA, $FF, $FB, $FF
 	.byte $83, $28, $00, $24, $00, $28
 	.byte $00, $24, $00, $FF
@@ -390,7 +377,7 @@ sfx_countdown:
 
 ; Square 1
 rom_9778:
-	.byte $F5, $04, $F8, $0E, $F9, $09, $FA, $FF
+	.byte $F5, $04, $F8, $FF, $F9, $FF, $FA, $FF
 	.byte $FB, $FF
 	.byte $81, $30, $81, $3A, $00, $FF
 
@@ -406,7 +393,7 @@ sfx_bleep:
 
 ; Potentially unused SFX noise channel
 rom_9789:
-	.byte $F5, $03, $F9, $00, $FA, $00
+	.byte $F5, $03, $F9, $FF, $FA, $FF
 	.byte $FB, $FF
 	.byte $F8, $00, $84, $2F, $FF
 
@@ -422,7 +409,7 @@ sfx_9796_unused:
 
 ; Noise
 rom_979A:
-	.byte $F5, $03, $F8, $04, $F9, $00
+	.byte $F5, $03, $F8, $FF, $F9, $FF
 	.byte $FA, $FF, $FB, $FF
 	.byte $F8, $00, $85, $17, $FF
 
@@ -433,5 +420,75 @@ sfx_97A7:
 	.byte $83
 	.word rom_979A
 	.byte $FF
+
+; -----------------------------------------------------------------------------
+
+sfx_rayden:
+	.byte $84
+	.word @sfx_rayden_ch4
+	.byte $FF
+
+	@sfx_rayden_ch4:
+	.byte $F5, $01, $03, $FF
+
+; -----------------------------------------------------------------------------
+
+sfx_sonya:
+	.byte $84
+	.word @sfx_sonya_ch4
+	.byte $FF
+
+	@sfx_sonya_ch4:
+	.byte $F5, $01, $04, $FF
+
+; -----------------------------------------------------------------------------
+
+sfx_subzero:
+	.byte $84
+	.word @sfx_subzero_ch4
+	.byte $FF
+
+	@sfx_subzero_ch4:
+	.byte $F5, $01, $05, $FF
+
+; -----------------------------------------------------------------------------
+
+sfx_skorpion:
+	.byte $84
+	.word @sfx_skorpion_ch4
+	.byte $FF
+
+	@sfx_skorpion_ch4:
+	.byte $F5, $01, $06, $FF
+
+; -----------------------------------------------------------------------------
+
+sfx_kano:
+	.byte $84
+	.word @sfx_kano_ch4
+	.byte $FF
+
+	@sfx_kano_ch4:
+	.byte $F5, $01, $07, $FF
+
+; -----------------------------------------------------------------------------
+
+sfx_cage:
+	.byte $84
+	.word @sfx_cage_ch4
+	.byte $FF
+
+	@sfx_cage_ch4:
+	.byte $F5, $01, $08, $FF
+
+; -----------------------------------------------------------------------------
+
+sfx_liukang:
+	.byte $84
+	.word @sfx_liukang_ch4
+	.byte $FF
+
+	@sfx_liukang_ch4:
+	.byte $F5, $01, $09, $FF
 
 ; -----------------------------------------------------------------------------

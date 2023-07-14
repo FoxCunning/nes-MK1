@@ -1755,13 +1755,14 @@ sub_apply_note_pitch:
 	beq @noise_channel
 
 	cpx #$04
-	beq @dmc_skip_save_note
+	beq @dpcm_channel
 
-		; Save note index
-		ldx ram_cur_channel_offset
-		sta ram_cur_note_idx,X
+	; Square and Triangle channels
 
-	@dmc_skip_save_note:
+	; Save note index
+	ldx ram_cur_channel_offset
+	sta ram_cur_note_idx,X
+
 	ldx ram_cur_channel_offset
 	; This is not how we want to apply the transpose value
 	;clc
@@ -1794,6 +1795,26 @@ sub_apply_note_pitch:
 	ldx ram_cur_chan_ptr_offset
 	sta ram_base_period_lo,X
 	
+	rts
+
+	@dpcm_channel:
+	; The DPCM channel will start playing the sample immediately
+	tax
+	lda tbl_dpcm_ptr,X
+	;sta ram_dmc_addr
+	sta DmcAddress_4012
+
+	lda tbl_dpcm_len,X
+	;sta ram_dmc_len
+	sta DmcLength_4013
+
+	lda #$0C
+	;sta ram_dmc_freq
+	sta DmcFreq_4010
+
+	lda #$1F
+	sta ApuStatus_4015
+
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -2213,7 +2234,6 @@ sub_cmd_set_arpeggio:
 
 sub_start_all_envelopes:
 	ldx ram_cur_chan_ptr_offset
-
 	; This will set bit 7 of length counter load
 	lda ram_note_period_hi,X
 	ora #$80
@@ -2224,6 +2244,7 @@ sub_start_all_envelopes:
 	jsr sub_start_duty_envelope
 	jsr sub_start_pitch_envelope
 	jsr sub_start_arpeggio
+
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -2245,10 +2266,10 @@ sub_start_volume_envelope:
 	:
 	cpx #$04
 	bmi :+
-
+		; DPCM channel: return immediately
 		rts
 ; ----------------
-:
+	:
 	ldx ram_cur_channel_offset
 	ldy ram_cur_chan_ptr_offset
 	
@@ -2276,7 +2297,7 @@ sub_start_volume_envelope:
 		lda (zp_sndptr_lo),Y
 		sta ram_cur_vol_env_duration,X
 
-	@skip_vol_env_start	:
+	@skip_vol_env_start:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -3132,6 +3153,34 @@ tbl_pitches:
 	.word $000F	; $5D	A7
 	.word $000E	; $5E	A#7
 	.word $000D	; $5F	B7
+
+; -----------------------------------------------------------------------------
+
+; Value for DPCM address register
+tbl_dpcm_ptr:
+	.byte $FF					; $00 (rest)
+	.byte $FF					; $01 (hold)
+	.byte >(dmc_fight<<2)		; $02 "Fight!"
+	.byte >(dmc_rayden<<2)		; $03 "Rayden"
+	.byte >(dmc_sonya<<2)		; $04 "Sonya"
+	.byte >(dmc_subzero<<2)		; $05 "Sub-Zero"
+	.byte >(dmc_skorpion<<2)	; $06 "Skorpion"
+	.byte >(dmc_kano<<2)		; $07 "Kano"
+	.byte >(dmc_cage<<2)		; $08 "Johnny Cage"
+	.byte >(dmc_liukang<<2)		; $09 "Liu Kang"
+
+; Values for DPCM length register
+tbl_dpcm_len:
+	.byte $00	; $00 (rest)
+	.byte $00	; $01 (hold)
+	.byte $48	; $02 "Fight!"
+	.byte $47	; $03 "Rayden"
+	.byte $58	; $04 "Sonya"
+	.byte $85	; $05 "Sub-Zero"
+	.byte $77	; $06 "Skorpion"
+	.byte $4B	; $07 "Kano"
+	.byte $7C	; $08 "Johnny Cage"
+	.byte $73	; $09 "Liu Kang"
 
 ; -----------------------------------------------------------------------------
 

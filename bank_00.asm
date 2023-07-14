@@ -1382,14 +1382,8 @@ sub_match_start:
 	bne :+
 		; "FIGHT!"
 		; Sample address
-		lda #>(dmc_fight<<2)
-		sta DmcAddress_4012
-		lda #$48
-		sta DmcLength_4013
-		lda #$0C
-		sta DmcFreq_4010
-		lda #$1F
-		sta ApuStatus_4015
+		lda #$06
+		sta ram_req_sfx
 	:
 	cmp #$63
 	beq :+

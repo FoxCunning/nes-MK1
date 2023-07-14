@@ -61,7 +61,8 @@ zp_controller1_prev = $2F   ;
 ; The status of the controller as it was on the last frame
 ; (Just for debugging, this does not need to be used in code since we use $2F,X)
 zp_controller2_prev = $30   ;
-zp_controller_backup = $31  ;
+zp_controller1_backup = $31 ;
+zp_controller2_backup = $31 ;
 
 zp_34 = $34     ;
 zp_35 = $35     ;
@@ -316,6 +317,8 @@ ram_063F = $063F    ;
 ram_0640 = $0640    ;
 ram_066D = $066D    ;
 ram_066E = $066E    ;
+
+ram_selected_opt = $0670    ; Sound test menu variable
 
 ; Index of the SFX to play starting from the next frame
 ram_req_sfx = $0672    ;
