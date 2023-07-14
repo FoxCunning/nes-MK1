@@ -450,12 +450,16 @@ sub_get_controller_input:
 	:
 	lda zp_controller1
 	sta zp_controller1_backup
+
 	lda zp_controller2
 	sta zp_controller2_backup
+
 	jsr sub_read_controllers
+
 	lda zp_controller1
 	cmp zp_controller1_backup
 	bne :-
+
 	lda zp_controller2
 	cmp zp_controller2_backup
 	bne :-
@@ -493,6 +497,7 @@ sub_read_controllers:
 	; Read controller 2
 	lda Ctrl2_FrameCtr_4017
 	and #$03
+	cmp #$01
 	rol zp_controller2
 	bcc :-
 
@@ -574,16 +579,53 @@ sub_irq_handler_01:
 	lda ram_0435
 	bne :+
 
-		jmp sub_rom_E480
+		sta mmc3_irq_disable
+		sta mmc3_irq_enable
+		lda #$1B
+		sta mmc3_irq_latch
+		lda PpuStatus_2002
+		lda zp_frame_counter
+		and #$07
+		bne @E497
+
+		inc ram_043F
+		@E497:
+		lda ram_043F
+		clc
+		adc zp_81 ;a:zp_81
+		sta PpuScroll_2005
+		ldy #$E0
+		jmp sub_rom_E41B
 
 	:
 	cmp #$01
 	bne :+
 
-		jmp sub_rom_E4A6
+		sta mmc3_irq_disable
+		sta mmc3_irq_enable
+		lda #$15
+		sta mmc3_irq_latch
+		lda PpuStatus_2002
+		lda zp_frame_counter
+		and #$03
+		bne @E4BD
+
+		inc ram_0440
+		@E4BD:
+		lda ram_0440
+		clc
+		adc zp_81 ;a:zp_81
+		sta PpuScroll_2005
+		inc ram_0435
 
 	:
-	jmp sub_rom_E4DF
+	sta mmc3_irq_disable
+	lda PpuStatus_2002
+	lda zp_81
+	sta PpuScroll_2005
+	lda #$00
+	sta ram_0435
+	rts
 
 ; -----------------------------------------------------------------------------
 
@@ -591,9 +633,73 @@ sub_irq_handler_02:
 	lda ram_0435
 	bne :+
 	
-		jmp sub_rom_E4F1
+		sta mmc3_irq_disable
+		sta mmc3_irq_enable
+		lda #$40
+		sta mmc3_irq_latch
+		lda PpuStatus_2002
+		lda zp_81
+		sta PpuScroll_2005
+		ldy #$E4
+		jmp sub_rom_E41B
 	:
-	jmp sub_rom_E50A
+	sta mmc3_irq_disable
+	ldy #$E8
+	lda #$00
+	sta ram_0435
+	ldx #$82
+	stx mmc3_bank_select
+	sty mmc3_bank_data
+	inx
+	iny
+	stx mmc3_bank_select
+	sty mmc3_bank_data
+	inx
+	iny
+	stx mmc3_bank_select
+	sty mmc3_bank_data
+	inx
+	iny
+	stx mmc3_bank_select
+	lda zp_game_substate	;a:zp_7A
+	cmp #$05
+	bcs @E54E
+
+		lda zp_frame_counter
+		and #$1F
+
+	bne :+
+		inc ram_043F
+	:	
+	lda ram_043F
+	and #$01
+	tax
+	ldy @rom_E564,X
+	sty mmc3_bank_data
+	rts
+; ----------------
+	@E54E:
+	lda zp_frame_counter
+	and #$07
+	bne :+
+		inc ram_043F
+	:	
+	lda ram_043F
+	and #$01
+	tax
+	ldy @rom_E566,X
+	sty mmc3_bank_data
+	rts
+
+; ----------------
+
+; CHR bank indices
+	@rom_E564:
+	.byte $EC, $ED
+
+; CHR bank indices
+	@rom_E566:
+	.byte $EE, $EF
 
 ; -----------------------------------------------------------------------------
 
@@ -601,9 +707,24 @@ sub_irq_handler_03:
 	lda ram_0435
 	bne :+
 
-		jmp sub_rom_E568
+		sta mmc3_irq_disable
+		sta mmc3_irq_enable
+		lda #$63
+		sta mmc3_irq_latch
+		lda PpuStatus_2002
+		lda zp_81 ;a:zp_81
+		sta PpuScroll_2005
+		ldy #$1C
+		jmp sub_rom_E41B
 	:
-	jmp sub_rom_E582
+	sta mmc3_irq_disable
+	lda PpuStatus_2002
+	lda zp_81 ;a:zp_81
+	sta PpuScroll_2005
+	lda #$00
+	sta ram_0435
+	ldy #$20
+	jmp sub_rom_E41E
 
 ; -----------------------------------------------------------------------------
 
@@ -611,18 +732,48 @@ sub_irq_handler_04:
 	lda ram_0435
 	bne :+
 
-		jmp sub_rom_E598
+		sta mmc3_irq_disable
+		sta mmc3_irq_enable
+		lda #$40
+		sta mmc3_irq_latch
+		lda PpuStatus_2002
+		lda zp_81 ;a:zp_81
+		sta PpuScroll_2005
+		ldy #$24
+		jmp sub_rom_E41B
 	:
-	jmp sub_rom_E5B2
+	sta mmc3_irq_disable
+	lda PpuStatus_2002
+	lda zp_81 ;a:zp_81
+	sta PpuScroll_2005
+	lda #$00
+	sta ram_0435
+	ldy #$28
+	jmp sub_rom_E41E
 
 ; -----------------------------------------------------------------------------
 
 sub_irq_handler_05:
 	lda ram_0435
 	bne :+
-		jmp sub_rom_E5C8
+		sta mmc3_irq_disable
+		sta mmc3_irq_enable
+		lda #$48
+		sta mmc3_irq_latch
+		lda PpuStatus_2002
+		lda zp_81 ;a:zp_81
+		sta PpuScroll_2005
+		ldy #$2C
+		jmp sub_rom_E41B
 	:
-	jmp sub_rom_E5E2
+	sta mmc3_irq_disable
+	lda PpuStatus_2002
+	lda zp_81 ;a:zp_81
+	sta PpuScroll_2005
+	lda #$00
+	sta ram_0435
+	ldy #$30
+	jmp sub_rom_E41E
 
 ; -----------------------------------------------------------------------------
 
@@ -720,195 +871,6 @@ sub_rom_E41E:
 	stx mmc3_bank_select
 	sty mmc3_bank_data
 	rts
-
-; -----------------------------------------------------------------------------
-
-; Potentially unused
-sub_rom_E43F:
-	stx zp_85
-	sty zp_80
-	sta mmc3_irq_disable
-	sta mmc3_irq_enable
-	lda #$1F
-	sta mmc3_irq_latch
-	lda PpuStatus_2002
-	lda zp_81 ;a:zp_81
-	sta PpuScroll_2005
-	inc ram_0435
-	rts
-
-; -----------------------------------------------------------------------------
-
-; Potentially unused
-sub_rom_E45B:
-	sta mmc3_irq_disable
-	lda PpuStatus_2002
-	lda zp_81 ;a:zp_81
-	lsr A
-	sta PpuScroll_2005
-	lda PpuStatus_2002
-	lda zp_ppu_control_backup
-	sta PpuControl_2000
-	lda #$00
-	sta ram_0435
-	lda ram_0421
-	beq @E47F
-
-	ora #$F0
-	sta ram_0421
-	@E47F:
-	rts
-
-; -----------------------------------------------------------------------------
-
-sub_rom_E480:
-	sta mmc3_irq_disable
-	sta mmc3_irq_enable
-	lda #$1B
-	sta mmc3_irq_latch
-	lda PpuStatus_2002
-	lda zp_frame_counter
-	and #$07
-	bne @E497
-
-	inc ram_043F
-	@E497:
-	lda ram_043F
-	clc
-	adc zp_81 ;a:zp_81
-	sta PpuScroll_2005
-	ldy #$E0
-	jmp sub_rom_E41B
-
-; -----------------------------------------------------------------------------
-
-sub_rom_E4A6:
-	sta mmc3_irq_disable
-	sta mmc3_irq_enable
-	lda #$15
-	sta mmc3_irq_latch
-	lda PpuStatus_2002
-	lda zp_frame_counter
-	and #$03
-	bne @E4BD
-
-	inc ram_0440
-	@E4BD:
-	lda ram_0440
-	clc
-	adc zp_81 ;a:zp_81
-	sta PpuScroll_2005
-	inc ram_0435
-	rts
-
-; -----------------------------------------------------------------------------
-
-; Potentially unused
-sub_rom_E4CB:
-	lda #$00
-	ldx #$08
-	@E4CF:
-	lsr zp_ptr2_lo
-	bcc @E4D6
-
-	clc
-	adc zp_16
-	@E4D6:
-	ror A
-	ror zp_ptr1_lo
-	dex
-	bne @E4CF
-
-	sta zp_ptr1_hi
-	rts
-
-; -----------------------------------------------------------------------------
-
-sub_rom_E4DF:
-	sta mmc3_irq_disable
-	lda PpuStatus_2002
-	lda zp_81 ;a:zp_81
-	sta PpuScroll_2005
-	lda #$00
-	sta ram_0435
-	rts
-
-; -----------------------------------------------------------------------------
-
-sub_rom_E4F1:
-	sta mmc3_irq_disable
-	sta mmc3_irq_enable
-	lda #$40
-	sta mmc3_irq_latch
-	lda PpuStatus_2002
-	lda zp_81 ;a:zp_81
-	sta PpuScroll_2005
-	ldy #$E4
-	jmp sub_rom_E41B
-
-; -----------------------------------------------------------------------------
-
-; Disables IRQs and selects CHR banks
-sub_rom_E50A:
-	sta mmc3_irq_disable
-	ldy #$E8
-	lda #$00
-	sta ram_0435
-	ldx #$82
-	stx mmc3_bank_select
-	sty mmc3_bank_data
-	inx
-	iny
-	stx mmc3_bank_select
-	sty mmc3_bank_data
-	inx
-	iny
-	stx mmc3_bank_select
-	sty mmc3_bank_data
-	inx
-	iny
-	stx mmc3_bank_select
-	lda zp_game_substate	;a:zp_7A
-	cmp #$05
-	bcs @E54E
-
-		lda zp_frame_counter
-		and #$1F
-
-	bne :+
-
-		inc ram_043F
-
-:	lda ram_043F
-	and #$01
-	tax
-	ldy rom_E564,X
-	sty mmc3_bank_data
-	rts
-; ----------------
-	@E54E:
-	lda zp_frame_counter
-	and #$07
-	bne :+
-
-		inc ram_043F
-
-:	lda ram_043F
-	and #$01
-	tax
-	ldy rom_E566,X
-	sty mmc3_bank_data
-	rts
-
-; -----------------------------------------------------------------------------
-
-; CHR bank indices
-rom_E564:
-	.byte $EC, $ED
-
-; CHR bank indices
-rom_E566:
-	.byte $EE, $EF
 
 ; -----------------------------------------------------------------------------
 

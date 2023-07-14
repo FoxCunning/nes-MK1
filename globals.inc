@@ -62,7 +62,7 @@ zp_controller1_prev = $2F   ;
 ; (Just for debugging, this does not need to be used in code since we use $2F,X)
 zp_controller2_prev = $30   ;
 zp_controller1_backup = $31 ;
-zp_controller2_backup = $31 ;
+zp_controller2_backup = $32 ;
 
 zp_34 = $34     ;
 zp_35 = $35     ;
