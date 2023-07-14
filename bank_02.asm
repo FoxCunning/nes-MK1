@@ -258,7 +258,7 @@ sfx_fight:
 
 ; Square 1
 rom_96C1:
-	.byte $F5, $02, $F8, $FF, $F9, $FF
+	.byte $F5, $02, $F8, $0C, $F9, $FF
 	.byte $FA, $FF, $FB, $FF
 	.byte $88, $09, $FF
 
@@ -273,7 +273,7 @@ sfx_bounce:
 
 ; Noise
 rom_96D2:
-	.byte $F5, $03, $F8, $FF, $FB, $FF
+	.byte $F5, $03, $F8, $00, $FB, $FF
 	.byte $84, $0D, $FF
 
 ; ----------------
@@ -287,7 +287,7 @@ sfx_projectile:
 
 ; Noise
 rom_96E3:
-	.byte $F5, $03, $F8, $FF, $FB, $FF
+	.byte $F5, $03, $F8, $00, $FB, $FF
 	.byte $82, $09, $06, $FF
 
 ; ----------------
@@ -338,7 +338,7 @@ sfx_happy_jingle:
 
 ; Square 1
 rom_973D:
-	.byte $F5, $01, $F8, $FF, $F9, $FF
+	.byte $F5, $01, $F8, $0C, $F9, $FF
 	.byte $FA, $FF, $FB, $FF
 	.byte $83, $28, $00, $24, $00, $28
 	.byte $00, $24, $00, $FF
@@ -378,7 +378,7 @@ sfx_countdown:
 
 ; Square 1
 rom_9778:
-	.byte $F5, $04, $F8, $FF, $F9, $FF, $FA, $FF
+	.byte $F5, $04, $F8, $0C, $F9, $FF, $FA, $FF
 	.byte $FB, $FF
 	.byte $81, $30, $81, $3A, $00, $FF
 
