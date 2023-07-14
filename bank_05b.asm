@@ -22,7 +22,7 @@ sub_state_machine_0:
 	.word sub_option_menu_states		; 0,1
 	.word sub_fighter_selection_states	; 0,2
 	.word sub_rom_B8BC				; 0,3
-	.word sub_rom_B6D8				; 0,4
+	.word sub_continue_screen_state_machine				; 0,4
 	.word sub_high_scores_states		; 0,5
 	.word sub_rom_BF1E				; 0,6
 
@@ -508,7 +508,8 @@ sub_init_sound_test:
 
 	lda #$00
 	sta zp_plr1_selection	; Selected music track index
-	sta zp_plr2_selection	; Menu item selection (0-2)
+	sta zp_plr2_selection	; Selected sfx index
+	sta ram_selected_opt		; Menu item selection (0-2)
 	lda #$F0
 	sta ram_oam_copy_tileid
 	jsr sub_sound_test_cursor
@@ -538,7 +539,7 @@ sub_sound_test_input_loop:
 		and #$D0	; A, B or START
 		beq sub_sound_test_input_loop
 
-		lda zp_plr2_selection
+		lda ram_selected_opt
 		bne :+
 			; Option zero
 			; Start playing the selected song
@@ -552,7 +553,8 @@ sub_sound_test_input_loop:
 		beq :+
 			; Option 1
 			; Start playing the selected sfx
-			; TODO
+			lda zp_plr2_selection
+			sta ram_req_sfx
 			jmp sub_sound_test_input_loop
 		:
 		; Option 2 = exit
@@ -570,7 +572,7 @@ sub_sound_test_input_loop:
 
 ; Handles controller 1 input for sound test menu
 ; Returns:
-; zp_plr2_selection = selection index (0-2)
+; zp_selected_opt = selection index (0-2)
 sub_get_controller1_sound_test:
 	lda rom_04_9CAD+8
 	sta zp_ptr1_lo
@@ -579,12 +581,12 @@ sub_get_controller1_sound_test:
 
 	lda zp_controller1_new
 	sta zp_06
-	lda zp_plr2_selection
+	lda ram_selected_opt
 	sta zp_05
 	jsr sub_ctrl_to_idx
 	bmi :+
 		; If index is valid, save new selection
-		sta zp_plr2_selection
+		sta ram_selected_opt
 	:
 	rts
 
@@ -592,7 +594,7 @@ sub_get_controller1_sound_test:
 
 ; Shows/updates the cursor sprite for the options menu
 sub_sound_test_cursor:
-	lda zp_plr2_selection
+	lda ram_selected_opt
 	asl A
 	tax
 	lda @tbl_sound_test_cursor_pos+0,X
@@ -793,7 +795,7 @@ sub_fighter_selection_input:
 		lda zp_controller1_new,X
 		and #$C0
 		beq @B352
-			jsr sub_announce_player_name
+			jsr sub_announce_fighter_name
 			inc zp_5C,X
 	@B352:
 	lda zp_5C,X
@@ -812,33 +814,22 @@ sub_fighter_selection_input:
 
 ; -----------------------------------------------------------------------------
 
-sub_announce_player_name:
-	lda zp_plr1_selection,X
-	asl
-	tay
-	lda @tbl_fighter_names_dmc_data+0,Y
-	cmp #$FF
-	beq :+
-		sta DmcAddress_4012
-		lda @tbl_fighter_names_dmc_data+1,Y
-		sta DmcLength_4013
-		lda #$0C
-		sta DmcFreq_4010
-		lda #$1F
-		sta ApuStatus_4015
-	:
+sub_announce_fighter_name:
+	ldy zp_plr1_selection,X
+	lda @tbl_fighter_names_sfx+0,Y
+	sta ram_req_sfx
 	rts
 
-	@tbl_fighter_names_dmc_data:
-	.byte $FF, $FF	; $00	Shang-Tsung
-	.byte $FF, $FF	; $01	Goro
-	.byte $FF, $FF	; $02	Johnny Cage
-	.byte $FF, $FF	; $03	Kano
-	.byte >(dmc_subzero<<2), $86	; $04 Sub-zero
-	.byte >(dmc_sonya<<2), $58		; $05	Sonya
-	.byte $FF, $FF	; $06	Rayden
-	.byte $FF, $FF	; $07	Liu Kang
-	.byte $FF, $FF	; $08	Skorpion
+	@tbl_fighter_names_sfx:
+	.byte $00	; $00 Shang-Tsung
+	.byte $00	; $01 Goro
+	.byte $16	; $02 Johnny Cage
+	.byte $15	; $03 Kano
+	.byte $13	; $04 Sub-zero
+	.byte $12	; $05 Sonya
+	.byte $11	; $06 Rayden
+	.byte $17	; $07 Liu Kang
+	.byte $14	; $08 Skorpion
 
 ; -----------------------------------------------------------------------------
 
@@ -1231,7 +1222,8 @@ rom_B6CF:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B6D8:
+; State machine for the Continue screen
+sub_continue_screen_state_machine:
 	lda zp_machine_state_2
 	jsr sub_trampoline
 ; ----------------
@@ -1241,7 +1233,7 @@ sub_rom_B6D8:
 	.word sub_rom_B723
 	.word sub_rom_B776
 	.word sub_rom_B789
-	.word sub_rom_B7A8
+	.word sub_continue_timer_expired
 
 ; -----------------------------------------------------------------------------
 
@@ -1368,7 +1360,7 @@ sub_rom_B789:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B7A8:
+sub_continue_timer_expired:
 	lda zp_frame_counter
 	cmp zp_last_execution_frame
 	bcc @B7C2

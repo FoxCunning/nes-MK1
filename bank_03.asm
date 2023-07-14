@@ -54,21 +54,21 @@ sub_rom_A00C:
 	asl A
 	tay
 	lda rom_A10C+0,Y
-	sta zp_3D
+	sta zp_ptr4_lo
 	lda rom_A10C+1,Y
-	sta zp_3E
+	sta zp_ptr4_hi
 	lda zp_8E,X
 	sec
 	sbc #$0B
 	asl A
 	tay
-	lda (zp_3D),Y
-	sta zp_3B
+	lda (zp_ptr4_lo),Y
+	sta zp_ptr3_lo
 	iny
-	lda (zp_3D),Y
-	sta zp_3C
+	lda (zp_ptr4_lo),Y
+	sta zp_ptr3_hi
 	ldy #$00
-	lda (zp_3B),Y
+	lda (zp_ptr3_lo),Y
 	sta zp_ptr1_lo
 	cmp #$FF
 	beq @A02A
@@ -91,7 +91,7 @@ sub_rom_A00C:
 	bcc @A02A
 
 	iny
-	cmp (zp_3B),Y
+	cmp (zp_ptr3_lo),Y
 	bcc @A077
 
 	bne @A02A
@@ -99,7 +99,7 @@ sub_rom_A00C:
 	@A077:
 	iny
 	lda zp_9C
-	cmp (zp_3B),Y
+	cmp (zp_ptr3_lo),Y
 	bcs @A02A
 
 	iny
@@ -118,7 +118,7 @@ sub_rom_A00C:
 
 	iny
 	@A08F:
-	lda (zp_3B),Y
+	lda (zp_ptr3_lo),Y
 	cmp zp_9D
 	bcc @A0BD
 
@@ -155,7 +155,7 @@ sub_rom_A00C:
 	rts
 ; ----------------
 	@A0BE:
-	lda (zp_3B),Y
+	lda (zp_ptr3_lo),Y
 	cmp #$09
 	beq @A0C8
 
@@ -176,7 +176,7 @@ sub_rom_A00C:
 	cmp #$03
 	bcs @A0CE
 
-	lda (zp_3B),Y
+	lda (zp_ptr3_lo),Y
 	@A0DA:
 	cmp zp_8E,X
 	beq @A0BD
@@ -185,16 +185,16 @@ sub_rom_A00C:
 	lda #$00
 	sta zp_90,X
 	iny
-	lda (zp_3B),Y
+	lda (zp_ptr3_lo),Y
 	ldx zp_7C
 	sta zp_EF,X
 	inc zp_EF,X
 	pha
 	iny
-	lda (zp_3B),Y
+	lda (zp_ptr3_lo),Y
 	sta zp_EB,X
 	iny
-	lda (zp_3B),Y
+	lda (zp_ptr3_lo),Y
 	sta zp_ED,X
 	pla
 	tay
@@ -797,14 +797,14 @@ sub_rom_A63B:
 	lda zp_A3,X
 	asl A
 	tay
-	lda (zp_3B),Y
-	sta zp_3D
+	lda (zp_ptr3_lo),Y
+	sta zp_ptr4_lo
 	iny
-	lda (zp_3B),Y
-	sta zp_3E
+	lda (zp_ptr3_lo),Y
+	sta zp_ptr4_hi
 	lda zp_8E,X
 	tay
-	lda (zp_3D),Y
+	lda (zp_ptr4_lo),Y
 	bmi @A679
 
 	jsr sub_rom_A773
@@ -820,9 +820,9 @@ sub_rom_A67A:
 	asl A
 	tax
 	lda rom_A7BF+0,X
-	sta zp_3B
+	sta zp_ptr3_lo
 	lda rom_A7BF+1,X
-	sta zp_3C
+	sta zp_ptr3_hi
 	jsr sub_rom_A63B
 	jsr sub_rom_A9EB
 	jsr sub_rom_A9FD
@@ -847,9 +847,9 @@ sub_rom_A6BC:
 	asl A
 	tax
 	lda rom_A7D7+0,X
-	sta zp_3B
+	sta zp_ptr3_lo
 	lda rom_A7D7+1,X
-	sta zp_3C
+	sta zp_ptr3_hi
 	jsr sub_rom_A63B
 	jsr sub_rom_A9EB
 	jsr sub_rom_A9FD
@@ -874,9 +874,9 @@ sub_rom_A6FE:
 	asl A
 	tax
 	lda rom_A7EF+0,X
-	sta zp_3B
+	sta zp_ptr3_lo
 	lda rom_A7EF+1,X
-	sta zp_3C
+	sta zp_ptr3_hi
 	jsr sub_rom_A63B
 	jsr sub_rom_A9EB
 	jsr sub_rom_A9FD
@@ -1183,8 +1183,8 @@ rom_AA3D:
 
 ; Initialises the APU registers, clears RAM used by sound routines
 sub_apu_init:
-	; Enable all channels
-	lda #$1F
+	; Enable channels
+	lda #$0F
 	sta ApuStatus_4015
 	; Silence all channels
 	lda #$00
@@ -1197,6 +1197,7 @@ sub_apu_init:
 	sta NoiseVolume_400C
 	sta ram_apu_output_volume+3
 	sta DmcFreq_4010
+	sta DmcCounter_4011
 	; Disable sweep units
 	lda #$7F
 	sta Sq0Sweep_4001
@@ -1754,13 +1755,14 @@ sub_apply_note_pitch:
 	beq @noise_channel
 
 	cpx #$04
-	beq @dmc_skip_save_note
+	beq @dpcm_channel
 
-		; Save note index
-		ldx ram_cur_channel_offset
-		sta ram_cur_note_idx,X
+	; Square and Triangle channels
 
-	@dmc_skip_save_note:
+	; Save note index
+	ldx ram_cur_channel_offset
+	sta ram_cur_note_idx,X
+
 	ldx ram_cur_channel_offset
 	; This is not how we want to apply the transpose value
 	;clc
@@ -1793,6 +1795,26 @@ sub_apply_note_pitch:
 	ldx ram_cur_chan_ptr_offset
 	sta ram_base_period_lo,X
 	
+	rts
+
+	@dpcm_channel:
+	; The DPCM channel will start playing the sample immediately
+	tax
+	lda tbl_dpcm_ptr,X
+	;sta ram_dmc_addr
+	sta DmcAddress_4012
+
+	lda tbl_dpcm_len,X
+	;sta ram_dmc_len
+	sta DmcLength_4013
+
+	lda #$0C
+	;sta ram_dmc_freq
+	sta DmcFreq_4010
+
+	lda #$1F
+	sta ApuStatus_4015
+
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -2212,7 +2234,6 @@ sub_cmd_set_arpeggio:
 
 sub_start_all_envelopes:
 	ldx ram_cur_chan_ptr_offset
-
 	; This will set bit 7 of length counter load
 	lda ram_note_period_hi,X
 	ora #$80
@@ -2223,6 +2244,7 @@ sub_start_all_envelopes:
 	jsr sub_start_duty_envelope
 	jsr sub_start_pitch_envelope
 	jsr sub_start_arpeggio
+
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -2244,10 +2266,10 @@ sub_start_volume_envelope:
 	:
 	cpx #$04
 	bmi :+
-
+		; DPCM channel: return immediately
 		rts
 ; ----------------
-:
+	:
 	ldx ram_cur_channel_offset
 	ldy ram_cur_chan_ptr_offset
 	
@@ -2275,7 +2297,7 @@ sub_start_volume_envelope:
 		lda (zp_sndptr_lo),Y
 		sta ram_cur_vol_env_duration,X
 
-	@skip_vol_env_start	:
+	@skip_vol_env_start:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -3131,6 +3153,34 @@ tbl_pitches:
 	.word $000F	; $5D	A7
 	.word $000E	; $5E	A#7
 	.word $000D	; $5F	B7
+
+; -----------------------------------------------------------------------------
+
+; Value for DPCM address register
+tbl_dpcm_ptr:
+	.byte $FF					; $00 (rest)
+	.byte $FF					; $01 (hold)
+	.byte >(dmc_fight<<2)		; $02 "Fight!"
+	.byte >(dmc_rayden<<2)		; $03 "Rayden"
+	.byte >(dmc_sonya<<2)		; $04 "Sonya"
+	.byte >(dmc_subzero<<2)		; $05 "Sub-Zero"
+	.byte >(dmc_skorpion<<2)	; $06 "Skorpion"
+	.byte >(dmc_kano<<2)		; $07 "Kano"
+	.byte >(dmc_cage<<2)		; $08 "Johnny Cage"
+	.byte >(dmc_liukang<<2)		; $09 "Liu Kang"
+
+; Values for DPCM length register
+tbl_dpcm_len:
+	.byte $00	; $00 (rest)
+	.byte $00	; $01 (hold)
+	.byte $48	; $02 "Fight!"
+	.byte $47	; $03 "Rayden"
+	.byte $58	; $04 "Sonya"
+	.byte $85	; $05 "Sub-Zero"
+	.byte $77	; $06 "Skorpion"
+	.byte $4B	; $07 "Kano"
+	.byte $7C	; $08 "Johnny Cage"
+	.byte $73	; $09 "Liu Kang"
 
 ; -----------------------------------------------------------------------------
 

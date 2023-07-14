@@ -1431,9 +1431,9 @@ sub_choose_music_track:
 
 ; Parameters:
 ; A = controller data with left or right bit set
-; zp_plr2_selection = 0 for music, 1 for sfx, anything else is ignored
+; zp_selected_opt = 0 for music, 1 for sfx, anything else is ignored
 sub_select_music_to_test:
-	ldy zp_plr2_selection
+	ldy ram_selected_opt
 	beq @select_music
 		cpy #$01
 		beq :+
@@ -1441,18 +1441,29 @@ sub_select_music_to_test:
 			rts
 		:
 		; Select sound effect
-		; TODO
-		bit @bit_01
-		beq :+
+		bit @bit_01	; Check left/right
+		beq @sfx_prev
 			; Right = increase index
-			; TODO
-			rts
-		:
+			lda #$20	; There are 32 choices (00-1F)
+			isc zp_plr2_selection
+			bne :+
+				; Invalid choice, avoid overflow
+				dec zp_plr2_selection
+			:
+			jmp sub_show_mus_selection
+
+		@sfx_prev:
+
 		; Left = decrease index
-		; TODO
-		rts
+		lda #$FF
+		dcp zp_plr2_selection
+		bne :+
+			inc zp_plr2_selection
+		:
+		jmp sub_show_mus_selection
+
 	@select_music:
-	bit @bit_01
+	bit @bit_01	; Check left/right (bit 0 set = Right)
 	beq @music_prev
 
 		; Right = increase index
@@ -1478,14 +1489,21 @@ sub_select_music_to_test:
 
 ; -----------------------------------------------------------------------------
 
+; Parameters:
+; Y = 0 for music, 1 for SFX
 sub_show_mus_selection:
 	; PPU Address = $2176
 	lda #$21
 	sta zp_nmi_ppu_ptr_hi
-	lda #$76
+
+	lda #$B6		; Vertical offset for sfx
+	cpy #$01
+	beq :+
+		lda #$76	; Vertical offset for music
+	:
 	sta zp_nmi_ppu_ptr_lo
 	
-	lda zp_plr1_selection
+	lda zp_plr1_selection,Y
 	asl
 	tax
 
@@ -1507,7 +1525,9 @@ sub_show_mus_selection:
 ; Number conversion table
 tbl_num_to_char:
 	.byte "00", "01", "02", "03", "04", "05", "06", "07"
-	.byte "08", "09", "10"
+	.byte "08", "09", "10", "11", "12", "13", "14", "15"
+	.byte "16", "17", "18", "19", "20", "21", "22", "23"
+	.byte "24", "25", "26", "27", "28", "29", "30", "31"
 
 ; -----------------------------------------------------------------------------
 .export sub_show_playing_song
