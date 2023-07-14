@@ -1363,7 +1363,7 @@ sub_rom_B789:
 sub_continue_timer_expired:
 	lda zp_frame_counter
 	cmp zp_last_execution_frame
-	bcc @B7C2
+	beq @B7C2
 		sta zp_last_execution_frame
 		lda zp_frame_counter
 		and #$1F
