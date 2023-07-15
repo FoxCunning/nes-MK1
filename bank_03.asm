@@ -711,7 +711,7 @@ sub_rom_03_A5E4:
 sub_rom_A5F0:
     tay
 	sty zp_7C
-	lda zp_F2,Y
+	lda zp_plr1_fighter_idx,Y
 	bpl @A60B
 
 	lda zp_plr1_cur_anim,Y

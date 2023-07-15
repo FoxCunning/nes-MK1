@@ -42,7 +42,7 @@ sub_state_machine_1:
 ; -----------------------------------------------------------------------------
 
 sub_match_loop:
-	lda zp_F2
+	lda zp_plr1_fighter_idx
 	and #$80
 	beq @C12E
 
@@ -50,7 +50,7 @@ sub_match_loop:
 	sta zp_controller1
 	sta zp_controller1_new
 	@C12E:
-	lda zp_F3
+	lda zp_plr2_fighter_idx
 	and #$80
 	beq @C13A
 
@@ -109,7 +109,7 @@ sub_match_hit:
 ; -----------------------------------------------------------------------------
 
 sub_match_victory:
-	lda zp_9F
+	lda zp_match_time
 	beq @C197
 	lda zp_4B
 	bpl @C192
@@ -118,7 +118,7 @@ sub_match_victory:
 	;rts
 ; ----------------
 	@C192:
-	dec zp_9F
+	dec zp_match_time
 	jsr sub_rom_CD34
 	@C197:
 	lda zp_A1
@@ -1204,7 +1204,7 @@ sub_rom_C9F2:
 	cmp #$2A
 	bne @CA04
 
-	lda zp_F2,Y
+	lda zp_plr1_fighter_idx,Y
 	bpl @CA08
 
 	lda #$00
@@ -1235,7 +1235,7 @@ sub_rom_CA19:
 	beq @CA26
 
 	lda #$00
-	sta zp_9F
+	sta zp_match_time
 	sta zp_A0
 	sta zp_A1
 	rts
@@ -1243,7 +1243,7 @@ sub_rom_CA19:
 	@CA26:
 	lda #$01
 	sta zp_A1
-	lda zp_9F
+	lda zp_match_time
 	clc
 	adc #$2C
 	sta zp_A0
@@ -1378,8 +1378,9 @@ sub_rom_CAC0:
 	cmp #$01
 	bne @CAE4
 
-	lda #$28
+	lda #$28	; Staggered animation
 	sta zp_plr1_cur_anim,Y
+	
 	lda #$00
 	sta zp_E5,Y
 	sta zp_90,Y
@@ -1511,7 +1512,7 @@ sub_rom_CB7F:
 	tay
 	lda zp_sprites_base_y
 	sta zp_plr1_y_pos,X
-	lda zp_F2,X
+	lda zp_plr1_fighter_idx,X
 	bmi @CBB3
 
 	lda zp_4B
@@ -1761,10 +1762,10 @@ sub_rom_CD19:
 	bcc sub_rom_CD34
 	lda #$00
 	sta zp_A2
-	dec zp_9F
+	dec zp_match_time
 ; ----------------
 sub_rom_CD34:
-	lda zp_9F
+	lda zp_match_time
 	sta zp_07
 	lda #$00
 	sta zp_08
@@ -1815,7 +1816,7 @@ sub_rom_CD81:
 	lda ram_0411
 	bne @CDD2
 
-	lda zp_9F
+	lda zp_match_time
 	bne @CDD4
 
 	lda zp_sprites_base_y
@@ -1833,7 +1834,7 @@ sub_rom_CD81:
 
 	lda #$29
 	sta zp_plr1_cur_anim
-	sta zp_8F
+	sta zp_plr2_cur_anim
 	jmp @CDC7
 
 	@CDA5:
@@ -1843,7 +1844,7 @@ sub_rom_CD81:
 	ldx #$2A
 	stx zp_plr1_cur_anim
 	dex
-	stx zp_8F
+	stx zp_plr2_cur_anim
 	inc ram_plr1_rounds_won
 	bne @CDC7
 
@@ -1854,7 +1855,7 @@ sub_rom_CD81:
 	ldx #$29
 	stx zp_plr1_cur_anim
 	inx
-	stx zp_8F
+	stx zp_plr2_cur_anim
 	inc ram_plr2_rounds_won
 	@CDC7:
 	lda #$00
@@ -2067,9 +2068,9 @@ sub_finish_match_init:
 	lda #$00
 	sta zp_49
 	sta zp_A2
-	sta zp_9F
+	sta zp_match_time
 	sta zp_plr1_cur_anim
-	sta zp_8F
+	sta zp_plr2_cur_anim
 	sta zp_90
 	sta zp_91
 	sta zp_83
@@ -2209,7 +2210,7 @@ sub_rom_D02F:
 	@D053:
 	stx zp_8A
 	@D055:
-	lda zp_8F
+	lda zp_plr2_cur_anim
 	cmp #$06
 	bcc @D06B
 
@@ -2421,7 +2422,7 @@ sub_rom_D164:
 	lda zp_5E
 	bne @D190
 
-	lda zp_F2,Y
+	lda zp_plr1_fighter_idx,Y
 	and #$80
 	bne @D190
 
@@ -2578,7 +2579,7 @@ sub_rom_D3DE:
 ; ----------------
 	@D3F0:
 	ldx #$00
-	lda zp_F2
+	lda zp_plr1_fighter_idx
 	bmi @D3F7
 
 	inx
@@ -3271,7 +3272,7 @@ tbl_fighter_sprite_banks:
 
 sub_rom_D8F0:
 	ldx zp_7C
-	lda zp_F2,X
+	lda zp_plr1_fighter_idx,X
 	and #$7F
 	cmp #$08
 	beq @D8FE

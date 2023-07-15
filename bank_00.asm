@@ -870,7 +870,7 @@ sub_update_health_bars:
 		lda #$20
 		sta PpuAddr_2006
 		ldx #$71	; First pattern of health bar for Player 2
-		lda zp_F2
+		lda zp_plr1_fighter_idx
 		bpl :+
 			ldx #$64	; First pattern of health bar for Player 1
 		:
@@ -916,7 +916,7 @@ sub_update_health_bars:
 	sta PpuAddr_2006
 	lda #$8F
 	sta PpuAddr_2006
-	lda zp_9F
+	lda zp_match_time
 	cmp #$0F
 	bcs @D2E1
 
@@ -1097,7 +1097,7 @@ sub_rom_D359:
 ; for the stage background, sprite data for the player(s) and music
 sub_init_game_mode:
 	; Retrieve the stage index
-	lda zp_F3	; This is player 2 fighter index, bit 7 is set for CPU opponent
+	lda zp_plr2_fighter_idx	; This is player 2 fighter index, bit 7 is set for CPU opponent
 	and #$7F
 	tax
 	lda @tbl_stage_indices,X
@@ -1116,10 +1116,10 @@ sub_init_game_mode:
 	; Check if the two players are using the same fighter
 	; Then either add or subtract $0C to the index in order to load
 	; the alternative palette
-	lda zp_F2	; <- Player 1
+	lda zp_plr1_fighter_idx	; <- Player 1
 	and #$7F
 	sta zp_ptr1_lo
-	lda zp_F3	; <- Player 2
+	lda zp_plr2_fighter_idx	; <- Player 2
 	and #$7F
 	cmp zp_ptr1_lo
 	bne @C05A
@@ -1137,15 +1137,15 @@ sub_init_game_mode:
 
 	@C050:
 	sta zp_ptr1_lo
-	lda zp_F3
+	lda zp_plr2_fighter_idx
 	and #$80
 	ora zp_ptr1_lo
-	sta zp_F3
+	sta zp_plr2_fighter_idx
 	@C05A:
-	lda zp_F2
+	lda zp_plr1_fighter_idx
 	and #$7F
 	sta zp_A3
-	lda zp_F3
+	lda zp_plr2_fighter_idx
 	and #$7F
 	sta zp_A4
 
@@ -1271,7 +1271,7 @@ sub_match_fade_in:
 .export sub_match_start
 
 sub_match_start:
-	ldy zp_9F	; The match will start when this counter reaches 99 ($63)
+	ldy zp_match_time	; The match will start when this counter reaches 99 ($63)
 	bne :+
 		; Counter is zero: show round number
 		ldx #$00
@@ -1312,7 +1312,7 @@ sub_match_start:
 	cpy #$63
 	beq :+
 		; Just waiting, increase the counter and return
-		inc zp_9F
+		inc zp_match_time
 		rts
 	:
 	; Counter is 99: advance substate and begin the match

@@ -145,7 +145,7 @@ zp_8B = $8B     ;
 zp_8C = $8C     ;
 zp_8D = $8D     ;
 zp_plr1_cur_anim = $8E  ;
-zp_8F = $8F     ;
+zp_plr2_cur_anim = $8F  ;
 
 zp_90 = $90     ;
 zp_91 = $91     ;
@@ -159,7 +159,7 @@ zp_9B = $9B     ;
 zp_9C = $9C     ;
 zp_players_y_distance = $9D ;
 zp_9E = $9E     ;
-zp_9F = $9F     ;
+zp_match_time = $9F ;
 
 zp_A0 = $A0     ;
 zp_A1 = $A1     ;
@@ -192,8 +192,8 @@ zp_gained_score_idx = $EF   ; 0 to 4 (low to high)
 
 zp_F0 = $F0     ;
 zp_player_hit_counter = $F1     ;
-zp_F2 = $F2     ;
-zp_F3 = $F3     ;
+zp_plr1_fighter_idx = $F2     ;
+zp_plr2_fighter_idx = $F3     ;
 zp_F4 = $F4     ;
 zp_F5 = $F5     ;
 ; After this has been set to 1, IRQ handling subroutines will be used

@@ -1042,7 +1042,7 @@ sub_rom_E7F5:
 	sta a:zp_machine_state_0
 
 	ldx ram_040C
-	lda zp_F2,X ;a:zp_F2,X
+	lda zp_plr1_fighter_idx,X ;a:zp_F2,X
 	bpl @E80B
 
 		@E805:
@@ -1051,8 +1051,8 @@ sub_rom_E7F5:
 		rts
 ; ----------------
 	@E80B:
-	lda zp_F2 ;a:zp_F2
-	eor zp_F3 ;a:zp_F3
+	lda zp_plr1_fighter_idx ;a:zp_F2
+	eor zp_plr2_fighter_idx ;a:zp_F3
 	and #$80
 	beq @E805
 

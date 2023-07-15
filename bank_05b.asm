@@ -1301,8 +1301,8 @@ sub_rom_B723:
 	dec zp_counter_param
 	bpl @B775
 
-	lda zp_F2
-	eor zp_F3
+	lda zp_plr1_fighter_idx
+	eor zp_plr2_fighter_idx
 	and #$80
 	bne @B767
 
@@ -1355,7 +1355,7 @@ sub_rom_B789:
 		eor #$01
 		tax
 		lda #$80
-		sta zp_F2,X
+		sta zp_plr1_fighter_idx,X
 		sta zp_plr1_selection,X
 
 	@B789_end:
@@ -1512,9 +1512,9 @@ sub_rom_B864:
 	and #$07
 	tay
 	lda rom_B89C+0,Y
-	sta zp_F2
+	sta zp_plr1_fighter_idx
 	lda rom_B89C+1,Y
-	sta zp_F3
+	sta zp_plr2_fighter_idx
 	inc zp_62
 	rts
 
@@ -2281,10 +2281,10 @@ rom_BE91:
 sub_rom_BE9F:
 	lda zp_plr1_selection
 	and #$80
-	sta zp_F2
+	sta zp_plr1_fighter_idx
 	lda zp_plr2_selection
 	and #$80
-	sta zp_F3
+	sta zp_plr2_fighter_idx
 	lda zp_65
 	and #$80
 	sta zp_60
@@ -2295,14 +2295,14 @@ sub_rom_BE9F:
 	and #$7F
 	tay
 	lda rom_BF03,Y
-	ora zp_F2
-	sta zp_F2
+	ora zp_plr1_fighter_idx
+	sta zp_plr1_fighter_idx
 	lda zp_plr2_selection
 	and #$7F
 	tay
 	lda rom_BF03,Y
-	ora zp_F3
-	sta zp_F3
+	ora zp_plr2_fighter_idx
+	sta zp_plr2_fighter_idx
 	lda zp_65
 	beq @BED9
 
@@ -2319,14 +2319,14 @@ sub_rom_BE9F:
 	and #$7F
 	tay
 	lda rom_BF0C,Y
-	ora zp_F2
-	sta zp_F2
+	ora zp_plr1_fighter_idx
+	sta zp_plr1_fighter_idx
 	lda zp_plr2_selection
 	and #$7F
 	tay
 	lda rom_BF0C,Y
-	ora zp_F3
-	sta zp_F3
+	ora zp_plr2_fighter_idx
+	sta zp_plr2_fighter_idx
 	lda zp_65
 	beq @BF00
 
