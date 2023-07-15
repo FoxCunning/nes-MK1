@@ -274,8 +274,8 @@ ram_0409 = $0409    ;
 ram_040A = $040A    ;
 ram_040B = $040B    ;
 ram_040C = $040C    ;
-ram_040D = $040D    ;
-ram_040E = $040E    ;
+ram_plr1_rounds_won = $040D    ;
+ram_plr2_rounds_won = $040E    ;
 ram_040F = $040F    ;
 ; Index for tables of pointers
 ; Used choose an IRQ handling routine and others

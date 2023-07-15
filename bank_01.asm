@@ -1505,7 +1505,7 @@ sub_rom_CB7F:
 	bmi @CBB6
 
 	@CBB3:
-	inc ram_040D,X
+	inc ram_plr1_rounds_won,X
 	@CBB6:
 	rts
 ; ----------------
@@ -1827,7 +1827,7 @@ sub_rom_CD81:
 	stx zp_8E
 	dex
 	stx zp_8F
-	inc ram_040D
+	inc ram_plr1_rounds_won
 	bne @CDC7
 
 	@CDB7:
@@ -1838,7 +1838,7 @@ sub_rom_CD81:
 	stx zp_8E
 	inx
 	stx zp_8F
-	inc ram_040E
+	inc ram_plr2_rounds_won
 	@CDC7:
 	lda #$00
 	sta zp_90

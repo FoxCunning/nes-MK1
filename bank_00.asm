@@ -6,6 +6,7 @@
 .feature pc_assignment
 
 .include "globals.inc"
+.include "charmap.inc"
 
 
 ; -----------------------------------------------------------------------------
@@ -945,7 +946,7 @@ sub_update_health_bars:
 	cmp #$03	; Match main loop
 	beq @D356
 
-	lda ram_040D
+	lda ram_plr1_rounds_won
 	beq @D325
 
 	ldx #$20
@@ -969,7 +970,7 @@ sub_update_health_bars:
 	lda #$AE
 	sta PpuData_2007
 	@D325:
-	lda ram_040E
+	lda ram_plr2_rounds_won
 	beq @D356
 
 	ldx #$20
@@ -1270,23 +1271,87 @@ sub_match_fade_in:
 .export sub_match_start
 
 sub_match_start:
-	lda zp_9F
+	ldy zp_9F	; The match will start when this counter reaches 99 ($63)
+	bne :+
+		; Counter is zero: show round number
+		ldx #$00
+		@round_text_loop:
+			lda @str_round,X
+			sta ram_ppu_data_buffer,X
+		inx
+		cpx #$06
+		bcc @round_text_loop
+		
+		; Show round number
+		lda ram_plr1_rounds_won
+		clc
+		adc ram_plr2_rounds_won
+		tax
+		lda @str_numbers,X
+		ldx #$06
+		sta ram_ppu_data_buffer,X
+		inx
+
+		jsr sub_announcer_text
+	:
+	cpy #$31
 	bne :+
 		; "FIGHT!"
-		; Sample address
 		lda #$06
 		sta ram_req_sfx
+		; Show text
+		ldx #$00
+		@fight_text_loop:
+			lda @str_fight,X
+			sta ram_ppu_data_buffer,X
+		inx
+		cpx #$07
+		bcc @fight_text_loop
+		jsr sub_announcer_text
 	:
-	cmp #$63
+	cpy #$63
 	beq :+
+		; Just waiting, increase the counter and return
 		inc zp_9F
-		; Just Waiting...
 		rts
 	:
-	lda #$00
+	; Counter is 99: advance substate and begin the match
+	
+	lax #$00
 	sta zp_A2
+	; Clear text
+	:
+		sta ram_ppu_data_buffer,X
+	inx
+	cpx #$07
+	bcc :-
+	jsr sub_announcer_text
+
 	inc zp_game_substate
 	rts
+
+; ----------------
+
+	@str_round:
+	.byte "ROUND "
+	@str_numbers:
+	.byte $1F, $20, $21	; Yellow numbers 1, 2 and 3
+	@str_fight:
+	.byte " fight  "
+
+; -----------------------------------------------------------------------------
+
+sub_announcer_text:
+		; X = number of characters in string
+		stx zp_nmi_ppu_cols
+		lda #$01
+		sta zp_nmi_ppu_rows
+		; PPU Address = $204D
+		lda #$20
+		sta zp_nmi_ppu_ptr_hi
+		lda #$8D
+		sta zp_nmi_ppu_ptr_lo
+		rts
 
 ; -----------------------------------------------------------------------------
 
@@ -1305,7 +1370,7 @@ sub_match_eval:
 
 sub_rom_C207:
 	ldx #$07
-	lda ram_040D,Y
+	lda ram_plr1_rounds_won,Y
 	cmp #$02
 	bcs @C215
 
@@ -1348,8 +1413,8 @@ sub_match_fade_out:
 
 	@C238:
 	ldx #$01
-	lda ram_040E
-	cmp ram_040D
+	lda ram_plr2_rounds_won
+	cmp ram_plr1_rounds_won
 	bcs @C243
 
 	dex
@@ -1369,8 +1434,8 @@ sub_match_fade_out:
 	jsr sub_rom_C272
 	lda #$00
 	sta ram_067C
-	sta ram_040D
-	sta ram_040E
+	sta ram_plr1_rounds_won
+	sta ram_plr2_rounds_won
 	sta zp_9E
 	@C268:
 	lda #$00

@@ -779,7 +779,7 @@ sub_rom_A63B:
 	cmp #$01
 	bcc @A659
 
-	lda ram_040D,X
+	lda ram_plr1_rounds_won,X
 	beq @A659
 
 	jsr sub_rom_A9FD
