@@ -301,10 +301,10 @@ sub_get_controller1_main_menu:
 	;asl A
 	;tax
 	;lda rom_04_9CAD+0,X
-	lda rom_04_9CAD+0
+	lda tbl_menu_indices_ptrs+0
 	sta zp_ptr1_lo
 	;lda rom_04_9CAD+1,X
-	lda rom_04_9CAD+1
+	lda tbl_menu_indices_ptrs+1
 	sta zp_ptr1_hi
 
 	lda zp_controller1_new
@@ -383,21 +383,14 @@ sub_options_menu_loop:
 		sta zp_last_execution_frame
 
 		jsr sub_get_controller1_options_menu
-		@bit_20:
 		jsr sub_option_menu_cursor
 		lda zp_controller1_new
-		bit @bit_20
-		beq :+
-			; SELECT pressed = go to sound test
-			lda #$05
-			sta zp_machine_state_2
-			rts
-		:
 		and #$D0	; A, B or START
 		beq sub_options_menu_loop
 
 		lda zp_plr2_selection
-		cmp #$05
+		
+		cmp #$05	; Option < 5 = Difficulty setting
 		bcs :+
 			; Apply selection
 			ldx zp_plr2_selection
@@ -407,6 +400,15 @@ sub_options_menu_loop:
 			;jmp sub_options_menu_loop
 			bne sub_options_menu_loop
 		:
+		; Option >= 5 Sound Test or Exit
+		;cmp #$05
+		bne :+
+			; Option 5 = Sound Text
+			;lda #$05 happens to match the substate index
+			sta zp_machine_state_2
+			rts
+		:
+		; Option 6 = Exit
 		inc zp_machine_state_2
 		lda #$05
 		sta zp_palette_fade_idx
@@ -445,10 +447,10 @@ sub_get_controller1_options_menu:
 	;asl A
 	;tax
 	;lda rom_04_9CAD+0,X
-	lda rom_04_9CAD+2
+	lda tbl_menu_indices_ptrs+2
 	sta zp_ptr1_lo
 	;lda rom_04_9CAD+1,X
-	lda rom_04_9CAD+3
+	lda tbl_menu_indices_ptrs+3
 	sta zp_ptr1_hi
 
 	lda zp_controller1_new
@@ -485,12 +487,13 @@ sub_option_menu_cursor:
 
 ; Two bytes per entry: Y position, X position
 	@tbl_options_menu_cursor_pos:
-	.byte $64, $54
-	.byte $74, $54
-	.byte $84, $54
-	.byte $94, $54
-	.byte $A4, $54
-	.byte $C4, $64
+	.byte $64, $54	; Very Easy
+	.byte $74, $54	; Easy
+	.byte $84, $54	; Normal
+	.byte $94, $54	; Hard
+	.byte $A4, $54	; Very Hard
+	.byte $B4, $54	; Sound Test
+	.byte $C4, $64	; Exit
 
 ; -----------------------------------------------------------------------------
 
@@ -574,9 +577,9 @@ sub_sound_test_input_loop:
 ; Returns:
 ; zp_selected_opt = selection index (0-2)
 sub_get_controller1_sound_test:
-	lda rom_04_9CAD+8
+	lda tbl_menu_indices_ptrs+8
 	sta zp_ptr1_lo
-	lda rom_04_9CAD+9
+	lda tbl_menu_indices_ptrs+9
 	sta zp_ptr1_hi
 
 	lda zp_controller1_new
@@ -773,9 +776,9 @@ sub_fighter_selection_input:
 		lda zp_tmp_idx
 		asl A
 		tax
-		lda rom_04_9CAD+0,X
+		lda tbl_menu_indices_ptrs+0,X
 		sta zp_ptr1_lo
-		lda rom_04_9CAD+1,X
+		lda tbl_menu_indices_ptrs+1,X
 		sta zp_ptr1_hi
 		lda zp_06
 		sta zp_06
