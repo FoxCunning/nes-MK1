@@ -1349,7 +1349,7 @@ sub_announcer_text:
 		; PPU Address = $204D
 		lda #$20
 		sta zp_nmi_ppu_ptr_hi
-		lda #$8D
+		lda #$AD
 		sta zp_nmi_ppu_ptr_lo
 		rts
 
