@@ -1293,11 +1293,11 @@ sub_rom_E8CB:
 
 sub_rom_E902:
 	ldx #$20
-	lda a:zp_9C	; ???
+	lda zp_9C ;a:zp_9C
 	cmp #$18
 	bcs @E910
 
-	lda a:zp_9D	; ???
+	lda zp_9D ;a:zp_9D
 	beq @E917
 
 	@E910:
@@ -1306,16 +1306,16 @@ sub_rom_E902:
 	bne @E91D
 
 	@E917:
-	lda a:zp_8C	; ???
+	lda zp_8C ;a:zp_8C
 	jmp @E920
 
 	@E91D:
-	lda a:zp_frame_counter	; ???
+	lda zp_frame_counter ;a:zp_frame_counter
 	@E920:
 	and #$02
 	bne @E995
 
-	lda a:zp_frame_counter	; ???
+	lda zp_frame_counter ;a:zp_frame_counter
 	and #$01
 	bne @E960
 
@@ -1366,7 +1366,7 @@ sub_rom_E902:
 	rts
 ; ----------------
 	@E995:
-	lda a:zp_frame_counter	; ???
+	lda zp_frame_counter ;a:zp_frame_counter
 	and #$01
 	bne @E9D1
 
@@ -1420,7 +1420,7 @@ sub_rom_E902:
 
 ; Potentially unused
 sub_rom_EA06:
-	lda zp_controller1 ;a:zp_controller1
+	lda zp_controller1
 	and #$30
 	eor #$30
 	bne :+
@@ -1437,7 +1437,7 @@ sub_rom_EA13:
 	lda zp_5E ;a:zp_5E
 	beq @EA2A
 
-		lda zp_controller1_new ;a:zp_controller1_new
+		lda zp_controller1_new
 		and #$10	; Start Button
 		beq @EA53
 
@@ -1450,7 +1450,7 @@ sub_rom_EA13:
 	and #$10	; Start Button
 	beq @EA4D
 
-	lda zp_game_substate ;a:zp_7A
+	lda zp_game_substate
 	cmp #$03
 	bne @EA53
 	lda ram_0438
@@ -1459,11 +1459,11 @@ sub_rom_EA13:
 	jsr sub_rom_EA5B
 	lda #$0E	; Pause sound
 	sta ram_req_sfx
-	lda zp_24 ;a:zp_24
+	lda zp_24
 	eor #$01
-	sta zp_24 ;a:zp_24
+	sta zp_24
 	@EA4D:
-	lda zp_24 ;a:zp_24
+	lda zp_24
 	beq @EA53
 
 	rts
@@ -1482,12 +1482,6 @@ sub_rom_EA13:
 	sta mmc3_bank_data
 
 	jmp sub_state_machine_1
-
-; -----------------------------------------------------------------------------
-
-;sub_rom_EA57:
-	;jmp sub_state_machine_1 ;jsr sub_rom_C000
-	;rts
 
 ; -----------------------------------------------------------------------------
 
@@ -1535,7 +1529,7 @@ sub_rom_EA5B:
 	lda #$C5
 	sta ram_0311
 	lda #$DA
-	sta a:zp_chr_bank_1
+	sta zp_chr_bank_1 ;a:zp_chr_bank_1
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1544,13 +1538,13 @@ sub_rom_EA5B:
 sub_call_sound_routines:
 	; PRG ROM $8000-$9FFF <-- Bank $02 (sound data)
 	lda #$86
-	sta zp_prg_bank_select_backup	;sta a:zp_prg_bank_select_backup
+	sta zp_prg_bank_select_backup
 	sta mmc3_bank_select
 	lda #$02
 	sta mmc3_bank_data
 	; PRG ROM $8000-$9FFF <-- Bank $03 (sound and moves code)
 	lda #$87
-	sta zp_prg_bank_select_backup	;sta a:zp_prg_bank_select_backup
+	sta zp_prg_bank_select_backup
 	sta mmc3_bank_select
 	lda #$03
 	sta mmc3_bank_data
@@ -1559,13 +1553,13 @@ sub_call_sound_routines:
 
 	; Switch back to PRG ROM Banks $04 and $05
 	lda #$86
-	sta zp_prg_bank_select_backup	;sta a:zp_prg_bank_select_backup
+	sta zp_prg_bank_select_backup
 	sta mmc3_bank_select
 	lda #$04
 	sta mmc3_bank_data
 	; PRG ROM $8000-$9FFF <-- Bank $03 (sound and moves code)
 	lda #$87
-	sta zp_prg_bank_select_backup	;sta a:zp_prg_bank_select_backup
+	sta zp_prg_bank_select_backup
 	sta mmc3_bank_select
 	lda #$05
 	sta mmc3_bank_data
