@@ -1191,7 +1191,7 @@ sub_rom_E8CB:
 
 sub_rom_E902:
 	ldx #$20
-	lda zp_9C ;a:zp_9C
+	lda zp_players_x_distance ;a:zp_9C
 	cmp #$18
 	bcs @E910
 

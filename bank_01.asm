@@ -58,7 +58,7 @@ sub_match_loop:
 	sta zp_controller2
 	sta zp_controller2_new
 	@C13A:
-	jsr sub_rom_CF1F
+	jsr sub_calc_players_distancec
 	jsr sub_rom_C7B0
 	jsr sub_rom_CA5C
 
@@ -240,7 +240,7 @@ sub_rom_C2A8:
 	rts
 ; ----------------
 	@C2CC:
-	lda zp_90,Y
+	lda zp_plr1_anim_frame,Y
 	cmp #$05
 	bcc @C2CB
 	bne @C2F0
@@ -271,7 +271,7 @@ sub_rom_C2A8:
 	@C2FB:
 	lda #$00
 	sta zp_plr1_cur_anim,Y
-	sta zp_90,Y
+	sta zp_plr1_anim_frame,Y
 	rts
 ; ----------------
 	@C304:
@@ -281,7 +281,7 @@ sub_rom_C2A8:
 	lda zp_plr1_cur_anim,X
 	bne @C310
 
-	lda zp_90,X
+	lda zp_plr1_anim_frame,X
 	beq @C317
 
 	@C310:
@@ -562,7 +562,7 @@ sub_rom_C572:
 	bne @C5A2
 
 	@C58C:
-	lda zp_90,X
+	lda zp_plr1_anim_frame,X
 	cmp #$05
 	bcc @C5A2
 
@@ -660,9 +660,9 @@ sub_ranged_attack:
 	@player_hit_anim:
 	sta zp_plr1_cur_anim,X	; Oppoent
 	lda #$00
-	sta zp_90,X
+	sta zp_plr1_anim_frame,X
 	sta zp_plr1_cur_anim,Y	; Attacker
-	sta zp_90,Y
+	sta zp_plr1_anim_frame,Y
 	@C60D:
 	pla
 	pla
@@ -1216,7 +1216,7 @@ sub_rom_C9F2:
 	bne @CA18
 
 	@CA08:
-	lda zp_90,Y
+	lda zp_plr1_anim_frame,Y
 	cmp #$05
 	bcc @CA18
 
@@ -1279,7 +1279,7 @@ sub_rom_CA4F:
 	ldy zp_7C
 	sta zp_plr1_cur_anim,Y
 	lda #$00
-	sta zp_90,Y
+	sta zp_plr1_anim_frame,Y
 	sty zp_8C
 	rts
 
@@ -1352,7 +1352,7 @@ sub_rom_CAA3:
 	bne @CABF
 
 	@CAB3:
-	lda zp_90,X
+	lda zp_plr1_anim_frame,X
 	cmp #$01
 	bne @CABF
 
@@ -1374,16 +1374,17 @@ sub_rom_CAC0:
 	cmp #$27
 	bne @CAE4
 
-	lda zp_90,Y
+	lda zp_plr1_anim_frame,Y
 	cmp #$01
 	bne @CAE4
 
 	lda #$28	; Staggered animation
 	sta zp_plr1_cur_anim,Y
-	
+
 	lda #$00
 	sta zp_E5,Y
-	sta zp_90,Y
+	sta zp_plr1_anim_frame,Y
+
 	@CAE4:
 	lda zp_E9,Y
 	cmp #$70
@@ -1426,7 +1427,7 @@ sub_rom_CB0C:
 
 	@CB1B:
 	lda #$06
-	cmp zp_90,Y
+	cmp zp_plr1_anim_frame,Y
 	bcs @CB7E
 
 	lda zp_sprites_base_y
@@ -1454,7 +1455,7 @@ sub_rom_CB0C:
 	lda #$34
 	sta zp_plr1_cur_anim,Y
 	lda #$0A
-	sta zp_90,Y
+	sta zp_plr1_anim_frame,Y
 	lda zp_ptr1_hi
 	clc
 	adc #$0C
@@ -1475,7 +1476,7 @@ sub_rom_CB0C:
 	lda #$26
 	sta zp_plr1_cur_anim,Y
 	lda #$00
-	sta zp_90,Y
+	sta zp_plr1_anim_frame,Y
 	lda zp_sprites_base_y
 	clc
 	adc #$08
@@ -1490,7 +1491,7 @@ sub_rom_CB7F:
 	cmp #$26
 	bne @CBC6
 
-	lda zp_90,Y
+	lda zp_plr1_anim_frame,Y
 	cmp #$0C
 	bcc @CBC6
 
@@ -1499,11 +1500,11 @@ sub_rom_CB7F:
 	bcc @CBB7
 
 	lda #$0B
-	sta zp_90,Y
+	sta zp_plr1_anim_frame,Y
 	tya
 	eor #$01
 	tax
-	lda zp_90,X
+	lda zp_plr1_anim_frame,X
 	bne @CBC6
 
 	lda #$2A
@@ -1527,7 +1528,7 @@ sub_rom_CB7F:
 	lda #$27
 	sta zp_plr1_cur_anim,Y
 	lda #$00
-	sta zp_90,Y
+	sta zp_plr1_anim_frame,Y
 	lda zp_sprites_base_y
 	sta zp_plr1_y_pos,Y
 	@CBC6:
@@ -1562,7 +1563,7 @@ sub_rom_CBC7:
 	inx
 	inx
 	@CBED:
-	lda zp_90,Y
+	lda zp_plr1_anim_frame,Y
 	cmp #$07
 	bcc @CBF5
 
@@ -1607,7 +1608,7 @@ sub_rom_CBFC:
 	inx
 	inx
 	@CC27:
-	lda zp_90,Y
+	lda zp_plr1_anim_frame,Y
 	cmp #$07
 	bcc @CC2F
 
@@ -1651,7 +1652,7 @@ sub_rom_CC36:
 ; -----------------------------------------------------------------------------
 
 sub_rom_CC5C:
-	lda zp_9C
+	lda zp_players_x_distance
 	cmp #$1E
 	bcs @CC7F
 
@@ -1685,7 +1686,7 @@ sub_rom_CC5C:
 ; -----------------------------------------------------------------------------
 
 sub_rom_CC82:
-	lda zp_9C
+	lda zp_players_x_distance
 	cmp #$30
 	bcs @CC97
 
@@ -1695,7 +1696,7 @@ sub_rom_CC82:
 
 	lda #$1B
 	@CC90:
-	cmp zp_9C
+	cmp zp_players_x_distance
 	bcc @CC97
 
 	ldx #$0C
@@ -1859,8 +1860,8 @@ sub_rom_CD81:
 	inc ram_plr2_rounds_won
 	@CDC7:
 	lda #$00
-	sta zp_90
-	sta zp_91
+	sta zp_plr1_anim_frame
+	sta zp_plr2_anim_frame
 	lda #$01
 	sta ram_0411
 	@CDD2:
@@ -2017,27 +2018,31 @@ str_name_empty_3spc:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_CF1F:
+sub_calc_players_distancec:
 	lda zp_plr1_x_pos
 	cmp zp_plr2_x_pos
 	bcs @CF2C
+
 	lda zp_plr2_x_pos
 	sec
 	sbc zp_plr1_x_pos
 	bne @CF2F
+
 	@CF2C:
 	sec
 	sbc zp_plr2_x_pos
 	@CF2F:
-	sta zp_9C
+	sta zp_players_x_distance
 	ldx #$00
 	lda zp_plr1_y_pos
 	cmp zp_plr2_y_pos
 	bcs @CF40
+
 	lda zp_plr2_y_pos
 	sec
 	sbc zp_plr1_y_pos
 	bne @CF44
+	
 	@CF40:
 	inx
 	sec
@@ -2071,8 +2076,8 @@ sub_finish_match_init:
 	sta zp_match_time
 	sta zp_plr1_cur_anim
 	sta zp_plr2_cur_anim
-	sta zp_90
-	sta zp_91
+	sta zp_plr1_anim_frame
+	sta zp_plr2_anim_frame
 	sta zp_83
 	sta zp_85
 	sta zp_8A
@@ -2095,7 +2100,7 @@ sub_finish_match_init:
 	sta zp_8B
 
 	lda #$90
-	sta zp_players_x_distance
+	sta zp_82
 
 	lda #$F0
 	sta zp_84
@@ -2200,7 +2205,7 @@ sub_rom_D02F:
 	@D045:
 	ldx #$00
 	sec
-	lda zp_players_x_distance
+	lda zp_82
 	sbc zp_84
 	lda zp_83
 	sbc zp_85
@@ -2229,7 +2234,7 @@ sub_rom_D02F:
 	@D06B:
 	ldx #$00
 	sec
-	lda zp_players_x_distance
+	lda zp_82
 	sbc zp_84
 	lda zp_83
 	sbc zp_85
@@ -2260,7 +2265,7 @@ sub_rom_D082:
 	cmp #$18
 	bne @D09D
 
-	lda zp_90,Y
+	lda zp_plr1_anim_frame,Y
 	cmp #$0A
 	bcs @D09D
 
@@ -2280,7 +2285,7 @@ sub_rom_D09F:
 	bcs @D0C4
 
 	clc
-	lda zp_players_x_distance
+	lda zp_82
 	adc zp_84
 	sta zp_ptr1_lo
 	lda zp_83
@@ -2412,7 +2417,7 @@ sub_rom_D129:
 	lda #$05
 	sta zp_plr1_cur_anim,Y
 	lda #$00
-	sta zp_90,Y
+	sta zp_plr1_anim_frame,Y
 	@D163:
 	rts
 
@@ -2444,7 +2449,7 @@ sub_rom_D164:
 	txa
 	sta zp_plr1_cur_anim,Y
 	lda #$00
-	sta zp_90,Y
+	sta zp_plr1_anim_frame,Y
 	@D190:
 	rts
 ; ----------------
@@ -2589,7 +2594,7 @@ sub_rom_D3DE:
 	sta zp_A3,X
 	lda #$00
 	sta zp_plr1_cur_anim,X
-	sta zp_90,X
+	sta zp_plr1_anim_frame,X
 	sta zp_plr1_damage,X
 	sta zp_plr1_dmg_counter,X
 	lda #$FF
@@ -2932,11 +2937,11 @@ sub_rom_D6E0:
 	cmp #$06
 	bcc @D6F1
 
-	cmp #$28
+	cmp #$28	; Staggered animation
 	bne sub_rom_D718
 
 	@D6F1:
-	lda zp_9C
+	lda zp_players_x_distance
 	cmp #$18
 	bcs sub_rom_D718
 
@@ -2955,10 +2960,10 @@ sub_rom_D701:
 	cmp #$20
 	bcc sub_rom_D718
 
-	lda zp_players_x_distance,X
+	lda zp_82,X
 	sec
 	sbc zp_ptr1_lo
-	sta zp_players_x_distance,X
+	sta zp_82,X
 	bcs sub_rom_D718
 
 	dec zp_83,X
@@ -2971,10 +2976,10 @@ sub_rom_D719:
 	cmp #$D0
 	bcs sub_rom_D718
 
-	lda zp_players_x_distance,X
+	lda zp_82,X
 	clc
 	adc zp_ptr1_lo
-	sta zp_players_x_distance,X
+	sta zp_82,X
 	bcc sub_rom_D718
 
 	inc zp_83,X
@@ -2983,7 +2988,7 @@ sub_rom_D719:
 ; -----------------------------------------------------------------------------
 
 sub_rom_D72C:
-	lda zp_9C
+	lda zp_players_x_distance
 	cmp #$50
 	bcc @D737
 
@@ -3012,7 +3017,7 @@ sub_rom_D72C:
 	bne @D76C
 
 	@D752:
-	lda zp_90,Y
+	lda zp_plr1_anim_frame,Y
 	cmp #$02
 	bne @D76C
 
@@ -3089,7 +3094,7 @@ sub_rom_D784:
 	lda rom_DAF7+1,X
 	sta zp_ptr4_hi
 	ldy zp_7C
-	lda zp_90,Y
+	lda zp_plr1_anim_frame,Y
 	asl A
 	tay
 	lda (zp_ptr4_lo),Y
@@ -3102,10 +3107,10 @@ sub_rom_D784:
 	sta zp_18
 	lda (zp_ptr4_lo),Y
 	cmp #$80
-	bne @D7F0
-
-	inc zp_18
-	@D7F0:
+	bne :+
+		; Animation will be set to zero when this is >0
+		inc zp_18
+	:
 	ldx zp_7B
 	ldy zp_7C
 	lda zp_05
@@ -3114,28 +3119,29 @@ sub_rom_D784:
 	eor #$FF
 	sta zp_05
 	inc zp_05
-	lda zp_8A,Y
+	lda zp_8A,Y	; Probably says wether this player is moving or not
 	bne @D81F
 
-	@D803:
-	lda zp_plr1_x_pos,Y
-	sec
-	sbc zp_05
-	cmp #$20
-	bcc @D834
+		; If in movement, recalculate the distance between player hit boxes
+		@D803:
+		lda zp_plr1_x_pos,Y
+		sec
+		sbc zp_05
+		cmp #$20
+		bcc @D834
 
-	lda zp_players_x_distance,X
-	sec
-	sbc zp_05
-	sta zp_players_x_distance,X
-	bcs @D834
+		lda zp_82,X
+		sec
+		sbc zp_05
+		sta zp_82,X
+		bcs @D834
 
-	dec zp_83,X
-	beq @D834
+		dec zp_83,X
+		beq @D834
 
-	@D81A:
-	lda zp_8A,Y
-	bne @D803
+		@D81A:
+		lda zp_8A,Y
+		bne @D803
 	@D81F:
 	lda zp_plr1_x_pos,Y
 	clc
@@ -3143,10 +3149,10 @@ sub_rom_D784:
 	cmp #$D0
 	bcs @D834
 
-	lda zp_players_x_distance,X
+	lda zp_82,X
 	clc
 	adc zp_05
-	sta zp_players_x_distance,X
+	sta zp_82,X
 	bcc @D834
 
 	inc zp_83,X
@@ -3163,7 +3169,7 @@ sub_rom_D784:
 	lda (zp_ptr3_lo),Y
 	sta zp_ptr4_hi
 	ldy zp_7C
-	lda zp_90,Y
+	lda zp_plr1_anim_frame,Y
 	tay
 	lda (zp_ptr4_lo),Y
 	sta zp_ptr1_lo
@@ -3185,6 +3191,7 @@ sub_rom_D784:
 	ldy zp_7C
 	jsr sub_rom_D6E0
 	jsr sub_rom_D72C
+
 	ldy zp_7C
 	ldx rom_CB0A,Y
 	lda zp_plr1_cur_anim,Y
@@ -3194,10 +3201,11 @@ sub_rom_D784:
 	cmp #$2E
 	beq @D88A
 
-		cmp #$28
+		cmp #$28	; Staggered animation
 		bne @D88E
 
 		@D88A:
+		; Force a move to the next OAM entry when staggered
 		inx
 		inx
 		inx
@@ -3208,11 +3216,10 @@ sub_rom_D784:
 	ldx zp_7B
 	lda zp_8A,Y
 	beq :+
-
-		lda #$40
+		lda #$40	; Offset for player 2
 	:
 	sta zp_1B
-	lda zp_players_x_distance,X
+	lda zp_82,X
 	sec
 	sbc zp_irq_hor_scroll
 	sta zp_plr1_x_pos,Y
@@ -3225,10 +3232,10 @@ sub_rom_D784:
 	sbc zp_ptr1_lo
 	sta zp_0A
 	ldx zp_7C
-	inc zp_90,X
+	inc zp_plr1_anim_frame,X
 	ldy zp_7C
 	ldx zp_plr1_cur_anim,Y
-	lda zp_90,Y
+	lda zp_plr1_anim_frame,Y
 
 	cmp #$01
 	bne @D8C8
@@ -3239,14 +3246,12 @@ sub_rom_D784:
 			sta ram_req_sfx
 	@D8C8:
 	lda zp_18
-	beq @D8D4
-
-	lda #$00
-	sta zp_plr1_cur_anim,Y
-	sta zp_90,Y
-	@D8D4:
-	jmp sub_rom_D9AF ;jsr sub_rom_D9AF
-	;rts
+	beq :+
+		lda #$00
+		sta zp_plr1_cur_anim,Y
+		sta zp_plr1_anim_frame,Y
+	:
+	jmp sub_rom_D9AF
 
 ; -----------------------------------------------------------------------------
 
@@ -3281,7 +3286,7 @@ sub_rom_D8F0:
 	bne @D92B
 
 	@D8FE:
-	lda zp_90,X
+	lda zp_plr1_anim_frame,X
 	bne @D923
 
 	ldy zp_plr1_cur_anim,X
@@ -3334,7 +3339,7 @@ sub_rom_D935:
 	ldy #$00
 	ldx zp_7C
 	sty zp_48,X
-	sty zp_90,X
+	sty zp_plr1_anim_frame,X
 	ldx #$00
 	@D94D:
 	lda (zp_ptr1_lo),Y
@@ -3899,20 +3904,53 @@ rom_B6A8:
 
 ; -----------------------------------------------------------------------------
 
-; Data pointers
+; Data pointers for sprite animation sequences
 rom_DAF7:
-	.word rom_DB7D, rom_DB98, rom_DBCC, rom_DBB7
-	.word rom_DBF6, rom_DC17, rom_DB8B, rom_DBE5
-	.word rom_DB81, rom_DB79, rom_DB85, rom_DC38
-	.word rom_DC59, rom_DC66, rom_DC8D, rom_DCA8
-	.word rom_DB65, rom_DB89, rom_DCD3, rom_DCEE
-	.word rom_DD19, rom_DD46, rom_DD53, rom_DD68
-	.word rom_DB51, rom_DD89, rom_DDA8, rom_DDC1
-	.word rom_DDC2, rom_DB75, rom_DE03, rom_DE04
-	.word rom_DE05, rom_DE12, rom_DB87, rom_DE2F
-	.word rom_DE48, rom_DB8E, rom_DBAD, rom_DE6D
-	.word rom_DE8E, rom_DE9B, rom_DEB4, rom_DECD
-	.word rom_DEEE
+	.word rom_DB7D	; $00
+	.word rom_DB98	; $01
+	.word rom_DBCC
+	.word rom_DBB7
+	.word rom_DBF6
+	.word rom_DC17
+	.word rom_DB8B
+	.word rom_DBE5
+	.word rom_DB81
+	.word rom_DB79
+	.word rom_DB85
+	.word rom_DC38
+	.word rom_DC59
+	.word rom_DC66
+	.word rom_DC8D
+	.word rom_DCA8
+	.word rom_DB65	; $10
+	.word rom_DB89
+	.word rom_DCD3
+	.word rom_DCEE
+	.word rom_DD19
+	.word rom_DD46
+	.word rom_DD53
+	.word rom_DD68
+	.word rom_DB51	; $18
+	.word rom_DD89
+	.word rom_DDA8
+	.word rom_DDC1
+	.word rom_DDC2
+	.word rom_DB75
+	.word rom_DE03
+	.word rom_DE04
+	.word rom_DE05
+	.word rom_DE12
+	.word rom_DB87
+	.word rom_DE2F
+	.word rom_DE48
+	.word rom_DB8E
+	.word rom_DBAD
+	.word rom_DE6D
+	.word rom_DE8E
+	.word rom_DE9B
+	.word rom_DEB4
+	.word rom_DECD
+	.word rom_DEEE	; $2C
 
 ; -----------------------------------------------------------------------------
 

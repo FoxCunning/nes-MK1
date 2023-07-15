@@ -131,7 +131,7 @@ zp_7F = $7F     ;
 
 ; Horizontal scroll value used in IRQ routines
 zp_irq_hor_scroll = $81 ;
-zp_players_x_distance = $82 ;
+zp_82 = $82 ;
 zp_83 = $83     ;
 zp_84 = $84     ;
 zp_85 = $85     ;
@@ -144,11 +144,13 @@ zp_8A = $8A     ;
 zp_8B = $8B     ;
 zp_8C = $8C     ;
 zp_8D = $8D     ;
+
 zp_plr1_cur_anim = $8E  ;
 zp_plr2_cur_anim = $8F  ;
 
-zp_90 = $90     ;
-zp_91 = $91     ;
+zp_plr1_anim_frame = $90     ;
+zp_plr2_anim_frame = $91     ;
+
 zp_92 = $92     ;
 zp_94 = $94     ;
 zp_chr_bank_0 = $96     ;
@@ -156,7 +158,7 @@ zp_chr_bank_1 = $97     ;
 zp_99 = $99     ;
 zp_9A = $9A     ;
 zp_9B = $9B     ;
-zp_9C = $9C     ;
+zp_players_x_distance = $9C ;
 zp_players_y_distance = $9D ;
 zp_9E = $9E     ;
 zp_match_time = $9F ;

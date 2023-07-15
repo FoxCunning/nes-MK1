@@ -86,7 +86,7 @@ sub_rom_A00C:
 
 	@A068:
 	ldx zp_7C
-	lda zp_90,X
+	lda zp_plr1_anim_frame,X
 	cmp zp_ptr1_lo
 	bcc @A02A
 
@@ -98,7 +98,7 @@ sub_rom_A00C:
 
 	@A077:
 	iny
-	lda zp_9C
+	lda zp_players_x_distance
 	cmp (zp_ptr3_lo),Y
 	bcs @A02A
 
@@ -150,7 +150,7 @@ sub_rom_A00C:
 	@A0B7:
 	sta zp_plr1_cur_anim,X
 	lda #$00
-	sta zp_90,X
+	sta zp_plr1_anim_frame,X
 	@A0BD:
 	rts
 ; ----------------
@@ -183,7 +183,7 @@ sub_rom_A00C:
 
 	sta zp_plr1_cur_anim,X
 	lda #$00
-	sta zp_90,X
+	sta zp_plr1_anim_frame,X
 	iny
 	lda (zp_ptr3_lo),Y
 	ldx zp_7C
@@ -736,7 +736,7 @@ sub_rom_A5F0:
 	eor #$01
 	tax
 	stx zp_7B
-	lda zp_9C
+	lda zp_players_x_distance
 	cmp #$14
 	bcs @A61C
 
@@ -957,7 +957,7 @@ sub_rom_A773:
     
 	@A7B0:
 	lda #$00
-	sta zp_90,Y
+	sta zp_plr1_anim_frame,Y
 	@A7B5:
 	lda zp_ptr1_lo
 	and #$3F

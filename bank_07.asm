@@ -97,7 +97,7 @@ rom_8004:
 	.word rom_823B
 	.byte $08
 	.word rom_8248
-	.byte $10
+	.byte $10		; $28 = Staggered
 	.word rom_824E
 	.byte $08
 	.word rom_8262
@@ -121,7 +121,7 @@ rom_8004:
 	.word rom_8292
 	.byte $1F
 	.word rom_82A1
-	.byte $04
+	.byte $04		; $34
 	.word rom_80ED
 
 ; -----------------------------------------------------------------------------

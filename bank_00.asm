@@ -1016,7 +1016,7 @@ sub_rom_D359:
 	lda #$2E
 	sta zp_plr1_cur_anim,X
 	lda #$00
-	sta zp_90,X
+	sta zp_plr1_anim_frame,X
 	@D375:
 	lda zp_4B
 	bmi @D38B
