@@ -39,6 +39,7 @@ def compress(data) -> bytearray:
 
     # Read first byte
     prev_byte = data[0]
+    new_byte = 0
 
     for p in range(1, len(data)):
         new_byte = data[p]
@@ -78,8 +79,12 @@ def compress(data) -> bytearray:
         output.append(count + 1)
         output.append(prev_byte)
     elif len(buffer) > 0:
+        buffer.append(new_byte)
         output.append(len(buffer) | 0x80)
         output = output + buffer
+    else:
+        output.append(0x81)
+        output.append(new_byte)
 
     return output
 
