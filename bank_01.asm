@@ -188,7 +188,7 @@ sub_match_victory:
 ; -----------------------------------------------------------------------------
 
 sub_rom_C284:
-	jsr sub_rom_D440
+	jsr sub_fade_palettes_out
 	bcc :+
 
 		lda #$00
@@ -2037,6 +2037,11 @@ sub_rom_CF1F:
 sub_finish_match_init:
 	jsr sub_load_game_palettes
 
+	; Make sure sprite BG colour does not overwrite patterns BG colour
+	; This is to allow stages with backgrounds other than black (e.g. the Pit)
+	lda ram_0640+0
+	sta ram_0640+$10
+
 	lda #$02
 	sta zp_92
 	lda #$01
@@ -2576,55 +2581,62 @@ sub_rom_D3DE:
 	rts
 
 ; -----------------------------------------------------------------------------
-.export sub_rom_D422
+.export sub_fade_palettes_in
 
-sub_rom_D422:
+; Parameters:
+; ram_0401 = fade cycle index (0-6 for fade in, anything higher is ignored)
+; ram_640 to ram_65F = target palettes for fade effect
+; Returns:
+; C = clear if colours have been faded (one step), set otherwise
+sub_fade_palettes_in:
 	ldx ram_0401
 	cpx #$07
 	bcs @D43F
 
-	ldy ram_0402
-	bne @D433
-
-	ldy #$03
-	sty ram_0402
-	@D433:
-	dec ram_0402
-	bne @D43E
-
-	jsr sub_rom_D465
-	inc ram_0401
-	@D43E:
-	clc
+		ldy ram_0402
+		bne :+
+			ldy #$03
+			sty ram_0402
+		:
+		dec ram_0402
+		bne :+
+			jsr sub_fade_colours
+			inc ram_0401	; Increment the index for the next fade cycle
+		:
+		clc
 	@D43F:
 	rts
 
 ; -----------------------------------------------------------------------------
-.export sub_rom_D440
+.export sub_fade_palettes_out
 
-sub_rom_D440:
+; Parameters:
+; ram_0401 = fade cycle index (7-1 for fade out)
+; ram_640 to ram_65F = target palettes for fade effect
+; Returns:
+; C = clear if colours have been faded (one step), set otherwise
+sub_fade_palettes_out:
 	ldx ram_0401
 	beq @D463
 
-	ldy ram_0402
-	bne @D44F
+		ldy ram_0402
+		bne :+
+			ldy #$03
+			sty ram_0402
+		:
+		dec ram_0402
+		bne @D461
 
-	ldy #$03
-	sty ram_0402
-	@D44F:
-	dec ram_0402
-	bne @D461
+			dec ram_0401
+			dex
+			jsr sub_fade_colours
+			cpx #$00
+			bne @D461
 
-	dec ram_0401
-	dex
-	jsr sub_rom_D465
-	cpx #$00
-	bne @D461
-
-	stx zp_ppu_mask_backup
-	@D461:
-	clc
-	rts
+				stx zp_ppu_mask_backup
+		@D461:
+		clc
+		rts
 ; ----------------
 	@D463:
 	sec
@@ -2632,26 +2644,32 @@ sub_rom_D440:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_D465:
-	ldy ram_0400
+; Parameters:
+; ram_640 to ram_65F = target palettes for fade effect
+sub_fade_colours:
+	ldy #$1F ;ram_0400 seems to be constant anyway
 	:
 		lda ram_0640,Y
-		cmp rom_D498,X
-		bcs @D474
+		cmp tbl_pal_cycle_min,X
+		bcs @darken_colour
 
-		lda #$0E
-		bcc @D47C
+			; Value too low, use black
+			lda #$0E
+			bcc @write_value
 
-		@D474:
-		lda rom_D498,X
+		@darken_colour:
+		; This will reduce the colour value depending on the current minimum
+		; e.g.: $36 -> $06 if min is $30, $36 -> $16 if min is $20, etc.
+		lda tbl_pal_cycle_min,X
 		eor #$3F
 		and ram_0640,Y
-		@D47C:
+
+		@write_value:
 		sta ram_ppu_data_buffer,Y
 	dey
 	bpl :-
 
-	lda rom_D49F,X
+	lda tbl_pal_cycle_ppumasks,X
 	sta zp_ppu_mask_backup
 	lda #$3F
 	sta zp_nmi_ppu_ptr_hi
@@ -2663,14 +2681,16 @@ sub_rom_D465:
 	sta zp_nmi_ppu_cols
 	rts
 
-; -----------------------------------------------------------------------------
+; ----------------
 
-rom_D498:
+; If the indexed colour is not at least this value, then use black instead
+tbl_pal_cycle_min:
 	.byte $FF, $30, $30, $20, $20, $10, $00
 
-; -----------------------------------------------------------------------------
+; ----------------
 
-rom_D49F:
+; Alternates between colour emphasis enabled and disabled
+tbl_pal_cycle_ppumasks:
 	.byte $1E, $FE, $1E, $FE, $1E, $1E, $1E
 
 ; -----------------------------------------------------------------------------
@@ -2774,8 +2794,8 @@ tbl_bg_palette_ptrs:
 	.byte $0E, $16, $2A, $28, $0E, $06, $16, $26
 	.byte $0E, $08, $08, $20, $0E, $08, $00, $10
 	@pal_pit:
-	.byte $0E, $16, $2A, $28, $0E, $18, $28, $38
-	.byte $0E, $02, $12, $22, $0E, $08, $00, $10
+	.byte $02, $16, $2A, $28, $02, $18, $28, $38
+	.byte $02, $0E, $00, $10, $02, $08, $00, $10
 	@pal_courtyard:
 	.byte $0E, $16, $2A, $28, $0E, $0C, $11, $21
 	.byte $0E, $05, $27, $21, $0E, $0C, $00, $21

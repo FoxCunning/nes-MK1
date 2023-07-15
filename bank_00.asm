@@ -112,25 +112,23 @@ sub_rom_8091:
 ; -----------------------------------------------------------------------------
 
 tbl_stage_rle_ptrs:
-	; Left / Top nametables
-	.word rom_80B0
-	.word rom_83A4
-	.word rom_84E4
-	.word rom_86C6
-	.word rom_8834
-	.word rom_8AF2
-	; Bottom / Right nametables
-	.word rom_8C4B
-	.word rom_8F17
-	.word rom_90A0
-	.word rom_934D
-	.word rom_94B2
-	.word rom_974F
+	.word rle_goros_lair_left
+	.word rle_goros_lair_right
+	.word rle_pit_left
+	.word rle_pit_right
+	.word rle_courtyard_left
+	.word rle_courtyard_right
+	.word rle_palace_gates_left
+	.word rle_palace_gates_right
+	.word rle_warrior_shrine_left
+	.word rle_warrior_shrine_right
+	.word rom_throne_room_left
+	.word rom_throne_room_right
 
 ; -----------------------------------------------------------------------------
 
 ; Nametable data, starts with PPU address and terminates with $FFFF
-rom_80B0:
+rle_goros_lair_left:
 	.byte $20, $00, $63, $00, $81, $81, $0B, $8A
 	.byte $02, $00, $0B, $8A, $81, $92, $43, $00
 	.byte $F8, $02, $01, $02, $01, $02, $01, $02
@@ -230,7 +228,7 @@ rom_80B0:
 ; -----------------------------------------------------------------------------
 
 ; Nametable data, starts with PPU address and terminates with $FFFF
-rom_83A4:
+rle_goros_lair_right:
 	.byte $20, $00, $77, $00, $49, $00, $8C, $0B
 	.byte $FA, $FB, $02, $01, $02, $01, $02, $01
 	.byte $02, $01, $02, $14, $00, $8C, $18, $01
@@ -275,125 +273,19 @@ rom_83A4:
 ; -----------------------------------------------------------------------------
 
 ; Nametable data, starts with PPU address and terminates with $FFFF
-rom_84E4:
-	.byte $20, $00, $63, $00, $81, $81, $0B, $8A
-	.byte $02, $00, $0B, $8A, $81, $92, $4A, $00
-	.byte $81, $01, $0F, $00, $81, $01, $0A, $00
-	.byte $8A, $02, $03, $04, $05, $06, $07, $08
-	.byte $09, $0A, $0B, $06, $00, $8A, $02, $03
-	.byte $04, $05, $06, $07, $08, $09, $0A, $0B
-	.byte $06, $00, $8A, $0C, $0D, $0E, $0F, $10
-	.byte $11, $12, $13, $14, $15, $06, $00, $8A
-	.byte $0C, $0D, $0E, $0F, $10, $11, $12, $13
-	.byte $14, $15, $09, $00, $83, $16, $17, $18
-	.byte $0D, $00, $83, $16, $17, $18, $0A, $00
-	.byte $86, $02, $03, $08, $09, $0A, $0B, $07
-	.byte $00, $86, $02, $03, $08, $09, $0A, $0B
-	.byte $03, $00, $86, $02, $03, $08, $09, $0A
-	.byte $0B, $04, $00, $86, $0C, $0D, $12, $13
-	.byte $14, $15, $07, $00, $86, $0C, $0D, $12
-	.byte $13, $14, $15, $03, $00, $86, $0C, $0D
-	.byte $12, $13, $14, $15, $29, $00, $83, $19
-	.byte $1A, $1B, $04, $00, $84, $F0, $F1, $F2
-	.byte $F3, $15, $00, $83, $1F, $20, $21, $04
-	.byte $00, $84, $F4, $F9, $F6, $F7, $15, $00
-	.byte $8B, $25, $26, $27, $00, $28, $29, $00
-	.byte $F8, $F9, $FA, $FB, $0D, $00, $81, $2A
-	.byte $07, $00, $8B, $25, $2F, $30, $00, $31
-	.byte $32, $00, $F5, $FC, $FD, $FE, $0D, $00
-	.byte $81, $33, $07, $00, $86, $37, $38, $39
-	.byte $00, $3A, $3B, $12, $00, $81, $3C, $06
-	.byte $41, $87, $42, $43, $44, $45, $46, $47
-	.byte $48, $12, $00, $8E, $49, $50, $51, $52
-	.byte $53, $54, $55, $56, $57, $58, $59, $5A
-	.byte $5B, $5C, $12, $00, $8E, $5D, $92, $69
-	.byte $6A, $6B, $6C, $6D, $6E, $6F, $68, $70
-	.byte $71, $72, $73, $12, $00, $81, $74, $02
-	.byte $7E, $8C, $7F, $80, $68, $81, $6E, $82
-	.byte $68, $83, $84, $85, $86, $87, $10, $00
-	.byte $85, $88, $89, $92, $93, $94, $02, $68
-	.byte $8A, $95, $6E, $96, $97, $98, $99, $9A
-	.byte $9B, $9C, $9D, $0E, $00, $86, $9E, $9F
-	.byte $A0, $AA, $AB, $AC, $02, $68, $8A, $AD
-	.byte $AE, $AF, $B0, $B1, $B2, $B3, $68, $B4
-	.byte $B5, $0E, $00, $83, $B6, $B7, $68, $03
-	.byte $C1, $83, $C2, $C3, $C4, $05, $6E, $82
-	.byte $C5, $C6, $08, $6E, $82, $D0, $D4, $08
-	.byte $6E, $81, $C7, $02, $6E, $82, $CD, $CE
-	.byte $06, $6E, $82, $C5, $C6, $09, $6E, $82
-	.byte $D0, $D4, $09, $6E, $82, $D3, $CF, $08
-	.byte $D3, $81, $CF, $0A, $D3, $81, $CF, $0A
-	.byte $D3, $03, $00, $81, $D5, $02, $68, $86
-	.byte $D6, $D7, $D8, $D9, $DA, $DB, $07, $00
-	.byte $82, $DC, $DD, $02, $D9, $82, $DA, $DB
-	.byte $0A, $00, $81, $E2, $02, $68, $86, $D6
-	.byte $D7, $E3, $E4, $E5, $E6, $07, $00, $86
-	.byte $E7, $E8, $E9, $E4, $E5, $E6, $0A, $00
-	.byte $81, $E2, $02, $68, $85, $D6, $D7, $E3
-	.byte $EC, $ED, $09, $00, $84, $EE, $EF, $EC
-	.byte $ED, $08, $00, $08, $0F, $08, $A0, $08
-	.byte $AA, $02, $FF, $82, $7F, $DF, $03, $FF
-	.byte $81, $7F, $02, $FF, $82, $77, $DD, $03
-	.byte $FF, $81, $77, $02, $FF, $82, $77, $5D
-	.byte $03, $FF, $81, $57, $10, $FF ;, $81, $0F
-	.byte $FF, $FF
+rle_pit_left:
+.incbin "bin/stage_pit_left.rle"
 
 ; -----------------------------------------------------------------------------
 
 ; Nametable data, starts with PPU address and terminates with $FFFF
-rom_86C6:
-	.byte $20, $00, $77, $00, $50, $00, $81, $01
-	.byte $0F, $00, $81, $01, $0A, $00, $8A, $02
-	.byte $03, $04, $05, $06, $07, $08, $09, $0A
-	.byte $0B, $06, $00, $8A, $02, $03, $04, $05
-	.byte $06, $07, $08, $09, $0A, $0B, $06, $00
-	.byte $8A, $0C, $0D, $0E, $0F, $10, $11, $12
-	.byte $13, $14, $15, $06, $00, $8A, $0C, $0D
-	.byte $0E, $0F, $10, $11, $12, $13, $14, $15
-	.byte $09, $00, $83, $16, $17, $18, $0D, $00
-	.byte $83, $16, $17, $18, $0A, $00, $86, $02
-	.byte $03, $08, $09, $0A, $0B, $07, $00, $86
-	.byte $02, $03, $08, $09, $0A, $0B, $03, $00
-	.byte $86, $02, $03, $08, $09, $0A, $0B, $04
-	.byte $00, $86, $0C, $0D, $12, $13, $14, $15
-	.byte $07, $00, $86, $0C, $0D, $12, $13, $14
-	.byte $15, $03, $00, $86, $0C, $0D, $12, $13
-	.byte $14, $15, $24, $00, $83, $1C, $1D, $1E
-	.byte $1D, $00, $83, $22, $23, $24, $1B, $00
-	.byte $85, $2B, $00, $2C, $2D, $2E, $1B, $00
-	.byte $85, $34, $00, $35, $36, $2E, $1B, $00
-	.byte $85, $3D, $00, $3E, $3F, $40, $1B, $00
-	.byte $86, $4A, $4B, $4C, $4D, $4E, $4F, $06
-	.byte $41, $14, $00, $89, $5E, $5F, $60, $61
-	.byte $62, $63, $64, $65, $66, $03, $67, $14
-	.byte $00, $8C, $75, $76, $77, $68, $78, $6E
-	.byte $79, $7A, $7B, $7C, $7D, $A9, $14, $00
-	.byte $8A, $8A, $8B, $8C, $68, $8D, $6E, $8E
-	.byte $68, $8F, $90, $02, $91, $14, $00, $87
-	.byte $A1, $A2, $A3, $A4, $A5, $6E, $A6, $02
-	.byte $68, $83, $A7, $A8, $A9, $14, $00, $87
-	.byte $B8, $B9, $BA, $BB, $BC, $BD, $BE, $02
-	.byte $68, $83, $BF, $C0, $6E, $14, $00, $81
-	.byte $C8, $05, $6E, $84, $C9, $CA, $CB, $CC
-	.byte $02, $C1, $14, $00, $82, $C7, $C8, $06
-	.byte $6E, $82, $D1, $D2, $02, $6E, $14, $00
-	.byte $81, $CF, $08, $D3, $81, $CF, $02, $D3
-	.byte $14, $00, $86, $DC, $DD, $D9, $DE, $DF
-	.byte $E0, $02, $68, $81, $E1, $17, $00, $86
-	.byte $E7, $E8, $E9, $EA, $DF, $E0, $02, $68
-	.byte $81, $EB, $18, $00, $85, $EE, $EF, $EA
-	.byte $DF, $E0, $02, $68, $81, $EB, $17, $00
-	.byte $08, $0F, $08, $A0, $08, $AA, $84, $DF
-	.byte $FF, $7F, $DF, $03, $FF, $85, $7F, $DD
-	.byte $FF, $F7, $DD, $03, $FF, $82, $77, $DD
-	.byte $02, $FF, $81, $5D, $03, $FF, $81, $57
-	.byte $10, $FF ;, $81, $0F
-	.byte $FF, $FF
+rle_pit_right:
+.incbin "bin/stage_pit_right.rle"
 
 ; -----------------------------------------------------------------------------
 
 ; Nametable data, starts with PPU address and terminates with $FFFF
-rom_8834:
+rle_courtyard_left:
 	.byte $20, $00, $63, $00, $81, $81, $0B, $8A
 	.byte $02, $00, $0B, $8A, $81, $92, $43, $00
 	.byte $22, $01, $82, $C5, $C6, $0B, $01, $81
@@ -486,7 +378,7 @@ rom_8834:
 ; -----------------------------------------------------------------------------
 
 ; Nametable data, starts with PPU address and terminates with $FFFF
-rom_8AF2:
+rle_courtyard_right:
 	.byte $20, $00, $77, $00, $49, $00, $0C, $01
 	.byte $14, $00, $08, $01, $82, $C7, $C8, $02
 	.byte $01, $14, $00, $05, $01, $87, $10, $CF
@@ -535,7 +427,7 @@ rom_8AF2:
 ; -----------------------------------------------------------------------------
 
 ; Nametable data, starts with PPU address and terminates with $FFFF
-rom_8C4B:
+rle_palace_gates_left:
 	.byte $20, $00, $63, $00, $81, $81, $0B, $8A
 	.byte $02, $00, $0B, $8A, $81, $92, $43, $00
 	.byte $88, $01, $02, $03, $04, $05, $06, $07
@@ -631,7 +523,7 @@ rom_8C4B:
 ; -----------------------------------------------------------------------------
 
 ; Nametable data, starts with PPU address and terminates with $FFFF
-rom_8F17:
+rle_palace_gates_right:
 	.byte $20, $00, $60, $00, $60, $FF, $04, $09
 	.byte $81, $8F, $02, $90, $85, $91, $92, $93
 	.byte $94, $95, $14, $FF, $04, $09, $81, $96
@@ -686,7 +578,7 @@ rom_8F17:
 ; -----------------------------------------------------------------------------
 
 ; Nametable data, starts with PPU address and terminates with $FFFF
-rom_90A0:
+rle_warrior_shrine_left:
 	.byte $20, $00, $63, $00, $81, $81, $0B, $8A
 	.byte $02, $00, $0B, $8A, $81, $92, $43, $00
 	.byte $85, $01, $02, $03, $04, $05, $1B, $00
@@ -778,7 +670,7 @@ rom_90A0:
 ; -----------------------------------------------------------------------------
 
 ; Nametable data, starts with PPU address and terminates with $FFFF
-rom_934D:
+rle_warrior_shrine_right:
 	.byte $20, $00, $77, $00, $49, $00, $04, $FF
 	.byte $03, $00, $85, $05, $06, $07, $08, $09
 	.byte $18, $FF, $02, $00, $86, $10, $11, $12
@@ -829,7 +721,7 @@ rom_934D:
 ; -----------------------------------------------------------------------------
 
 ; Nametable data, starts with PPU address and terminates with $FFFF
-rom_94B2:
+rom_throne_room_left:
 	.byte $20, $00, $63, $00, $81, $81, $0B, $8A
 	.byte $02, $00, $0B, $8A, $81, $92, $43, $00
 	.byte $02, $01, $8E, $02, $03, $04, $01, $05
@@ -919,7 +811,7 @@ rom_94B2:
 ; -----------------------------------------------------------------------------
 
 ; Nametable data, starts with PPU address and terminates with $FFFF
-rom_974F:
+rom_throne_room_right:
 	.byte $20, $00, $40, $00, $77, $FF, $09, $FF
 	.byte $02, $01, $8A, $05, $06, $07, $08, $09
 	.byte $0A, $0B, $02, $03, $04, $14, $FF, $02
@@ -1368,7 +1260,7 @@ sub_match_fade_in:
 	bne :+
 		jsr sub_rom_C69C
 	:
-	jsr sub_rom_D422
+	jsr sub_fade_palettes_in
 	bcc :+
 		inc zp_game_substate
 	:
@@ -1443,7 +1335,7 @@ sub_match_fade_out:
 	rts
 ; ----------------
 	@C227:
-	jsr sub_rom_D440
+	jsr sub_fade_palettes_out
 	bcc @C271
 
 	lda zp_9E
