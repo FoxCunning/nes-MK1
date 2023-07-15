@@ -32,7 +32,7 @@ tbl_track_ptrs:
 	.word sfx_rayden			; $11	Announcer "Rayden"
 	.word sfx_sonya				; $12	Announcer "Sonya"
 	.word sfx_subzero			; $13	Announcer "Sub-Zero"
-	.word sfx_skorpion			; $14	Announcer "Skorpion"
+	.word sfx_scorpion			; $14	Announcer "Scorpion"
 	.word sfx_kano				; $15	Announcer "Kano"
 	.word sfx_cage				; $16	Announcer "Johnny Cage"
 	.word sfx_liukang			; $17	Announcer "Liu Kang"
@@ -454,12 +454,12 @@ sfx_subzero:
 
 ; -----------------------------------------------------------------------------
 
-sfx_skorpion:
+sfx_scorpion:
 	.byte $84
-	.word @sfx_skorpion_ch4
+	.word @sfx_scorpion_ch4
 	.byte $FF
 
-	@sfx_skorpion_ch4:
+	@sfx_scorpion_ch4:
 	.byte $F5, $01, $06, $FF
 
 ; -----------------------------------------------------------------------------

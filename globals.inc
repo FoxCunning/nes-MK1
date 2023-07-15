@@ -127,8 +127,9 @@ zp_7B = $7B     ;
 zp_7C = $7C     ;
 zp_7F = $7F     ;
 
-zp_80 = $80     ;
-zp_81 = $81     ;
+;zp_80 = $80     ;
+; Horizontal scroll value used in IRQ routines
+zp_irq_hor_scroll = $81 ;
 zp_82 = $82     ;
 zp_83 = $83     ;
 zp_84 = $84     ;

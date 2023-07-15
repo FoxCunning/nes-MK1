@@ -829,7 +829,7 @@ sub_announce_fighter_name:
 	.byte $12	; $05 Sonya
 	.byte $11	; $06 Rayden
 	.byte $17	; $07 Liu Kang
-	.byte $14	; $08 Skorpion
+	.byte $14	; $08 Scorpion
 
 ; -----------------------------------------------------------------------------
 

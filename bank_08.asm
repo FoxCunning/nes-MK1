@@ -10,7 +10,7 @@
 
 ; -----------------------------------------------------------------------------
 
-; Data pointers for Skorpion
+; Data pointers for Scorpion
 rom_08_8000:
 	.word rom_8004, rom_82C7
 

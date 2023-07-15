@@ -27,10 +27,10 @@ dmc_subzero:
 .incbin "audio/subzero.dmc"
 
 ; ----------------
-.export dmc_skorpion
+.export dmc_scorpion
 
-dmc_skorpion:
-.incbin "audio/skorpion.dmc"
+dmc_scorpion:
+.incbin "audio/scorpion.dmc"
 
 ; ----------------
 .export dmc_kano

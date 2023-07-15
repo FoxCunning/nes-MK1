@@ -1115,7 +1115,7 @@ rom_C97B:
 rom_C97F:
 	.byte $03, $01, $04, $80
 
-; Skorpion
+; Scorpion
 ;rom_C983:
 ;	.byte $03, $02, $01, $80
 rom_C987:
@@ -1931,7 +1931,7 @@ tbl_fighter_name_ptrs:
 	.word str_name_rayden
 	.word str_name_sonya
 	.word str_name_subzero
-	.word str_name_skorpion
+	.word str_name_scorpion
 	.word str_name_kano
 	.word str_name_cage
 	.word str_name_liukang
@@ -1944,7 +1944,7 @@ tbl_fighter_name_ptrs:
 	.word str_name_rayden
 	.word str_name_sonya
 	.word str_name_subzero
-	.word str_name_skorpion
+	.word str_name_scorpion
 	.word str_name_kano
 	.word str_name_cage
 	.word str_name_liukang
@@ -1964,7 +1964,7 @@ str_name_sonya:
 	.byte $05, $53, $4F, $4E, $59, $41
 str_name_subzero:
 	.byte $08, $53, $55, $42, $5C, $5A, $45, $52, $4F
-str_name_skorpion:
+str_name_scorpion:
 	.byte $08, $53, $43, $4F, $52, $50, $49, $4F, $4E
 str_name_kano:
 	.byte $04, $4B, $41, $4E, $4F
@@ -2065,7 +2065,7 @@ sub_finish_match_init:
 	sta zp_4D
 
 	lda #$40
-	sta zp_81
+	sta zp_irq_hor_scroll
 	sta ram_0414
 
 	lda #$01
@@ -2272,7 +2272,7 @@ sub_rom_D09F:
 	cmp rom_D0C5,X
 	bcs @D0C4
 
-	sta zp_81
+	sta zp_irq_hor_scroll
 	@D0C4:
 	rts
 
@@ -2679,7 +2679,7 @@ tbl_fighter_palette_ptrs:
 	.word @pal_rayden			; $00 Rayden
 	.word @pal_sonya			; $01 Sonya
 	.word @pal_subzero			; $02 Sub-Zero
-	.word @pal_skorpion			; $03 Skorpion
+	.word @pal_scorpion			; $03 Scorpion
 	.word @pal_kano				; $04 Kano
 	.word @pal_cage				; $05 Johnny Cage
 	.word @pal_liukang			; $06 Liu Kang
@@ -2693,7 +2693,7 @@ tbl_fighter_palette_ptrs:
 	.word @pal_rayden_alt		; $0C Alt Rayden
 	.word @pal_sonya_alt		; $0D Alt Sonya
 	.word @pal_subzero_alt		; $0E Alt Sub-Zero
-	.word @pal_skorpion_alt		; $0F Alt Skorpion
+	.word @pal_scorpion_alt		; $0F Alt Scorpion
 	.word @pal_kano_alt			; $10 Alt Kano
 	.word @pal_cage_alt			; $11 Alt Johnny Cage
 	.word @pal_liukang_alt		; $12 Alt Liu Kang
@@ -2705,21 +2705,21 @@ tbl_fighter_palette_ptrs:
 	.word @pal_rayden_alt ;.word @rom_D58E	; $17 Unused?
 	
 	@pal_rayden:
-	.byte $0E, $08, $2C, $20, $0E, $08, $26, $20
+	.byte $0E, $0F, $21, $20, $0E, $0F, $18, $28
 	@pal_sonya:
 	.byte $0E, $08, $18, $20, $0E, $08, $18, $36
 	@pal_subzero:
-	.byte $0E, $0F, $2C, $1C, $0E, $0F, $2C, $37
-	@pal_skorpion:
+	.byte $0E, $0F, $11, $01, $0E, $0F, $11, $27
+	@pal_scorpion:
 	.byte $0E, $0F, $27, $17, $0E, $0F, $27, $37
 	@pal_kano:
-	.byte $0E, $07, $27, $30, $0E, $07, $2C, $30
+	.byte $0E, $0F, $27, $20, $0E, $0F, $22, $20
 	@pal_cage:
-	.byte $0E, $08, $27, $37, $0E, $07, $27, $37
+	.byte $0E, $0F, $16, $27, $0E, $0F, $27, $37
 	@pal_liukang:
-	.byte $0E, $08, $16, $30, $0E, $07, $27, $37
+	.byte $0E, $0F, $16, $30, $0E, $0F, $17, $27
 	@pal_goro:
-	.byte $0E, $07, $27, $30, $0E, $07, $27, $37
+	.byte $0E, $0F, $27, $20, $0E, $0F, $17, $27
 	@pal_shangtsung:
 	.byte $0E, $1D, $00, $10, $0E, $0D, $0C, $17
 	;@rom_D51E:
@@ -2733,11 +2733,11 @@ tbl_fighter_palette_ptrs:
 	@pal_sonya_alt:
 	.byte $0E, $08, $15, $20, $0E, $08, $15, $36
 	@pal_subzero_alt:
-	.byte $00, $0F, $1C, $0C, $00, $0F, $1C, $37
-	@pal_skorpion_alt:
+	.byte $0E, $0F, $1C, $0C, $00, $0F, $1C, $37
+	@pal_scorpion_alt:
 	.byte $0E, $0F, $26, $16, $0E, $0F, $26, $37
 	@pal_kano_alt:
-	.byte $0E, $07, $27, $30, $0E, $07, $28, $30
+	.byte $0E, $0F, $27, $20, $0E, $07, $28, $30
 	@pal_cage_alt:
 	.byte $0E, $06, $26, $36, $0E, $08, $26, $36
 	@pal_liukang_alt:
@@ -2772,19 +2772,19 @@ tbl_bg_palette_ptrs:
 
 	@pal_goros_lair:
 	.byte $0E, $16, $2A, $28, $0E, $06, $16, $26
-	.byte $0E, $10, $10, $30, $0E, $00, $10, $20
+	.byte $0E, $08, $08, $20, $0E, $08, $00, $10
 	@pal_pit:
 	.byte $0E, $16, $2A, $28, $0E, $18, $28, $38
-	.byte $0E, $0C, $1C, $2C, $0E, $00, $10, $20
+	.byte $0E, $02, $12, $22, $0E, $08, $00, $10
 	@pal_courtyard:
-	.byte $0E, $16, $2A, $28, $0E, $1B, $27, $3C
-	.byte $0E, $05, $27, $3C, $0E, $00, $10, $3C
+	.byte $0E, $16, $2A, $28, $0E, $0C, $11, $21
+	.byte $0E, $05, $27, $21, $0E, $0C, $00, $21
 	@pal_palace_gates:
 	.byte $0E, $16, $2A, $28, $0E, $17, $27, $3C
 	.byte $0E, $17, $06, $3C, $0E, $00, $10, $3C
 	@pal_warrior_shrine:
 	.byte $0E, $16, $2A, $28, $0E, $21, $26, $20
-	.byte $0E, $18, $28, $38, $0E, $00, $10, $20
+	.byte $0E, $18, $28, $38, $0E, $08, $00, $10
 	@pal_throne_room:
 	.byte $0E, $16, $2A, $28, $0E, $0B, $18, $06
 	.byte $0E, $18, $28, $06, $0E, $00, $10, $06
@@ -2793,10 +2793,10 @@ tbl_bg_palette_ptrs:
 	.byte $0E, $0B, $1B, $11, $0E, $08, $18, $28
 	@rom_D620:
 	.byte $0E, $05, $27, $30, $0E, $0B, $1B, $2C
-	.byte $0E, $07, $16, $26, $0E, $0C, $1C, $2C
+	.byte $0E, $07, $16, $26, $0E, $02, $12, $22
 	@rom_D630:
 	.byte $0E, $05, $27, $30, $0E, $0B, $1B, $3B
-	.byte $0E, $00, $10, $20, $0E, $06, $16, $26
+	.byte $0E, $08, $00, $10, $0E, $06, $16, $26
 	@rom_D640:
 	.byte $0E, $31, $20, $10, $0E, $3B, $20, $10
 	.byte $0E, $31, $20, $17, $0E, $06, $38, $16
@@ -3176,7 +3176,7 @@ sub_rom_D784:
 	sta zp_1B
 	lda zp_82,X
 	sec
-	sbc zp_81
+	sbc zp_irq_hor_scroll
 	sta zp_86,Y
 	sta zp_07
 
@@ -3218,7 +3218,7 @@ tbl_fighter_sprite_banks:
 	.byte $05	; Rayden
 	.byte $06	; Sonya
 	.byte $07	; Sub-Zero
-	.byte $08	; Skorpion
+	.byte $08	; Scorpion
 	.byte $09	; Kano
 	.byte $0A	; Cage
 	.byte $0B	; Liu Kang
