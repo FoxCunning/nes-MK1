@@ -130,12 +130,12 @@ reset:
 
 	@main_loop:
 		inc zp_22
-		lda zp_F7	;lda a:zp_F7
+		lda zp_F7
 	beq @main_loop
 
-		dec zp_F7	;dec a:zp_F7
+		dec zp_F7
 		lda #$01
-		sta zp_FD	;sta a:zp_FD
+		sta zp_FD
 
 		jsr sub_state_machine_start
 		jsr sub_rom_E902
@@ -157,7 +157,7 @@ reset:
 		jsr sub_process_all_sound
 
 		lda #$00
-		sta zp_FD	;sta a:zp_FD
+		sta zp_FD
 
 	jmp @main_loop
 
@@ -203,7 +203,7 @@ nmi:
 	lda zp_nmi_ppu_ptr_hi
 	beq @E14C
 
-		jsr sub_rom_E272
+		jsr sub_do_ppu_transfer
 
 	@E14C:
 	lda zp_machine_state_0
@@ -243,7 +243,6 @@ nmi:
 		sta mmc3_irq_enable
 		
 	@E186:
-	;nop
 	lda #$80
 	sta mmc3_bank_select
 	lda zp_chr_bank_0 ;a:zp_chr_bank_0
@@ -310,34 +309,6 @@ nmi:
 	pla
 	plp
 	rti
-
-; -----------------------------------------------------------------------------
-
-; Potentially unused
-sub_rom_E20E:
-	lda #$00
-	sta zp_00
-	sta zp_01
-	ldy #$02
-	ldx #$07
-	@E218:
-	sta (zp_00),Y
-	iny
-	cpy #$00
-	bne @E218
-
-	inc zp_01
-	dex
-	bpl @E218
-
-	sta zp_00
-	sta zp_01
-	rts
-
-; -----------------------------------------------------------------------------
-
-sub_rom_E229:
-	rts
 
 ; -----------------------------------------------------------------------------
 sub_rom_E22A:
@@ -409,7 +380,7 @@ sub_hide_all_sprites:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_E272:
+sub_do_ppu_transfer:
 	lda zp_47
 	ora zp_ppu_control_backup
 	and #$7F
@@ -578,16 +549,18 @@ sub_irq_handler_00:
 
 ; -----------------------------------------------------------------------------
 
+; This controls the parallax scrolling effect for the Pit
 sub_irq_handler_01:
 	lda ram_0435
 
 	bne :+
-
+		; Top
 		sta mmc3_irq_disable
 		sta mmc3_irq_enable
 		lda #$1B
 		sta mmc3_irq_latch
 		lda PpuStatus_2002
+
 		lda zp_frame_counter
 		and #$07
 		bne @E497
@@ -597,31 +570,30 @@ sub_irq_handler_01:
 		clc
 		adc zp_irq_hor_scroll
 		sta PpuScroll_2005
-		ldy #$E0
+		ldy #$E0		
 		jmp sub_rom_E41B
-
 	:
 	cmp #$01
 	bne :+
-
+		; Middle
 		sta mmc3_irq_disable
 		sta mmc3_irq_enable
 		lda #$15
 		sta mmc3_irq_latch
 		lda PpuStatus_2002
+
 		lda zp_frame_counter
 		and #$03
 		bne @E4BD
-
-		inc ram_0440
+			inc ram_0440
 		@E4BD:
 		lda ram_0440
 		clc
 		adc zp_irq_hor_scroll
 		sta PpuScroll_2005
 		inc ram_0435
-
 	:
+	; Bottom
 	sta mmc3_irq_disable
 	lda PpuStatus_2002
 	lda zp_irq_hor_scroll
@@ -664,7 +636,7 @@ sub_irq_handler_02:
 	inx
 	iny
 	stx mmc3_bank_select
-	lda zp_game_substate	;a:zp_7A
+	lda zp_game_substate
 	cmp #$05
 	bcs @E54E
 
@@ -735,7 +707,7 @@ sub_irq_handler_04:
 	lda ram_0435
 
 	bne :+
-
+		; Top
 		sta mmc3_irq_disable
 		sta mmc3_irq_enable
 		lda #$40
@@ -746,6 +718,7 @@ sub_irq_handler_04:
 		ldy #$24
 		jmp sub_rom_E41B
 	:
+	; Bottom
 	sta mmc3_irq_disable
 	lda PpuStatus_2002
 	lda zp_irq_hor_scroll ;a:zp_81
@@ -1029,49 +1002,12 @@ sub_irq_handler_11:
 
 ; -----------------------------------------------------------------------------
 
-; Potentially unused
-sub_rom_E792:
-	ldy #$00
-	ldx #$00
-	@E796:
-	lda PpuStatus_2002
-	lda ram_067B
-	sta PpuAddr_2006
-	lda zp_nmi_ppu_ptr_lo
-	sta PpuAddr_2006
-	@E7A4:
-	lda ram_ppu_data_buffer,X
-	sta PpuData_2007
-	iny
-	inx
-	cpy zp_nmi_ppu_cols
-	bcc @E7A4
-
-	lda zp_nmi_ppu_ptr_lo
-	clc
-	adc #$08
-	sta zp_nmi_ppu_ptr_lo
-	bcc @E7BC
-
-	inc ram_067B
-	@E7BC:
-	ldy #$00
-	dec zp_nmi_ppu_rows
-	bne @E796
-
-	lda #$00
-	sta ram_067B
-	rts
-
-; -----------------------------------------------------------------------------
-
 sub_state_machine_start:
 	;lda a:zp_machine_state_0
 	lda zp_machine_state_0
 	jsr sub_trampoline	; The sub will pull from the stack and jump, so this is
 						; basically a JMP with parameter from the table below
 ; ----------------
-rom_E7CE:
 	.word sub_prg_banks_4_5			; $00
 	.word sub_rom_EA13				; $01
 	.word sub_rom_E7F5				; $02
@@ -1096,14 +1032,6 @@ sub_prg_banks_4_5:
 	stx mmc3_bank_select
 	sta mmc3_bank_data
 	jmp sub_state_machine_0
-	; Unreachable
-	;rts
-
-; -----------------------------------------------------------------------------
-
-; Potentially unused
-;sub_rom_E7F4:
-;	rts
 
 ; -----------------------------------------------------------------------------
 
@@ -1114,45 +1042,45 @@ sub_rom_E7F5:
 	sta a:zp_machine_state_0
 
 	ldx ram_040C
-	lda a:zp_F2,X	; WHY?!
+	lda zp_F2,X ;a:zp_F2,X
 	bpl @E80B
 
 		@E805:
 		lda #$04
-		sta a:zp_machine_state_1		; ???
+		sta zp_machine_state_1 ;a:zp_machine_state_1
 		rts
 ; ----------------
 	@E80B:
-	lda a:zp_F2		; ???
-	eor a:zp_F3		; ???
+	lda zp_F2 ;a:zp_F2
+	eor zp_F3 ;a:zp_F3
 	and #$80
 	beq @E805
 
 		lda #$03
-		sta a:zp_machine_state_1		; ???
+		sta zp_machine_state_1 ;a:zp_machine_state_1
 		lda ram_0100
 		asl A
 		asl A
 		clc
-		adc a:zp_5F		; ???
+		adc zp_5F ;a:zp_5F
 		tax
-		inc a:zp_61		; ???
-		lda a:zp_61		; ???
+		inc zp_61 ;a:zp_61
+		lda zp_61 ;a:zp_61
 		cmp rom_E849,X
 		bcc :+
 
 			lda #$00
-			sta a:zp_61		; ???
-			inc a:zp_5F		; ???
-			lda a:zp_5F		; ???
+			sta zp_61 ;a:zp_61
+			inc zp_5F ;a:zp_5F
+			lda zp_5F ;a:zp_5F
 			cmp #$04
 			bcc :+
 
 				; New machine state: 2,6,0
 				lda #$00
-				sta a:zp_machine_state_2		; ???
+				sta zp_machine_state_2 ;a:zp_machine_state_2
 				lda #$06
-				sta a:zp_machine_state_1		; ???
+				sta zp_machine_state_1 ;a:zp_machine_state_1
 	:
 	rts
 
@@ -1160,21 +1088,6 @@ sub_rom_E7F5:
 
 rom_E849:
 	.byte $07, $03, $01, $01, $0E, $03, $01, $01
-
-; -----------------------------------------------------------------------------
-
-; Potentially unused
-sub_rom_E851:
-	lda #$00
-	sta a:zp_machine_state_0	; ???
-	lda #$36	; Useless: immediately overwritten
-	; This would change CHR A12 inversion and then crash the game
-	lda #$04
-	sta rom_8C00+0
-	lda #$05
-	sta rom_8C00+1
-	jsr sub_rom_8000	; This would try to execute data as code
-	rts
 
 ; -----------------------------------------------------------------------------
 
@@ -1188,21 +1101,6 @@ sub_clear_machine_states:
 	;;lda #$00
 	;sta a:zp_machine_state_1	; ???
 	;sta a:zp_machine_state_0	; ???
-	rts
-
-; -----------------------------------------------------------------------------
-
-; Potentially unused
-sub_rom_E874:
-	lda #$00
-	sta a:zp_machine_state_0	; ???
-	lda #$02
-	; Like the sub at $E851, this would crash the game
-	lda #$04
-	sta rom_8C00+0
-	lda #$05
-	sta rom_8C00+1
-	jsr sub_rom_8000
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1225,35 +1123,35 @@ sub_rom_E893:
 ; -----------------------------------------------------------------------------
 
 sub_rom_E89B:
-	lda a:zp_controller1	; ???
+	lda zp_controller1 ;a:zp_controller1
 	and #$40	; Button B
 	beq @E8A7
 
 		lda #$00
 		sta ram_040C
 	@E8A7:
-	lda a:zp_controller1	; ???
+	lda zp_controller1 ;a:zp_controller1
 	and #$80	; Button A
 	beq @E8B3
 
 		lda #$01
 		sta ram_040C
 	@E8B3:
-	lda a:zp_controller1	; ???
+	lda zp_controller1 ;a:zp_controller1
 	and #$10	; Start Button
 	beq @E8C4
 
-	lda a:zp_5E	; ???
+	lda zp_5E ;a:zp_5E
 	bne @E8C5
 
 		lda #$02
-		sta a:zp_machine_state_0	; ???
+		sta zp_machine_state_0 ;a:zp_machine_state_0
 	@E8C4:
 	rts
 ; ----------------
 	@E8C5:
 	lda #$03
-	sta a:zp_machine_state_0	; ???
+	sta zp_machine_state_0 ;a:zp_machine_state_0
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1261,12 +1159,12 @@ sub_rom_E89B:
 ; Sound / music stuff
 sub_rom_E8CB:
 	lda #$86
-	sta a:zp_prg_bank_select_backup	; ???
+	sta zp_prg_bank_select_backup ;a:zp_prg_bank_select_backup
 	sta mmc3_bank_select
 	lda #$02
 	sta mmc3_bank_data
 	lda #$87
-	sta a:zp_prg_bank_select_backup	; ???
+	sta zp_prg_bank_select_backup ;a:zp_prg_bank_select_backup
 	sta mmc3_bank_select
 	lda #$03
 	sta mmc3_bank_data

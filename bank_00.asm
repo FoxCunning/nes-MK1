@@ -1260,7 +1260,7 @@ sub_match_fade_in:
 	bne :+
 		jsr sub_rom_C69C
 	:
-	jsr sub_rom_D422
+	jsr sub_fade_palettes_in
 	bcc :+
 		inc zp_game_substate
 	:
@@ -1335,7 +1335,7 @@ sub_match_fade_out:
 	rts
 ; ----------------
 	@C227:
-	jsr sub_rom_D440
+	jsr sub_fade_palettes_out
 	bcc @C271
 
 	lda zp_9E
