@@ -21,7 +21,7 @@ sub_rom_03_A000:
 sub_rom_A00C:
 	tax
 	stx zp_7C
-	lda zp_8E,X
+	lda zp_plr1_cur_anim,X
 	cmp #$0B
 	bcc @A02A
 
@@ -31,8 +31,8 @@ sub_rom_A00C:
 	txa
 	eor #$01
 	tay
-	lda zp_86,X
-	cmp zp_86,Y
+	lda zp_plr1_x_pos,X
+	cmp zp_plr1_x_pos,Y
 	beq @A030
 
 	bcs @A02B
@@ -57,7 +57,7 @@ sub_rom_A00C:
 	sta zp_ptr4_lo
 	lda rom_A10C+1,Y
 	sta zp_ptr4_hi
-	lda zp_8E,X
+	lda zp_plr1_cur_anim,X
 	sec
 	sbc #$0B
 	asl A
@@ -119,14 +119,14 @@ sub_rom_A00C:
 	iny
 	@A08F:
 	lda (zp_ptr3_lo),Y
-	cmp zp_9D
+	cmp zp_players_y_distance
 	bcc @A0BD
 
 	ldy #$05
 	txa
 	eor #$01
 	tax
-	lda zp_8E,X
+	lda zp_plr1_cur_anim,X
 	cmp #$27
 	beq @A0BD
 
@@ -148,7 +148,7 @@ sub_rom_A00C:
 
 	lda #$2C
 	@A0B7:
-	sta zp_8E,X
+	sta zp_plr1_cur_anim,X
 	lda #$00
 	sta zp_90,X
 	@A0BD:
@@ -163,8 +163,8 @@ sub_rom_A00C:
 	bne @A0DA
 
 	@A0C8:
-	lda zp_88,X
-	cmp zp_4A
+	lda zp_plr1_y_pos,X
+	cmp zp_sprites_base_y
 	beq @A0D2
 
 	@A0CE:
@@ -178,17 +178,17 @@ sub_rom_A00C:
 
 	lda (zp_ptr3_lo),Y
 	@A0DA:
-	cmp zp_8E,X
+	cmp zp_plr1_cur_anim,X
 	beq @A0BD
 
-	sta zp_8E,X
+	sta zp_plr1_cur_anim,X
 	lda #$00
 	sta zp_90,X
 	iny
 	lda (zp_ptr3_lo),Y
 	ldx zp_7C
-	sta zp_EF,X
-	inc zp_EF,X
+	sta zp_gained_score_idx,X
+	inc zp_gained_score_idx,X
 	pha
 	iny
 	lda (zp_ptr3_lo),Y
@@ -202,9 +202,9 @@ sub_rom_A00C:
 	eor #$01
 	tax
 	lda rom_A108,Y
-	sta zp_A7,X
+	sta zp_plr1_dmg_counter,X
 	lda #$01
-	sta zp_F1
+	sta zp_player_hit_counter
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -714,7 +714,7 @@ sub_rom_A5F0:
 	lda zp_F2,Y
 	bpl @A60B
 
-	lda zp_8E,Y
+	lda zp_plr1_cur_anim,Y
 	beq @A601
 
 	cmp #$03
@@ -802,7 +802,7 @@ sub_rom_A63B:
 	iny
 	lda (zp_ptr3_lo),Y
 	sta zp_ptr4_hi
-	lda zp_8E,X
+	lda zp_plr1_cur_anim,X
 	tay
 	lda (zp_ptr4_lo),Y
 	bmi @A679
@@ -921,11 +921,11 @@ sub_rom_A773:
 	bne @A7B0
 
 	ldx zp_7B
-	lda zp_88,X
-	cmp zp_4A
+	lda zp_plr1_y_pos,X
+	cmp zp_sprites_base_y
 	bne @A7A5
 
-	lda zp_8E,X
+	lda zp_plr1_cur_anim,X
 	cmp #$09
 	beq @A7A5
 
@@ -952,7 +952,7 @@ sub_rom_A773:
 	bne @A7B0
 
 	@A7AB:
-	cmp zp_8E,Y
+	cmp zp_plr1_cur_anim,Y
 	beq @A7B5
     
 	@A7B0:
@@ -961,7 +961,7 @@ sub_rom_A773:
 	@A7B5:
 	lda zp_ptr1_lo
 	and #$3F
-	sta zp_8E,Y
+	sta zp_plr1_cur_anim,Y
 	sty zp_8C
 	rts
 

@@ -1003,7 +1003,7 @@ sub_rom_D359:
 	cmp #$58
 	bcc @D387
 
-	lda zp_8E,X
+	lda zp_plr1_cur_anim,X
 	cmp #$2E
 	beq @D375
 
@@ -1014,7 +1014,7 @@ sub_rom_D359:
 	beq @D38B
 
 	lda #$2E
-	sta zp_8E,X
+	sta zp_plr1_cur_anim,X
 	lda #$00
 	sta zp_90,X
 	@D375:
@@ -1030,14 +1030,14 @@ sub_rom_D359:
 	bne @D38B
 
 	@D387:
-	lda zp_A7,X
+	lda zp_plr1_dmg_counter,X
 	bne @D38C
 
 	@D38B:
 	rts
 ; ----------------
 	@D38C:
-	dec zp_A7,X
+	dec zp_plr1_dmg_counter,X
 	inc zp_plr1_damage,X
 	lda #$20
 	sta PpuAddr_2006
@@ -1151,8 +1151,8 @@ sub_init_game_mode:
 
 	; Select stage music
 	ldx ram_irq_routine_idx
-	lda @rom_C0C0,X
-	sta zp_4A
+	lda @tbl_y_pos_offsets,X
+	sta zp_sprites_base_y
 	txa
 	clc
 	adc #$25	; Stage music offset
@@ -1192,7 +1192,7 @@ sub_init_game_mode:
 
 ; ----------------
 
-	@rom_C0C0:
+	@tbl_y_pos_offsets:
 	.byte $DA, $D0, $DA, $DA, $DA, $DA
 
 ; -----------------------------------------------------------------------------
@@ -1360,7 +1360,7 @@ sub_announcer_text:
 sub_match_eval:
 	inc zp_9E
 	ldy #$00
-	sty zp_F1
+	sty zp_player_hit_counter
 	jsr sub_rom_C207
 	iny
 	jsr sub_rom_C207
@@ -1392,11 +1392,11 @@ sub_rom_C207:
 .export sub_match_fade_out
 
 sub_match_fade_out:
-	lda zp_F1
+	lda zp_player_hit_counter
 	cmp #$40
 	bcs @C227
 
-	inc zp_F1
+	inc zp_player_hit_counter
 	rts
 ; ----------------
 	@C227:
@@ -1441,7 +1441,7 @@ sub_match_fade_out:
 	lda #$00
 	sta ram_067D
 	sta zp_game_substate
-	sta zp_F1
+	sta zp_player_hit_counter
 	@C271:
 	rts
 

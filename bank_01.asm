@@ -99,12 +99,11 @@ sub_match_loop:
 ; -----------------------------------------------------------------------------
 
 sub_match_hit:
-	jsr sub_rom_C79C
+	jsr sub_match_hit_loop
 	lda zp_5E
-	bne @C185
-
-	jsr sub_rom_C695
-	@C185:
+	bne :+
+		jmp sub_rom_C695
+	:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -133,9 +132,9 @@ sub_match_victory:
 	and #$03
 	bne @C1AF
 
-	lda #$22
+	lda #$22	; Silence everything
 	sta ram_req_song
-	lda #$03
+	lda #$03	; Bleep
 	sta ram_req_sfx
 	@C1AF:
 	ldy #$00
@@ -155,7 +154,7 @@ sub_match_victory:
 	@C1C3:
 	sty zp_7C
 	stx zp_7B
-	jsr sub_rom_C675
+	jsr sub_clear_score_display
 	ldx zp_7B
 	lda #$01
 	sta zp_05
@@ -234,7 +233,7 @@ sub_rom_C2A8:
 	sta zp_4C,Y
 	@C2C4:
 	lda #$1E
-	cmp zp_8E,Y
+	cmp zp_plr1_cur_anim,Y
 
 	beq @C2CC
 	@C2CB:
@@ -250,19 +249,19 @@ sub_rom_C2A8:
 	lda zp_8A,Y
 	bne @C2E6
 
-		lda zp_86,Y
+		lda zp_plr1_x_pos,Y
 		clc
 		adc @rom_C35F,X
 		jmp @C2ED
 
 	@C2E6:
-	lda zp_86,Y
+	lda zp_plr1_x_pos,Y
 	sec
 	sbc @rom_C35F,X
 	@C2ED:
-	sta ram_0436,Y
+	sta ram_ranged_atk_x_pos,Y
 	@C2F0:
-	lda ram_0436,Y
+	lda ram_ranged_atk_x_pos,Y
 	cmp #$E8
 	bcs @C2FB
 
@@ -271,7 +270,7 @@ sub_rom_C2A8:
 
 	@C2FB:
 	lda #$00
-	sta zp_8E,Y
+	sta zp_plr1_cur_anim,Y
 	sta zp_90,Y
 	rts
 ; ----------------
@@ -279,7 +278,7 @@ sub_rom_C2A8:
 	tya
 	eor #$01
 	tax
-	lda zp_8E,X
+	lda zp_plr1_cur_anim,X
 	bne @C310
 
 	lda zp_90,X
@@ -289,11 +288,11 @@ sub_rom_C2A8:
 	cmp #$27
 	beq @C317
 
-	jsr sub_rom_C5B1
+	jsr sub_ranged_attack
 	@C317:
-	lda ram_0436,Y
+	lda ram_ranged_atk_x_pos,Y
 	sta zp_05
-	lda zp_8E,Y
+	lda zp_plr1_cur_anim,Y
 	cmp #$0D
 	bne @C327
 
@@ -332,8 +331,8 @@ sub_rom_C2A8:
 	lda #$03
 	@C357:
 	clc
-	adc ram_0436,Y
-	sta ram_0436,Y
+	adc ram_ranged_atk_x_pos,Y
+	sta ram_ranged_atk_x_pos,Y
 	rts
 
 ; ----------------
@@ -391,7 +390,7 @@ sub_rom_C36B:
 	rts
 ; ----------------
 	@C3B0:
-	lda ram_0436,Y
+	lda ram_ranged_atk_x_pos,Y
 	sta zp_05
 	lda zp_06
 	clc
@@ -523,31 +522,33 @@ sub_rom_C4B2:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_C549:
-	lda ram_0436,Y
-	cmp zp_86,X
+; Returns the distance between the opponent player's hitbox and an active
+; fireball sprite's hitbox (X only)
+sub_calc_ranged_atk_distance:
+	lda ram_ranged_atk_x_pos,Y
+	cmp zp_plr1_x_pos,X
 	bcs @C558
 
-	lda zp_86,X
+	lda zp_plr1_x_pos,X
 	sec
-	sbc ram_0436,Y
+	sbc ram_ranged_atk_x_pos,Y
 	bne @C55B
 
 	@C558:
 	sec
-	sbc zp_86,X
+	sbc zp_plr1_x_pos,X
 	@C55B:
 	rts
 
 ; -----------------------------------------------------------------------------
 
 sub_rom_C572:
-	lda zp_8E,X
-	cmp #$1E
+	lda zp_plr1_cur_anim,X
+	cmp #$1E	; Parry animation (opponent)
 	bne @C581
 
-	lda zp_8E,Y
-	cmp #$1E
+	lda zp_plr1_cur_anim,Y
+	cmp #$1E	; Parry animation (attacker)
 	beq @C58C
 
 	bne @C5A2
@@ -556,7 +557,7 @@ sub_rom_C572:
 	cmp #$0D
 	bne @C5A2
 
-	lda zp_8E,Y
+	lda zp_plr1_cur_anim,Y
 	cmp #$0D
 	bne @C5A2
 
@@ -565,12 +566,12 @@ sub_rom_C572:
 	cmp #$05
 	bcc @C5A2
 
-	lda ram_0436,X
-	cmp ram_0436,Y
+	lda ram_ranged_atk_x_pos,X
+	cmp ram_ranged_atk_x_pos,Y
 	bcc @C5A4
 
 	sec
-	sbc ram_0436,Y
+	sbc ram_ranged_atk_x_pos,Y
 	@C59E:
 	cmp #$08
 	bcc @C5AD
@@ -580,9 +581,9 @@ sub_rom_C572:
 	rts
 ; ----------------
 	@C5A4:
-	lda ram_0436,Y
+	lda ram_ranged_atk_x_pos,Y
 	sec
-	sbc ram_0436,X
+	sbc ram_ranged_atk_x_pos,X
 	bne @C59E
 	
 	@C5AD:
@@ -592,26 +593,28 @@ sub_rom_C572:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_C5B1:
+; Parameters:
+; Y = index of player launching the attack (0 for player one, 1 for player two)
+sub_ranged_attack:
 	tya
-	eor #$01
-	tax
+	eor #$01	; Sets X = !Y (This might be unnecessary, because it was already
+	tax			; 				done before the call)
 	jsr sub_rom_C572
-	bcs @C601
+	bcs @player_hit_anim
 
-	lda zp_4A
+	lda zp_sprites_base_y
 	sec
-	sbc #$21
-	cmp zp_88,X
-	bcs @C60F
+	sbc #$21	; Hit box "height" = 33 pixels
+	cmp zp_plr1_y_pos,X
+	bcs @ranged_atk_return
 
-	jsr sub_rom_C549
-	cmp #$10
-	bcs @C60F
+	jsr sub_calc_ranged_atk_distance
+	cmp #$10	; Hit box "width" = 16 pixels
+	bcs @ranged_atk_return
 
-	lda zp_8E,X
-	cmp #$01
-	beq @C60F
+	lda zp_plr1_cur_anim,X
+	cmp #$01	; Crouching = no hit
+	beq @ranged_atk_return
 
 	cmp #$2B
 	beq @C60D
@@ -625,44 +628,51 @@ sub_rom_C5B1:
 	cmp #$05
 	beq @C5FB
 
-	lda #$01
-	sta zp_F1
+	lda #$01	; Start the counter
+	sta zp_player_hit_counter
+
 	lda #$08
-	sta zp_A7,X
+	sta zp_plr1_dmg_counter,X	; Opponent
 	lda #$03
-	sta zp_EF,Y
-	lda zp_88,X
-	cmp zp_4A
+	sta zp_gained_score_idx,Y	; Attacker
+
+	; TODO Special ranged attacks (Scorpion / Sub-Zero)
+
+	; Check if a player was hit whilst airborne
+	lda zp_plr1_y_pos,X
+	cmp zp_sprites_base_y
 	bne @C5F7
 
-	lda #$30
-	bne @C601
+	lda #$30	; Airborne hit
+	bne @player_hit_anim
 
 	@C5F7:
 	lda #$2E
-	bne @C601
+	bne @player_hit_anim
 
 	@C5FB:
 	lda #$2C
-	bne @C601
+	bne @player_hit_anim
 
 	@C5FF:
 	lda #$2B
-	@C601:
-	sta zp_8E,X
+
+	@player_hit_anim:
+	sta zp_plr1_cur_anim,X	; Oppoent
 	lda #$00
 	sta zp_90,X
-	sta zp_8E,Y
+	sta zp_plr1_cur_anim,Y	; Attacker
 	sta zp_90,Y
 	@C60D:
 	pla
 	pla
-	@C60F:
+	@ranged_atk_return:
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_C675:
+; Displays zero on the score above the health bars for both players
+sub_clear_score_display:
 	lda #$20
 	sta zp_nmi_ppu_ptr_hi
 	lda #$44
@@ -675,7 +685,7 @@ sub_rom_C675:
 
 	ldy #$00
 	@C689:
-		lda rom_C76C,Y
+		lda tbl_score_zero,Y
 		sta ram_ppu_data_buffer,Y
 	iny
 	cpy #$1A
@@ -687,13 +697,13 @@ sub_rom_C675:
 .export sub_rom_C69C
 
 sub_rom_C695:
-	lda zp_F1
+	lda zp_player_hit_counter
 	cmp #$02
 	beq sub_rom_C69C
 		rts
 ; ----------------
 sub_rom_C69C:
-	jsr sub_rom_C675
+	jsr sub_clear_score_display
 	ldy #$00
 	sty zp_7C
 	ldx #$00
@@ -712,13 +722,14 @@ sub_rom_C6BA:
 ; -----------------------------------------------------------------------------
 
 sub_rom_C6BB:
-	lda zp_EF,Y
+	lda zp_gained_score_idx,Y
 	asl A
 	tax
 	lda rom_C760+0,X
 	sta zp_05
 	lda rom_C760+1,X
 	sta zp_06
+	
 	ldx zp_7B
 ; ----------------
 sub_rom_C6CC:
@@ -811,7 +822,7 @@ rom_C76A:
 
 ; -----------------------------------------------------------------------------
 
-rom_C76C:
+tbl_score_zero:
 	.byte $FF, $FF, $FF, $FF, $FF, $B0, $FF, $FF
 	.byte $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
 	.byte $FF, $FF, $FF, $FF, $FF, $FF, $FF, $B0
@@ -837,20 +848,22 @@ sub_rom_C789:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_C79C:
-	lda zp_F1
+; Acts as a counter from 15 to 0, after which the machine state returns to
+; the main match loop
+sub_match_hit_loop:
+	lda zp_player_hit_counter
 	cmp #$0F
-	bcc @C7AD
+	bcc :+
 
-	lda #$00
-	sta zp_EF
-	sta zp_F0
-	sta zp_F1
-	dec zp_game_substate
-	rts
+		lda #$00
+		sta zp_gained_score_idx
+		sta zp_F0
+		sta zp_player_hit_counter
+		dec zp_game_substate
+		rts
 ; ----------------
-	@C7AD:
-	inc zp_F1
+	:
+	inc zp_player_hit_counter
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -874,7 +887,7 @@ sub_rom_C7B0:
 	ldx zp_7C
 ; ----------------
 sub_rom_C7C6:
-	lda zp_8E,X
+	lda zp_plr1_cur_anim,X
 	cmp #$28
 	beq @C800
 
@@ -936,8 +949,8 @@ sub_rom_C833:
 ; ----------------
 sub_rom_C838:
 	ldx zp_7C
-	lda zp_88,X
-	cmp zp_4A
+	lda zp_plr1_y_pos,X
+	cmp zp_sprites_base_y
 	bne @C875
 
 	lda ram_043D
@@ -967,7 +980,7 @@ sub_rom_C838:
 	sta zp_4C,Y
 	@C86A:
 	lda ram_043E
-	cmp zp_8E,Y
+	cmp zp_plr1_cur_anim,Y
 	beq @C875
 
 	jsr sub_rom_CA4F
@@ -1187,7 +1200,7 @@ sub_rom_C9EC:
 	iny
 ; ----------------
 sub_rom_C9F2:
-	lda zp_8E,Y
+	lda zp_plr1_cur_anim,Y
 	cmp #$2A
 	bne @CA04
 
@@ -1264,7 +1277,7 @@ sub_rom_CA19:
 
 sub_rom_CA4F:
 	ldy zp_7C
-	sta zp_8E,Y
+	sta zp_plr1_cur_anim,Y
 	lda #$00
 	sta zp_90,Y
 	sty zp_8C
@@ -1331,7 +1344,7 @@ sub_rom_CAA3:
 	cmp #$03
 	bcs @CABF
 
-	lda zp_8E,X
+	lda zp_plr1_cur_anim,X
 	cmp #$09
 	beq @CAB3
 
@@ -1357,7 +1370,7 @@ sub_rom_CAC0:
 	cmp #$03
 	bcc @CAE4
 
-	lda zp_8E,Y
+	lda zp_plr1_cur_anim,Y
 	cmp #$27
 	bne @CAE4
 
@@ -1366,7 +1379,7 @@ sub_rom_CAC0:
 	bne @CAE4
 
 	lda #$28
-	sta zp_8E,Y
+	sta zp_plr1_cur_anim,Y
 	lda #$00
 	sta zp_E5,Y
 	sta zp_90,Y
@@ -1400,7 +1413,7 @@ rom_CB0A:
 ; -----------------------------------------------------------------------------
 
 sub_rom_CB0C:
-	lda zp_8E,Y
+	lda zp_plr1_cur_anim,Y
 	cmp #$2E
 	beq @CB1B
 
@@ -1415,14 +1428,14 @@ sub_rom_CB0C:
 	cmp zp_90,Y
 	bcs @CB7E
 
-	lda zp_4A
+	lda zp_sprites_base_y
 	sec
 	sbc #$22
 	sta zp_ptr1_lo
 	sec
 	sbc #$38
 	sta zp_ptr1_hi
-	lda zp_88,Y
+	lda zp_plr1_y_pos,Y
 	cmp zp_ptr1_lo
 	bcs @CB5A
 
@@ -1438,41 +1451,41 @@ sub_rom_CB0C:
 	bcs @CB5A
 
 	lda #$34
-	sta zp_8E,Y
+	sta zp_plr1_cur_anim,Y
 	lda #$0A
 	sta zp_90,Y
 	lda zp_ptr1_hi
 	clc
 	adc #$0C
-	sta zp_88,Y
+	sta zp_plr1_y_pos,Y
 	rts
 ; ----------------
 	@CB5A:
-	lda zp_4A
+	lda zp_sprites_base_y
 	sec
 	sbc #$1A
 	sta zp_ptr1_lo
-	lda zp_88,Y
+	lda zp_plr1_y_pos,Y
 	cmp zp_ptr1_lo
 	bcc @CB7E
 
 	lda #$02
 	sta zp_92
 	lda #$26
-	sta zp_8E,Y
+	sta zp_plr1_cur_anim,Y
 	lda #$00
 	sta zp_90,Y
-	lda zp_4A
+	lda zp_sprites_base_y
 	clc
 	adc #$08
-	sta zp_88,Y
+	sta zp_plr1_y_pos,Y
 	@CB7E:
 	rts
 
 ; -----------------------------------------------------------------------------
 
 sub_rom_CB7F:
-	lda zp_8E,Y
+	lda zp_plr1_cur_anim,Y
 	cmp #$26
 	bne @CBC6
 
@@ -1493,11 +1506,11 @@ sub_rom_CB7F:
 	bne @CBC6
 
 	lda #$2A
-	sta zp_8E,X
+	sta zp_plr1_cur_anim,X
 	lda zp_A3,X
 	tay
-	lda zp_4A
-	sta zp_88,X
+	lda zp_sprites_base_y
+	sta zp_plr1_y_pos,X
 	lda zp_F2,X
 	bmi @CBB3
 
@@ -1511,18 +1524,20 @@ sub_rom_CB7F:
 ; ----------------
 	@CBB7:
 	lda #$27
-	sta zp_8E,Y
+	sta zp_plr1_cur_anim,Y
 	lda #$00
 	sta zp_90,Y
-	lda zp_4A
-	sta zp_88,Y
+	lda zp_sprites_base_y
+	sta zp_plr1_y_pos,Y
 	@CBC6:
 	rts
 
 ; -----------------------------------------------------------------------------
 
+; Parameters:
+; Y = 0 for player one, 1 for player two
 sub_rom_CBC7:
-	lda zp_8E,Y
+	lda zp_plr1_cur_anim,Y
 	cmp #$06
 	bne @CBFB
 
@@ -1531,7 +1546,7 @@ sub_rom_CBC7:
 	and #$40
 	beq @CBDE
 
-	lda #$07
+	lda #$07	; Kick swing
 	sta ram_req_sfx
 	bne @CBED
 
@@ -1540,7 +1555,7 @@ sub_rom_CBC7:
 	and #$80
 	beq @CBFB
 
-	lda #$08
+	lda #$08	; Punch swing
 	sta ram_req_sfx
 	inx
 	inx
@@ -1553,16 +1568,18 @@ sub_rom_CBC7:
 	inx
 	@CBF5:
 	txa
-	sta zp_8E,Y
+	sta zp_plr1_cur_anim,Y
 	sty zp_8C
 	@CBFB:
 	rts
 
 ; -----------------------------------------------------------------------------
 
+; Parameters:
+; Y = 0 for player one, 1 for player 2
 sub_rom_CBFC:
 	ldx #$19
-	lda zp_8E,Y
+	lda zp_plr1_cur_anim,Y
 	cmp #$07
 	beq @CC0B
 
@@ -1575,7 +1592,7 @@ sub_rom_CBFC:
 	and #$80
 	beq @CC19
 
-	lda #$08
+	lda #$08	; Punch swing
 	sta ram_req_sfx
 	bne @CC27
 
@@ -1584,7 +1601,7 @@ sub_rom_CBFC:
 	and #$40
 	beq @CC35
 
-	lda #$07
+	lda #$07	; Kick swing
 	sta ram_req_sfx
 	inx
 	inx
@@ -1596,7 +1613,7 @@ sub_rom_CBFC:
 	inx
 	@CC2F:
 	txa
-	sta zp_8E,Y
+	sta zp_plr1_cur_anim,Y
 	sty zp_8C
 	@CC35:
 	rts
@@ -1649,8 +1666,8 @@ sub_rom_CC5C:
 	tya
 	eor #$01
 	tax
-	lda zp_88,X
-	cmp zp_4A
+	lda zp_plr1_y_pos,X
+	cmp zp_sprites_base_y
 	bne @CC7C
 
 	ldx #$18
@@ -1711,7 +1728,7 @@ sub_rom_CCA8:
 ; -----------------------------------------------------------------------------
 
 sub_rom_CCAC:
-	lda zp_F1
+	lda zp_player_hit_counter
 	beq @CCC2
 
 	cmp #$01
@@ -1720,12 +1737,12 @@ sub_rom_CCAC:
 		lda #$02	; Hit SFX
 		sta ram_req_sfx
 		lda #$00
-		sta zp_F1
+		sta zp_player_hit_counter
 		inc zp_game_substate
 		rts
 ; ----------------
 	@CCC0:
-	inc zp_F1
+	inc zp_player_hit_counter
 	@CCC2:
 	rts
 
@@ -1801,11 +1818,11 @@ sub_rom_CD81:
 	lda zp_9F
 	bne @CDD4
 
-	lda zp_4A
-	cmp zp_88
+	lda zp_sprites_base_y
+	cmp zp_plr1_y_pos
 	bne @CDD2
 
-	cmp zp_89
+	cmp zp_plr2_y_pos
 	bne @CDD2
 
 	lda zp_plr1_damage
@@ -1815,16 +1832,16 @@ sub_rom_CD81:
 	bne @CDB7
 
 	lda #$29
-	sta zp_8E
+	sta zp_plr1_cur_anim
 	sta zp_8F
 	jmp @CDC7
 
 	@CDA5:
 	ldx zp_A3
-	lda zp_4A
-	sta zp_88
+	lda zp_sprites_base_y
+	sta zp_plr1_y_pos
 	ldx #$2A
-	stx zp_8E
+	stx zp_plr1_cur_anim
 	dex
 	stx zp_8F
 	inc ram_plr1_rounds_won
@@ -1832,10 +1849,10 @@ sub_rom_CD81:
 
 	@CDB7:
 	ldx zp_A4
-	lda zp_4A
-	sta zp_89
+	lda zp_sprites_base_y
+	sta zp_plr2_y_pos
 	ldx #$29
-	stx zp_8E
+	stx zp_plr1_cur_anim
 	inx
 	stx zp_8F
 	inc ram_plr2_rounds_won
@@ -2000,32 +2017,32 @@ str_name_empty_3spc:
 ; -----------------------------------------------------------------------------
 
 sub_rom_CF1F:
-	lda zp_86
-	cmp zp_87
+	lda zp_plr1_x_pos
+	cmp zp_plr2_x_pos
 	bcs @CF2C
-	lda zp_87
+	lda zp_plr2_x_pos
 	sec
-	sbc zp_86
+	sbc zp_plr1_x_pos
 	bne @CF2F
 	@CF2C:
 	sec
-	sbc zp_87
+	sbc zp_plr2_x_pos
 	@CF2F:
 	sta zp_9C
 	ldx #$00
-	lda zp_88
-	cmp zp_89
+	lda zp_plr1_y_pos
+	cmp zp_plr2_y_pos
 	bcs @CF40
-	lda zp_89
+	lda zp_plr2_y_pos
 	sec
-	sbc zp_88
+	sbc zp_plr1_y_pos
 	bne @CF44
 	@CF40:
 	inx
 	sec
-	sbc zp_89
+	sbc zp_plr2_y_pos
 	@CF44:
-	sta zp_9D
+	sta zp_players_y_distance
 	stx zp_8D
 	lda #$1C
 	sta ram_067E
@@ -2051,7 +2068,7 @@ sub_finish_match_init:
 	sta zp_49
 	sta zp_A2
 	sta zp_9F
-	sta zp_8E
+	sta zp_plr1_cur_anim
 	sta zp_8F
 	sta zp_90
 	sta zp_91
@@ -2060,8 +2077,8 @@ sub_finish_match_init:
 	sta zp_8A
 	sta zp_plr1_damage
 	sta zp_plr2_damage
-	sta zp_A7
-	sta zp_A8
+	sta zp_plr1_dmg_counter
+	sta zp_plr2_dmg_counter
 	sta zp_E5
 	sta zp_E6
 	sta zp_7F
@@ -2077,13 +2094,13 @@ sub_finish_match_init:
 	sta zp_8B
 
 	lda #$90
-	sta zp_82
+	sta zp_players_x_distance
 
 	lda #$F0
 	sta zp_84
-	lda zp_4A
-	sta zp_88
-	sta zp_89
+	lda zp_sprites_base_y
+	sta zp_plr1_y_pos
+	sta zp_plr2_y_pos
 	sta zp_F4
 	sta zp_F5
 
@@ -2163,7 +2180,7 @@ sub_read_fighter_palette:
 ; -----------------------------------------------------------------------------
 
 sub_rom_D02F:
-	lda zp_8E
+	lda zp_plr1_cur_anim
 	cmp #$06
 	bcc @D045
 
@@ -2182,7 +2199,7 @@ sub_rom_D02F:
 	@D045:
 	ldx #$00
 	sec
-	lda zp_82
+	lda zp_players_x_distance
 	sbc zp_84
 	lda zp_83
 	sbc zp_85
@@ -2211,7 +2228,7 @@ sub_rom_D02F:
 	@D06B:
 	ldx #$00
 	sec
-	lda zp_82
+	lda zp_players_x_distance
 	sbc zp_84
 	lda zp_83
 	sbc zp_85
@@ -2238,7 +2255,7 @@ sub_rom_D082:
 	bne @D09D
 
 	@D08B:
-	lda zp_8E,Y
+	lda zp_plr1_cur_anim,Y
 	cmp #$18
 	bne @D09D
 
@@ -2262,7 +2279,7 @@ sub_rom_D09F:
 	bcs @D0C4
 
 	clc
-	lda zp_82
+	lda zp_players_x_distance
 	adc zp_84
 	sta zp_ptr1_lo
 	lda zp_83
@@ -2290,7 +2307,7 @@ rom_D0C5:
 ; -----------------------------------------------------------------------------
 
 sub_rom_D0D1:
-	lda zp_8E,Y
+	lda zp_plr1_cur_anim,Y
 	beq sub_rom_D0E0
 ; ----------------
 sub_rom_D0D6:
@@ -2356,7 +2373,7 @@ sub_rom_D0E1:
 	bne @D121
 ; ----------------
 sub_rom_D129:
-	lda zp_8E,Y
+	lda zp_plr1_cur_anim,Y
 	beq @D136
 
 	cmp #$03
@@ -2369,7 +2386,7 @@ sub_rom_D129:
 	tya
 	eor #$01
 	tax
-	lda zp_8E,X
+	lda zp_plr1_cur_anim,X
 	cmp #$0B
 	bcc @D163
 
@@ -2392,7 +2409,7 @@ sub_rom_D129:
 	beq @D163
 
 	lda #$05
-	sta zp_8E,Y
+	sta zp_plr1_cur_anim,Y
 	lda #$00
 	sta zp_90,Y
 	@D163:
@@ -2408,7 +2425,7 @@ sub_rom_D164:
 	and #$80
 	bne @D190
 
-	lda zp_8E,Y
+	lda zp_plr1_cur_anim,Y
 	bne @D1A5
 
 	lda zp_7F
@@ -2424,7 +2441,7 @@ sub_rom_D164:
 	dex
 	@D187:
 	txa
-	sta zp_8E,Y
+	sta zp_plr1_cur_anim,Y
 	lda #$00
 	sta zp_90,Y
 	@D190:
@@ -2452,7 +2469,7 @@ sub_rom_D164:
 	and #$03
 	bne @D1A4
 
-	lda zp_8E,Y
+	lda zp_plr1_cur_anim,Y
 	jsr sub_rom_D0D6
 	lda #$00
 	beq @D1A1
@@ -2461,7 +2478,7 @@ sub_rom_D1B6:
 	tya
 	eor #$01
 	tax
-	lda zp_8E,Y
+	lda zp_plr1_cur_anim,Y
 	cmp #$06
 	bcs @D209
 
@@ -2485,7 +2502,7 @@ sub_rom_D1B6:
 	bne @D206
 
 	@D1DE:
-	lda zp_8E,X
+	lda zp_plr1_cur_anim,X
 	cmp #$0B
 	bcc @D1FD
 
@@ -2529,8 +2546,8 @@ sub_rom_D20A:
 	sty zp_7C
 ; ----------------
 sub_rom_D215:
-	lda zp_88,Y
-	cmp zp_4A
+	lda zp_plr1_y_pos,Y
+	cmp zp_sprites_base_y
 	bcc @D22A
 
 	cmp zp_F4,Y
@@ -2570,10 +2587,10 @@ sub_rom_D3DE:
 	and #$7F
 	sta zp_A3,X
 	lda #$00
-	sta zp_8E,X
+	sta zp_plr1_cur_anim,X
 	sta zp_90,X
 	sta zp_plr1_damage,X
-	sta zp_A7,X
+	sta zp_plr1_dmg_counter,X
 	lda #$FF
 	sta zp_4B
 	stx zp_7C
@@ -2910,7 +2927,7 @@ sub_rom_D6E0:
 	cmp #$03
 	bne sub_rom_D718
 
-	lda zp_8E,Y
+	lda zp_plr1_cur_anim,Y
 	cmp #$06
 	bcc @D6F1
 
@@ -2922,7 +2939,7 @@ sub_rom_D6E0:
 	cmp #$18
 	bcs sub_rom_D718
 
-	lda zp_9D
+	lda zp_players_y_distance
 	cmp #$10
 	bcs sub_rom_D718
 
@@ -2933,14 +2950,14 @@ sub_rom_D701:
 	lda zp_8A,Y
 	bne sub_rom_D719
 
-	lda zp_86,Y
+	lda zp_plr1_x_pos,Y
 	cmp #$20
 	bcc sub_rom_D718
 
-	lda zp_82,X
+	lda zp_players_x_distance,X
 	sec
 	sbc zp_ptr1_lo
-	sta zp_82,X
+	sta zp_players_x_distance,X
 	bcs sub_rom_D718
 
 	dec zp_83,X
@@ -2949,14 +2966,14 @@ sub_rom_D718:
 	rts
 ; ----------------
 sub_rom_D719:
-	lda zp_86,Y
+	lda zp_plr1_x_pos,Y
 	cmp #$D0
 	bcs sub_rom_D718
 
-	lda zp_82,X
+	lda zp_players_x_distance,X
 	clc
 	adc zp_ptr1_lo
-	sta zp_82,X
+	sta zp_players_x_distance,X
 	bcc sub_rom_D718
 
 	inc zp_83,X
@@ -2977,7 +2994,7 @@ sub_rom_D72C:
 	lda zp_7F
 	bne @D759
 
-	lda zp_8E,Y
+	lda zp_plr1_cur_anim,Y
 	cmp #$2D
 	beq @D752
 
@@ -3051,13 +3068,13 @@ sub_rom_D784:
 	sta zp_ptr3_lo
 	lda rom_8000+1
 	sta zp_ptr3_hi
-	lda zp_8E,Y
+	lda zp_plr1_cur_anim,Y
 	asl A
 	bcc :+
 		inc zp_ptr3_hi
 	:	
 	clc
-	adc zp_8E,Y
+	adc zp_plr1_cur_anim,Y
 	bcc :+
 		inc zp_ptr3_hi
 	:
@@ -3100,16 +3117,16 @@ sub_rom_D784:
 	bne @D81F
 
 	@D803:
-	lda zp_86,Y
+	lda zp_plr1_x_pos,Y
 	sec
 	sbc zp_05
 	cmp #$20
 	bcc @D834
 
-	lda zp_82,X
+	lda zp_players_x_distance,X
 	sec
 	sbc zp_05
-	sta zp_82,X
+	sta zp_players_x_distance,X
 	bcs @D834
 
 	dec zp_83,X
@@ -3119,24 +3136,24 @@ sub_rom_D784:
 	lda zp_8A,Y
 	bne @D803
 	@D81F:
-	lda zp_86,Y
+	lda zp_plr1_x_pos,Y
 	clc
 	adc zp_05
 	cmp #$D0
 	bcs @D834
 
-	lda zp_82,X
+	lda zp_players_x_distance,X
 	clc
 	adc zp_05
-	sta zp_82,X
+	sta zp_players_x_distance,X
 	bcc @D834
 
 	inc zp_83,X
 	@D834:
-	lda zp_88,Y
+	lda zp_plr1_y_pos,Y
 	clc
 	adc zp_06
-	sta zp_88,Y
+	sta zp_plr1_y_pos,Y
 	ldy zp_ptr1_lo
 	iny
 	lda (zp_ptr3_lo),Y
@@ -3169,7 +3186,7 @@ sub_rom_D784:
 	jsr sub_rom_D72C
 	ldy zp_7C
 	ldx rom_CB0A,Y
-	lda zp_8E,Y
+	lda zp_plr1_cur_anim,Y
 	cmp #$09
 	beq @D88A
 
@@ -3194,22 +3211,22 @@ sub_rom_D784:
 		lda #$40
 	:
 	sta zp_1B
-	lda zp_82,X
+	lda zp_players_x_distance,X
 	sec
 	sbc zp_irq_hor_scroll
-	sta zp_86,Y
+	sta zp_plr1_x_pos,Y
 	sta zp_07
 
 	ldx #$08
 	stx zp_ptr1_lo
-	lda zp_88,Y
+	lda zp_plr1_y_pos,Y
 	sec
 	sbc zp_ptr1_lo
 	sta zp_0A
 	ldx zp_7C
 	inc zp_90,X
 	ldy zp_7C
-	ldx zp_8E,Y
+	ldx zp_plr1_cur_anim,Y
 	lda zp_90,Y
 
 	cmp #$01
@@ -3224,7 +3241,7 @@ sub_rom_D784:
 	beq @D8D4
 
 	lda #$00
-	sta zp_8E,Y
+	sta zp_plr1_cur_anim,Y
 	sta zp_90,Y
 	@D8D4:
 	jmp sub_rom_D9AF ;jsr sub_rom_D9AF
@@ -3266,7 +3283,7 @@ sub_rom_D8F0:
 	lda zp_90,X
 	bne @D923
 
-	ldy zp_8E,X
+	ldy zp_plr1_cur_anim,X
 	lda rom_D977,Y
 	beq @D923
 
@@ -3298,7 +3315,7 @@ sub_rom_D8F0:
 	rts
 ; ----------------
 	@D92C:
-	lda zp_8E,X
+	lda zp_plr1_cur_anim,X
 	bne @D92B
 
 	jsr sub_rom_D96D

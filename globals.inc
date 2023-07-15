@@ -83,7 +83,7 @@ zp_nmi_ppu_cols = $46   ;
 zp_47 = $47     ;
 zp_48 = $48     ;
 zp_49 = $49     ;
-zp_4A = $4A     ;
+zp_sprites_base_y = $4A ; The only stage with a different one is the Pit
 zp_4B = $4B     ;
 zp_4C = $4C     ;
 zp_4D = $4D     ;
@@ -128,21 +128,23 @@ zp_7C = $7C     ;
 zp_7F = $7F     ;
 
 ;zp_80 = $80     ;
+
 ; Horizontal scroll value used in IRQ routines
 zp_irq_hor_scroll = $81 ;
-zp_82 = $82     ;
+zp_players_x_distance = $82 ;
 zp_83 = $83     ;
 zp_84 = $84     ;
 zp_85 = $85     ;
-zp_86 = $86     ;
-zp_87 = $87     ;
-zp_88 = $88     ;
-zp_89 = $89     ;
+; Hitbox coordinates
+zp_plr1_x_pos = $86 ;
+zp_plr2_x_pos = $87 ;
+zp_plr1_y_pos = $88 ;
+zp_plr2_y_pos = $89 ;
 zp_8A = $8A     ;
 zp_8B = $8B     ;
 zp_8C = $8C     ;
 zp_8D = $8D     ;
-zp_8E = $8E     ;
+zp_plr1_cur_anim = $8E  ;
 zp_8F = $8F     ;
 
 zp_90 = $90     ;
@@ -155,7 +157,7 @@ zp_99 = $99     ;
 zp_9A = $9A     ;
 zp_9B = $9B     ;
 zp_9C = $9C     ;
-zp_9D = $9D     ;
+zp_players_y_distance = $9D ;
 zp_9E = $9E     ;
 zp_9F = $9F     ;
 
@@ -168,8 +170,9 @@ zp_A4 = $A4     ;
 zp_plr1_damage = $A5    ;
 ; This basically represents missing health / hits taken
 zp_plr2_damage = $A6    ;
-zp_A7 = $A7     ;
-zp_A8 = $A8     ;
+; This will count down while damage is applied point by point
+zp_plr1_dmg_counter = $A7   ;
+zp_plr2_dmg_counter = $A8   ;
 zp_A9 = $A9     ;
 zp_AD = $AD     ;
 
@@ -184,10 +187,11 @@ zp_E9 = $E9     ;
 zp_EB = $EB     ;
 zp_ED = $ED     ;
 
-zp_EF = $EF     ;
+; Determines how many points to add to a player's score
+zp_gained_score_idx = $EF   ; 0 to 4 (low to high)
 
 zp_F0 = $F0     ;
-zp_F1 = $F1     ;
+zp_player_hit_counter = $F1     ;
 zp_F2 = $F2     ;
 zp_F3 = $F3     ;
 zp_F4 = $F4     ;
@@ -304,7 +308,7 @@ ram_042A = $042A    ;
 ram_difficulty_setting = $042C    ;
 ram_042D = $042D    ;
 ram_0435 = $0435    ;
-ram_0436 = $0436    ;
+ram_ranged_atk_x_pos = $0436    ; Ranged attack hit box coordinate
 ram_0438 = $0438    ;
 ram_043D = $043D    ;
 ram_043E = $043E    ;

@@ -1195,7 +1195,7 @@ sub_rom_E902:
 	cmp #$18
 	bcs @E910
 
-	lda zp_9D ;a:zp_9D
+	lda zp_players_y_distance ;a:zp_9D
 	beq @E917
 
 	@E910:
