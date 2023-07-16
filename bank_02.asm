@@ -47,7 +47,7 @@ tbl_track_ptrs:
 	.word mus_opening			; $20
 	.word mus_player_select		; $21
 	.word mus_and_sfx_silence	; $22
-	.word mus_player_unused		; $23
+	.word mus_game_over		; $23	Game Over
 	.word mus_silence			; $24
 	; ---- Stage background music starts here
 	.word mus_goros_lair		; $25	Goro's Lair
@@ -110,25 +110,8 @@ mus_player_select:
 
 ; -----------------------------------------------------------------------------
 
-; Silent channel
-rom_895F:
-	.byte $FF
-
-; ----------------
-
-; A somewhat noisy version of the player selection music
-mus_player_unused:
-	.byte $00
-	.word rom_895F
-	.byte $01
-	.word rom_895F
-	.byte $02
-	.word rom_895F
-	.byte $03
-	.word rom_895F
-	.byte $04
-	.word rom_895F
-	.byte $FF
+mus_game_over:
+.include "audio/gameover.asm"
 
 ; -----------------------------------------------------------------------------
 

@@ -1273,7 +1273,7 @@ sub_show_playing_song:
 	.byte "    opening     "	; $20
 	.byte "  your destiny  "	; $21
 	.byte "    silence     "	; $22
-	.byte "     unused     "	; $23
+	.byte "   game over    "	; $23
 	.byte "    silence     "	; $24
 	.byte "   goros lair   "	; $25
 	.byte "    the pit     "	; $26

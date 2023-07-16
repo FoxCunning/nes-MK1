@@ -22,7 +22,7 @@ sub_state_machine_0:
 	.word sub_option_menu_states		; 0,1
 	.word sub_fighter_selection_states	; 0,2
 	.word sub_rom_B8BC				; 0,3
-	.word sub_continue_screen_state_machine				; 0,4
+	.word sub_continue_screen_state_machine	; 0,4
 	.word sub_high_scores_states		; 0,5
 	.word sub_rom_BF1E				; 0,6
 
@@ -1237,6 +1237,7 @@ sub_continue_screen_state_machine:
 	.word sub_rom_B776
 	.word sub_rom_B789
 	.word sub_continue_timer_expired
+	.word sub_game_over
 
 ; -----------------------------------------------------------------------------
 
@@ -1270,24 +1271,23 @@ sub_rom_B712:
 sub_rom_B723:
 	lda zp_frame_counter
 	cmp zp_last_execution_frame
-	bne @B72A
+	beq @B723_rts
 
-	rts
-; ----------------
-	@B72A:
-	sta zp_last_execution_frame
-	lda ram_040C
-	eor #$01
-	tax
-	lda zp_controller1_new,X
-	and #$C0
-	beq @B744
+		sta zp_last_execution_frame
+		lda ram_040C
+		eor #$01
+		tax
+		lda zp_controller1_new,X
+		and #$C0
+		beq @B744
 
-	lda #$0F
-	sta ram_req_sfx
-	inc zp_machine_state_2
-	lda #$05
-	sta zp_palette_fade_idx
+		lda #$0F
+		sta ram_req_sfx
+		inc zp_machine_state_2
+		lda #$05
+		sta zp_palette_fade_idx
+
+	@B723_rts:
 	rts
 ; ----------------
 	@B744:
@@ -1375,9 +1375,10 @@ sub_continue_timer_expired:
 		dec zp_counter_param
 		bne @B7C2
 
-		lda #$00
-		sta zp_ppu_mask_backup
-		jmp reset
+		lda #$23	; Game over music
+		sta ram_req_song
+		sta zp_counter_param	; Incidentally, it's also a good value for the counter
+		inc zp_machine_state_2
 	@B7C2:
 	rts
 
@@ -1403,6 +1404,28 @@ sub_rom_B7C3:
 	inx			;lda #$02
 	stx zp_nmi_ppu_rows	;sta zp_45
 
+	rts
+
+; -----------------------------------------------------------------------------
+
+sub_game_over:
+	lda zp_frame_counter
+	cmp zp_last_execution_frame
+	beq @game_over_rts
+
+		sta zp_last_execution_frame
+		lda zp_frame_counter
+		and #$1F
+		bne @game_over_rts
+
+			dec zp_counter_param
+			bne @game_over_rts
+
+				lda #$00
+				sta zp_ppu_mask_backup
+				jmp reset
+
+	@game_over_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1444,14 +1467,13 @@ sub_rom_B834:
 	jsr sub_rom_cycle_palettes
 	lda zp_palette_fade_idx
 	cmp #$05
-	bcs @B83E
+	bcc @B834_rts
 
-	rts
-; ----------------
-	@B83E:
-	lda #$09
-	sta zp_counter_param
-	inc zp_machine_state_2
+		lda #$09
+		sta zp_counter_param
+		inc zp_machine_state_2
+
+	@B834_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1459,28 +1481,26 @@ sub_rom_B834:
 sub_rom_B845:
 	lda zp_frame_counter
 	cmp zp_last_execution_frame
-	bne @B84C
+	beq @B863
 
-	rts
-; ----------------
-	@B84C:
-	sta zp_last_execution_frame
-	lda zp_controller1_new
-	beq @B857
+		sta zp_last_execution_frame
+		lda zp_controller1_new
+		beq @B857
 
-	inc zp_machine_state_2
-	jmp @B861
+		inc zp_machine_state_2
+		jmp @B861
 
-	@B857:
-	lda zp_frame_counter
-	and #$3F
-	bne @B863
+		@B857:
+		lda zp_frame_counter
+		and #$3F
+		bne @B863
 
-	dec zp_counter_param
-	bpl @B863
+		dec zp_counter_param
+		bpl @B863
 
-	@B861:
-	inc zp_machine_state_2
+		@B861:
+		inc zp_machine_state_2
+
 	@B863:
 	rts
 
@@ -1490,32 +1510,31 @@ sub_rom_B864:
 	jsr sub_rom_cycle_palettes
 	lda zp_palette_fade_idx
 	cmp #$09
-	bcs @B86E
+	bcc @B864_rts
 
-	rts
-; ----------------
-	@B86E:
-	lda #$00
-	sta PpuMask_2001
-	sta zp_ppu_mask_backup
-	lda #$00
-	sta mmc3_mirroring
-	lda #$00
-	sta zp_machine_state_2
-	lda #$00
-	sta zp_machine_state_1
-	lda #$01
-	sta zp_machine_state_0
-	lda #$01
-	sta zp_5E
-	lda zp_62
-	and #$07
-	tay
-	lda rom_B89C+0,Y
-	sta zp_plr1_fighter_idx
-	lda rom_B89C+1,Y
-	sta zp_plr2_fighter_idx
-	inc zp_62
+		lda #$00
+		sta PpuMask_2001
+		sta zp_ppu_mask_backup
+		lda #$00
+		sta mmc3_mirroring
+		lda #$00
+		sta zp_machine_state_2
+		lda #$00
+		sta zp_machine_state_1
+		lda #$01
+		sta zp_machine_state_0
+		lda #$01
+		sta zp_5E
+		lda zp_62
+		and #$07
+		tay
+		lda rom_B89C+0,Y
+		sta zp_plr1_fighter_idx
+		lda rom_B89C+1,Y
+		sta zp_plr2_fighter_idx
+		inc zp_62
+
+	@B864_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1530,17 +1549,16 @@ sub_rom_B8A5:
 	jsr sub_rom_cycle_palettes
 	lda zp_palette_fade_idx
 	cmp #$09
-	bcs @B8AF
+	bcc @B8A5_rts
 
-	rts
-; ----------------
-	@B8AF:
-	lda #$00
-	sta zp_machine_state_2
-	lda #$00
-	sta zp_machine_state_1
-	sta zp_plr1_selection
-	sta zp_plr2_selection
+		lda #$00
+		sta zp_machine_state_2
+		lda #$00
+		sta zp_machine_state_1
+		sta zp_plr1_selection
+		sta zp_plr2_selection
+
+	@B8A5_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1675,14 +1693,13 @@ sub_rom_B982:
 	jsr sub_rom_cycle_palettes
 	lda zp_palette_fade_idx
 	cmp #$05
-	bcs @B98C
+	bcc @B982_rts
 
-	rts
-; ----------------
-	@B98C:
-	inc zp_machine_state_2
-	lda #$04
-	sta zp_counter_param
+		inc zp_machine_state_2
+		lda #$04
+		sta zp_counter_param
+
+	@B982_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1690,29 +1707,27 @@ sub_rom_B982:
 sub_rom_B993:
 	lda zp_frame_counter
 	cmp zp_last_execution_frame
-	bne @B99A
+	beq @B9B4
 
-	rts
-; ----------------
-	@B99A:
-	sta zp_last_execution_frame
-	lda zp_controller1_new
-	bne @B9AE
+		sta zp_last_execution_frame
+		lda zp_controller1_new
+		bne @B9AE
 
-	lda zp_controller2_new
-	bne @B9AE
+		lda zp_controller2_new
+		bne @B9AE
 
-	lda zp_frame_counter
-	and #$1F
-	bne @B9B4
+		lda zp_frame_counter
+		and #$1F
+		bne @B9B4
 
-	dec zp_counter_param
-	bne @B9B4
+		dec zp_counter_param
+		bne @B9B4
 
-	@B9AE:
-	lda #$00
-	sta zp_counter_param
-	inc zp_machine_state_2
+		@B9AE:
+		lda #$00
+		sta zp_counter_param
+		inc zp_machine_state_2
+
 	@B9B4:
 	rts
 
