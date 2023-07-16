@@ -3382,14 +3382,21 @@ sub_load_fighters_palettes:
 	sty zp_48,X
 	sty zp_plr1_anim_frame,X
 	ldx #$00
-	@D94D:
+	:
 		lda (zp_ptr1_lo),Y
 		sta ram_ppu_data_buffer,X
 		inx
 		iny
 	cpy #$08
-	bcc @D94D
+	bcc :-
 
+	; Adjust global GB colour for the Pit stage
+	lda ram_irq_routine_idx
+	cmp #$01
+	bne :+
+		lda #$02
+		sta ram_ppu_data_buffer
+	:
 	sty zp_nmi_ppu_cols
 	lda #$01
 	sta zp_nmi_ppu_rows
