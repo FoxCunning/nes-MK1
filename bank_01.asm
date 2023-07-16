@@ -134,7 +134,7 @@ sub_match_victory:
 
 	lda #$22	; Silence everything
 	sta ram_req_song
-	lda #$03	; Bleep
+	lda #$09	; Pulse bleep
 	sta ram_req_sfx
 	@C1AF:
 	ldy #$00

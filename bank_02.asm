@@ -15,13 +15,13 @@ tbl_track_ptrs:
 	.word sfx_silence			; $00
 	.word sfx_97A7				; $01	A glitchy sound that sometimes plays when a match starts
 	.word sfx_hit				; $02	Any hit
-	.word sfx_bleep				; $03	Cursor move and point counter at end of match
+	.word sfx_dmcbleep			; $03	Cursor movement bleep
 	.word sfx_projectile		; $04	Projectile/special attack
 	.word sfx_bounce			; $05	Bounce/land after jump
 	.word sfx_fight				; $06	Announcer "Fight!"
 	.word sfx_kick				; $07	Kick swing
 	.word sfx_kick				; $08	Punch swing
-	.word sfx_silence			; $09
+	.word sfx_bleep				; $09	Pulse bleep (score counter)
 	.word sfx_silence			; $0A
 	.word sfx_silence			; $0B
 	.word sfx_select			; $0C	"Siren" sound (selection confirmed)
@@ -251,7 +251,17 @@ sfx_bounce:
 	.byte $81
 	.word rom_96C1
 	.byte $FF
-	
+
+; -----------------------------------------------------------------------------
+
+sfx_dmcbleep:
+	.byte $84
+	.word @sfx_dmcbleep_ch4
+	.byte $FF
+
+	@sfx_dmcbleep_ch4:
+	.byte $F5, $01, $0B, $FF
+
 ; -----------------------------------------------------------------------------
 
 ; Noise
@@ -268,18 +278,14 @@ sfx_projectile:
 	
 ; -----------------------------------------------------------------------------
 
-; Noise
-rom_96E3:
-	.byte $F5, $03, $F8, $00, $FB, $FF
-	.byte $82, $09, $06, $FF
-
-; ----------------
-
 sfx_kick:
-	.byte $83
-	.word rom_96E3
+	.byte $84
+	.word @sfx_kick_ch4
 	.byte $FF
-	
+
+	@sfx_kick_ch4:
+	.byte $F5, $01, $0C, $FF
+
 ; -----------------------------------------------------------------------------
 
 ; Noise

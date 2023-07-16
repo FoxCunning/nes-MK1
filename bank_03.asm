@@ -3168,6 +3168,9 @@ tbl_dpcm_ptr:
 	.byte >(dmc_kano<<2)		; $07 "Kano"
 	.byte >(dmc_cage<<2)		; $08 "Johnny Cage"
 	.byte >(dmc_liukang<<2)		; $09 "Liu Kang"
+	.byte $FF					; $0A "...wins"
+	.byte >(dmc_bleep<<2)		; $0B UI bleep
+	.byte >(dmc_swing<<2)		; $0C SFX punch/kick swing
 
 ; Values for DPCM length register
 tbl_dpcm_len:
@@ -3181,6 +3184,9 @@ tbl_dpcm_len:
 	.byte $4B	; $07 "Kano"
 	.byte $7C	; $08 "Johnny Cage"
 	.byte $73	; $09 "Liu Kang"
+	.byte $00	; $0A "...wins"
+	.byte $0B	; $0B UI bleep
+	.byte $0E	; $0C SFX punch/kick swing
 
 ; -----------------------------------------------------------------------------
 

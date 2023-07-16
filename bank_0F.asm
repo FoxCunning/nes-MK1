@@ -1506,6 +1506,24 @@ dmc_liukang:
 dmc_cage:
 .incbin "audio/cage.dmc"
 
+; ----------------
+.export dmc_swing
+
+dmc_swing:
+.incbin "audio/swing.dmc"
+
+; ----------------
+;.export dmc_hit
+
+;dmc_hit:
+;.incbin "audio/hit.dmc"
+
+; ----------------
+;.export dmc_bounce
+
+;dmc_bounce:
+;.incbin "audio/bounce.dmc"
+
 ; -----------------------------------------------------------------------------
 
 .segment "VECTORS"
