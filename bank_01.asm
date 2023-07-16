@@ -58,8 +58,8 @@ sub_match_loop:
 	sta zp_controller2
 	sta zp_controller2_new
 	@C13A:
-	jsr sub_calc_players_distancec
-	jsr sub_rom_C7B0
+	jsr sub_calc_players_distance
+	jsr sub_check_fighter_ko
 	jsr sub_rom_CA5C
 
 	; Bank $03 in $A000-$BFFF
@@ -245,8 +245,8 @@ sub_rom_C2A8:
 	bcc @C2CB
 	bne @C2F0
 
-	ldx zp_A3,Y
-	lda zp_8A,Y
+	ldx zp_plr1_fgtr_idx_clean,Y
+	lda zp_plr1_facing_dir,Y
 	bne @C2E6
 
 		lda zp_plr1_x_pos,Y
@@ -300,16 +300,16 @@ sub_rom_C2A8:
 	bne @C32C
 
 	@C327:
-	ldx zp_A3,Y
+	ldx zp_plr1_fgtr_idx_clean,Y
 	lda rom_C3BD,X
 	@C32C:
 	sta zp_06
-	lda rom_CB0A,Y
+	lda tbl_player_oam_offsets,Y
 	sta zp_ptr1_lo
 	clc
 	adc #$0C
 	tax
-	lda zp_A3,Y
+	lda zp_plr1_fgtr_idx_clean,Y
 	asl A
 	asl A
 	tay
@@ -325,7 +325,7 @@ sub_rom_C2A8:
 	jsr sub_rom_C3F9
 	lda #$FD
 	ldy zp_7C
-	ldx zp_8A,Y
+	ldx zp_plr1_facing_dir,Y
 	bne @C357
 
 	lda #$03
@@ -355,7 +355,7 @@ sub_rom_C36B:
 		lda zp_06
 		sta ram_0370,X
 		ldy zp_7C
-		lda zp_8A,Y
+		lda zp_plr1_facing_dir,Y
 		tay
 		lda zp_7C
 		asl A
@@ -375,7 +375,7 @@ sub_rom_C36B:
 	and #$01
 	bne @C3B0
 
-	lda zp_8A,Y
+	lda zp_plr1_facing_dir,Y
 	bne @C3A8
 
 	lda #$08
@@ -419,7 +419,7 @@ rom_C3C9:
 
 sub_rom_C3F9:
 	ldy zp_7C
-	lda zp_A3,Y
+	lda zp_plr1_fgtr_idx_clean,Y
 	jsr sub_game_trampoline
 ; ----------------
 	.word sub_rom_C419
@@ -450,7 +450,7 @@ sub_rom_C4B2:
 		rts
 ; ----------------
 	:
-	ldx rom_CB0A,Y
+	ldx tbl_player_oam_offsets,Y
 	lda ram_037C,X
 	clc
 	adc #$08
@@ -467,7 +467,7 @@ sub_rom_C4B2:
 	sec
 	sbc #$08
 	sta ram_0370,X
-	lda zp_8A,Y
+	lda zp_plr1_facing_dir,Y
 	bne @C4EF
 
 	lda #$10
@@ -868,7 +868,7 @@ sub_match_hit_loop:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_C7B0:
+sub_check_fighter_ko:
 	lda #$58
 	cmp zp_plr1_damage
 	beq @C7BA
@@ -891,10 +891,10 @@ sub_rom_C7C6:
 	cmp #$28
 	beq @C800
 
-	lda zp_A3,X
+	lda zp_plr1_fgtr_idx_clean,X
 	asl A
 	clc
-	adc zp_A3,X
+	adc zp_plr1_fgtr_idx_clean,X
 	tay
 	sty ram_0422
 	lda rom_C801,Y
@@ -957,7 +957,7 @@ sub_rom_C838:
 	bne @C84B
 
 	lda zp_controller1,X
-	and #$04
+	and #$04	; Button down?
 	bne @C875
 
 	@C84B:
@@ -983,7 +983,8 @@ sub_rom_C838:
 	cmp zp_plr1_cur_anim,Y
 	beq @C875
 
-	jsr sub_rom_CA4F
+		jsr sub_change_fighter_anim
+
 	@C875:
 	rts
 
@@ -1007,7 +1008,7 @@ sub_rom_C876:
 	sta zp_ptr1_lo
 	inc zp_ptr1_lo
 	ldx zp_7C
-	lda zp_8A,X
+	lda zp_plr1_facing_dir,X
 	tay
 	lda zp_controller1_new,X
 	beq @C8BC
@@ -1015,7 +1016,7 @@ sub_rom_C876:
 	cpy #$00
 	beq @C8B0
 
-	and #$03
+	and #$03	; Left/right
 	bne @C8AC
 
 	lda zp_controller1_new,X
@@ -1023,7 +1024,7 @@ sub_rom_C876:
 
 	@C8AC:
 	lda zp_controller1_new,X
-	eor #$03
+	eor #$03	; Flip left/right bits
 	@C8B0:
 	ldy zp_ptr1_lo
 	ldx zp_7B
@@ -1275,7 +1276,12 @@ sub_rom_CA19:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_CA4F:
+; Changes a player's animation index and resets current frame to zero
+; Saves Y in zp_8C
+; Parameters:
+; zp_7C = player index (0 for player one, 1 for player 2)
+; A = new animation index
+sub_change_fighter_anim:
 	ldy zp_7C
 	sta zp_plr1_cur_anim,Y
 	lda #$00
@@ -1409,8 +1415,9 @@ sub_rom_CAC0:
 
 ; -----------------------------------------------------------------------------
 
-rom_CB0A:
-	.byte $00, $80
+tbl_player_oam_offsets:
+	.byte $00	; Player 1 (starting at sprite $00)
+	.byte $80	; Player 2 (starting at sprite $20 [32 decimal])
 
 ; -----------------------------------------------------------------------------
 
@@ -1509,7 +1516,7 @@ sub_rom_CB7F:
 
 	lda #$2A
 	sta zp_plr1_cur_anim,X
-	lda zp_A3,X
+	lda zp_plr1_fgtr_idx_clean,X
 	tay
 	lda zp_sprites_base_y
 	sta zp_plr1_y_pos,X
@@ -1536,6 +1543,7 @@ sub_rom_CB7F:
 
 ; -----------------------------------------------------------------------------
 
+; Punch/kick during animation 6
 ; Parameters:
 ; Y = 0 for player one, 1 for player two
 sub_rom_CBC7:
@@ -1544,6 +1552,7 @@ sub_rom_CBC7:
 	bne @CBFB
 
 	ldx #$0E
+
 	lda zp_controller1_new,Y
 	and #$40
 	beq @CBDE
@@ -1577,6 +1586,7 @@ sub_rom_CBC7:
 
 ; -----------------------------------------------------------------------------
 
+; Punch/kick during animation 7 or 8
 ; Parameters:
 ; Y = 0 for player one, 1 for player 2
 sub_rom_CBFC:
@@ -1635,7 +1645,7 @@ sub_rom_CC36:
 	jsr sub_rom_CC82
 	@CC4A:
 	txa
-	jsr sub_rom_CA4F
+	jsr sub_change_fighter_anim
 	rts
 ; ----------------
 	@CC4F:
@@ -1657,7 +1667,7 @@ sub_rom_CC5C:
 	bcs @CC7F
 
 	lda #$01
-	ldx zp_8A,Y
+	ldx zp_plr1_facing_dir,Y
 	beq @CC6A
 
 	lda #$02
@@ -1691,7 +1701,7 @@ sub_rom_CC82:
 	bcs @CC97
 
 	lda #$1B
-	ldx zp_A3,Y
+	ldx zp_plr1_fgtr_idx_clean,Y
 	bne @CC90
 
 	lda #$1B
@@ -1808,8 +1818,8 @@ sub_rom_CD56:
 	sta zp_09
 	sta ram_0405,X
 	@CD7D:
-	jsr sub_rom_D6C7
-	rts
+	jmp sub_rom_D6C7;jsr sub_rom_D6C7
+	;rts
 
 ; -----------------------------------------------------------------------------
 
@@ -1839,7 +1849,7 @@ sub_rom_CD81:
 	jmp @CDC7
 
 	@CDA5:
-	ldx zp_A3
+	ldx zp_plr1_fgtr_idx_clean
 	lda zp_sprites_base_y
 	sta zp_plr1_y_pos
 	ldx #$2A
@@ -1850,7 +1860,7 @@ sub_rom_CD81:
 	bne @CDC7
 
 	@CDB7:
-	ldx zp_A4
+	ldx zp_plr2_fgtr_idx_clean
 	lda zp_sprites_base_y
 	sta zp_plr2_y_pos
 	ldx #$29
@@ -1874,7 +1884,7 @@ sub_rom_CD81:
 .export sub_show_fighter_names
 
 sub_show_fighter_names:
-	lda zp_A3
+	lda zp_plr1_fgtr_idx_clean
 	asl A
 	tax
 	lda tbl_fighter_name_ptrs,X
@@ -1916,7 +1926,7 @@ sub_show_fighter_names:
 	cpx zp_07
 	bcc @CE08
 
-	lda zp_A4
+	lda zp_plr2_fgtr_idx_clean
 	asl A
 	tax
 	lda tbl_fighter_name_ptrs,X
@@ -2018,7 +2028,7 @@ str_name_empty_3spc:
 
 ; -----------------------------------------------------------------------------
 
-sub_calc_players_distancec:
+sub_calc_players_distance:
 	lda zp_plr1_x_pos
 	cmp zp_plr2_x_pos
 	bcs @CF2C
@@ -2078,9 +2088,9 @@ sub_finish_match_init:
 	sta zp_plr2_cur_anim
 	sta zp_plr1_anim_frame
 	sta zp_plr2_anim_frame
-	sta zp_83
-	sta zp_85
-	sta zp_8A
+	sta zp_plr1_spr_x_offset
+	sta zp_plr2_spr_x_offset
+	sta zp_plr1_facing_dir
 	sta zp_plr1_damage
 	sta zp_plr2_damage
 	sta zp_plr1_dmg_counter
@@ -2097,7 +2107,7 @@ sub_finish_match_init:
 	sta ram_0414
 
 	lda #$01
-	sta zp_8B
+	sta zp_plr2_facing_dir
 
 	lda #$90
 	sta zp_82
@@ -2159,10 +2169,10 @@ sub_load_game_palettes:
 	bcc :-
 
 	ldx #$10
-	lda zp_A3	; Player 1 chosen fighter index
+	lda zp_plr1_fgtr_idx_clean	; Player 1 chosen fighter index
 	jsr sub_read_fighter_palette
 	;ldx #$18	; This shouldn't be necessary
-	lda zp_A4	; Player 2 chosen fighter index
+	lda zp_plr2_fgtr_idx_clean	; Player 2 chosen fighter index
 ; ----------------
 sub_read_fighter_palette:
 	asl A
@@ -2207,13 +2217,13 @@ sub_rom_D02F:
 	sec
 	lda zp_82
 	sbc zp_84
-	lda zp_83
-	sbc zp_85
+	lda zp_plr1_spr_x_offset
+	sbc zp_plr2_spr_x_offset
 	bmi @D053
 
 	inx
 	@D053:
-	stx zp_8A
+	stx zp_plr1_facing_dir
 	@D055:
 	lda zp_plr2_cur_anim
 	cmp #$06
@@ -2236,13 +2246,13 @@ sub_rom_D02F:
 	sec
 	lda zp_82
 	sbc zp_84
-	lda zp_83
-	sbc zp_85
+	lda zp_plr1_spr_x_offset
+	sbc zp_plr2_spr_x_offset
 	bpl @D079
 
 	inx
 	@D079:
-	stx zp_8B
+	stx zp_plr2_facing_dir
 	@D07B:
 	rts
 
@@ -2254,7 +2264,7 @@ sub_rom_D07C:
 	iny
 ; ----------------
 sub_rom_D082:
-	lda zp_A3,Y
+	lda zp_plr1_fgtr_idx_clean,Y
 	beq @D08B
 
 	cmp #$04
@@ -2288,8 +2298,8 @@ sub_rom_D09F:
 	lda zp_82
 	adc zp_84
 	sta zp_ptr1_lo
-	lda zp_83
-	adc zp_85
+	lda zp_plr1_spr_x_offset
+	adc zp_plr2_spr_x_offset
 	sta zp_ptr1_hi
 	lsr zp_ptr1_hi
 	ror zp_ptr1_lo
@@ -2333,7 +2343,7 @@ sub_rom_D0E0:
 ; -----------------------------------------------------------------------------
 
 sub_rom_D0E1:
-	lda zp_A3,Y
+	lda zp_plr1_fgtr_idx_clean,Y
 	beq @D0EE
 	cmp #$03
 	beq @D0EE
@@ -2351,12 +2361,12 @@ sub_rom_D0E1:
 	and #$01
 	beq @D111
 	ldx #$08
-	lda zp_8A,Y
+	lda zp_plr1_facing_dir,Y
 	bne @D10C
 	dex
 	@D10C:
 	txa
-	jsr sub_rom_CA4F
+	jsr sub_change_fighter_anim
 	rts
 ; ----------------
 	@D111:
@@ -2364,13 +2374,13 @@ sub_rom_D0E1:
 	and #$02
 	beq @D125
 	ldx #$08
-	lda zp_8A,Y
+	lda zp_plr1_facing_dir,Y
 	beq @D120
 	dex
 	@D120:
 	txa
 	@D121:
-	jsr sub_rom_CA4F
+	jsr sub_change_fighter_anim
 	@D124:
 	rts
 ; ----------------
@@ -2406,7 +2416,7 @@ sub_rom_D129:
 	beq @D163
 
 	lda #$01
-	ldx zp_8A,Y
+	ldx zp_plr1_facing_dir,Y
 	bne @D154
 
 	lda #$02
@@ -2425,101 +2435,107 @@ sub_rom_D129:
 
 sub_rom_D164:
 	lda zp_5E
-	bne @D190
+	bne @D190_rts
 
 	lda zp_plr1_fighter_idx,Y
 	and #$80
-	bne @D190
+	bne @D190_rts	; Skip input for CPU-controller opponent
 
 	lda zp_plr1_cur_anim,Y
-	bne @D1A5
+	bne @D1A5	; Branch if not in idle animation
 
 	lda zp_7F
 	bne @D1A5
 
 	lda zp_controller1,Y
-	and #$01
-	beq @D191
+	and #$01	; Right button mask
+	beq @D191_check_dpad_left
 
-	ldx #$04
-	lda zp_8A,Y
-	bne @D187
-	dex
-	@D187:
-	txa
-	sta zp_plr1_cur_anim,Y
-	lda #$00
-	sta zp_plr1_anim_frame,Y
-	@D190:
+		; Right D-Pad button is currently pressed
+		ldx #$04	; 4 = moving left animation
+		lda zp_plr1_facing_dir,Y
+		bne :+
+			dex		; 3 = moving right animation
+		:
+		txa
+		sta zp_plr1_cur_anim,Y
+		lda #$00
+		sta zp_plr1_anim_frame,Y
+
+	@D190_rts:
 	rts
 ; ----------------
-	@D191:
+	@D191_check_dpad_left:
 	lda zp_controller1,Y
-	and #$02
+	and #$02	; Left button mask
 	beq @D1A5
 
-	ldx #$04
-	lda zp_8A,Y
-	beq @D1A0
-
-	dex
-	@D1A0:
-	txa
-	@D1A1:
-	jsr sub_rom_CA4F
-	@D1A4:
+		ldx #$04	; 4 = moving left animation
+		lda zp_plr1_facing_dir,Y
+		beq :+
+			dex		; 3 = moving right animation
+		:
+		txa
+		@D1A1_set_anim:
+		jsr sub_change_fighter_anim
+	
+	@D1A4_rts:
 	rts
 ; ----------------
 	@D1A5:
 	lda zp_controller1,Y
-	and #$03
-	bne @D1A4
+	and #$03		; Left/Right mask
+	bne @D1A4_rts	; Return if pressing left or right
 
 	lda zp_plr1_cur_anim,Y
 	jsr sub_rom_D0D6
-	lda #$00
-	beq @D1A1
-; ----------------
+	lda #$00	; This will reset the animation to idle when a player stops walking
+	beq @D1A1_set_anim	; This always branches
+
+; -----------------------------------------------------------------------------
+
 sub_rom_D1B6:
 	tya
 	eor #$01
-	tax
+	tax	; Opponent player's index in X (0 for player one, 1 for player 2)
+		; Used to check the opponent's animation
+
 	lda zp_plr1_cur_anim,Y
-	cmp #$06
-	bcs @D209
+	cmp #$06		; 6 = jumping up animation
+	bcs @D209_rts	; Anything lower is idle, parrying, crouching or walking
 
 	lda zp_controller1,Y
-	and #$04
-	beq @D209
+	and #$04	; D-pad down
+	beq @D209_rts
 
 	lda zp_controller1_new,Y
-	and #$80
+	and #$80	; Button A (punch)
 	beq @D1D3
 
-	lda #$13
-	bne @D206
+	lda #$13	; $13 = Uppercut
+	bne @D206_set_anim
 
 	@D1D3:
 	lda zp_controller1_new,Y
-	and #$40
+	and #$40	; Button B (kick)
 	beq @D1DE
 
-	lda #$14
-	bne @D206
+	lda #$14	; $14 = crouching kick
+	bne @D206_set_anim
 
 	@D1DE:
 	lda zp_plr1_cur_anim,X
-	cmp #$0B
+	cmp #$0B	; $0B = base kick
 	bcc @D1FD
 
-	cmp #$26
+	cmp #$26	; $26 = tripped/falling
 	bcs @D1FD
 
-	cmp #$18
+	cmp #$18	; $18 = executing a throw move
 	beq @D1FD
 
 	lda #$01
-	ldx zp_8A,Y
+	ldx zp_plr1_facing_dir,Y
 	bne @D1F4
 
 	lda #$02
@@ -2528,17 +2544,17 @@ sub_rom_D1B6:
 	beq @D1FD
 
 	lda #$02
-	bne @D206
+	bne @D206_set_anim
 
 	@D1FD:
-	lda zp_A3,Y
+	lda zp_plr1_fgtr_idx_clean,Y
 	cmp #$07
-	beq @D209
+	beq @D209_rts
 
 	lda #$01
-	@D206:
-	jsr sub_rom_CA4F
-	@D209:
+	@D206_set_anim:
+	jsr sub_change_fighter_anim
+	@D209_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -2591,7 +2607,7 @@ sub_rom_D3DE:
 	@D3F7:
 	lda zp_4B
 	and #$7F
-	sta zp_A3,X
+	sta zp_plr1_fgtr_idx_clean,X
 	lda #$00
 	sta zp_plr1_cur_anim,X
 	sta zp_plr1_anim_frame,X
@@ -2600,7 +2616,7 @@ sub_rom_D3DE:
 	lda #$FF
 	sta zp_4B
 	stx zp_7C
-	jsr sub_rom_D935
+	jsr sub_load_fighters_palettes
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -2928,62 +2944,66 @@ sub_rom_D6C7:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_D6E0:
+; Makes players "push" each other when moving against a stationary opponent
+sub_check_player_push:
 	lda zp_game_substate
 	cmp #$03
-	bne sub_rom_D718
+	bne sub_skip_bump_check	; Return if we are in "player hit" substate
 
 	lda zp_plr1_cur_anim,Y
-	cmp #$06
-	bcc @D6F1
+	cmp #$06	; Idle/non-moving animations?
+	bcc :+
 
-	cmp #$28	; Staggered animation
-	bne sub_rom_D718
+		cmp #$28	; Staggered animation
+		bne sub_skip_bump_check
 
-	@D6F1:
+	:
+	; Looks like this is only executed if the current player is not moving
 	lda zp_players_x_distance
 	cmp #$18
-	bcs sub_rom_D718
+	bcs sub_skip_bump_check
 
-	lda zp_players_y_distance
-	cmp #$10
-	bcs sub_rom_D718
+		lda zp_players_y_distance
+		cmp #$10
+		bcs sub_skip_bump_check
 
-	lda #$04
-	sta zp_ptr1_lo
+			lda #$04
+			sta zp_ptr1_lo
 ; ----------------
-sub_rom_D701:
-	lda zp_8A,Y
-	bne sub_rom_D719
+; Can't push a player that is near the border
+sub_check_left_border_proximity:
+	lda zp_plr1_facing_dir,Y
+	bne sub_check_right_border_proximity
 
-	lda zp_plr1_x_pos,Y
-	cmp #$20
-	bcc sub_rom_D718
+		lda zp_plr1_x_pos,Y
+		cmp #$20
+		bcc sub_skip_bump_check
 
-	lda zp_82,X
-	sec
-	sbc zp_ptr1_lo
-	sta zp_82,X
-	bcs sub_rom_D718
+			lda zp_82,X
+			sec
+			sbc zp_ptr1_lo
+			sta zp_82,X
+			bcs sub_skip_bump_check
 
-	dec zp_83,X
+				dec zp_plr1_spr_x_offset,X
 ; ----------------
-sub_rom_D718:
+sub_skip_bump_check:
 	rts
 ; ----------------
-sub_rom_D719:
+; Can't push a player that is near the border
+sub_check_right_border_proximity:
 	lda zp_plr1_x_pos,Y
 	cmp #$D0
-	bcs sub_rom_D718
+	bcs sub_skip_bump_check
 
-	lda zp_82,X
-	clc
-	adc zp_ptr1_lo
-	sta zp_82,X
-	bcc sub_rom_D718
+		lda zp_82,X
+		clc
+		adc zp_ptr1_lo
+		sta zp_82,X
+		bcc sub_skip_bump_check
 
-	inc zp_83,X
-	rts
+			inc zp_plr1_spr_x_offset,X
+			rts
 
 ; -----------------------------------------------------------------------------
 
@@ -2992,34 +3012,34 @@ sub_rom_D72C:
 	cmp #$50
 	bcc @D737
 
-	lda #$00
-	sta zp_7F
-	rts
+		lda #$00
+		sta zp_7F
+		rts
 ; ----------------
 	@D737:
 	lda zp_7F
 	bne @D759
 
-	lda zp_plr1_cur_anim,Y
-	cmp #$2D
-	beq @D752
+		lda zp_plr1_cur_anim,Y
+		cmp #$2D
+		beq @D752
 
-	cmp #$2F
-	beq @D752
+		cmp #$2F
+		beq @D752
 
-	cmp #$09
-	beq @D752
+		cmp #$09
+		beq @D752
 
-	cmp #$0A
-	beq @D752
+		cmp #$0A
+		beq @D752
 
-	cmp #$2E
-	bne @D76C
+		cmp #$2E
+		bne @D76C
 
-	@D752:
-	lda zp_plr1_anim_frame,Y
-	cmp #$02
-	bne @D76C
+		@D752:
+		lda zp_plr1_anim_frame,Y
+		cmp #$02
+		bne @D76C
 
 	@D759:
 	lda #$01
@@ -3032,7 +3052,8 @@ sub_rom_D72C:
 	tax
 	lda #$08
 	sta zp_ptr1_lo
-	jmp sub_rom_D701 ;jsr sub_rom_D701
+	jmp sub_check_left_border_proximity ;jsr sub_rom_D701
+
 	@D76C:
 	rts
 
@@ -3043,15 +3064,16 @@ sub_load_fighter_sprite_data:
 	stx zp_7B
 	stx zp_7C
 	jsr sub_rom_D784
+
 	ldx #$02
 	stx zp_7B
 	dex
 	stx zp_7C
 ; ----------------
 sub_rom_D784:
-	jsr sub_rom_D8F0
+	jsr sub_shangtsung_palettes
 	ldy zp_7C
-	ldx zp_A3,Y
+	ldx zp_plr1_fgtr_idx_clean,Y
 	lda tbl_fighter_sprite_banks,X
 	sta zp_05
 
@@ -3062,8 +3084,8 @@ sub_rom_D784:
 	lda zp_05
 	sta mmc3_bank_data
 	; Bank $01 in $A000-$BFFF
-	lda #$87
-	sta zp_prg_bank_select_backup
+	;lda #$87
+	;sta zp_prg_bank_select_backup
 	; Not needed after relocation
 	;sta mmc3_bank_select
 	;lda #$01
@@ -3074,6 +3096,7 @@ sub_rom_D784:
 	sta zp_ptr3_lo
 	lda rom_8000+1
 	sta zp_ptr3_hi
+	; Index = animation idx * 3
 	lda zp_plr1_cur_anim,Y
 	asl A
 	bcc :+
@@ -3085,6 +3108,7 @@ sub_rom_D784:
 		inc zp_ptr3_hi
 	:
 	sta zp_ptr1_lo
+	; Index ready, read first byte
 	tay
 	lda (zp_ptr3_lo),Y
 	asl A
@@ -3093,15 +3117,17 @@ sub_rom_D784:
 	sta zp_ptr4_lo
 	lda rom_DAF7+1,X
 	sta zp_ptr4_hi
-	ldy zp_7C
+
+	ldy zp_7C	; Player index (0 for player one, 1 for player two)
 	lda zp_plr1_anim_frame,Y
 	asl A
 	tay
 	lda (zp_ptr4_lo),Y
-	sta zp_05
+	sta zp_05	; Player's X movement (signed value)
 	iny
 	lda (zp_ptr4_lo),Y
-	sta zp_06
+	sta zp_06	; Player's Y movement (signed value)
+
 	iny
 	lda #$00
 	sta zp_18
@@ -3111,37 +3137,39 @@ sub_rom_D784:
 		; Animation will be set to zero when this is >0
 		inc zp_18
 	:
-	ldx zp_7B
-	ldy zp_7C
-	lda zp_05
+	ldx zp_7B	; 2-byte data / pointer offset for current player
+	ldy zp_7C	; 1-byte data offset for current player
+	lda zp_05	; X movement for current animation
 	bpl @D81A
 
-	eor #$FF
-	sta zp_05
-	inc zp_05
-	lda zp_8A,Y	; Probably says wether this player is moving or not
-	bne @D81F
+		; Negative movement (against current facing direction)
+		eor #$FF
+		sta zp_05
+		inc zp_05
+		lda zp_plr1_facing_dir,Y	; Will determine whether to move forward or backwards
+		bne @D81F
 
-		; If in movement, recalculate the distance between player hit boxes
-		@D803:
-		lda zp_plr1_x_pos,Y
-		sec
-		sbc zp_05
-		cmp #$20
-		bcc @D834
+			; Recalculate the distance between player hit boxes
+			@D803:
+			lda zp_plr1_x_pos,Y
+			sec
+			sbc zp_05
+			cmp #$20
+			bcc @D834
 
-		lda zp_82,X
-		sec
-		sbc zp_05
-		sta zp_82,X
-		bcs @D834
+			lda zp_82,X
+			sec
+			sbc zp_05
+			sta zp_82,X
+			bcs @D834
 
-		dec zp_83,X
-		beq @D834
+			dec zp_plr1_spr_x_offset,X
+			beq @D834
 
-		@D81A:
-		lda zp_8A,Y
-		bne @D803
+	@D81A:
+	lda zp_plr1_facing_dir,Y
+	bne @D803
+
 	@D81F:
 	lda zp_plr1_x_pos,Y
 	clc
@@ -3149,63 +3177,70 @@ sub_rom_D784:
 	cmp #$D0
 	bcs @D834
 
-	lda zp_82,X
-	clc
-	adc zp_05
-	sta zp_82,X
-	bcc @D834
+		lda zp_82,X
+		clc
+		adc zp_05
+		sta zp_82,X
+		bcc @D834
 
-	inc zp_83,X
+			inc zp_plr1_spr_x_offset,X
+
 	@D834:
 	lda zp_plr1_y_pos,Y
 	clc
 	adc zp_06
 	sta zp_plr1_y_pos,Y
-	ldy zp_ptr1_lo
+
+	ldy zp_ptr1_lo	; Fighter's anim ROM data offset
 	iny
 	lda (zp_ptr3_lo),Y
 	sta zp_ptr4_lo
 	iny
 	lda (zp_ptr3_lo),Y
 	sta zp_ptr4_hi
+
 	ldy zp_7C
 	lda zp_plr1_anim_frame,Y
 	tay
 	lda (zp_ptr4_lo),Y
 	sta zp_ptr1_lo
+
 	lda rom_8002+0
 	sta zp_ptr4_lo
 	lda rom_8002+1
 	sta zp_ptr4_hi
+
 	lda zp_ptr1_lo
 	asl A
-	bcc @D862
-	@D862:
+	;bcc @D862	; This achieves nothing
+	;@D862:
 	tay
 	lda (zp_ptr4_lo),Y
 	sta zp_ptr3_lo
 	iny
 	lda (zp_ptr4_lo),Y
-	sta zp_ptr3_hi
+	sta zp_ptr3_hi	; This now points to the second data table in fighter's anim ROM bank
+
 	ldx zp_7B
 	ldy zp_7C
-	jsr sub_rom_D6E0
+	jsr sub_check_player_push
 	jsr sub_rom_D72C
 
 	ldy zp_7C
-	ldx rom_CB0A,Y
+	ldx tbl_player_oam_offsets,Y
 	lda zp_plr1_cur_anim,Y
+
 	cmp #$09
 	beq @D88A
 
 	cmp #$2E
 	beq @D88A
 
-		cmp #$28	; Staggered animation
-		bne @D88E
+	cmp #$28	; Staggered animation
+	bne @D88E
 
 		@D88A:
-		; Force a move to the next OAM entry when staggered
+		; Force a move to the next OAM entry when staggered (and knocked out?)
 		inx
 		inx
 		inx
@@ -3214,11 +3249,12 @@ sub_rom_D784:
 	@D88E:
 	stx zp_1A
 	ldx zp_7B
-	lda zp_8A,Y
+	lda zp_plr1_facing_dir,Y
 	beq :+
-		lda #$40	; Offset for player 2
+		lda #$40	; Sprite's horizontal flip flag
 	:
 	sta zp_1B
+	
 	lda zp_82,X
 	sec
 	sbc zp_irq_hor_scroll
@@ -3231,27 +3267,29 @@ sub_rom_D784:
 	sec
 	sbc zp_ptr1_lo
 	sta zp_0A
+
 	ldx zp_7C
 	inc zp_plr1_anim_frame,X
 	ldy zp_7C
 	ldx zp_plr1_cur_anim,Y
 	lda zp_plr1_anim_frame,Y
 
+	; Frame 1 may have a sound
 	cmp #$01
-	bne @D8C8
+	bne :+
 
-		lda rom_DABE,X
-		beq @D8C8
+		lda tbl_frame_1_sfx_idx,X
+		beq :+
 
 			sta ram_req_sfx
-	@D8C8:
+	:
 	lda zp_18
 	beq :+
 		lda #$00
 		sta zp_plr1_cur_anim,Y
 		sta zp_plr1_anim_frame,Y
 	:
-	jmp sub_rom_D9AF
+	jmp sub_animate_player_sprites
 
 ; -----------------------------------------------------------------------------
 
@@ -3275,77 +3313,80 @@ tbl_fighter_sprite_banks:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_D8F0:
+; Change palettes if Shang-Tsung has morphed into a different fighter
+sub_shangtsung_palettes:
 	ldx zp_7C
 	lda zp_plr1_fighter_idx,X
-	and #$7F
-	cmp #$08
+	and #$7F	; Mask out CPU opponent flag
+
+	cmp #$08	; Shang-Tsung
 	beq @D8FE
 
-	cmp #$14
-	bne @D92B
+	cmp #$14	; Shang-Tsung (alt palette)
+	bne @D92B_rts
 
-	@D8FE:
-	lda zp_plr1_anim_frame,X
-	bne @D923
+		@D8FE:
+		lda zp_plr1_anim_frame,X
+		bne @D923
 
-	ldy zp_plr1_cur_anim,X
-	lda rom_D977,Y
-	beq @D923
+		ldy zp_plr1_cur_anim,X
+		lda rom_D977,Y
+		beq @D923
 
-	cmp #$01
-	bne @D91D
+		cmp #$01
+		bne @D91D
 
-	lda zp_A3,X
-	cmp #$08
-	bne @D923
+		lda zp_plr1_fgtr_idx_clean,X
+		cmp #$08
+		bne @D923
 
-	jsr sub_rom_D96D
-	cpy #$08
-	bne @D933
+		jsr sub_rom_D96D
+		cpy #$08
+		bne @D933
 
-	dey
-	bne @D933
+		dey
+		bne @D933
 
-	@D91D:
-	lda #$08
-	sta zp_A3,X
-	bne sub_rom_D935
-	@D923:
-	lda zp_48,X
-	cmp #$30
-	bcs @D92C
+		@D91D:
+		lda #$08
+		sta zp_plr1_fgtr_idx_clean,X
+		bne sub_load_fighters_palettes
+		@D923:
+		lda zp_48,X
+		cmp #$30
+		bcs @D92C
 
-	inc zp_48,X
-	@D92B:
+		inc zp_48,X
+	@D92B_rts:
 	rts
 ; ----------------
 	@D92C:
 	lda zp_plr1_cur_anim,X
-	bne @D92B
+	bne @D92B_rts
 
 	jsr sub_rom_D96D
 	@D933:
-	sty zp_A3,X
+	sty zp_plr1_fgtr_idx_clean,X
 ; ----------------
-sub_rom_D935:
-	lda zp_A3,X
+sub_load_fighters_palettes:
+	lda zp_plr1_fgtr_idx_clean,X
 	asl A
 	tax
 	lda tbl_fighter_palette_ptrs+0,X
 	sta zp_ptr1_lo
 	lda tbl_fighter_palette_ptrs+1,X
 	sta zp_ptr1_hi
+
 	ldy #$00
 	ldx zp_7C
 	sty zp_48,X
 	sty zp_plr1_anim_frame,X
 	ldx #$00
 	@D94D:
-	lda (zp_ptr1_lo),Y
-	sta ram_ppu_data_buffer,X
-	inx
-	iny
+		lda (zp_ptr1_lo),Y
+		sta ram_ppu_data_buffer,X
+		inx
+		iny
 	cpy #$08
 	bcc @D94D
 
@@ -3368,10 +3409,9 @@ sub_rom_D935:
 sub_rom_D96D:
 	lda zp_22
 	and #$07
-	bne @D974
-
-	iny
-	@D974:
+	bne :+
+		iny
+	:
 	tay
 	iny
 	rts
@@ -3389,24 +3429,25 @@ rom_D977:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_D9AF:
-	ldx rom_CB0A,Y
+sub_animate_player_sprites:
+	ldx tbl_player_oam_offsets,Y
 	ldy #$00
 	lda #$F8
-	@D9B6:
-	sta ram_oam_copy_ypos,X
-	inx
-	inx
-	inx
-	inx
+	; This loop moves all sprites off-screen for the current player
+	:
+		sta ram_oam_copy_ypos,X
+		inx
+		inx
+		inx
+		inx
 	iny
 	cpy #$20
-	bcc @D9B6
+	bcc :-
 
 	ldy #$00
 	lda (zp_ptr3_lo),Y
 	sta zp_05
-	sta zp_ptr2_lo
+	sta zp_ptr2_lo	; This may be unused
 	iny
 	lda (zp_ptr3_lo),Y
 	sta zp_06
@@ -3425,140 +3466,171 @@ sub_rom_D9AF:
 	iny
 	lda zp_05
 	sta zp_09
-	lda zp_1B
-	bne @D9FB
 
-	lda #$08
-	sta zp_ptr1_lo
-	lda zp_07
-	sec
-	sbc zp_0F
-	jmp @DA07
+	lda zp_1B	; Probably a "direction" flag to indicate whether to move left or right
+	bne :+
+		; ptr1_lo = $08
+		; zp_07 = zp_07 - zp_0F
+		lda #$08
+		sta zp_ptr1_lo	; X increment (+8)
 
-	@D9FB:
+		lda zp_07
+		sec
+		sbc zp_0F
+		jmp @DA07
+	:
+	; ptr1_lo = $F8
+	; zp_07 = zp_0F - $08 + zp_07
 	lda #$F8
-	sta zp_ptr1_lo
+	sta zp_ptr1_lo	; X decrement (-8)
+
 	lda zp_0F
 	sec
 	sbc #$08
 	clc
 	adc zp_07
+
 	@DA07:
-	sta zp_07
-	sta zp_08
-	ldx zp_06
-	@DA0D:
-	lda zp_0A
-	sec
-	sbc #$08
-	sta zp_0A
+	sta zp_07	; Starting X offset for first tile in a row
+	sta zp_08	; Current X offset (updated for each column)
+
+	ldx zp_06	; Vertical updates count?
+
+	:
+		lda zp_0A	; It seems this was player Y pos - 8 before this loop
+		sec
+		sbc #$08
+		sta zp_0A
 	dex
-	bne @DA0D
+	bne :-
+
 	sta zp_0B
-	dec zp_0B
-	ldx zp_1A
-	@DA1D:
+	dec zp_0B	; Base Y position (incremented by 8 for each row)
+
+	ldx zp_1A	; OAM offset of first sprite
+
+	@next_frame_data_byte:
 	lda (zp_ptr3_lo),Y
 	cmp #$FF
-	beq @DA44
+	beq @skip_sprite
 
-	and #$7F
-	pha
-	lda zp_7C
-	beq @DA2F
+		; Ignore the MSB because we use this as an offset: we don't know yet
+		; if we are in the top half of CHR ROM or the bottom
+		and #$7F
 
-	pla
-	ora #$80
-	bne @DA30
+		pha
+		lda zp_7C	; Player index
+		beq @DA2F	; Nothing to change for player 1
 
-	@DA2F:
-	pla
-	@DA30:
-	sta ram_oam_copy_tileid,X
-	jmp @DA64
+		pla
+		ora #$80	; Move to the bottom of CHR ROM for player 2
+		bne @set_tile_id
 
-	@DA36:
-	lda zp_0B
-	sta ram_oam_copy_ypos,X
-	lda zp_08
-	sta ram_oam_copy_xpos,X
-	inx
-	inx
-	inx
-	inx
-	@DA44:
-	iny
-	lda zp_ptr1_lo
+		@DA2F:
+		pla
+
+		@set_tile_id:
+		sta ram_oam_copy_tileid,X
+		jmp @set_sprite_flags
+
+		@set_xy_pos:
+		lda zp_0B	; Current row's Y pos
+		sta ram_oam_copy_ypos,X
+		lda zp_08	; Current tile's X pos
+		sta ram_oam_copy_xpos,X
+		; Move to next OAM entry
+		;inx
+		;inx
+		;inx
+		;inx
+		txa
+		axs #$FC
+
+	@skip_sprite:
+	iny	; Animation frame data offset
+
+	; Increase X position offset for next tile in this row
+	lda zp_ptr1_lo	; This is a signed value (negative to draw right-to-left)
 	clc
 	adc zp_08
 	sta zp_08
-	dec zp_09
-	bne @DA1D
 
+	dec zp_09	; X counter
+	bne @next_frame_data_byte
+
+	; Increase Y position offset for next row
 	lda zp_0B
 	clc
-	adc #$08
+	adc #$08	; Fixed offset: we always draw top-to-bottom
 	sta zp_0B
-	lda zp_05
+
+	lda zp_05	; Horizontal tiles count reload
 	sta zp_09
-	lda zp_07
+
+	lda zp_07	; Starting X pos for next row of sprites
 	sta zp_08
-	dec zp_06
-	bne @DA1D
+
+	dec zp_06	; Y counter
+	bne @next_frame_data_byte
 
 	rts
 ; ----------------
-	@DA64:
-	tya
+	@set_sprite_flags:
+	tya	; Preserve animation data offset
 	pha
-	lda ram_0429
-	tay
+
+	ldy ram_0429 ;lda ram_0429
+	;tay
 	lda rom_01_B000+0,Y
 	sta zp_ptr4_lo
 	lda rom_01_B000+1,Y
 	sta zp_ptr4_hi
+
 	lda ram_oam_copy_tileid,X
 	and #$07
 	tay
-	lda @rom_DAB4,Y
+	lda @rom_DAB4,Y	; Index by tile ID % 8
 	pha
-	lda ram_oam_copy_tileid,X
-	and #$7F
-	lsr A
-	lsr A
-	lsr A
-	tay
+		lda ram_oam_copy_tileid,X
+		and #$7F
+		lsr A
+		lsr A
+		lsr A
+		tay
 	pla
 	and (zp_ptr4_lo),Y
-	beq @DA8E
-
-	lda #$01
-	@DA8E:
-	ora ram_042A
-	eor zp_1B
+	beq :+
+		lda #$01
+	:
+	ora ram_042A	; Add flags from fighter's anim frame data
+	eor zp_1B		; Horizontal flip flag depending on current facing direction
 	tay
-	lda zp_7C
-	beq @DA9D
+	lda zp_7C		; Player index
+	beq @DA9D		; Branch for player one
 
-	tya
-	ora #$02
-	bne @DA9E
+		tya			; Player 2 changes palette index
+		ora #$02
+		bne @DA9E
 
 	@DA9D:
-	tya
+	tya				; Player 1 uses value as it is (keep palette index)
+
 	@DA9E:
 	ldy ram_irq_routine_idx
 	cpy #$06
-	bne @DAA7
-
-	ora #$20
-	@DAA7:
+	bne :+
+		; This is only used in the Continue screen...
+		; probably leftover from a different game
+		ora #$20	; Move sprite behind the background
+	:
 	sta ram_oam_copy_attr,X
+
 	pla
 	tay
+
 	lda #$FB
-	sta ram_067F
-	jmp @DA36
+	sta ram_067F	; Probably unused
+	jmp @set_xy_pos
 
 ; -----------------------------------------------------------------------------
 
@@ -3570,8 +3642,9 @@ sub_rom_D9AF:
 
 ; -----------------------------------------------------------------------------
 
-; SFX indices
-rom_DABE:
+; SFX indices for frame 1 of each animation
+; 0 = no sound
+tbl_frame_1_sfx_idx:
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $00, $00, $00, $07, $07, $08, $00, $00
 	.byte $08, $00, $00, $08, $07, $08, $00, $04
@@ -3587,7 +3660,7 @@ rom_DABE:
 ; -----------------------------------------------------------------------------
 .export rom_01_B000
 
-; Data pointers
+; Data pointers, indexed by CHR ROM bank number
 rom_01_B000:
 	.word rom_B0D8, rom_B0E8, rom_B0F8, rom_B108
 	.word rom_B118, rom_B128, rom_B138, rom_B148
@@ -3905,6 +3978,8 @@ rom_B6A8:
 ; -----------------------------------------------------------------------------
 
 ; Data pointers for sprite animation sequences
+; Index for these pointers is first byte from 3-byte data on top of fighter's
+; PRG ROM bank
 rom_DAF7:
 	.word rom_DB7D	; $00
 	.word rom_DB98	; $01
@@ -3914,7 +3989,7 @@ rom_DAF7:
 	.word rom_DC17
 	.word rom_DB8B
 	.word rom_DBE5
-	.word rom_DB81
+	.word rom_DB81	; $08
 	.word rom_DB79
 	.word rom_DB85
 	.word rom_DC38
@@ -3954,6 +4029,7 @@ rom_DAF7:
 
 ; -----------------------------------------------------------------------------
 
+; Index for this data is current animation frame * 2
 rom_DB51:
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $00, $00, $00, $00, $00, $00, $00, $00

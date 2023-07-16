@@ -37,20 +37,20 @@ sub_rom_A00C:
 
 	bcs @A02B
 
-	lda zp_8A,X
+	lda zp_plr1_facing_dir,X
 	beq @A030
 
 	@A02A:
 	rts
 ; ----------------
 	@A02B:
-	lda zp_8A,X
+	lda zp_plr1_facing_dir,X
 	bne @A030
 
 	rts
 ; ----------------
 	@A030:
-	lda zp_A3,X
+	lda zp_plr1_fgtr_idx_clean,X
 	asl A
 	tay
 	lda rom_A10C+0,Y
@@ -794,7 +794,7 @@ sub_rom_A63B:
 	bne @A679
 
 	@A660:
-	lda zp_A3,X
+	lda zp_plr1_fgtr_idx_clean,X
 	asl A
 	tay
 	lda (zp_ptr3_lo),Y
@@ -816,7 +816,7 @@ sub_rom_A63B:
 ; -----------------------------------------------------------------------------
 
 sub_rom_A67A:
-	lda zp_A3,Y
+	lda zp_plr1_fgtr_idx_clean,Y
 	asl A
 	tax
 	lda rom_A7BF+0,X
@@ -843,7 +843,7 @@ rom_A69C:
 ; -----------------------------------------------------------------------------
 
 sub_rom_A6BC:
-	lda zp_A3,Y
+	lda zp_plr1_fgtr_idx_clean,Y
 	asl A
 	tax
 	lda rom_A7D7+0,X
@@ -870,7 +870,7 @@ rom_A6DE:
 ; -----------------------------------------------------------------------------
 
 sub_rom_A6FE:
-	lda zp_A3,Y
+	lda zp_plr1_fgtr_idx_clean,Y
 	asl A
 	tax
 	lda rom_A7EF+0,X
@@ -885,7 +885,7 @@ sub_rom_A6FE:
 	lda rom_A733,X
 	bpl @A723
 
-	ldx zp_A3,Y
+	ldx zp_plr1_fgtr_idx_clean,Y
 	lda rom_A727,X
 	@A723:
 	jsr sub_rom_A773

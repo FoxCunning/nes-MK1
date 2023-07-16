@@ -1144,10 +1144,10 @@ sub_init_game_mode:
 	@C05A:
 	lda zp_plr1_fighter_idx
 	and #$7F
-	sta zp_A3
+	sta zp_plr1_fgtr_idx_clean
 	lda zp_plr2_fighter_idx
 	and #$7F
-	sta zp_A4
+	sta zp_plr2_fgtr_idx_clean
 
 	; Select stage music
 	ldx ram_irq_routine_idx
@@ -1229,25 +1229,25 @@ sub_call_load_stage_bg:
 ; If any of the fighter indices were changed to load the alt palette,
 ; put it back as it was before ($00-$08 instead of $0C-$14)
 sub_rebase_fighter_indices:
-	lda zp_A3	; Player 1 fighter idx
+	lda zp_plr1_fgtr_idx_clean	; Player 1 fighter idx
 	@C0EC:
 	cmp #$0C
 	bcc @C0F8
 
 	sec
 	sbc #$0C
-	sta zp_A3
+	sta zp_plr1_fgtr_idx_clean
 	jmp @C0EC
 
 	@C0F8:
-	lda zp_A4	; Player 2 fighter idx
+	lda zp_plr2_fgtr_idx_clean	; Player 2 fighter idx
 	@C0FA:
 	cmp #$0C
 	bcc @C106
 
 	sec
 	sbc #$0C
-	sta zp_A4
+	sta zp_plr2_fgtr_idx_clean
 	jmp @C0FA
 
 	@C106:

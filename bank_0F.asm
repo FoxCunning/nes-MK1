@@ -1116,7 +1116,7 @@ sub_rom_E889:
 
 sub_rom_E893:
 	lda #$00
-	sta a:zp_machine_state_0	; ???
+	sta zp_machine_state_0 ;a:zp_machine_state_0
 	lda #$00
 	rts
 

@@ -17,115 +17,116 @@ rom_07_8000:
 ; -----------------------------------------------------------------------------
 
 rom_8004:
-	.byte $08
+	.byte $08			; $00 = idle
     .word rom_80A3
-    .byte $06
+    .byte $06			; $01 = crouching
     .word rom_80A9
-    .byte $08
+    .byte $08			; $02 = ???
 	.word rom_80AD
-	.byte $01
+	.byte $01			; $03 = walking forward
 	.word rom_80B5
-	.byte $03
+	.byte $03			; $04 = walking backwards
 	.word rom_80BF
-	.byte $08
+	.byte $08			; $05 = parrying
 	.word rom_80C9
-	.byte $02
+	.byte $02			; $06 = jumping up
 	.word rom_80D1
-	.byte $05
+	.byte $05			; $07 = jumping forward
 	.word rom_80DD
-	.byte $04
+	.byte $04			; $08 = jumping backwards
 	.word rom_80ED
-	.byte $07
+	.byte $07			; $09 = strong hit? hit by flying kick? (still shoved backwards)
 	.word rom_80FD
-	.byte $07
+	.byte $07			; $0A = regular hit (shoved backwards)
 	.word rom_8105
-	.byte $08
+	.byte $08			; $0B = base kick
 	.word rom_810D
-	.byte $0A
+	.byte $0A			; $0C
 	.word rom_8113
-	.byte $1D
+	.byte $1D			; $0D
 	.word rom_8117
-	.byte $02
+	.byte $02			; $0E
 	.word rom_8137
-	.byte $02
+	.byte $02			; $0F
 	.word rom_8143
-	.byte $00
+	.byte $00			; $10 = base punch
 	.word rom_814F
-	.byte $02
+	.byte $02			; $11 = jumping up punch
 	.word rom_8157
-	.byte $02
+	.byte $02			; $12
 	.word rom_8163
-	.byte $00
+	.byte $00			; $13 = uppercut
 	.word rom_816F
-	.byte $0A
+	.byte $0A			; $14 = crouching kick
 	.word rom_8177
-	.byte $05
+	.byte $05			; $15
 	.word rom_817B
-	.byte $02
+	.byte $02			; $16
 	.word rom_817C
-	.byte $2C
+	.byte $2C			; $17
 	.word rom_817D
-	.byte $2A
+	.byte $2A			; $18 = throw move
 	.word rom_818D
-	.byte $05
+	.byte $05			; $19 = jumping forward punch
 	.word rom_8199
-	.byte $05
+	.byte $05			; $1A
 	.word rom_81A9
-	.byte $05
+	.byte $05			; $1B = jumping forward kick
 	.word rom_81B9
-	.byte $05
+	.byte $05			; $1C
 	.word rom_81C9
-	.byte $05
+	.byte $05			; $1D
 	.word rom_81D9
-	.byte $18
+	.byte $18			; $1E
 	.word rom_81DA
-	.byte $04
+	.byte $04			; $1F = jumping backwards punch
 	.word rom_81F8
-	.byte $04
+	.byte $04			; $20
 	.word rom_8208
-	.byte $04
+	.byte $04			; $21 = jumping backwards kick
 	.word rom_8218
-	.byte $04
+	.byte $04			; $22
 	.word rom_8228
-	.byte $04
+	.byte $04			; $23
 	.word rom_8238
-	.byte $04
+	.byte $04			; $24
 	.word rom_8239
-	.byte $06
+	.byte $06			; $25
 	.word rom_823A
-	.byte $0E
+	.byte $0E			; $26 = falling on his back
 	.word rom_823B
-	.byte $08
+	.byte $08			; $27 = getting up
 	.word rom_8248
-	.byte $10		; $28 = Staggered
+	.byte $10			; $28 = staggered
 	.word rom_824E
-	.byte $08
+	.byte $08			; $29
 	.word rom_8262
-	.byte $08
+	.byte $08			; $2A
 	.word rom_8268
-	.byte $07
+	.byte $07			; $2B
 	.word rom_80AD
-	.byte $07
+	.byte $07			; $2C
 	.word rom_80C9
-	.byte $0F
+	.byte $0F			; $2D
 	.word rom_8270
-	.byte $0D
+	.byte $0D			; $2E = strong hit (knocked down)
 	.word rom_8271
-	.byte $14
+	.byte $14			; $2F
 	.word rom_8286
-	.byte $0D
+	.byte $0D			; $30
 	.word rom_8271
-	.byte $29
+	.byte $29			; $31
 	.word rom_8286
-	.byte $19
+	.byte $19			; $32
 	.word rom_8292
-	.byte $1F
+	.byte $1F			; $33
 	.word rom_82A1
-	.byte $04		; $34
+	.byte $04			; $34 = ???
 	.word rom_80ED
 
 ; -----------------------------------------------------------------------------
 
+; Indices for a pointer in the second table below
 rom_80A3:
 	.byte $00, $00, $00, $01, $01, $01
 rom_80A9:
@@ -302,33 +303,53 @@ rom_82C7:
 
 ; -----------------------------------------------------------------------------
 
+; Idle animation, frame 0
 rom_8391:
-	.byte $05, $09, $10, $58, $00, $FF, $FF, $01
-	.byte $02, $FF, $05, $06, $07, $08, $FF, $0F
-	.byte $10, $11, $12, $FF, $FF, $1C, $1D, $1E
-	.byte $FF, $FF, $2A, $2B, $2C, $FF, $FF, $37
-	.byte $38, $39, $FF, $FF, $47, $48, $49, $FF
-	.byte $FF, $57, $FF, $58, $FF, $FF, $65, $FF
-	.byte $66, $67
+	.byte $05	; Horizontal tiles count
+	.byte $09	; Vertical tiles count
+	.byte $10	; X offset (8 = neutral, higher = move forward, lower = backwards)
+	.byte $58	; CHR bank number
+	.byte $00	; Sprite attributes OR mask (e.g. force flip / priority / palette)
+	; So we have 5 columns x 9 rows composing our meta-sprite
+	; $FF = no sprite to display on that position
+	.byte $FF, $FF, $01, $02, $FF	; This is the top of the head
+	.byte $05, $06, $07, $08, $FF
+	.byte $0F, $10, $11, $12, $FF
+	.byte $FF, $1C, $1D, $1E, $FF
+	.byte $FF, $2A, $2B, $2C, $FF
+	.byte $FF, $37, $38, $39, $FF
+	.byte $FF, $47, $48, $49, $FF
+	.byte $FF, $57, $FF, $58, $FF
+	.byte $FF, $65, $FF, $66, $67	; These are the feet
+
+; Idle animation, frame 1
 rom_83C3:
-	.byte $04, $09, $08, $58, $00, $FF, $03, $04
-	.byte $FF, $09, $0A, $0B, $0C, $13, $14, $15
-	.byte $16, $1F, $20, $21, $22, $FF, $2D, $2E
-	.byte $2F, $3A, $3B, $3C, $FF, $4A, $4B, $4C
-	.byte $0C, $59, $5A, $5B, $5C, $68, $FF, $69
-	.byte $6A
+	.byte $04, $09, $08, $58, $00
+	.byte $FF, $03, $04, $FF
+	.byte $09, $0A, $0B, $0C
+	.byte $13, $14, $15, $16
+	.byte $1F, $20, $21, $22
+	.byte $FF, $2D, $2E, $2F
+	.byte $3A, $3B, $3C, $FF
+	.byte $4A, $4B, $4C, $0C
+	.byte $59, $5A, $5B, $5C
+	.byte $68, $FF, $69, $6A
+
 rom_83EC:
-	.byte $04, $05, $10, $5C, $00, $6C, $6D, $6E
-	.byte $6F, $70, $71, $72, $73, $74, $75, $76
-	.byte $77, $78, $79, $7A, $7B, $7C, $FF, $7D
-	.byte $7E
+	.byte $04, $05, $10, $5C, $00
+	.byte $6C, $6D, $6E, $6F, $70
+	.byte $71, $72, $73, $74, $75
+	.byte $76, $77, $78, $79, $7A
+	.byte $7B, $7C, $FF, $7D, $7E
 rom_8405:
-	.byte $04, $06, $10, $5E, $00, $82, $83, $84
+	.byte $04, $06, $10, $5E, $00
+	.byte $82, $83, $84
 	.byte $FF, $8B, $8C, $8D, $8E, $98, $99, $9A
 	.byte $9B, $A4, $A5, $A6, $A7, $B1, $B2, $B3
 	.byte $B4, $BD, $92, $BE, $BF
 rom_8422:
-	.byte $04, $0A, $10, $5C, $00, $FF, $01, $02
+	.byte $04, $0A, $10, $5C, $00
+	.byte $FF, $01, $02
 	.byte $FF, $FF, $05, $06, $FF, $0B, $0C, $0D
 	.byte $FF, $14, $15, $16, $04, $1D, $1E, $1F
 	.byte $20, $29, $2A, $2B, $2C, $37, $38, $39

@@ -132,16 +132,16 @@ zp_7F = $7F     ;
 ; Horizontal scroll value used in IRQ routines
 zp_irq_hor_scroll = $81 ;
 zp_82 = $82 ;
-zp_83 = $83     ;
+zp_plr1_spr_x_offset = $83  ; How much the player has moved from the starting position
 zp_84 = $84     ;
-zp_85 = $85     ;
+zp_plr2_spr_x_offset = $85  ; How much the player has moved from the starting position
 ; Hitbox coordinates
 zp_plr1_x_pos = $86 ;
 zp_plr2_x_pos = $87 ;
 zp_plr1_y_pos = $88 ;
 zp_plr2_y_pos = $89 ;
-zp_8A = $8A     ;
-zp_8B = $8B     ;
+zp_plr1_facing_dir = $8A    ; 0 = forward, 1 = backwards
+zp_plr2_facing_dir = $8B    ; 0 = forward, 1 = backwards
 zp_8C = $8C     ;
 zp_8D = $8D     ;
 
@@ -166,15 +166,18 @@ zp_match_time = $9F ;
 zp_A0 = $A0     ;
 zp_A1 = $A1     ;
 zp_A2 = $A2     ;
-zp_A3 = $A3     ;
-zp_A4 = $A4     ;
+zp_plr1_fgtr_idx_clean = $A3    ; Fighter index without flags
+zp_plr2_fgtr_idx_clean = $A4    ; Fighter index without flags
+
 ; This basically represents missing health / hits taken
 zp_plr1_damage = $A5    ;
 ; This basically represents missing health / hits taken
 zp_plr2_damage = $A6    ;
+
 ; This will count down while damage is applied point by point
 zp_plr1_dmg_counter = $A7   ;
 zp_plr2_dmg_counter = $A8   ;
+
 zp_A9 = $A9     ;
 zp_AD = $AD     ;
 
@@ -319,8 +322,10 @@ ram_0440 = $0440    ;
 
 ; This buffer will be copied to the PPU during vblank
 ram_ppu_data_buffer = $0600 ; Size=63
+; The last two bytes are also used to store the tile indices for the match timer
 ram_063E = $063E    ;
-ram_063F = $063F    ;
+ram_063F = $063F    ; 
+
 ram_0640 = $0640    ;
 ram_066D = $066D    ;
 ram_066E = $066E    ;
@@ -337,16 +342,19 @@ ram_req_song = $0673    ;
 ram_cur_song = $0674    ;
 
 ram_0675 = $0675    ;
-ram_0678 = $0678    ;
-ram_0679 = $0679    ;
-ram_067B = $067B    ;
-ram_067C = $067C    ;
-ram_067D = $067D    ;
-ram_067E = $067E    ;
-ram_067F = $067F    ;
+;ram_0678 = $0678    ;
+;ram_0679 = $0679    ;
+;ram_067B = $067B    ;
+
+ram_067C = $067C    ; Set twice, but potentially unused
+ram_067D = $067D    ; Set twice, but potentially unused
+ram_067E = $067E    ; Set once, but potentially unused
+ram_067F = $067F    ; Set once, but potentially unused
+
 ram_0680 = $0680    ;
 ram_0681 = $0681    ;
 ram_0682 = $0682    ;
+
 ram_06C0 = $06C0    ;
 ram_06C3 = $06C3    ;
 ram_06C6 = $06C6    ;
