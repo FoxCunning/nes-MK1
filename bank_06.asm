@@ -18,7 +18,7 @@ rom_06_8000:
 
 ; Index = player's animation idx * 3
 rom_8004:
-	.byte $08
+	.byte $09
 	.word rom_80A3
     .byte $06
 	.word rom_80A9
@@ -130,7 +130,8 @@ rom_8004:
 ; Index = player's animation frame
 ; Data = indices for a pointer in the second table below
 rom_80A3:
-	.byte $00, $00, $00, $01, $01, $01
+	.byte $00, $00, $00, $00, $00, $00, $00, $00
+	.byte $01, $01, $01, $01, $01, $01, $01, $01
 rom_80A9:
 	.byte $02, $02, $02, $02
 rom_80AD:
