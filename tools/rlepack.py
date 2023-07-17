@@ -47,6 +47,13 @@ def compress(data) -> bytearray:
         if new_byte == prev_byte:
             if len(buffer) > 0:
                 # Dump the contents of the buffer first, if needed
+                if len(buffer) > 0x7F:
+                    # Split the buffer if it's too big
+                    split = len(buffer) - 0x7E
+                    output.append(split | 0x80)
+                    output.append(buffer[:split])
+                    buffer = buffer[split:]
+
                 output.append(len(buffer) | 0x80)
                 output = output + buffer
                 buffer.clear()
@@ -62,12 +69,17 @@ def compress(data) -> bytearray:
         else:
             # Check if a sequence of identical bytes has just ended
             if count > 0:
+                if count >= 0x7F:
+                    output.append(0x7F)
+                    output.append(prev_byte)
+                    count = count - 0x7F
                 output.append(count + 1)
                 output.append(prev_byte)
                 count = 0
             else:
                 # If not, add previous byte to the un-identical sequence
-                if len(buffer) == 0x7F:
+                if len(buffer) == 0x7E:
+                    output.append(0xFE)
                     output = output + buffer
                     buffer.clear()
                 buffer.append(prev_byte)
@@ -76,6 +88,10 @@ def compress(data) -> bytearray:
 
     # Check if we have anything left to write
     if count > 0:
+        if count >= 0x7F:
+            output.append(0x7F)
+            output.append(prev_byte)
+            count = count - 0x7F
         output.append(count + 1)
         output.append(prev_byte)
     elif len(buffer) > 0:
@@ -122,7 +138,7 @@ if __name__ == "__main__":
     # Write output to file
     try:
         with open(out_path, "wb+") as out_file:
-            out_file.write(bytearray([0x20, 0x20]))
+            out_file.write(bytearray([0x20, 0x00]))
             out_file.write(rle)
             out_file.write(b"\xFF")
     except IOError as error:
