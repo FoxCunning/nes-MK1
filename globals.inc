@@ -110,7 +110,7 @@ zp_chr_bank_5 = $5B     ;
 zp_5C = $5C     ;
 zp_5D = $5D     ;
 zp_5E = $5E     ;
-zp_5F = $5F     ;
+zp_endurance_flag = $5F ; Set to one for endurance matches (1 vs 2)
 
 zp_60 = $60     ;
 zp_61 = $61     ;

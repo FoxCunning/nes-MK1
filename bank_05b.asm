@@ -21,7 +21,7 @@ sub_state_machine_0:
 	.word sub_main_menu_states			; 0,0
 	.word sub_option_menu_states		; 0,1
 	.word sub_fighter_selection_states	; 0,2
-	.word sub_rom_B8BC				; 0,3
+	.word sub_vs_state_machine				; 0,3
 	.word sub_continue_screen_state_machine	; 0,4
 	.word sub_high_scores_states		; 0,5
 	.word sub_rom_BF1E				; 0,6
@@ -67,7 +67,7 @@ sub_init_menu_screen:
 	sta ram_irq_latch_value
 	
 	lda #$00
-	sta zp_5F
+	sta zp_endurance_flag
 	sta zp_61
 	;lda #$00
 	sta zp_plr1_selection
@@ -1563,37 +1563,41 @@ sub_rom_B8A5:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B8BC:
+sub_vs_state_machine:
 	lda zp_machine_state_2
 	jsr sub_trampoline
 ; ----------------
 ; Jump pointers
-	.word sub_rom_B8CB
-	.word sub_rom_B926
-	.word sub_rom_B982
-	.word sub_rom_B993
-	.word sub_rom_B9B5
+	.word sub_vs_state_init	; 0,2,0
+	.word sub_rom_B926	; 0,2,1
+	.word sub_vs_fade_in	; 0,2,2
+	.word sub_rom_B993	; 0,2,3
+	.word sub_vs_fade_out	; 0,2,4
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B8CB:
+sub_vs_state_init:
 	jsr sub_rom_BE15
+	; If both fighters have already been selected, move to VS screen,
+	; otherwise this will show the fighter selection screen
 	ldx #$00
-	lda zp_plr1_selection,X
+	lda zp_plr1_selection,X			; Player 1
 	bmi @B8E2
 
-	inx
-	lda zp_plr1_selection,X
+		inx
+		lda zp_plr1_selection,X		; Player 2
+
 	bmi @B8E2
 
-	inc zp_machine_state_2
-	lda #$00
-	sta zp_61
-	sta zp_5F
+		inc zp_machine_state_2
+		lda #$00
+		sta zp_61
+		sta zp_endurance_flag
+
 	rts
 ; ----------------
 	@B8E2:
-	lda zp_5F
+	lda zp_endurance_flag
 	bne @B8F2
 
 	lda #$00
@@ -1640,7 +1644,7 @@ rom_B922:
 ; -----------------------------------------------------------------------------
 
 sub_rom_B926:
-	lda zp_5F
+	lda zp_endurance_flag
 	cmp #$01
 	beq @B941
 
@@ -1689,7 +1693,7 @@ sub_rom_B926:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B982:
+sub_vs_fade_in:
 	jsr sub_rom_cycle_palettes
 	lda zp_palette_fade_idx
 	cmp #$05
@@ -1733,7 +1737,7 @@ sub_rom_B993:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B9B5:
+sub_vs_fade_out:
 	jsr sub_rom_cycle_palettes
 	lda zp_palette_fade_idx
 	cmp #$09

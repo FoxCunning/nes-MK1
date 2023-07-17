@@ -278,12 +278,12 @@ sub_ctrl_to_idx:
 tbl_chr_banks_per_screen:
 	.byte $F0, $F2, $F0, $F1, $F2, $F3, $00, $00	; $00	Main menu
 	.byte $FC, $FE, $FC, $FD, $FE, $FF, $00, $00	; $01	Options menu
-	.byte $FC, $FE, $F8, $F9, $FA, $FB, $00, $00	; $02
+	.byte $FC, $FE, $F8, $F9, $FA, $FB, $00, $00	; $02	Fighter select / VS
 	.byte $FC, $FE, $F8, $F9, $FA, $FB, $00, $00	; $03
 	.byte $FC, $FE, $FC, $FD, $FE, $FF, $00, $00	; $04
 	.byte $FC, $FE, $FC, $FD, $FE, $FF, $00, $00	; $05	(Fake) high scores
 	.byte $D8, $DA, $D8, $D9, $DA, $DB, $00, $00	; $06
-	.byte $FC, $FE, $F8, $F9, $FA, $FB, $00, $00	; $07
+	.byte $FC, $FE, $F8, $F9, $FA, $FB, $00, $00	; $07	Endurance match VS
 	.byte $BC, $BE, $BC, $BD, $BE, $BF, $00, $00	; $08	Titles screen
 	.byte $D8, $DA, $D8, $D9, $DA, $DB, $00, $00	; $09	Sound test
 
@@ -308,7 +308,7 @@ tbl_rle_data_ptr_odd:
 	.word nam_option_menu_2_rle
     .byte $28, $28
 
-    .word rom_player_select_rle		; $02
+    .word rom_fighter_select_rle	; $02
     .byte $20, $20
 	.word rom_vs_screen_2_rle
     .byte $28, $28
@@ -333,9 +333,9 @@ tbl_rle_data_ptr_odd:
 	.word rom_8390
     .byte $28, $28
 
-    .word rom_9391				; $07
+    .word rom_endurance_top_rle	; $07
     .byte $20, $20
-	.word rom_9491
+	.word rom_endurance_btm_rle
     .byte $28, $28
 
     .word nam_titles_rle		; $08
@@ -571,95 +571,8 @@ nam_option_menu_2_rle:
 
 ; -----------------------------------------------------------------------------
 
-rom_player_select_rle:
-	.byte $20, $00, $46, $FC, $82, $E0, $E1, $02
-	.byte $E2, $8F, $E3, $E4, $FC, $E5, $E2, $E6
-	.byte $E7, $FC, $E8, $E9, $E0, $E1, $EA, $E4
-	.byte $E7, $0D, $FC, $82, $F0, $F1, $02, $F2
-	.byte $8F, $F3, $F4, $FC, $F5, $F2, $F6, $F7
-	.byte $FC, $F8, $F9, $F0, $F1, $FA, $F4, $F7
-	.byte $0C, $FC, $81, $EB, $14, $EC, $81, $ED
-	.byte $0A, $FC, $83, $FB, $FC, $EB, $04, $EC
-	.byte $81, $ED, $06, $FC, $81, $EB, $04, $EC
-	.byte $83, $ED, $FC, $FB, $0A, $FC, $88, $FB
-	.byte $FC, $FB, $C0, $C1, $C2, $C3, $FB, $06
-	.byte $FC, $88, $FB, $6C, $6D, $6E, $6F, $FB
-	.byte $FC, $FB, $0A, $FC, $88, $FB, $FC, $FB
-	.byte $D0, $D1, $D2, $D3, $FB, $06, $FC, $88
-	.byte $FB, $7C, $7D, $7E, $7F, $FB, $FC, $FB
-	.byte $0A, $FC, $88, $FB, $FC, $FB, $C4, $C5
-	.byte $C6, $C7, $FB, $06, $FC, $88, $FB, $8C
-	.byte $8D, $8E, $8F, $FB, $FC, $FB, $07, $FC
-	.byte $81, $EB, $02, $EC, $88, $EF, $FC, $FB
-	.byte $D4, $D5, $D6, $D7, $FB, $06, $FC, $88
-	.byte $FB, $9C, $9D, $9E, $9F, $FB, $FC, $EE
-	.byte $02, $EC, $81, $ED, $04, $FC, $81, $FB
-	.byte $04, $FC, $86, $FB, $C8, $C9, $CA, $CB
-	.byte $FB, $06, $FC, $86, $FB, $AC, $AD, $AE
-	.byte $AF, $FB, $04, $FC, $81, $FB, $04, $FC
-	.byte $81, $FB, $04, $FC, $86, $FB, $D8, $D9
-	.byte $DA, $DB, $FB, $06, $FC, $86, $FB, $BC
-	.byte $BD, $BE, $BF, $FB, $04, $FC, $81, $FB
-	.byte $04, $FC, $81, $FB, $04, $FC, $81, $EE
-	.byte $04, $EC, $81, $EF, $06, $FC, $81, $EE
-	.byte $04, $EC, $81, $EF, $04, $FC, $81, $FB
-	.byte $04, $FC, $81, $FB, $1A, $FC, $81, $FB
-	.byte $04, $FC, $86, $FB, $FC, $08, $09, $0A
-	.byte $0B, $02, $FC, $84, $64, $65, $66, $67
-	.byte $04, $FC, $84, $00, $01, $02, $03, $02
-	.byte $FC, $86, $68, $69, $6A, $6B, $FC, $FB
-	.byte $04, $FC, $86, $FB, $FC, $18, $19, $1A
-	.byte $1B, $02, $FC, $84, $74, $75, $76, $77
-	.byte $04, $FC, $84, $10, $11, $12, $13, $02
-	.byte $FC, $86, $78, $79, $7A, $7B, $FC, $FB
-	.byte $04, $FC, $86, $FB, $FC, $28, $29, $2A
-	.byte $2B, $02, $FC, $84, $84, $85, $86, $87
-	.byte $04, $FC, $84, $20, $21, $22, $23, $02
-	.byte $FC, $86, $88, $89, $8A, $8B, $FC, $FB
-	.byte $04, $FC, $86, $FB, $FC, $38, $39, $3A
-	.byte $3B, $02, $FC, $84, $94, $95, $96, $97
-	.byte $04, $FC, $84, $30, $31, $32, $33, $02
-	.byte $FC, $86, $98, $99, $9A, $9B, $FC, $FB
-	.byte $04, $FC, $86, $FB, $FC, $48, $49, $4A
-	.byte $4B, $02, $FC, $84, $A4, $A5, $A6, $A7
-	.byte $04, $FC, $84, $40, $15, $42, $43, $02
-	.byte $FC, $86, $A8, $A9, $AA, $AB, $FC, $FB
-	.byte $04, $FC, $86, $FB, $FC, $58, $59, $5A
-	.byte $5B, $02, $FC, $84, $B4, $B5, $B6, $B7
-	.byte $04, $FC, $84, $50, $51, $52, $53, $02
-	.byte $FC, $86, $B8, $B9, $BA, $BB, $FC, $FB
-	.byte $04, $FC, $81, $FB, $05, $FC, $84, $60
-	.byte $61, $62, $63, $02, $FC, $84, $04, $05
-	.byte $06, $07, $02, $FC, $84, $0C, $0D, $0E
-	.byte $0F, $05, $FC, $81, $FB, $04, $FC, $81
-	.byte $FB, $05, $FC, $84, $70, $71, $72, $73
-	.byte $02, $FC, $84, $14, $15, $16, $17, $02
-	.byte $FC, $84, $1C, $1D, $1E, $1F, $05, $FC
-	.byte $81, $FB, $04, $FC, $81, $EE, $02, $EC
-	.byte $81, $ED, $02, $FC, $84, $80, $81, $82
-	.byte $83, $02, $FC, $84, $24, $25, $26, $27
-	.byte $02, $FC, $84, $2C, $2D, $2E, $2F, $02
-	.byte $FC, $81, $EB, $02, $EC, $81, $EF, $07
-	.byte $FC, $81, $FB, $02, $FC, $84, $90, $91
-	.byte $92, $93, $02, $FC, $84, $34, $35, $36
-	.byte $37, $02, $FC, $84, $3C, $3D, $3E, $3F
-	.byte $02, $FC, $81, $FB, $0A, $FC, $81, $FB
-	.byte $02, $FC, $84, $A0, $A1, $A2, $A3, $02
-	.byte $FC, $84, $44, $45, $46, $47, $02, $FC
-	.byte $84, $4C, $4D, $4E, $4F, $02, $FC, $81
-	.byte $FB, $0A, $FC, $81, $FB, $02, $FC, $84
-	.byte $B0, $B1, $B2, $B3, $02, $FC, $84, $54
-	.byte $55, $56, $57, $02, $FC, $84, $5C, $5D
-	.byte $5E, $5F, $02, $FC, $81, $FB, $0A, $FC
-	.byte $81, $FB, $14, $FC, $81, $FB, $0A, $FC
-	.byte $81, $EE, $14, $EC, $81, $EF, $45, $FC
-	.byte $0A, $FF, $81, $5F, $02, $FF, $81, $0F
-	.byte $04, $FF, $81, $55, $02, $FF, $81, $00
-	.byte $03, $FF, $86, $0F, $7F, $DF, $7F, $DF
-	.byte $AF, $02, $FF, $86, $00, $77, $DD, $77
-	.byte $DD, $AA, $03, $FF, $84, $55, $33, $CC
-	.byte $AA, $04, $FF, $84, $F5, $F3, $FC, $FA
-	.byte $0A, $FF, $FF
+rom_fighter_select_rle:
+.incbin "bin/fighter_select.rle"
 
 ; -----------------------------------------------------------------------------
 
@@ -751,38 +664,11 @@ rom_901A:
 ; -----------------------------------------------------------------------------
 
 rom_vs_screen_2_rle:
-	.byte $20, $00, $77, $15, $77, $15, $37, $15
-	.byte $81, $EB, $04, $EC, $81, $ED, $0A, $15
-	.byte $81, $EB, $04, $EC, $81, $ED, $0A, $15
-	.byte $81, $FB, $04, $15, $81, $FB, $0A, $15
-	.byte $81, $FB, $04, $15, $81, $FB, $0A, $15
-	.byte $81, $FB, $04, $15, $81, $FB, $03, $15
-	.byte $83, $CC, $CD, $CE, $04, $15, $81, $FB
-	.byte $04, $15, $81, $FB, $0A, $15, $81, $FB
-	.byte $04, $15, $81, $FB, $03, $15, $84, $DC
-	.byte $DD, $DE, $DF, $03, $15, $81, $FB, $04
-	.byte $15, $81, $FB, $0A, $15, $81, $FB, $04
-	.byte $15, $81, $FB, $04, $15, $83, $41, $CF
-	.byte $FD, $03, $15, $81, $FB, $04, $15, $81
-	.byte $FB, $0A, $15, $81, $FB, $04, $15, $81
-	.byte $FB, $04, $15, $83, $15, $FE, $FF, $03
-	.byte $15, $81, $FB, $04, $15, $81, $FB, $0A
-	.byte $15, $81, $FB, $04, $15, $81, $FB, $0A
-	.byte $15, $81, $FB, $04, $15, $81, $FB, $0A
-	.byte $15, $81, $EE, $04, $EC, $81, $EF, $0A
-	.byte $15, $81, $EE, $04, $EC, $81, $EF, $77
-	.byte $15, $77, $15, $77, $15, $40, $15, $0A
-	.byte $FF, $81, $5F, $02, $FF, $81, $0F, $04
-	.byte $FF, $84, $DF, $3F, $CF, $3F, $03, $FF
-	.byte $86, $3F, $FF, $D3, $4C, $FF, $EF, $02
-	.byte $FF, $86, $0F, $7F, $DD, $77, $DF, $AF
-	.byte $03, $FF, $84, $55, $33, $CC, $AA, $04
-	.byte $FF, $84, $F5, $F3, $FC, $FA, $0A, $FF
-	.byte $FF
+.incbin "bin/vs_screen_btm.rle"
 
 ; -----------------------------------------------------------------------------
 
-rom_9391:
+rom_endurance_top_rle:
 	.byte $20, $00, $77, $15, $77, $15, $35, $15
 	.byte $81, $EB, $04, $EC, $81, $ED, $08, $15
 	.byte $81, $EB, $04, $EC, $82, $ED, $EB, $04
@@ -818,7 +704,7 @@ rom_9391:
 
 ; -----------------------------------------------------------------------------
 
-rom_9491:
+rom_endurance_btm_rle:
 	.byte $28, $00, $77, $C1, $77, $C1, $35, $C1
 	.byte $81, $17, $04, $18, $82, $19, $17, $04
 	.byte $18, $81, $19, $08, $C1, $81, $17, $04

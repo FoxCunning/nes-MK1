@@ -1062,7 +1062,7 @@ sub_rom_E7F5:
 		asl A
 		asl A
 		clc
-		adc zp_5F ;a:zp_5F
+		adc zp_endurance_flag ;a:zp_5F
 		tax
 		inc zp_61 ;a:zp_61
 		lda zp_61 ;a:zp_61
@@ -1071,8 +1071,8 @@ sub_rom_E7F5:
 
 			lda #$00
 			sta zp_61 ;a:zp_61
-			inc zp_5F ;a:zp_5F
-			lda zp_5F ;a:zp_5F
+			inc zp_endurance_flag ;a:zp_5F
+			lda zp_endurance_flag ;a:zp_5F
 			cmp #$04
 			bcc :+
 
