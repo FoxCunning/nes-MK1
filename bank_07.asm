@@ -18,7 +18,7 @@ rom_07_8000:
 
 rom_8004:
 	.byte $09			; $00 = idle
-    .word rom_80A3
+    .word anim_subzero_idle
     .byte $06			; $01 = crouching
     .word rom_80A9
     .byte $08			; $02 = ???
@@ -97,8 +97,8 @@ rom_8004:
 	.word rom_823B
 	.byte $08			; $27 = getting up
 	.word rom_8248
-	.byte $10			; $28 = staggered
-	.word rom_824E
+	.byte $18			; $28 = staggered
+	.word anim_subzero_staggered
 	.byte $08			; $29
 	.word rom_8262
 	.byte $08			; $2A
@@ -109,7 +109,7 @@ rom_8004:
 	.word rom_80C9
 	.byte $0F			; $2D
 	.word rom_8270
-	.byte $0D			; $2E = strong hit (knocked down)
+	.byte $0D			; $2E = strong hit (knocked down or hit in the air)
 	.word rom_8271
 	.byte $14			; $2F
 	.word rom_8286
@@ -127,7 +127,7 @@ rom_8004:
 ; -----------------------------------------------------------------------------
 
 ; Indices for a pointer in the second table below
-rom_80A3:
+anim_subzero_idle:
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $01, $01, $01, $01, $01, $01, $01, $01
 rom_80A9:
@@ -242,10 +242,11 @@ rom_823B:
 	.byte $26
 rom_8248:
 	.byte $27, $27, $28, $28, $29, $29
-rom_824E:
-	.byte $2A, $2A, $2A, $2A, $2B, $2B, $2B, $2B
-	.byte $2A, $2A, $2A, $2A, $2B, $2B, $2B, $2B
-	.byte $2A, $2A, $2A, $2A
+anim_subzero_staggered:
+	.byte $2A, $2A, $2A, $2A, $2A, $2A, $2A, $2A
+	.byte $2B, $2B, $2B, $2B, $2B, $2B, $2B, $2B
+	.byte $2A, $2A, $2A, $2A, $2A, $2A, $2A, $2A
+	.byte $2B, $2B, $2B, $2B, $2B, $2B
 rom_8262:
 	.byte $2C, $2C, $2C, $2C, $2C, $2C
 rom_8268:
@@ -275,7 +276,7 @@ rom_82A1:
 ; -----------------------------------------------------------------------------
 
 rom_82C7:
-	.word rom_8391, rom_83C3, rom_83EC, rom_8405
+	.word subzero_frame_00, rom_83C3, rom_83EC, rom_8405
 	.word rom_8422, rom_844F, rom_847C, rom_84A5
 	.word rom_84CE, rom_84F7, rom_8520, rom_854D
 	.word rom_857A, rom_858E, rom_85A2, rom_85D4
@@ -289,23 +290,23 @@ rom_82C7:
 	.word rom_8AB5, rom_8ADE, rom_8B0B, rom_8B3C
 	.word rom_8B69, rom_8B98, rom_8BCA, rom_8BF3
 	.word rom_8C20, rom_8C45, rom_8C86, rom_8CB7
-	.word rom_8CD4, rom_8D06, rom_8D33, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391
+	.word rom_8CD4, rom_8D06, rom_8D33, subzero_frame_00
+	.word subzero_frame_00, subzero_frame_00, subzero_frame_00, subzero_frame_00
+	.word subzero_frame_00, subzero_frame_00, subzero_frame_00, subzero_frame_00
+	.word subzero_frame_00, subzero_frame_00, subzero_frame_00, subzero_frame_00
+	.word subzero_frame_00, subzero_frame_00, subzero_frame_00, subzero_frame_00
+	.word subzero_frame_00, subzero_frame_00, subzero_frame_00, subzero_frame_00
+	.word subzero_frame_00, subzero_frame_00, subzero_frame_00, subzero_frame_00
+	.word subzero_frame_00, subzero_frame_00, subzero_frame_00, subzero_frame_00
+	.word subzero_frame_00, subzero_frame_00, subzero_frame_00, subzero_frame_00
+	.word subzero_frame_00, subzero_frame_00, subzero_frame_00, subzero_frame_00
+	.word subzero_frame_00, subzero_frame_00, subzero_frame_00, subzero_frame_00
+	.word subzero_frame_00
 
 ; -----------------------------------------------------------------------------
 
 ; Idle animation, frame 0
-rom_8391:
+subzero_frame_00:
 	.byte $05	; Horizontal tiles count
 	.byte $09	; Vertical tiles count
 	.byte $10	; X offset (8 = neutral, higher = move forward, lower = backwards)

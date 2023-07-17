@@ -18,7 +18,7 @@ rom_8000:
 
 rom_8004:
 	.byte $09
-	.word rom_80A3
+	.word anim_kano_idle
 	.byte $06
 	.word rom_80A9
 	.byte $08
@@ -97,8 +97,8 @@ rom_8004:
 	.word rom_823B
 	.byte $08
 	.word rom_8248
-	.byte $10
-	.word rom_824E
+	.byte $18
+	.word anim_kano_staggered
 	.byte $08
 	.word rom_8262
 	.byte $08
@@ -126,7 +126,7 @@ rom_8004:
 
 ; -----------------------------------------------------------------------------
 
-rom_80A3:
+anim_kano_idle:
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $01, $01, $01, $01, $01, $01, $01, $01
 rom_80A9:
@@ -236,10 +236,11 @@ rom_823B:
 	.byte $26, $26, $26, $26, $26
 rom_8248:
 	.byte $27, $27, $28, $28, $29, $29
-rom_824E:
-	.byte $2A, $2A, $2A, $2A, $2B, $2B, $2B, $2B
-	.byte $2A, $2A, $2A, $2A, $2B, $2B, $2B, $2B
-	.byte $2A, $2A, $2A, $2A
+anim_kano_staggered:
+	.byte $2A, $2A, $2A, $2A, $2A, $2A, $2A, $2A
+	.byte $2B, $2B, $2B, $2B, $2B, $2B, $2B, $2B
+	.byte $2A, $2A, $2A, $2A, $2A, $2A, $2A, $2A
+	.byte $2B, $2B, $2B, $2B, $2B, $2B
 rom_8262:
 	.byte $2C, $2C, $2C, $2C, $2C, $2C
 rom_8268:
@@ -268,7 +269,7 @@ rom_82A1:
 ; -----------------------------------------------------------------------------
 
 rom_82C7:
-	.word rom_8391, rom_83BA, rom_83E3, rom_8401
+	.word kano_frame_00, kano_frame_01, kano_frame_02, rom_8401
 	.word rom_8429, rom_8429, rom_8497, rom_84CE
 	.word rom_8505, rom_853C, rom_8569, rom_8592
 	.word rom_85B3, rom_85CC, rom_85E5, rom_8617
@@ -282,36 +283,36 @@ rom_82C7:
 	.word rom_8B0D, rom_8B3A, rom_8B71, rom_8B9A
 	.word rom_8BBB, rom_8BEA, rom_8C21, rom_8C5C
 	.word rom_8C97, rom_8CC0, rom_8D04, rom_8D2D
-	.word rom_8D47, rom_8D79, rom_8DA8, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391
+	.word rom_8D47, rom_8D79, rom_8DA8, kano_frame_00
+	.word kano_frame_00, kano_frame_00, kano_frame_00, kano_frame_00
+	.word kano_frame_00, kano_frame_00, kano_frame_00, kano_frame_00
+	.word kano_frame_00, kano_frame_00, kano_frame_00, kano_frame_00
+	.word kano_frame_00, kano_frame_00, kano_frame_00, kano_frame_00
+	.word kano_frame_00, kano_frame_00, kano_frame_00, kano_frame_00
+	.word kano_frame_00, kano_frame_00, kano_frame_00, kano_frame_00
+	.word kano_frame_00, kano_frame_00, kano_frame_00, kano_frame_00
+	.word kano_frame_00, kano_frame_00, kano_frame_00, kano_frame_00
+	.word kano_frame_00, kano_frame_00, kano_frame_00, kano_frame_00
+	.word kano_frame_00, kano_frame_00, kano_frame_00, kano_frame_00
+	.word kano_frame_00
 
 ; -----------------------------------------------------------------------------
 
-rom_8391:
+kano_frame_00:
 	.byte $04, $09, $10, $AA, $00, $FF, $81, $82
 	.byte $FF, $8C, $8D, $8E, $8F, $9A, $9B, $9C
 	.byte $9D, $A8, $A9, $AA, $FF, $B5, $B6, $B7
 	.byte $FF, $C1, $C2, $C3, $FF, $CA, $CB, $CC
 	.byte $CD, $D5, $FE, $D6, $FF, $DA, $FF, $DB
 	.byte $DC
-rom_83BA:
+kano_frame_01:
 	.byte $04, $09, $10, $AA, $00, $FF, $83, $84
 	.byte $FF, $90, $91, $92, $93, $9E, $9F, $A0
 	.byte $A1, $AB, $AC, $AD, $FF, $B8, $B9, $BA
 	.byte $FF, $C4, $C5, $C6, $FF, $CE, $CF, $D0
 	.byte $D1, $D7, $D8, $D9, $D1, $DD, $FF, $DE
 	.byte $DF
-rom_83E3:
+kano_frame_02:
 	.byte $05, $05, $10, $A6, $00, $80, $81, $82
 	.byte $FF, $FF, $83, $84, $85, $86, $87, $89
 	.byte $8A, $8B, $8C, $8D, $91, $92, $93, $94

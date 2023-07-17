@@ -18,7 +18,7 @@ rom_0B_8000:
 
 rom_8004:
 	.byte $09
-	.word rom_80A3
+	.word anim_liukang_idle
 	.byte $06
 	.word rom_80A9
 	.byte $08
@@ -97,8 +97,8 @@ rom_8004:
 	.word rom_823B
 	.byte $08
 	.word rom_8248
-	.byte $10
-	.word rom_824E
+	.byte $18
+	.word anim_liukang_staggered
 	.byte $08
 	.word rom_8262
 	.byte $08
@@ -126,7 +126,7 @@ rom_8004:
 
 ; -----------------------------------------------------------------------------
 
-rom_80A3:
+anim_liukang_idle:
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $01, $01, $01, $01, $01, $01, $01, $01
 rom_80A9:
@@ -235,10 +235,11 @@ rom_823B:
 	.byte $26, $26, $26, $26, $26
 rom_8248:
 	.byte $27, $27, $28, $28, $29, $29
-rom_824E:
-	.byte $2A, $2A, $2A, $2A, $2B, $2B, $2B, $2B
-	.byte $2A, $2A, $2A, $2A, $2B, $2B, $2B, $2B
-	.byte $2A, $2A, $2A, $2A
+anim_liukang_staggered:
+	.byte $2A, $2A, $2A, $2A, $2A, $2A, $2A, $2A
+	.byte $2B, $2B, $2B, $2B, $2B, $2B, $2B, $2B
+	.byte $2A, $2A, $2A, $2A, $2A, $2A, $2A, $2A
+	.byte $2B, $2B, $2B, $2B, $2B, $2B
 rom_8262:
 	.byte $2C, $2C, $2C, $2C, $2C, $2C
 rom_8268:
@@ -265,7 +266,7 @@ rom_82A1:
 ; -----------------------------------------------------------------------------
 
 rom_82C7:
-	.word rom_8391, rom_83BA, rom_83E3, rom_8400
+	.word liukang_frame_00, liukang_frame_01, liukang_frame_02, rom_8400
 	.word rom_8421, rom_844A, rom_846A, rom_848A
 	.word rom_84AA, rom_84D3, rom_84FC, rom_851D
 	.word rom_853E, rom_8552, rom_8566, rom_858F
@@ -279,36 +280,36 @@ rom_82C7:
 	.word rom_8A66, rom_8A98, rom_8AB8, rom_8AD8
 	.word rom_8AFB, rom_8B1E, rom_8B47, rom_8B74
 	.word rom_8B9D, rom_8BD8, rom_8C13, rom_8C3C
-	.word rom_8C56, rom_8C7F, rom_8CA7, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391
+	.word rom_8C56, rom_8C7F, rom_8CA7, liukang_frame_00
+	.word liukang_frame_00, liukang_frame_00, liukang_frame_00, liukang_frame_00
+	.word liukang_frame_00, liukang_frame_00, liukang_frame_00, liukang_frame_00
+	.word liukang_frame_00, liukang_frame_00, liukang_frame_00, liukang_frame_00
+	.word liukang_frame_00, liukang_frame_00, liukang_frame_00, liukang_frame_00
+	.word liukang_frame_00, liukang_frame_00, liukang_frame_00, liukang_frame_00
+	.word liukang_frame_00, liukang_frame_00, liukang_frame_00, liukang_frame_00
+	.word liukang_frame_00, liukang_frame_00, liukang_frame_00, liukang_frame_00
+	.word liukang_frame_00, liukang_frame_00, liukang_frame_00, liukang_frame_00
+	.word liukang_frame_00, liukang_frame_00, liukang_frame_00, liukang_frame_00
+	.word liukang_frame_00, liukang_frame_00, liukang_frame_00, liukang_frame_00
+	.word liukang_frame_00
 
 ; -----------------------------------------------------------------------------
 
-rom_8391:
+liukang_frame_00:
 	.byte $04, $09, $10, $74, $00, $FF, $01, $02
 	.byte $FF, $FF, $09, $0A, $FF, $17, $18, $19
 	.byte $FF, $28, $29, $2A, $2B, $FF, $35, $36
 	.byte $37, $41, $42, $43, $44, $4F, $50, $51
 	.byte $52, $5E, $5F, $60, $61, $6D, $6E, $FF
 	.byte $6F
-rom_83BA:
+liukang_frame_01:
 	.byte $04, $09, $10, $74, $00, $FF, $03, $04
 	.byte $FF, $FF, $0B, $0C, $FF, $1A, $1B, $1C
 	.byte $FF, $2C, $2D, $2E, $2F, $FF, $38, $39
 	.byte $3A, $45, $46, $47, $48, $53, $54, $55
 	.byte $56, $62, $63, $64, $65, $71, $FF, $FF
 	.byte $72
-rom_83E3:
+liukang_frame_02:
 	.byte $04, $06, $10, $76, $00, $FF, $FF, $82
 	.byte $FF, $FF, $88, $89, $8A, $90, $91, $92
 	.byte $93, $98, $99, $9A, $9B, $9F, $A0, $A1

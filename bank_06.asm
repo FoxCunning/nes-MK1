@@ -18,8 +18,8 @@ rom_06_8000:
 
 ; Index = player's animation idx * 3
 rom_8004:
-	.byte $09
-	.word rom_80A3
+	.byte $09			; $00 = Idle
+	.word anim_sonya_idle
     .byte $06
 	.word rom_80A9
     .byte $08
@@ -34,7 +34,7 @@ rom_8004:
 	.word rom_80D1
     .byte $05
 	.word rom_80DD
-	.byte $04
+	.byte $04			; $08
 	.word rom_80ED
     .byte $07
 	.word rom_80FD
@@ -50,7 +50,7 @@ rom_8004:
 	.word rom_8137
     .byte $02
 	.word rom_8143
-	.byte $00
+	.byte $00			; $10
 	.word rom_814F
     .byte $02
 	.word rom_8157
@@ -66,7 +66,7 @@ rom_8004:
 	.word rom_817C
     .byte $0B
 	.word rom_817D
-	.byte $2A
+	.byte $2A			; $18
 	.word rom_818D
     .byte $05
 	.word rom_8199
@@ -82,7 +82,7 @@ rom_8004:
 	.word rom_81DA
     .byte $04
 	.word rom_81F8
-	.byte $04
+	.byte $04			; $20
 	.word rom_8208
     .byte $04
 	.word rom_8218
@@ -98,9 +98,9 @@ rom_8004:
 	.word rom_823B
     .byte $08
 	.word rom_8248
-	.byte $10
-	.word rom_824E
-    .byte $08
+	.byte $18 ;$10			; $28 = Staggered
+	.word anim_sonya_staggered
+    .byte $08			; $29 = Victory pose
 	.word rom_8262
     .byte $08
 	.word rom_8268
@@ -114,7 +114,7 @@ rom_8004:
 	.word rom_8271
     .byte $14
 	.word rom_8286
-	.byte $0D
+	.byte $0D			; $30
 	.word rom_8271
     .byte $29
 	.word rom_8286
@@ -122,14 +122,14 @@ rom_8004:
 	.word rom_8292
     .byte $1F
 	.word rom_82A1
-    .byte $04
+    .byte $04			; $34
 	.word rom_80ED
 
 ; -----------------------------------------------------------------------------
 
 ; Index = player's animation frame
 ; Data = indices for a pointer in the second table below
-rom_80A3:
+anim_sonya_idle:
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $01, $01, $01, $01, $01, $01, $01, $01
 rom_80A9:
@@ -236,10 +236,11 @@ rom_823B:
 	.byte $26, $26, $26, $26, $26
 rom_8248:
 	.byte $27, $27, $28, $28, $29, $29
-rom_824E:
-	.byte $2A, $2A, $2A, $2A, $2B, $2B, $2B, $2B
-	.byte $2A, $2A, $2A, $2A, $2B, $2B, $2B, $2B
-	.byte $2A, $2A, $2A, $2A
+anim_sonya_staggered:
+	.byte $2A, $2A, $2A, $2A, $2A, $2A, $2A, $2A
+	.byte $2B, $2B, $2B, $2B, $2B, $2B, $2B, $2B
+	.byte $2A, $2A, $2A, $2A, $2A, $2A, $2A, $2A
+	.byte $2B, $2B, $2B, $2B, $2B, $2B
 rom_8262:
 	.byte $2C, $2C, $2C, $2C, $2C, $2C
 rom_8268:
@@ -266,12 +267,12 @@ rom_82A1:
 ; -----------------------------------------------------------------------------
 
 rom_82C7:
-	.word rom_8391, rom_83BA, rom_83E3, rom_83F7
-	.word rom_8414, rom_844B, rom_846E, rom_8491
-	.word rom_84B4, rom_84E1, rom_8504, rom_8529
-	.word rom_8540, rom_8554, rom_8568, rom_8591
-	.word rom_85BA, rom_85F5, rom_8622, rom_865F
-	.word rom_8687, rom_86B9, rom_86F4, rom_872F
+	.word sonya_frame_00, sonya_frame_01, sonya_frame_02, sonya_frame_03
+	.word sonya_frame_04, sonya_frame_05, sonya_frame_06, sonya_frame_07
+	.word sonya_frame_08, sonya_frame_09, sonya_frame_0A, sonya_frame_0B
+	.word sonya_frame_0C, sonya_frame_0D, sonya_frame_0E, sonya_frame_0F
+	.word sonya_frame_10, sonya_frame_11, sonya_frame_12, sonya_frame_13
+	.word sonya_frame_14, sonya_frame_15, sonya_frame_16, sonya_frame_17
 	.word rom_8761, rom_877E, rom_87AB, rom_87D3
 	.word rom_87FC, rom_8824, rom_883D, rom_8865
 	.word rom_8876, rom_889F, rom_88D6, rom_88EF
@@ -280,45 +281,45 @@ rom_82C7:
 	.word rom_89F5, rom_8A15, rom_8A36, rom_8A77
 	.word rom_8AA4, rom_8AC7, rom_8AF0, rom_8B1D
 	.word rom_8B52, rom_8B84, rom_8BC5, rom_8C06
-	.word rom_8C19, rom_8C42, rom_8C5B, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391
+	.word rom_8C19, rom_8C42, rom_8C5B, sonya_frame_00
+	.word sonya_frame_00, sonya_frame_00, sonya_frame_00, sonya_frame_00
+	.word sonya_frame_00, sonya_frame_00, sonya_frame_00, sonya_frame_00
+	.word sonya_frame_00, sonya_frame_00, sonya_frame_00, sonya_frame_00
+	.word sonya_frame_00, sonya_frame_00, sonya_frame_00, sonya_frame_00
+	.word sonya_frame_00, sonya_frame_00, sonya_frame_00, sonya_frame_00
+	.word sonya_frame_00, sonya_frame_00, sonya_frame_00, sonya_frame_00
+	.word sonya_frame_00, sonya_frame_00, sonya_frame_00, sonya_frame_00
+	.word sonya_frame_00, sonya_frame_00, sonya_frame_00, sonya_frame_00
+	.word sonya_frame_00, sonya_frame_00, sonya_frame_00, sonya_frame_00
+	.word sonya_frame_00, sonya_frame_00, sonya_frame_00, sonya_frame_00
+	.word sonya_frame_00
 
 ; -----------------------------------------------------------------------------
 
-rom_8391:
+sonya_frame_00:
 	.byte $04, $09, $10, $38, $00, $FF, $04, $05
 	.byte $FF, $13, $14, $15, $FF, $26, $27, $28
 	.byte $FF, $39, $3A, $3B, $FF, $49, $4A, $4B
 	.byte $FF, $57, $58, $59, $FF, $63, $64, $65
 	.byte $66, $6F, $FF, $70, $FF, $78, $FF, $79
 	.byte $7A
-rom_83BA:
+sonya_frame_01:
 	.byte $04, $09, $10, $38, $00, $06, $07, $08
 	.byte $FF, $16, $17, $18, $FF, $29, $2A, $2B
 	.byte $FF, $3C, $3D, $3E, $FF, $4C, $4D, $4E
 	.byte $FF, $5A, $5B, $5C, $FF, $67, $68, $69
 	.byte $FF, $71, $FF, $72, $FF, $78, $FF, $79
 	.byte $7A
-rom_83E3:
+sonya_frame_02:
 	.byte $03, $05, $10, $3A, $00, $BE, $BF, $C0
 	.byte $CB, $CC, $CD, $D9, $DA, $DB, $E6, $E7
 	.byte $E8, $F4, $FF, $F5
-rom_83F7:
+sonya_frame_03:
 	.byte $04, $06, $10, $48, $00, $2A, $2B, $2C
 	.byte $2D, $39, $3A, $3B, $FF, $FF, $48, $49
 	.byte $FF, $03, $55, $56, $57, $62, $63, $64
 	.byte $65, $FF, $71, $FF, $72
-rom_8414:
+sonya_frame_04:
 	.byte $05, $0A, $10, $3C, $00, $FF, $FF, $01
 	.byte $02, $FF, $FF, $FF, $07, $08, $FF, $FF
 	.byte $FF, $0F, $10, $FF, $FF, $FF, $18, $19
@@ -326,70 +327,70 @@ rom_8414:
 	.byte $31, $32, $FF, $FF, $3D, $3E, $3F, $FF
 	.byte $FF, $4A, $4B, $4C, $FF, $FF, $57, $58
 	.byte $59, $FF, $63, $64, $FF, $65, $FF
-rom_844B:
+sonya_frame_05:
 	.byte $03, $0A, $00, $3C, $00, $03, $04, $FF
 	.byte $09, $0A, $FF, $11, $12, $FF, $1B, $1C
 	.byte $1D, $28, $29, $FF, $33, $34, $FF, $40
 	.byte $41, $FF, $4D, $4E, $FF, $5A, $5B, $FF
 	.byte $66, $67, $FF
-rom_846E:
+sonya_frame_06:
 	.byte $03, $0A, $00, $3C, $00, $FF, $FF, $FF
 	.byte $0B, $0C, $FF, $13, $14, $FF, $1E, $1F
 	.byte $20, $2A, $2B, $2C, $35, $36, $FF, $42
 	.byte $43, $FF, $4F, $50, $FF, $5C, $5D, $5E
 	.byte $68, $69, $6A
-rom_8491:
+sonya_frame_07:
 	.byte $03, $0A, $00, $3C, $00, $03, $04, $FF
 	.byte $09, $0A, $FF, $11, $12, $FF, $1B, $1C
 	.byte $21, $2D, $2E, $FF, $37, $38, $39, $44
 	.byte $45, $46, $51, $52, $53, $5F, $60, $FF
 	.byte $6B, $6C, $FF
-rom_84B4:
+sonya_frame_08:
 	.byte $04, $0A, $08, $3C, $00, $FF, $05, $06
 	.byte $FF, $FF, $0D, $0E, $FF, $FF, $15, $16
 	.byte $17, $FF, $22, $23, $24, $FF, $2F, $30
 	.byte $FF, $FF, $3A, $3B, $3C, $FF, $47, $48
 	.byte $49, $FF, $54, $55, $56, $3D, $61, $FF
 	.byte $62, $6D, $6E, $FF, $6F
-rom_84E1:
+sonya_frame_09:
 	.byte $03, $0A, $10, $46, $00, $FF, $FF, $FF
 	.byte $85, $86, $FF, $8A, $8B, $8C, $94, $95
 	.byte $FF, $A0, $A1, $A2, $B0, $B1, $B2, $B0
 	.byte $C2, $C3, $D3, $D4, $D5, $E5, $E6, $E7
 	.byte $F4, $FF, $F5
-rom_8504:
+sonya_frame_0A:
 	.byte $04, $08, $10, $3A, $00, $FF, $95, $96
 	.byte $FF, $A5, $A6, $A7, $FF, $AF, $B0, $B1
 	.byte $B2, $BA, $BB, $BC, $BD, $C8, $C9, $CA
 	.byte $FF, $D6, $D7, $D8, $FF, $E3, $E4, $E5
 	.byte $FF, $F1, $F2, $F3, $FF
-rom_8529:
+sonya_frame_0B:
 	.byte $02, $09, $10, $3E, $00, $FF, $84, $92
 	.byte $93, $A4, $A5, $B0, $B1, $BB, $BC, $C7
 	.byte $C8, $D6, $D7, $E5, $E6, $EE, $EF
-rom_8540:
+sonya_frame_0C:
 	.byte $03, $05, $10, $3E, $00, $BD, $BE, $F7
 	.byte $C9, $CA, $CB, $D9, $DA, $DB, $E7, $E8
 	.byte $E9, $FF, $F0, $E9
-rom_8554:
+sonya_frame_0D:
 	.byte $03, $05, $10, $3E, $40, $F7, $BE, $BD
 	.byte $CB, $CA, $C9, $DB, $DA, $D9, $E9, $E8
 	.byte $E7, $E9, $F0, $FF
-rom_8568:
+sonya_frame_0E:
 	.byte $04, $09, $10, $48, $00, $05, $06, $FF
 	.byte $FF, $0F, $10, $FF, $FF, $1B, $1C, $FF
 	.byte $FF, $26, $27, $FF, $FF, $34, $35, $36
 	.byte $FF, $43, $44, $45, $FF, $51, $52, $53
 	.byte $FF, $5E, $FF, $5F, $FF, $6C, $FF, $6D
 	.byte $6E
-rom_8591:
+sonya_frame_0F:
 	.byte $04, $09, $10, $38, $00, $09, $0A, $FF
 	.byte $FF, $1A, $1B, $FF, $FF, $2D, $2E, $2F
 	.byte $30, $3F, $40, $41, $42, $4F, $50, $51
 	.byte $52, $5D, $5E, $FF, $5F, $FF, $6A, $FF
 	.byte $FF, $FF, $73, $FF, $FF, $FF, $7B, $FF
 	.byte $FF
-rom_85BA:
+sonya_frame_10:
 	.byte $06, $09, $10, $38, $00, $FF, $0B, $0C
 	.byte $FF, $0D, $0E, $1C, $1D, $1E, $1F, $20
 	.byte $21, $31, $32, $33, $34, $35, $FF, $43
@@ -398,14 +399,14 @@ rom_85BA:
 	.byte $FF, $FF, $FF, $6B, $FF, $FF, $FF, $FF
 	.byte $FF, $74, $FF, $FF, $FF, $FF, $FF, $7B
 	.byte $FF, $FF, $FF
-rom_85F5:
+sonya_frame_11:
 	.byte $04, $0A, $10, $40, $00, $01, $02, $FF
 	.byte $FF, $03, $04, $05, $FF, $06, $07, $08
 	.byte $FF, $0C, $0D, $FF, $FF, $19, $1A, $FF
 	.byte $FF, $29, $2A, $2B, $FF, $3C, $3D, $3E
 	.byte $FF, $4E, $4F, $50, $FF, $60, $61, $62
 	.byte $63, $75, $76, $FF, $FF
-rom_8622:
+sonya_frame_12:
 	.byte $07, $08, $10, $10, $00, $FF, $FF, $FF
 	.byte $0E, $FF, $FF, $FF, $FF, $FF, $19, $1A
 	.byte $FF, $FF, $FF, $FF, $29, $2A, $2B, $FF
@@ -414,13 +415,13 @@ rom_8622:
 	.byte $FF, $FF, $54, $55, $56, $57, $58, $63
 	.byte $64, $65, $66, $FF, $67, $68, $71, $72
 	.byte $73, $FF, $FF, $FF, $FF
-rom_865F:
+sonya_frame_13:
 	.byte $05, $07, $10, $40, $00, $0E, $0F, $10
 	.byte $FF, $FF, $1B, $1C, $1D, $1E, $1F, $2C
 	.byte $2D, $2E, $2F, $30, $3F, $40, $41, $42
 	.byte $FF, $51, $52, $FF, $FF, $FF, $64, $65
 	.byte $66, $FF, $FF, $77, $78, $FF, $FF, $FF
-rom_8687:
+sonya_frame_14:
 	.byte $05, $09, $10, $3A, $00, $FF, $FF, $82
 	.byte $83, $84, $FF, $FF, $8C, $8D, $8E, $FF
 	.byte $9C, $9D, $9E, $9F, $FF, $AA, $AB, $FF
@@ -428,7 +429,7 @@ rom_8687:
 	.byte $C4, $FF, $FF, $CE, $D1, $D2, $FF, $FF
 	.byte $DF, $FF, $E0, $FF, $FF, $EB, $FF, $EC
 	.byte $ED, $FF
-rom_86B9:
+sonya_frame_15:
 	.byte $06, $09, $10, $3A, $00, $FF, $FF, $85
 	.byte $86, $FF, $FF, $8F, $90, $91, $92, $93
 	.byte $94, $F6, $A0, $A1, $A2, $A3, $A4, $FF
@@ -437,7 +438,7 @@ rom_86B9:
 	.byte $FF, $D3, $D4, $D5, $FF, $FF, $FF, $E1
 	.byte $FF, $E2, $FF, $FF, $FF, $EE, $FF, $EF
 	.byte $F0, $FF, $FF
-rom_86F4:
+sonya_frame_16:
 	.byte $06, $09, $10, $3A, $00, $FF, $FF, $80
 	.byte $81, $FF, $FF, $FF, $87, $88, $89, $8A
 	.byte $8B, $FF, $97, $98, $99, $9A, $9B, $FF
@@ -446,7 +447,7 @@ rom_86F4:
 	.byte $FF, $CE, $CF, $D0, $FF, $FF, $FF, $DC
 	.byte $DD, $DE, $FF, $FF, $FF, $E9, $FF, $EA
 	.byte $FF, $FF, $FF
-rom_872F:
+sonya_frame_17:
 	.byte $09, $05, $20, $4C, $00, $FF, $FF, $FF
 	.byte $FF, $02, $03, $FF, $FF, $FF, $FF, $FF
 	.byte $FF, $FF, $04, $05, $06, $FF, $FF, $07

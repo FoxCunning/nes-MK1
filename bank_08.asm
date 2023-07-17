@@ -18,7 +18,7 @@ rom_08_8000:
 
 rom_8004:
 	.byte $09
-	.word rom_80A3
+	.word anim_scorpion_idle
 	.byte $06
 	.word rom_80A9
 	.byte $08
@@ -97,8 +97,8 @@ rom_8004:
 	.word rom_823B
 	.byte $08
 	.word rom_8248
-	.byte $10
-	.word rom_824E
+	.byte $18
+	.word anim_scorpion_staggered
 	.byte $08
 	.word rom_8262
 	.byte $08
@@ -126,7 +126,7 @@ rom_8004:
 
 ; -----------------------------------------------------------------------------
 
-rom_80A3:
+anim_scorpion_idle:
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $01, $01, $01, $01, $01, $01, $01, $01
 rom_80A9:
@@ -237,10 +237,11 @@ rom_823B:
 	.byte $26, $26, $26, $26, $26
 rom_8248:
 	.byte $27, $27, $28, $28, $29, $29
-rom_824E:
-	.byte $2A, $2A, $2A, $2A, $2B, $2B, $2B, $2B
-	.byte $2A, $2A, $2A, $2A, $2B, $2B, $2B, $2B
-	.byte $2A, $2A, $2A, $2A
+anim_scorpion_staggered:
+	.byte $2A, $2A, $2A, $2A, $2A, $2A, $2A, $2A
+	.byte $2B, $2B, $2B, $2B, $2B, $2B, $2B, $2B
+	.byte $2A, $2A, $2A, $2A, $2A, $2A, $2A, $2A
+	.byte $2B, $2B, $2B, $2B, $2B, $2B
 rom_8262:
 	.byte $2C, $2C, $2C, $2C, $2C, $2C
 rom_8268:
@@ -271,8 +272,8 @@ rom_82A1:
 ; -----------------------------------------------------------------------------
 
 rom_82C7:
-	.word rom_8391, rom_83C3, rom_83EC, rom_8405
-	.word rom_8422, rom_844B, rom_8474, rom_849D
+	.word scorpion_frame_00, rom_83C3, rom_83EC, rom_8405
+	.word rom_8422, scorpion_frame_05, rom_8474, rom_849D
 	.word rom_84C6, rom_84F8, rom_8521, rom_854E
 	.word rom_857B, rom_858F, rom_85A3, rom_85D5
 	.word rom_860A, rom_8647, rom_8679, rom_86AB
@@ -285,22 +286,22 @@ rom_82C7:
 	.word rom_8AB6, rom_8ADF, rom_8B0C, rom_8B3D
 	.word rom_8B6A, rom_8B99, rom_8BCB, rom_8C06
 	.word rom_8C4A, rom_8C6F, rom_8CB0, rom_8CE1
-	.word rom_8CFE, rom_8D30, rom_8D5D, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391
+	.word rom_8CFE, rom_8D30, rom_8D5D, scorpion_frame_00
+	.word scorpion_frame_00, scorpion_frame_00, scorpion_frame_00, scorpion_frame_00
+	.word scorpion_frame_00, scorpion_frame_00, scorpion_frame_00, scorpion_frame_00
+	.word scorpion_frame_00, scorpion_frame_00, scorpion_frame_00, scorpion_frame_00
+	.word scorpion_frame_00, scorpion_frame_00, scorpion_frame_00, scorpion_frame_00
+	.word scorpion_frame_00, scorpion_frame_00, scorpion_frame_00, scorpion_frame_00
+	.word scorpion_frame_00, scorpion_frame_00, scorpion_frame_00, scorpion_frame_00
+	.word scorpion_frame_00, scorpion_frame_00, scorpion_frame_00, scorpion_frame_00
+	.word scorpion_frame_00, scorpion_frame_00, scorpion_frame_00, scorpion_frame_00
+	.word scorpion_frame_00, scorpion_frame_00, scorpion_frame_00, scorpion_frame_00
+	.word scorpion_frame_00, scorpion_frame_00, scorpion_frame_00, scorpion_frame_00
+	.word scorpion_frame_00
 
 ; -----------------------------------------------------------------------------
 
-rom_8391:
+scorpion_frame_00:
 	.byte $05, $09, $10, $D2, $00, $80, $81, $82
 	.byte $FF, $FF, $85, $86, $87, $88, $FF, $8D
 	.byte $8E, $8F, $90, $FF, $FF, $95, $96, $97
@@ -332,7 +333,7 @@ rom_8422:
 	.byte $2C, $FF, $37, $38, $39, $45, $46, $47
 	.byte $48, $53, $54, $55, $56, $61, $FF, $62
 	.byte $63
-rom_844B:
+scorpion_frame_05:
 	.byte $04, $09, $10, $D0, $00, $FF, $04, $05
 	.byte $FF, $0C, $0D, $0E, $0F, $17, $18, $19
 	.byte $1A, $22, $23, $24, $25, $FF, $2D, $2E

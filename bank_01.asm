@@ -3988,155 +3988,160 @@ rom_B6A8:
 ; Index for these pointers is first byte from 3-byte data on top of fighter's
 ; PRG ROM bank
 tbl_anim_data_ptrs:
-	.word rom_DB7D	; $00
-	.word rom_DB98	; $01
-	.word rom_DBCC
-	.word rom_DBB7
-	.word rom_DBF6
-	.word rom_DC17
-	.word rom_DB8B
-	.word rom_DBE5
-	.word rom_DB81	; $08
-	.word tbl_16_frames_still ;rom_DB79	; $09
-	.word rom_DB85
-	.word rom_DC38
-	.word rom_DC59
-	.word rom_DC66
-	.word rom_DC8D
-	.word rom_DCA8
-	.word rom_DB65	; $10
-	.word rom_DB89
-	.word rom_DCD3
-	.word rom_DCEE
-	.word rom_DD19
-	.word rom_DD46
-	.word rom_DD53
-	.word rom_DD68
-	.word rom_DB51	; $18
-	.word rom_DD89
-	.word rom_DDA8
-	.word rom_DDC1
-	.word rom_DDC2
-	.word rom_DB75
-	.word rom_DE03
-	.word rom_DE04
-	.word rom_DE05	; $20
-	.word rom_DE12
-	.word rom_DB87
-	.word rom_DE2F
-	.word rom_DE48
-	.word rom_DB8E
-	.word rom_DBAD
-	.word rom_DE6D
-	.word rom_DE8E	; $28
-	.word rom_DE9B
-	.word rom_DEB4
-	.word rom_DECD
-	.word rom_DEEE	; $2C
+	.word @rom_DB7D	; $00
+	.word @rom_DB98	; $01
+	.word @rom_DBCC
+	.word @rom_DBB7
+	.word @rom_DBF6
+	.word @rom_DC17
+	.word @rom_DB8B
+	.word @rom_DBE5
+	.word @rom_DB81	; $08
+	.word @still_16_frames	; $09
+	.word @rom_DB85
+	.word @rom_DC38
+	.word @rom_DC59
+	.word @knockback_20_frames
+	.word @rom_DC8D
+	.word @rom_DCA8
+	.word @still_20_frames	; $10
+	.word @rom_DB89
+	.word @rom_DCD3
+	.word @rom_DCEE
+	.word @rom_DD19
+	.word @rom_DD46
+	.word @rom_DD53
+	.word @rom_DD68
+	.word @still_30_frames	; $18
+	.word @rom_DD89
+	.word @rom_DDA8
+	.word @rom_DDC1
+	.word @rom_DDC2
+	.word @rom_DB75
+	.word @rom_DE03
+	.word @rom_DE04
+	.word @rom_DE05	; $20
+	.word @rom_DE12
+	.word @rom_DB87
+	.word @rom_DE2F
+	.word @rom_DE48
+	.word @rom_DB8E
+	.word @rom_DBAD
+	.word @rom_DE6D
+	.word @rom_DE8E	; $28
+	.word @rom_DE9B
+	.word @rom_DEB4
+	.word @rom_DECD
+	.word @rom_DEEE	; $2C
 
 ; ----------------
 
 ; Index for this data is current animation frame * 2
-rom_DB51:
+@still_30_frames:
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $00, $00, $00, $00
 
 ; ----------------
 
-rom_DB65:
+@still_20_frames:
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 
 ; ----------------
 
 ; No movement, 16 frames
-tbl_16_frames_still:
+@still_16_frames:
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 
 ; ----------------
 
-rom_DB75:
+@rom_DB75:
+	.byte $00, $00, $00, $00
 	.byte $00, $00, $00, $00
 
 ; ----------------
 
-;rom_DB79:
+@rom_DB7D:
 	.byte $00, $00, $00, $00
 
 ; ----------------
 
-rom_DB7D:
+@rom_DB81:
 	.byte $00, $00, $00, $00
 
 ; ----------------
 
-rom_DB81:
-	.byte $00, $00, $00, $00
-
-; ----------------
-
-rom_DB85:
+@rom_DB85:
 	.byte $00, $00
 
 ; ----------------
 
-rom_DB87:
+@rom_DB87:
 	.byte $00, $00
 
 ; ----------------
 
-rom_DB89:
+@rom_DB89:
 	.byte $00, $00
 
 ; ----------------
 
-rom_DB8B:
+@rom_DB8B:
 	.byte $00, $00, $80
 
 ; ----------------
 
-rom_DB8E:
+@rom_DB8E:
 	.byte $04, $00, $04, $00, $04, $00, $04, $00
 	.byte $04, $00
 
 ; ----------------
 
-rom_DB98:
+@rom_DB98:
 	.byte $04, $00, $04, $00, $04, $00, $04, $00
 	.byte $04, $00, $04, $00, $04, $00, $04, $00
 	.byte $04, $00, $04, $00, $80
 
 ; ----------------
 
-rom_DBAD:
+@rom_DBAD:
 	.byte $FC, $00, $FC, $00, $FC, $00, $FC, $00
 	.byte $FC, $00
 
 ; ----------------
 
-rom_DBB7:
+@rom_DBB7:
 	.byte $FC, $00, $FC, $00, $FC, $00, $FC, $00
 	.byte $FC, $00, $FC, $00, $FC, $00, $FC, $00
 	.byte $FC, $00, $FC, $00, $80
 
 ; ----------------
 
-rom_DBCC:
-	.byte $00, $ED, $00, $F0, $00, $F2, $00, $F4
-	.byte $00, $F6, $00, $F8, $00, $08, $00, $0A
-	.byte $00, $0C, $00, $0E, $00, $10, $00, $13
+@rom_DBCC:
+	.byte $00, $ED	; 0, -19
+	.byte $00, $F0	; 0, -16
+	.byte $00, $F2	; 0, -14
+	.byte $00, $F4	; 0, -12
+	.byte $00, $F6	; 0, -10
+	.byte $00, $F8	; 0, -8
+	.byte $00, $08	; 0, 8
+	.byte $00, $0A	; 0, 10
+	.byte $00, $0C	; 0, 12
+	.byte $00, $0E	; 0, 14
+	.byte $00, $10	; 0, 16
+	.byte $00, $13	; 0, 19
 	.byte $80
 
 ; ----------------
 
-rom_DBE5:
+@rom_DBE5:
 	.byte $F8, $00, $F8, $00, $F8, $00, $FB, $00
 	.byte $F8, $00, $FB, $00, $FD, $00, $FE, $00
 	.byte $80
 
 ; ----------------
 
-rom_DBF6:
+@rom_DBF6:
 	.byte $FE, $EE, $FE, $F0, $FE, $F2, $FE, $F4
 	.byte $FC, $F6, $FA, $F8, $F8, $FA, $F6, $FC
 	.byte $F6, $04, $F8, $06, $FA, $08, $FC, $0A
@@ -4145,7 +4150,7 @@ rom_DBF6:
 
 ; ----------------
 
-rom_DC17:
+@rom_DC17:
 	.byte $02, $EE, $02, $F0, $02, $F2, $02, $F4
 	.byte $04, $F6, $06, $F8, $08, $FA, $0A, $FC
 	.byte $0A, $04, $08, $06, $06, $08, $04, $0A
@@ -4154,7 +4159,7 @@ rom_DC17:
 
 ; ----------------
 
-rom_DC38:
+@rom_DC38:
 	.byte $00, $00, $00, $00, $06, $E8, $0C, $00
 	.byte $0C, $00, $0C, $00, $08, $00, $08, $00
 	.byte $08, $00, $06, $00, $06, $00, $06, $00
@@ -4163,22 +4168,38 @@ rom_DC38:
 
 ; ----------------
 
-rom_DC59:
+@rom_DC59:
 	.byte $10, $00, $00, $00, $00, $00, $00, $00
 	.byte $00, $00, $00, $00, $80
 
 ; ----------------
 
-rom_DC66:
-	.byte $F0, $F4, $F2, $F6, $F4, $F8, $F6, $FC
-	.byte $F8, $00, $FC, $01, $FC, $02, $FC, $04
-	.byte $FE, $08, $FE, $0A, $FE, $0C, $FE, $0E
-	.byte $FE, $10, $00, $12, $00, $14, $00, $14
-	.byte $00, $14, $00, $14, $00, $14, $80
+; Knockback / airborne hit
+@knockback_20_frames:
+	.byte $F0, $F4	; -16, -12
+	.byte $F2, $F6	; -14, -10
+	.byte $F4, $F8	; -12, -8
+	.byte $F6, $FC	; -10, -4
+	.byte $F8, $00	; -8, 0
+	.byte $FC, $01	; -4, 1
+	.byte $FC, $02	; -4, 2
+	.byte $FC, $04	; -4, 4
+	.byte $FE, $08	; -2, 8
+	.byte $FE, $0A	; -2, 10
+	.byte $FE, $0C	; -2, 12
+	.byte $FE, $0E	; -2, 14
+	.byte $FE, $10	; -2, 16
+	.byte $00, $12	; 0, 18
+	.byte $00, $14	; 0, 20
+	.byte $00, $14	; 0, 20
+	.byte $00, $14	; 0, 20
+	.byte $00, $14	; 0, 20
+	.byte $00, $14	; 0, 20
+	.byte $80
 
 ; ----------------
 
-rom_DC8D:
+@rom_DC8D:
 	.byte $F6, $F8, $F8, $FA, $FA, $FC, $FC, $FE
 	.byte $FE, $02, $FF, $04, $00, $06, $00, $00
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
@@ -4186,7 +4207,7 @@ rom_DC8D:
 
 ; ----------------
 
-rom_DCA8:
+@rom_DCA8:
 	.byte $00, $00, $0A, $F8, $F6, $00, $00, $00
 	.byte $F6, $08, $0A, $00, $F6, $08, $00, $00
 	.byte $F6, $F8, $F8, $FA, $FA, $FC, $FC, $FE
@@ -4196,7 +4217,7 @@ rom_DCA8:
 
 ; ----------------
 
-rom_DCD3:
+@rom_DCD3:
 	.byte $F6, $F8, $F8, $FA, $FA, $FC, $FC, $FE
 	.byte $FE, $02, $FF, $04, $00, $06, $00, $00
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
@@ -4204,7 +4225,7 @@ rom_DCD3:
 
 ; ----------------
 
-rom_DCEE:
+@rom_DCEE:
 	.byte $00, $00, $0A, $F8, $F6, $00, $00, $00
 	.byte $F6, $08, $0A, $00, $F6, $00, $00, $00
 	.byte $F6, $F8, $F8, $FA, $FA, $FC, $FC, $FE
@@ -4214,7 +4235,7 @@ rom_DCEE:
 
 ; ----------------
 
-rom_DD19:
+@rom_DD19:
 	.byte $00, $00, $00, $00, $0A, $F8, $F6, $00
 	.byte $00, $00, $F6, $08, $00, $00, $F6, $00
 	.byte $00, $00, $F6, $F8, $F8, $FA, $FA, $FC
@@ -4224,20 +4245,20 @@ rom_DD19:
 
 ; ----------------
 
-rom_DD46:
+@rom_DD46:
 	.byte $00, $EC, $00, $F1, $00, $F6, $00, $0A
 	.byte $00, $0F, $00, $14, $80
 
 ; ----------------
 
-rom_DD53:
+@rom_DD53:
 	.byte $00, $F4, $00, $F6, $00, $F8, $00, $FA
 	.byte $00, $FC, $00, $04, $00, $06, $00, $08
 	.byte $00, $0A, $00, $0C, $80
 
 ; ----------------
 
-rom_DD68:
+@rom_DD68:
 	.byte $00, $EE, $00, $F0, $FF, $F2, $FE, $F4
 	.byte $FD, $F6, $FC, $F8, $00, $00, $00, $00
 	.byte $00, $00, $00, $00, $F8, $08, $F9, $0A
@@ -4246,7 +4267,7 @@ rom_DD68:
 
 ; ----------------
 
-rom_DD89:
+@rom_DD89:
 	.byte $00, $00, $00, $00, $00, $EA, $0A, $EC
 	.byte $19, $F8, $F0, $FA, $F1, $FC, $F2, $FE
 	.byte $F3, $02, $F4, $04, $F5, $06, $F6, $08
@@ -4254,7 +4275,7 @@ rom_DD89:
 
 ; ----------------
 
-rom_DDA8:
+@rom_DDA8:
 	.byte $00, $00, $00, $00, $2A, $00, $00, $F0
 	.byte $00, $00, $00, $00, $00, $F4, $00, $00
 	.byte $2A, $00, $00, $00, $00, $14, $00, $00
@@ -4262,12 +4283,12 @@ rom_DDA8:
 
 ; ----------------
 
-rom_DDC1:
+@rom_DDC1:
 	.byte $80
 
 ; ----------------
 
-rom_DDC2:
+@rom_DDC2:
 	.byte $00, $F6, $00, $F8, $00, $FA, $00, $FC
 	.byte $06, $00, $06, $00, $06, $00, $06, $00
 	.byte $06, $00, $06, $00, $06, $00, $06, $00
@@ -4280,23 +4301,23 @@ rom_DDC2:
 
 ; ----------------
 
-rom_DE03:
+@rom_DE03:
 	.byte $80
 
 ; ----------------
 
-rom_DE04:
+@rom_DE04:
 	.byte $80
 
 ; ----------------
 
-rom_DE05:
+@rom_DE05:
 	.byte $00, $00, $00, $00, $14, $00, $0F, $00
 	.byte $0A, $00, $05, $00, $80
 
 ; ----------------
 
-rom_DE12:
+@rom_DE12:
 	.byte $00, $EC, $02, $F6, $04, $F6, $06, $00
 	.byte $08, $00, $14, $00, $14, $00, $14, $00
 	.byte $14, $00, $08, $00, $06, $00, $04, $0A
@@ -4304,7 +4325,7 @@ rom_DE12:
 
 ; ----------------
 
-rom_DE2F:
+@rom_DE2F:
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $14, $00, $0F, $00, $0A, $00, $05, $00
@@ -4312,7 +4333,7 @@ rom_DE2F:
 
 ; ----------------
 
-rom_DE48:
+@rom_DE48:
 	.byte $01, $00, $02, $00, $03, $00, $04, $00
 	.byte $05, $00, $06, $00, $07, $00, $08, $00
 	.byte $08, $00, $08, $00, $08, $00, $08, $00
@@ -4321,7 +4342,7 @@ rom_DE48:
 
 ; ----------------
 
-rom_DE6D:
+@rom_DE6D:
 	.byte $02, $EE, $02, $F0, $02, $F2, $02, $F4
 	.byte $04, $F6, $06, $F8, $08, $FA, $0A, $FC
 	.byte $0A, $04, $08, $06, $08, $08, $08, $0A
@@ -4330,14 +4351,14 @@ rom_DE6D:
 
 ; ----------------
 
-rom_DE8E:
+@rom_DE8E:
 	.byte $01, $00, $01, $00, $01, $00, $01, $00
 	.byte $FF, $00, $FF, $00, $FF, $00, $FF, $00
 	.byte $80
 
 ; ----------------
 
-rom_DE9B:
+@rom_DE9B:
 	.byte $00, $00, $00, $00, $20, $00, $00, $F0
 	.byte $00, $00, $00, $00, $00, $F4, $00, $00
 	.byte $30, $00, $00, $00, $E0, $14, $E0, $00
@@ -4345,7 +4366,7 @@ rom_DE9B:
 
 ; ----------------
 
-rom_DEB4:
+@rom_DEB4:
 	.byte $10, $00, $00, $00, $00, $00, $00, $00
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
@@ -4353,7 +4374,7 @@ rom_DEB4:
 
 ; ----------------
 
-rom_DECD:
+@rom_DECD:
 	.byte $00, $00, $00, $00, $06, $00, $06, $00
 	.byte $06, $00, $06, $00, $06, $00, $06, $00
 	.byte $06, $00, $06, $00, $06, $00, $06, $00
@@ -4362,7 +4383,7 @@ rom_DECD:
 
 ; ----------------
 
-rom_DEEE:
+@rom_DEEE:
 	.byte $00, $00, $00, $00, $06, $FC, $0C, $00
 	.byte $0C, $00, $0C, $00, $08, $00, $08, $00
 	.byte $08, $00, $06, $00, $06, $00, $06, $00

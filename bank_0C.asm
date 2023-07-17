@@ -18,11 +18,11 @@ rom_0C_8000:
 
 rom_8004:
 	.byte $1D
-	.word rom_80A3
+	.word anim_goro_idle
 	.byte $1D
-	.word rom_80A3
+	.word anim_goro_idle
 	.byte $1D
-	.word rom_80A3
+	.word anim_goro_idle
 	.byte $01
 	.word rom_80BB
 	.byte $03
@@ -96,7 +96,7 @@ rom_8004:
 	.byte $0E
 	.word rom_8241
 	.byte $08
-	.word rom_824E
+	.word anim_goro_staggered
 	.byte $10
 	.word rom_8254
 	.byte $08
@@ -126,7 +126,7 @@ rom_8004:
 
 ; -----------------------------------------------------------------------------
 
-rom_80A3:
+anim_goro_idle:
 	.byte $00, $00, $00, $01, $01, $01, $38, $38
 	.byte $38, $39, $39, $39, $02, $02, $02, $02
 	.byte $03, $03, $03, $03, $03, $03, $03, $03
@@ -219,7 +219,7 @@ rom_8240:
 rom_8241:
 	.byte $25, $25, $25, $25, $25, $25, $25, $26
 	.byte $26, $26, $26, $26, $26
-rom_824E:
+anim_goro_staggered:
 	.byte $27, $27, $28, $28, $29, $29
 rom_8254:
 	.byte $2A, $2A, $2A, $2A, $2B, $2B, $2B, $2B

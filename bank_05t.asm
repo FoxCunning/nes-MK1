@@ -18,7 +18,7 @@ rom_8000:
 
 rom_8004:
 	.byte $09
-    .word rom_80A3
+    .word anim_rayden_idle
     .byte $06
     .word rom_80A9
     .byte $08
@@ -97,8 +97,8 @@ rom_8004:
     .word rom_823B
     .byte $08
     .word rom_8248
-	.byte $10
-    .word rom_824E
+	.byte $18
+    .word anim_rayden_staggered
     .byte $08
     .word rom_8262
     .byte $08
@@ -126,7 +126,7 @@ rom_8004:
 
 ; -----------------------------------------------------------------------------
 
-rom_80A3:
+anim_rayden_idle:
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $01, $01, $01, $01, $01, $01, $01, $01
 rom_80A9:
@@ -233,10 +233,11 @@ rom_823B:
 	.byte $26, $26, $26, $26, $26
 rom_8248:
 	.byte $27, $27, $28, $28, $29, $29
-rom_824E:
-	.byte $2A, $2A, $2A, $2A, $2B, $2B, $2B, $2B
-	.byte $2A, $2A, $2A, $2A, $2B, $2B, $2B, $2B
-	.byte $2A, $2A, $2A, $2A
+anim_rayden_staggered:
+	.byte $2A, $2A, $2A, $2A, $2A, $2A, $2A, $2A
+	.byte $2B, $2B, $2B, $2B, $2B, $2B, $2B, $2B
+	.byte $2A, $2A, $2A, $2A, $2A, $2A, $2A, $2A
+	.byte $2B, $2B, $2B, $2B, $2B, $2B
 rom_8262:
 	.byte $2C, $2C, $2C, $2C, $2C, $2C
 rom_8268:
@@ -264,9 +265,9 @@ rom_82A1:
 
 ; More pointers
 rom_82C7:
-	.word rom_8391, rom_83BA, rom_83E3, rom_8400
+	.word rayden_frame_00, rayden_frame_01, rayden_frame_02, rom_8400
 	.word rom_8421, rom_8453, rom_847C, rom_84A5
-	.word rom_84D7, rom_8500, rom_8529, rom_854E
+	.word rom_84D7, rom_8500, rayden_frame_0B, rom_854E
 	.word rom_8577, rom_858C, rom_85A1, rom_85D3
 	.word rom_8600, rom_864B, rom_8678, rom_86B5
 	.word rom_86F9, rom_872B, rom_876F, rom_87B3
@@ -280,21 +281,21 @@ rom_82C7:
 	.word rom_8C97, rom_8CB8, rom_8CF9, rom_8D19
 	.word rom_8D19, rom_8D4B, rom_8D70
 ; The rest are potentially unused
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391
+	.word rayden_frame_00, rayden_frame_00, rayden_frame_00, rayden_frame_00
+	.word rayden_frame_00, rayden_frame_00, rayden_frame_00, rayden_frame_00
+	.word rayden_frame_00, rayden_frame_00, rayden_frame_00, rayden_frame_00
+	.word rayden_frame_00, rayden_frame_00, rayden_frame_00, rayden_frame_00
+	.word rayden_frame_00, rayden_frame_00, rayden_frame_00, rayden_frame_00
+	.word rayden_frame_00, rayden_frame_00, rayden_frame_00, rayden_frame_00
+	.word rayden_frame_00, rayden_frame_00, rayden_frame_00, rayden_frame_00
+	.word rayden_frame_00, rayden_frame_00, rayden_frame_00, rayden_frame_00
+	.word rayden_frame_00, rayden_frame_00, rayden_frame_00, rayden_frame_00
+	.word rayden_frame_00, rayden_frame_00, rayden_frame_00, rayden_frame_00
+	.word rayden_frame_00, rayden_frame_00
 
 ; -----------------------------------------------------------------------------
 
-rom_8391:
+rayden_frame_00:
 	.byte $04, $09, $10, $00, $00, $FF, $01, $02
 	.byte $FF, $09, $0A, $0B, $0C, $18, $19, $1A
 	.byte $1B, $29, $2A, $2B, $2C, $37, $38, $39
@@ -304,7 +305,7 @@ rom_8391:
 
 ; -----------------------------------------------------------------------------
 
-rom_83BA:
+rayden_frame_01:
 	.byte $04, $09, $10, $00, $00, $FF, $03, $04
 	.byte $FF, $09, $0D, $0E, $0F, $1C, $1D, $1E
 	.byte $1F, $2D, $2E, $2F, $30, $3A, $3B, $3C
@@ -314,7 +315,7 @@ rom_83BA:
 
 ; -----------------------------------------------------------------------------
 
-rom_83E3:
+rayden_frame_02:
 	.byte $04, $06, $10, $02, $00, $FF, $AC, $AD
 	.byte $FF, $BB, $BC, $BD, $BE, $CB, $CC, $CD
 	.byte $CE, $D8, $D9, $DA, $DB, $E1, $E2, $E3
@@ -393,7 +394,7 @@ rom_8500:
 
 ; -----------------------------------------------------------------------------
 
-rom_8529:
+rayden_frame_0B:
 	.byte $04, $08, $10, $0C, $00, $FF, $0B, $0C
 	.byte $FF, $FF, $14, $15, $FF, $1F, $20, $21
 	.byte $22, $2C, $2D, $2E, $2F, $3F, $40, $41

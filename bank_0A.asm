@@ -18,7 +18,7 @@ rom_8000:
 
 rom_8004:
 	.byte $09
-	.word rom_80A3
+	.word anim_cage_idle
 	.byte $06
 	.word rom_80A9
 	.byte $08
@@ -97,8 +97,8 @@ rom_8004:
 	.word rom_823B
 	.byte $08
 	.word rom_8248
-	.byte $10
-	.word rom_824E
+	.byte $18
+	.word anim_cage_staggered
 	.byte $08
 	.word rom_8262
 	.byte $08
@@ -126,7 +126,7 @@ rom_8004:
 
 ; -----------------------------------------------------------------------------
 
-rom_80A3:
+anim_cage_idle:
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $01, $01, $01, $01, $01, $01, $01, $01
 rom_80A9:
@@ -233,10 +233,11 @@ rom_823B:
 	.byte $26, $26, $26, $26, $26
 rom_8248:
 	.byte $27, $27, $28, $28, $29, $29
-rom_824E:
-	.byte $2A, $2A, $2A, $2A, $2B, $2B, $2B, $2B
-	.byte $2A, $2A, $2A, $2A, $2B, $2B, $2B, $2B
-	.byte $2A, $2A, $2A, $2A
+anim_cage_staggered:
+	.byte $2A, $2A, $2A, $2A, $2A, $2A, $2A, $2A
+	.byte $2B, $2B, $2B, $2B, $2B, $2B, $2B, $2B
+	.byte $2A, $2A, $2A, $2A, $2A, $2A, $2A, $2A
+	.byte $2B, $2B, $2B, $2B, $2B, $2B
 rom_8262:
 	.byte $2C, $2C, $2C, $2C, $2C, $2C
 rom_8268:
@@ -263,7 +264,7 @@ rom_82A1:
 ; -----------------------------------------------------------------------------
 
 rom_82C7:
-	.word rom_8391, rom_83C3, rom_83F5, rom_840E
+	.word cage_frame_00, rom_83C3, rom_83F5, rom_840E
 	.word rom_842F, rom_846A, rom_849C, rom_84CE
 	.word rom_8500, rom_8532, rom_855B, rom_8578
 	.word rom_8598, rom_85B1, rom_85CA, rom_85FC
@@ -277,22 +278,22 @@ rom_82C7:
 	.word rom_8B10, rom_8B39, rom_8B62, rom_8B8F
 	.word rom_8BBC, rom_8C01, rom_8C33, rom_8C60
 	.word rom_8C9D, rom_8CCF, rom_8D0A, rom_8D2A
-	.word rom_8D4B, rom_8D7D, rom_8DA5, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391
+	.word rom_8D4B, rom_8D7D, rom_8DA5, cage_frame_00
+	.word cage_frame_00, cage_frame_00, cage_frame_00, cage_frame_00
+	.word cage_frame_00, cage_frame_00, cage_frame_00, cage_frame_00
+	.word cage_frame_00, cage_frame_00, cage_frame_00, cage_frame_00
+	.word cage_frame_00, cage_frame_00, cage_frame_00, cage_frame_00
+	.word cage_frame_00, cage_frame_00, cage_frame_00, cage_frame_00
+	.word cage_frame_00, cage_frame_00, cage_frame_00, cage_frame_00
+	.word cage_frame_00, cage_frame_00, cage_frame_00, cage_frame_00
+	.word cage_frame_00, cage_frame_00, cage_frame_00, cage_frame_00
+	.word cage_frame_00, cage_frame_00, cage_frame_00, cage_frame_00
+	.word cage_frame_00, cage_frame_00, cage_frame_00, cage_frame_00
+	.word cage_frame_00
 
 ; -----------------------------------------------------------------------------
 
-rom_8391:
+cage_frame_00:
 	.byte $05, $09, $10, $8C, $00, $FF, $01, $02
 	.byte $FF, $FF, $0C, $0D, $0E, $FF, $0F, $1E
 	.byte $1F, $20, $21, $22, $30, $31, $32, $33

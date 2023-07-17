@@ -18,7 +18,7 @@ rom_0D_8000:
 
 rom_8004:
 	.byte $28
-	.word rom_80A3
+	.word anim_shangtsung_idle
 	.byte $06
 	.word rom_80A9
 	.byte $08
@@ -97,8 +97,8 @@ rom_8004:
 	.word rom_823B
 	.byte $08
 	.word rom_8248
-	.byte $10
-	.word rom_824E
+	.byte $18
+	.word anim_shangtsung_staggered
 	.byte $08
 	.word rom_8262
 	.byte $08
@@ -126,7 +126,7 @@ rom_8004:
 
 ; -----------------------------------------------------------------------------
 
-rom_80A3:
+anim_shangtsung_idle:
 	.byte $00, $00, $00, $00, $01, $01, $01, $01
 rom_80A9:
 	.byte $02, $02, $02, $02
@@ -232,10 +232,11 @@ rom_823B:
 	.byte $26, $26, $26, $26, $26
 rom_8248:
 	.byte $27, $27, $28, $28, $29, $29
-rom_824E:
-	.byte $2A, $2A, $2A, $2A, $2B, $2B, $2B, $2B
-	.byte $2A, $2A, $2A, $2A, $2B, $2B, $2B, $2B
-	.byte $2A, $2A, $2A, $2A
+anim_shangtsung_staggered:
+	.byte $2A, $2A, $2A, $2A, $2A, $2A, $2A, $2A
+	.byte $2B, $2B, $2B, $2B, $2B, $2B, $2B, $2B
+	.byte $2A, $2A, $2A, $2A, $2A, $2A, $2A, $2A
+	.byte $2B, $2B, $2B, $2B, $2B, $2B
 rom_8262:
 	.byte $2C, $2C, $2C, $2C, $2C, $2C
 rom_8268:
@@ -262,7 +263,7 @@ rom_82A1:
 ; -----------------------------------------------------------------------------
 
 rom_82C7:
-	.word rom_8391, rom_83BA, rom_83E3, rom_8400
+	.word shangtsung_frame_00, shangtsung_frame_01, shangtsung_frame_02, rom_8400
 	.word rom_8421, rom_844A, rom_8473, rom_849C
 	.word rom_84CE, rom_84F7, rom_8520, rom_8545
 	.word rom_856E, rom_8583, rom_8598, rom_85CA
@@ -275,37 +276,37 @@ rom_82C7:
 	.word rom_8A92, rom_8AB7, rom_8AE0, rom_8B09
 	.word rom_8B29, rom_8B49, rom_8B49, rom_8B7A
 	.word rom_8BA7, rom_8BCA, rom_8BFC, rom_8C1C
-	.word rom_8C4E, rom_8C6F, rom_8CB0, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391, rom_8391, rom_8391, rom_8391
-	.word rom_8391
+	.word rom_8C4E, rom_8C6F, rom_8CB0, shangtsung_frame_00
+	.word shangtsung_frame_00, shangtsung_frame_00, shangtsung_frame_00, shangtsung_frame_00
+	.word shangtsung_frame_00, shangtsung_frame_00, shangtsung_frame_00, shangtsung_frame_00
+	.word shangtsung_frame_00, shangtsung_frame_00, shangtsung_frame_00, shangtsung_frame_00
+	.word shangtsung_frame_00, shangtsung_frame_00, shangtsung_frame_00, shangtsung_frame_00
+	.word shangtsung_frame_00, shangtsung_frame_00, shangtsung_frame_00, shangtsung_frame_00
+	.word shangtsung_frame_00, shangtsung_frame_00, shangtsung_frame_00, shangtsung_frame_00
+	.word shangtsung_frame_00, shangtsung_frame_00, shangtsung_frame_00, shangtsung_frame_00
+	.word shangtsung_frame_00, shangtsung_frame_00, shangtsung_frame_00, shangtsung_frame_00
+	.word shangtsung_frame_00, shangtsung_frame_00, shangtsung_frame_00, shangtsung_frame_00
+	.word shangtsung_frame_00, shangtsung_frame_00, shangtsung_frame_00, shangtsung_frame_00
+	.word shangtsung_frame_00, shangtsung_frame_00, shangtsung_frame_00, shangtsung_frame_00
+	.word shangtsung_frame_00
 
 ; -----------------------------------------------------------------------------
 
-rom_8391:
+shangtsung_frame_00:
 	.byte $04, $09, $10, $50, $00, $01, $02, $FF
 	.byte $FF, $09, $0A, $0B, $FF, $14, $15, $16
 	.byte $17, $24, $25, $26, $27, $34, $35, $36
 	.byte $37, $41, $42, $43, $FF, $4E, $4F, $50
 	.byte $FF, $5B, $5C, $5D, $5E, $69, $6A, $6B
 	.byte $6C
-rom_83BA:
+shangtsung_frame_01:
 	.byte $04, $09, $10, $50, $00, $01, $02, $FF
 	.byte $FF, $09, $0A, $0B, $FF, $14, $15, $16
 	.byte $17, $24, $25, $26, $27, $34, $35, $36
 	.byte $37, $41, $42, $43, $FF, $4E, $4F, $50
 	.byte $FF, $5B, $5C, $5D, $5E, $69, $6A, $6B
 	.byte $6C
-rom_83E3:
+shangtsung_frame_02:
 	.byte $04, $06, $10, $02, $00, $FF, $AC, $AD
 	.byte $FF, $BB, $BC, $BD, $BE, $CB, $CC, $CD
 	.byte $CE, $D8, $D9, $DA, $DB, $E1, $E2, $E3
