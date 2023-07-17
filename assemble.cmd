@@ -23,11 +23,11 @@ echo [1;33mAssembling Mortal Kombat...[0m
 echo.
 
 :: Compress nametables
-for %%f in (bin\*.nam) do (
+for %%f in (nam\*.nam) do (
 	set compress="1"
 	:: If RLE file already exists, check if it's older than source
-	if exist bin\%%~nf.rle (
-		call isnewer.cmd %%f bin\%%~nf.rle
+	if exist nam\%%~nf.rle (
+		call isnewer.cmd %%f nam\%%~nf.rle
 		::echo Errorlevel: !errorlevel!
 		if !errorlevel! equ 1 (set compress="0")
 	) else (

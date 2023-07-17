@@ -130,73 +130,73 @@ tbl_stage_rle_ptrs:
 
 ; Nametable data, starts with PPU address and terminates with $FFFF
 rle_goros_lair_left:
-.incbin "bin/goros_lair_left.rle"
+.incbin "nam/goros_lair_left.rle"
 
 ; -----------------------------------------------------------------------------
 
 ; Nametable data, starts with PPU address and terminates with $FFFF
 rle_goros_lair_right:
-.incbin "bin/goros_lair_right.rle"
+.incbin "nam/goros_lair_right.rle"
 
 ; -----------------------------------------------------------------------------
 
 ; Nametable data, starts with PPU address and terminates with $FFFF
 rle_pit_left:
-.incbin "bin/stage_pit_left.rle"
+.incbin "nam/stage_pit_left.rle"
 
 ; -----------------------------------------------------------------------------
 
 ; Nametable data, starts with PPU address and terminates with $FFFF
 rle_pit_right:
-.incbin "bin/stage_pit_right.rle"
+.incbin "nam/stage_pit_right.rle"
 
 ; -----------------------------------------------------------------------------
 
 ; Nametable data, starts with PPU address and terminates with $FFFF
 rle_courtyard_left:
-.incbin "bin/courtyard_left.rle"
+.incbin "nam/courtyard_left.rle"
 
 ; -----------------------------------------------------------------------------
 
 ; Nametable data, starts with PPU address and terminates with $FFFF
 rle_courtyard_right:
-.incbin "bin/courtyard_right.rle"
+.incbin "nam/courtyard_right.rle"
 
 ; -----------------------------------------------------------------------------
 
 ; Nametable data, starts with PPU address and terminates with $FFFF
 rle_palace_gates_left:
-.incbin "bin/palace_gates_left.rle"
+.incbin "nam/palace_gates_left.rle"
 
 ; -----------------------------------------------------------------------------
 
 ; Nametable data, starts with PPU address and terminates with $FFFF
 rle_palace_gates_right:
-.incbin "bin/palace_gates_right.rle"
+.incbin "nam/palace_gates_right.rle"
 
 ; -----------------------------------------------------------------------------
 
 ; Nametable data, starts with PPU address and terminates with $FFFF
 rle_warrior_shrine_left:
-.incbin "bin/warrior_shrine_left.rle"
+.incbin "nam/warrior_shrine_left.rle"
 
 ; -----------------------------------------------------------------------------
 
 ; Nametable data, starts with PPU address and terminates with $FFFF
 rle_warrior_shrine_right:
-.incbin "bin/warrior_shrine_right.rle"
+.incbin "nam/warrior_shrine_right.rle"
 
 ; -----------------------------------------------------------------------------
 
 ; Nametable data, starts with PPU address and terminates with $FFFF
 rle_throne_room_left:
-.incbin "bin/throne_room_left.rle"
+.incbin "nam/throne_room_left.rle"
 
 ; -----------------------------------------------------------------------------
 
 ; Nametable data, starts with PPU address and terminates with $FFFF
 rle_throne_room_right:
-.incbin "bin/throne_room_right.rle"
+.incbin "nam/throne_room_right.rle"
 
 ; -----------------------------------------------------------------------------
 .export sub_update_health_bars
