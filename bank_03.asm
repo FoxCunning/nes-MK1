@@ -1179,6 +1179,241 @@ rom_AA3D:
 	.byte $0A, $02
 
 ; -----------------------------------------------------------------------------
+
+
+; -----------------------------------------------------------------------------
+.export sub_update_health_bars
+
+sub_update_health_bars:
+	lda zp_4B
+	cmp #$FF
+	bne @D291
+
+		; Display the full bar at the beginning of the match
+		lda #$20
+		sta PpuAddr_2006
+		ldx #$71	; First pattern of health bar for Player 2
+		lda zp_plr1_fighter_idx
+		bpl :+
+			ldx #$64	; First pattern of health bar for Player 1
+		:
+		stx PpuAddr_2006
+		ldx #$0A
+		lda #$8A	; Full bar pattern
+		:
+			sta PpuData_2007
+		dex
+		bpl :-
+
+	rts
+; ----------------
+	@D291:
+	lda zp_ppu_control_backup
+	ora #$04
+	sta PpuControl_2000
+	lda zp_frame_counter
+	and #$01
+	bne :+
+		ldx #$00
+		jsr sub_rom_D359
+		ldx #$01
+		jsr sub_rom_D359
+	:
+	jmp @D2EE
+
+	@D2AB:
+	lda zp_ppu_control_backup
+	sta PpuControl_2000
+	lda zp_game_substate
+	cmp #$03	; Match main loop
+	beq @D2BE
+
+	cmp #$04
+	beq @D2BE
+
+	cmp #$05
+	bne @D2ED
+
+	@D2BE:
+	lda #$20
+	sta PpuAddr_2006
+	lda #$8F
+	sta PpuAddr_2006
+	lda zp_match_time
+	cmp #$0F
+	bcs @D2E1
+
+	lda zp_frame_counter
+	and #$04
+	bne @D2E1
+
+	lda zp_game_substate
+	cmp #$03	; Match main loop
+	bne @D2E1
+
+	ldx #$FF
+	stx PpuData_2007
+	bne @D2EA
+
+	@D2E1:
+	ldx ram_063E
+	stx PpuData_2007
+	ldx ram_063F
+	@D2EA:
+	stx PpuData_2007
+	@D2ED:
+	rts
+; ----------------
+	@D2EE:
+	lda zp_game_substate
+	cmp #$03	; Match main loop
+	beq @D356
+
+	lda ram_plr1_rounds_won
+	beq @D325
+
+	ldx #$20
+	stx PpuAddr_2006
+	cmp #$02
+	bcc @D316
+
+	ldx #$41
+	stx PpuAddr_2006
+	lda #$AD
+	sta PpuData_2007
+	lda #$AE
+	sta PpuData_2007
+	lda #$20
+	sta PpuAddr_2006
+	@D316:
+	ldx #$42
+	stx PpuAddr_2006
+	lda #$AD
+	sta PpuData_2007
+	lda #$AE
+	sta PpuData_2007
+	@D325:
+	lda ram_plr2_rounds_won
+	beq @D356
+
+	ldx #$20
+	stx PpuAddr_2006
+	cmp #$02
+	bcc @D347
+
+	ldx #$5E
+	stx PpuAddr_2006
+	lda #$AD
+	sta PpuData_2007
+	lda #$AE
+	sta PpuData_2007
+	lda #$20
+	sta PpuAddr_2006
+	@D347:
+	ldx #$5D
+	stx PpuAddr_2006
+	lda #$AD
+	sta PpuData_2007
+	lda #$AE
+	sta PpuData_2007
+	@D356:
+	jmp @D2AB
+
+; -----------------------------------------------------------------------------
+
+sub_rom_D359:
+	lda zp_plr1_damage,X
+	cmp #$58
+	bcc @D387
+
+	lda zp_plr1_cur_anim,X
+	cmp #$2E
+	beq @D375
+
+	cmp #$31
+	beq @D375
+
+	cmp #$26
+	beq @D38B
+
+	lda #$2E
+	sta zp_plr1_cur_anim,X
+	lda #$00
+	sta zp_plr1_anim_frame,X
+	@D375:
+	lda zp_4B
+	bmi @D38B
+
+	; Play the "victory jingle"
+	lda #$32
+	sta ram_req_song
+	lda #$10
+	sta zp_92
+	sta ram_0438
+	bne @D38B
+
+	@D387:
+	lda zp_plr1_dmg_counter,X
+	bne @D38C
+
+	@D38B:
+	rts
+; ----------------
+	@D38C:
+	dec zp_plr1_dmg_counter,X
+	inc zp_plr1_damage,X
+	lda #$20
+	sta PpuAddr_2006
+	lda zp_plr1_damage,X
+	sec
+	sbc #$01
+	lsr A
+	lsr A
+	lsr A
+	sta zp_ptr1_lo
+	txa
+	bne @D3B7
+
+	lda #$64
+	clc
+	adc zp_ptr1_lo
+	sta PpuAddr_2006
+	lda zp_plr1_damage
+	sec
+	sbc #$01
+	and #$07
+	tay
+	lda @plr1_health_bar,Y
+	bne @D3CA
+
+	@D3B7:
+	lda #$7B
+	sec
+	sbc zp_ptr1_lo
+	sta PpuAddr_2006
+	lda zp_plr1_damage,X
+	sec
+	sbc #$01
+	and #$07
+	tay
+	lda @plr2_health_bar,Y
+	@D3CA:
+	sta PpuData_2007
+	rts
+
+; ----------------
+; Pattern indices for health bars
+
+	@plr1_health_bar:
+	.byte $89, $88, $87, $86, $85, $84, $83, $82
+	@plr2_health_bar:
+	.byte $91, $90, $8F, $8E, $8D, $8C, $8B, $82
+
+; -----------------------------------------------------------------------------
+
+
+
+; -----------------------------------------------------------------------------
 .export sub_apu_init
 
 ; Initialises the APU registers, clears RAM used by sound routines
@@ -1288,7 +1523,7 @@ sub_process_all_sound:
 		inc ram_cur_chan_ptr_offset
 		inc ram_cur_chan_ptr_offset
 	ldx ram_cur_apu_channel
-	cpx #$05
+	cpx #$04 ;#$05 DMC reserved to SFX
 	bne :-
 
 	; Process SFX channels ($10-$13)
@@ -1800,6 +2035,7 @@ sub_apply_note_pitch:
 	@dpcm_channel:
 	; The DPCM channel will start playing the sample immediately
 	tax
+
 	lda tbl_dpcm_ptr,X
 	;sta ram_dmc_addr
 	sta DmcAddress_4012
@@ -1808,13 +2044,13 @@ sub_apply_note_pitch:
 	;sta ram_dmc_len
 	sta DmcLength_4013
 
-	lda #$0C
+	lda tbl_dpcm_freq,X
 	;sta ram_dmc_freq
 	sta DmcFreq_4010
 
 	lda #$1F
 	sta ApuStatus_4015
-
+	
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -3168,9 +3404,10 @@ tbl_dpcm_ptr:
 	.byte >(dmc_kano<<2)		; $07 "Kano"
 	.byte >(dmc_cage<<2)		; $08 "Johnny Cage"
 	.byte >(dmc_liukang<<2)		; $09 "Liu Kang"
-	.byte $FF					; $0A "...wins"
+	.byte $FF;>(dmc_wins<<2)		; $0A "...wins"
 	.byte >(dmc_bleep<<2)		; $0B UI bleep
 	.byte >(dmc_swing<<2)		; $0C SFX punch/kick swing
+	.byte >(dmc_hit<<2)			; $0D SFX hit
 
 ; Values for DPCM length register
 tbl_dpcm_len:
@@ -3184,9 +3421,27 @@ tbl_dpcm_len:
 	.byte $4B	; $07 "Kano"
 	.byte $7C	; $08 "Johnny Cage"
 	.byte $73	; $09 "Liu Kang"
-	.byte $00	; $0A "...wins"
+	.byte $53	; $0A "...wins"
 	.byte $0B	; $0B UI bleep
-	.byte $0E	; $0C SFX punch/kick swing
+	.byte $08	; $0C SFX punch/kick swing
+	.byte $0F	; $0D SFX hit
+
+; Values for DPCM frequency register
+tbl_dpcm_freq:
+	.byte $00	; $00 (rest)
+	.byte $00	; $01 (hold)
+	.byte $0C	; $02 "Fight!"
+	.byte $0C	; $03 "Rayden"
+	.byte $0C	; $04 "Sonya"
+	.byte $0C	; $05 "Sub-Zero"
+	.byte $0C	; $06 "Scorpion"
+	.byte $0C	; $07 "Kano"
+	.byte $0C	; $08 "Johnny Cage"
+	.byte $0C	; $09 "Liu Kang"
+	.byte $0C	; $0A "...wins"
+	.byte $0A	; $0B UI bleep
+	.byte $08	; $0C SFX punch/kick swing
+	.byte $08	; $0D SFX hit
 
 ; -----------------------------------------------------------------------------
 

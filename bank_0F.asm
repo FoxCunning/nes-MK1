@@ -76,16 +76,17 @@ reset:
 	jsr sub_clear_nametable
 
 	jsr sub_hide_all_sprites
+
+	lda #$80
+	sta zp_bank_select_mask
 	; PRG ROM $8000-$9FFF <-- Bank $02
-	lda #$86
-	sta zp_prg_bank_select_backup	;sta a:zp_FC
-	sta mmc3_bank_select
+	ldx #$86
+	stx mmc3_bank_select
 	lda #$02
 	sta mmc3_bank_data
 	; PRG ROM $A000-$BFFF <-- Bank $03
-	lda #$87
-	sta zp_prg_bank_select_backup	;sta a:zp_FC
-	sta mmc3_bank_select
+	inx
+	stx mmc3_bank_select
 	lda #$03
 	sta mmc3_bank_data
 
@@ -96,12 +97,12 @@ reset:
 	sta ram_req_song
 	sta ram_cur_song	; This should have the same effect
 	;jsr sub_play_new_song_or_sfx
-	inc ram_snd_initialised	; Sounds will start playing after this
+	inc ram_snd_initialised	; SFX and music can be played only after this
 
 	lda #$00
 	sta zp_28
 	lda #$01
-	sta zp_mmc3_irq_ready	;sta a:zp_mmc3_irq_ready
+	sta zp_mmc3_irq_ready
 	lda #$88
 	sta ram_0409
 	lda #$13
@@ -130,7 +131,7 @@ reset:
 
 	@main_loop:
 		inc zp_22
-		lda zp_F7
+		lda zp_F7	; This basically waits for the next NMI
 	beq @main_loop
 
 		dec zp_F7
@@ -139,18 +140,18 @@ reset:
 
 		jsr sub_state_machine_start
 		jsr sub_rom_E902
-		jsr sub_rom_E8CB
+		jsr sub_sound_playlist
 
+		lda #$80
+		sta zp_bank_select_mask
 		; PRG ROM $8000-$9FFF <-- Bank $02 (sound data)
-		lda #$86
-		sta zp_prg_bank_select_backup	;sta a:zp_prg_bank_select_backup
-		sta mmc3_bank_select
+		ldx #$86
+		stx mmc3_bank_select
 		lda #$02
 		sta mmc3_bank_data
-		; PRG ROM $8000-$9FFF <-- Bank $03 (sound and moves code)
-		lda #$87
-		sta zp_prg_bank_select_backup	;sta a:zp_prg_bank_select_backup
-		sta mmc3_bank_select
+		; PRG ROM $8000-$9FFF <-- Bank $03 (sound and graphics code)
+		inx
+		stx mmc3_bank_select
 		lda #$03
 		sta mmc3_bank_data
 
@@ -200,25 +201,15 @@ nmi:
 	lda zp_FD
 	bne @E155
 
-	lda zp_nmi_ppu_ptr_hi
-	beq @E14C
+		lda zp_nmi_ppu_ptr_hi
+		beq :+
+			jsr sub_do_ppu_transfer
+		:
+		lda zp_machine_state_0
+		cmp #$01
+		bne @E155
 
-		jsr sub_do_ppu_transfer
-
-	@E14C:
-	lda zp_machine_state_0
-	cmp #$01
-	bne @E155
-
-		lda #$86
-		sta mmc3_bank_select
-		lda #$00
-		sta mmc3_bank_data
-		jsr sub_update_health_bars
-		lda #$86
-		sta mmc3_bank_select
-		lda #$02
-		sta mmc3_bank_data
+			jsr sub_update_health_bars
 
 	@E155:
 	lda PpuStatus_2002
@@ -244,63 +235,66 @@ nmi:
 		
 	@E186:
 	lda #$80
-	sta mmc3_bank_select
-	lda zp_chr_bank_0 ;a:zp_chr_bank_0
+	ora zp_bank_select_mask
+	tax
+	stx mmc3_bank_select
+	lda zp_chr_bank_0
 	sta mmc3_bank_data
-	lda #$81
-	sta mmc3_bank_select
-	lda zp_chr_bank_1 ;a:zp_chr_bank_1
+	inx
+	stx mmc3_bank_select
+	lda zp_chr_bank_1
 	sta mmc3_bank_data
 	lda zp_machine_state_0
 	bne @E1CC
 
-		ldx #$82
+		inx
 		lda zp_chr_bank_2
 		stx mmc3_bank_select
 		sta mmc3_bank_data
-		ldx #$83
+		inx
 		lda zp_chr_bank_3
 		stx mmc3_bank_select
 		sta mmc3_bank_data
-		ldx #$84
+		inx
 		lda zp_chr_bank_4
 		stx mmc3_bank_select
 		sta mmc3_bank_data
-		ldx #$85
+		inx
 		lda zp_chr_bank_5
 		stx mmc3_bank_select
 		sta mmc3_bank_data
 		jmp @E1F2
 
 	@E1CC:
-	lda #$82
-	sta mmc3_bank_select
-	ldx zp_34
-	stx mmc3_bank_data
-	lda #$83
-	sta mmc3_bank_select
 	inx
-	stx mmc3_bank_data
-	lda #$84
-	sta mmc3_bank_select
-	ldx zp_35
-	stx mmc3_bank_data
-	lda #$85
-	sta mmc3_bank_select
+	stx mmc3_bank_select
+	ldy zp_34
+	sty mmc3_bank_data
 	inx
-	stx mmc3_bank_data
+	stx mmc3_bank_select
+	iny
+	sty mmc3_bank_data
+	inx
+	stx mmc3_bank_select
+	ldy zp_35
+	sty mmc3_bank_data
+	inx
+	stx mmc3_bank_select
+	iny
+	sty mmc3_bank_data
+
 	@E1F2:
 	inc zp_frame_counter
+
 	jsr sub_get_controller_input
-	lda zp_FD ;a:zp_FD
-	bne @E201
 
+	lda zp_FD
+	bne :+
 		lda #$01
-		sta zp_F7 ;a:zp_F7
-
-	@E201:
-	lda zp_prg_bank_select_backup ;a:zp_prg_bank_select_backup
-	sta mmc3_bank_select
+		sta zp_F7
+	:
+	;lda zp_bank_select_mask
+	;sta mmc3_bank_select
 
 	pla
 	tay
@@ -607,7 +601,6 @@ sub_irq_handler_01:
 sub_irq_handler_02:
 	lda ram_0435
 	bne :+
-	
 		sta mmc3_irq_disable
 		sta mmc3_irq_enable
 		lda #$40
@@ -619,10 +612,13 @@ sub_irq_handler_02:
 		jmp sub_rom_E41B
 	:
 	sta mmc3_irq_disable
+
 	ldy #$E8
 	lda #$00
 	sta ram_0435
-	ldx #$82
+	lda #$82
+	ora zp_bank_select_mask
+	tax
 	stx mmc3_bank_select
 	sty mmc3_bank_data
 	inx
@@ -786,22 +782,27 @@ sub_irq_handler_06:
 	lda PpuStatus_2002
 	lda ram_0414
 	sta PpuScroll_2005
+
 	lda #$82
-	sta mmc3_bank_select
+	ora zp_bank_select_mask
+	tax
+
+	stx mmc3_bank_select
 	lda #$B0
 	sta mmc3_bank_data
-	lda #$83
-	sta mmc3_bank_select
-	lda #$B1
+	inx
+	stx mmc3_bank_select
+	inx
 	sta mmc3_bank_data
-	lda #$84
-	sta mmc3_bank_select
+	inx
+	stx mmc3_bank_select
 	lda #$B2
 	sta mmc3_bank_data
-	lda #$85
-	sta mmc3_bank_select
+	inx
+	stx mmc3_bank_select
 	lda #$B3
 	sta mmc3_bank_data
+
 	lda #$00
 	sta ram_0435
 	lda ram_0421
@@ -832,7 +833,9 @@ sub_rom_E41B:
 	inc ram_0435
 ; ----------------
 sub_rom_E41E:
-	ldx #$82
+	lda #$82
+	ora zp_bank_select_mask
+	tax
 	stx mmc3_bank_select
 	sty mmc3_bank_data
 	inx
@@ -861,34 +864,45 @@ sub_irq_handler_0C:
 
 sub_irq_handler_0D:
 	sta mmc3_irq_disable
-	ldy #$12
-	@E6DA:
+
+	; Timing for split-screen
+	ldy #$14
+	:
 	dey
-	bne @E6DA
+	bne :-
+
 	lda #$80
-	sta mmc3_bank_select
+	ora zp_bank_select_mask
+	tax
+
+	stx mmc3_bank_select
 	lda #$F4
 	sta mmc3_bank_data
-	lda #$81
-	sta mmc3_bank_select
+	inx
+	stx mmc3_bank_select
 	lda #$F6
 	sta mmc3_bank_data
-	ldx #$82
+	inx
 	lda #$F4
 	stx mmc3_bank_select
 	sta mmc3_bank_data
-	ldx #$83
+	inx
 	lda #$F5
 	stx mmc3_bank_select
 	sta mmc3_bank_data
-	ldx #$84
+	inx
 	lda #$F6
 	stx mmc3_bank_select
 	sta mmc3_bank_data
-	ldx #$85
+	inx
 	lda #$F7
 	stx mmc3_bank_select
 	sta mmc3_bank_data
+
+	php	; Timing
+	plp
+	nop
+
 	lda PpuStatus_2002
 	lda zp_ppu_ptr_hi
 	sta PpuAddr_2006
@@ -899,6 +913,7 @@ sub_irq_handler_0D:
 	sta PpuScroll_2005
 	lda #$00
 	sta ram_0435
+
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -925,22 +940,27 @@ sub_irq_handler_0E:
 
 sub_irq_handler_0F:
 	sta mmc3_irq_disable
-	ldx #$82
+
+	lda #$82
+	ora zp_bank_select_mask
+
+	tax
 	lda #$54
 	stx mmc3_bank_select
 	sta mmc3_bank_data
-	ldx #$83
+	inx
 	lda #$55
 	stx mmc3_bank_select
 	sta mmc3_bank_data
-	ldx #$84
+	inx
 	lda #$56
 	stx mmc3_bank_select
 	sta mmc3_bank_data
-	ldx #$85
+	inx
 	lda #$57
 	stx mmc3_bank_select
 	sta mmc3_bank_data
+	
 	jmp sub_irq_handler_0C
 
 ; -----------------------------------------------------------------------------
@@ -1023,14 +1043,18 @@ sub_state_machine_start:
 ; Bank $05 in $A000-$BFFF
 ; Then jumps to $B000 (first routine in bottom half of bank 5)
 sub_prg_banks_4_5:
+	lda #$80
+	sta zp_bank_select_mask
+
 	lda #$04
 	ldx #$86
 	stx mmc3_bank_select
 	sta mmc3_bank_data
 	lda #$05
-	ldx #$87
+	inx
 	stx mmc3_bank_select
 	sta mmc3_bank_data
+
 	jmp sub_state_machine_0
 
 ; -----------------------------------------------------------------------------
@@ -1038,49 +1062,49 @@ sub_prg_banks_4_5:
 ; Called if State Machine 0 is 2
 sub_rom_E7F5:
 	lda #$00
-	sta a:zp_machine_state_2
-	sta a:zp_machine_state_0
+	sta zp_machine_state_2
+	sta zp_machine_state_0
 
 	ldx ram_040C
-	lda zp_plr1_fighter_idx,X ;a:zp_F2,X
+	lda zp_plr1_fighter_idx,X
 	bpl @E80B
 
 		@E805:
 		lda #$04
-		sta zp_machine_state_1 ;a:zp_machine_state_1
+		sta zp_machine_state_1
 		rts
 ; ----------------
 	@E80B:
-	lda zp_plr1_fighter_idx ;a:zp_F2
-	eor zp_plr2_fighter_idx ;a:zp_F3
+	lda zp_plr1_fighter_idx
+	eor zp_plr2_fighter_idx
 	and #$80
 	beq @E805
 
 		lda #$03
-		sta zp_machine_state_1 ;a:zp_machine_state_1
+		sta zp_machine_state_1
 		lda ram_0100
 		asl A
 		asl A
 		clc
-		adc zp_endurance_flag ;a:zp_5F
+		adc zp_endurance_flag
 		tax
-		inc zp_61 ;a:zp_61
-		lda zp_61 ;a:zp_61
+		inc zp_61
+		lda zp_61
 		cmp rom_E849,X
 		bcc :+
 
 			lda #$00
-			sta zp_61 ;a:zp_61
-			inc zp_endurance_flag ;a:zp_5F
-			lda zp_endurance_flag ;a:zp_5F
+			sta zp_61
+			inc zp_endurance_flag
+			lda zp_endurance_flag
 			cmp #$04
 			bcc :+
 
 				; New machine state: 2,6,0
 				lda #$00
-				sta zp_machine_state_2 ;a:zp_machine_state_2
+				sta zp_machine_state_2
 				lda #$06
-				sta zp_machine_state_1 ;a:zp_machine_state_1
+				sta zp_machine_state_1
 	:
 	rts
 
@@ -1157,14 +1181,16 @@ sub_rom_E89B:
 ; -----------------------------------------------------------------------------
 
 ; Sound / music stuff
-sub_rom_E8CB:
+sub_sound_playlist:
+	lda #$80
+	sta zp_bank_select_mask
+
 	lda #$86
-	sta zp_prg_bank_select_backup ;a:zp_prg_bank_select_backup
 	sta mmc3_bank_select
 	lda #$02
 	sta mmc3_bank_data
 	lda #$87
-	sta zp_prg_bank_select_backup ;a:zp_prg_bank_select_backup
+	sta zp_bank_select_mask
 	sta mmc3_bank_select
 	lda #$03
 	sta mmc3_bank_data
@@ -1367,15 +1393,17 @@ sub_rom_EA13:
 	rts
 ; ----------------
 	@EA53:
-	;jmp sub_rom_EA57	; jsr sub_rom_EA57
-	;rts
-	lda #$86
-	sta mmc3_bank_select
+	lda #$80
+	sta zp_bank_select_mask
+
+	; Banks 0, 1 on top of PRG ROM space
+	ldx #$86
+	stx mmc3_bank_select
 	lda #$00
 	sta mmc3_bank_data
 
-	lda #$87
-	sta mmc3_bank_select
+	inx
+	stx mmc3_bank_select
 	lda #$01
 	sta mmc3_bank_data
 
@@ -1433,31 +1461,36 @@ sub_rom_EA5B:
 ; -----------------------------------------------------------------------------
 .export sub_call_sound_routines
 
+; This is only used to play one extra tick of music in-between loading
+; RLE-packed nametables, to reduce the music slowdown.
+; No DMC should be playing when this is called.
 sub_call_sound_routines:
+	lda #$80
+	sta zp_bank_select_mask
+
 	; PRG ROM $8000-$9FFF <-- Bank $02 (sound data)
 	lda #$86
-	sta zp_prg_bank_select_backup
 	sta mmc3_bank_select
 	lda #$02
 	sta mmc3_bank_data
 	; PRG ROM $8000-$9FFF <-- Bank $03 (sound and moves code)
 	lda #$87
-	sta zp_prg_bank_select_backup
 	sta mmc3_bank_select
 	lda #$03
 	sta mmc3_bank_data
 
 	jsr sub_process_all_sound
 
+	lda #$80
+	sta zp_bank_select_mask
 	; Switch back to PRG ROM Banks $04 and $05
 	lda #$86
-	sta zp_prg_bank_select_backup
 	sta mmc3_bank_select
 	lda #$04
 	sta mmc3_bank_data
 	; PRG ROM $8000-$9FFF <-- Bank $03 (sound and moves code)
 	lda #$87
-	sta zp_prg_bank_select_backup
+	ora zp_bank_select_mask
 	sta mmc3_bank_select
 	lda #$05
 	sta mmc3_bank_data
@@ -1465,17 +1498,20 @@ sub_call_sound_routines:
 	rts
 
 ; -----------------------------------------------------------------------------
-.export sub_call_03_routines
+.export sub_call_gfx_routines
 
-sub_call_03_routines:
+sub_call_gfx_routines:
 	lda #$87
-	sta zp_prg_bank_select_backup
+	ora zp_bank_select_mask
 	sta mmc3_bank_select
 	lda #$03
 	sta mmc3_bank_data
+
 	jsr sub_rom_03_A5E4
 	jsr sub_rom_03_A000
+
 	lda #$87
+	ora zp_bank_select_mask
 	sta mmc3_bank_select
 	lda #$01
 	sta mmc3_bank_data
@@ -1510,13 +1546,13 @@ dmc_cage:
 .export dmc_swing
 
 dmc_swing:
-.incbin "audio/swing.dmc"
+.incbin "audio/swing_08.dmc"
 
 ; ----------------
-;.export dmc_hit
+.export dmc_bleep
 
-;dmc_hit:
-;.incbin "audio/hit.dmc"
+dmc_bleep:
+.incbin "audio/bleep.dmc"
 
 ; ----------------
 ;.export dmc_bounce

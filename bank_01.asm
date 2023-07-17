@@ -70,7 +70,7 @@ sub_match_loop:
 	;sta mmc3_bank_data
 	;jsr sub_rom_03_A5E4
 	;jsr sub_rom_03_A000
-	jsr sub_call_03_routines
+	jsr sub_call_gfx_routines
 
 	lda zp_94
 	cmp zp_92
@@ -2133,10 +2133,14 @@ sub_finish_match_init:
 	jsr sub_rom_D20A
 	
 	; Put bank 0 back in after loading sprite data
+	lda #$80
+	sta zp_bank_select_mask
+
 	lda #$86
 	sta mmc3_bank_select
 	lda #$00
 	sta mmc3_bank_data
+	
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -3078,8 +3082,9 @@ sub_rom_D784:
 	sta zp_05
 
 	; Load a new bank in $8000-$9FFF from table below
+	lda #$80
+	sta zp_bank_select_mask
 	lda #$86
-	sta zp_prg_bank_select_backup
 	sta mmc3_bank_select
 	lda zp_05
 	sta mmc3_bank_data
