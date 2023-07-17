@@ -279,10 +279,10 @@ tbl_chr_banks_per_screen:
 	.byte $F0, $F2, $F0, $F1, $F2, $F3, $00, $00	; $00	Main menu
 	.byte $FC, $FE, $FC, $FD, $FE, $FF, $00, $00	; $01	Options menu
 	.byte $FC, $FE, $F8, $F9, $FA, $FB, $00, $00	; $02	Fighter select / VS
-	.byte $FC, $FE, $F8, $F9, $FA, $FB, $00, $00	; $03
-	.byte $FC, $FE, $FC, $FD, $FE, $FF, $00, $00	; $04
-	.byte $FC, $FE, $FC, $FD, $FE, $FF, $00, $00	; $05	(Fake) high scores
-	.byte $D8, $DA, $D8, $D9, $DA, $DB, $00, $00	; $06
+	.byte $FC, $FE, $F8, $F9, $FA, $FB, $00, $00	; $03	UNUSED/LEFTOVER
+	.byte $FC, $FE, $FC, $FD, $FE, $FF, $00, $00	; $04	(Fake) high scores
+	.byte $FC, $FE, $FC, $FD, $FE, $FF, $00, $00	; $05	Continue screen
+	.byte $D8, $DA, $D8, $D9, $DA, $DB, $00, $00	; $06	Ending
 	.byte $FC, $FE, $F8, $F9, $FA, $FB, $00, $00	; $07	Endurance match VS
 	.byte $BC, $BE, $BC, $BD, $BE, $BF, $00, $00	; $08	Titles screen
 	.byte $D8, $DA, $D8, $D9, $DA, $DB, $00, $00	; $09	Sound test
@@ -308,42 +308,42 @@ tbl_rle_data_ptr_odd:
 	.word nam_option_menu_2_rle
     .byte $28, $28
 
-    .word rom_fighter_select_rle	; $02
+    .word nam_fighter_select_rle	; $02
     .byte $20, $20
-	.word rom_vs_screen_2_rle
+	.word nam_vs_screen_2_rle
     .byte $28, $28
 
     .word rom_901A				; $03
     .byte $20, $20
-	.word rom_vs_screen_2_rle
+	.word nam_vs_screen_2_rle
     .byte $28, $28
 
-    .word rom_high_scores_rle	; $04	Fake "top winning streaks"
+    .word nam_high_scores_rle		; $04	Fake "top winning streaks"
     .byte $20, $20
-	.word rom_high_scores_rle
+	.word nam_high_scores_rle
     .byte $28, $28
 
-    .word rom_9591				; $05
+    .word nam_continue_rle			; $05
     .byte $20, $20
-	.word rom_968C
+	.word nam_game_over_rle
     .byte $28, $28
 
-    .word rom_8327				; $06
+    .word nam_congratulations_rle	; $06
     .byte $20, $20
-	.word rom_8390
+	.word nam_try_harder_rle
     .byte $28, $28
 
-    .word rom_endurance_top_rle	; $07
+    .word nam_endurance_top_rle		; $07
     .byte $20, $20
-	.word rom_endurance_btm_rle
+	.word nam_endurance_btm_rle
     .byte $28, $28
 
-    .word nam_titles_rle		; $08
+    .word nam_titles_rle			; $08
     .byte $20, $20
 	.word nam_titles_rle
     .byte $28, $28
 
-	.word nam_sound_test_rle	; $09
+	.word nam_sound_test_rle		; $09
 	.byte $20, $20
 	.word nam_sound_test_rle
 	.byte $28, $28
@@ -513,7 +513,7 @@ palette_mask_8307:
 
 ; -----------------------------------------------------------------------------
 
-rom_8327:
+nam_congratulations_rle:
 	.byte $20, $00, $77, $00, $77, $00, $77, $00
 	.byte $64, $00, $8F, $34, $35, $36, $37, $38
 	.byte $39, $3A, $3B, $3C, $39, $3A, $3D, $35
@@ -531,7 +531,7 @@ rom_8327:
 
 ; -----------------------------------------------------------------------------
 
-rom_8390:
+nam_try_harder_rle:
 	.byte $28, $00, $77, $00, $77, $00, $77, $00
 	.byte $77, $00, $0A, $00, $86, $17, $15, $1C
 	.byte $00, $07, $0C, $02, $09, $8C, $08, $15
@@ -571,7 +571,7 @@ nam_option_menu_2_rle:
 
 ; -----------------------------------------------------------------------------
 
-rom_fighter_select_rle:
+nam_fighter_select_rle:
 .incbin "bin/fighter_select.rle"
 
 ; -----------------------------------------------------------------------------
@@ -663,12 +663,12 @@ rom_901A:
 
 ; -----------------------------------------------------------------------------
 
-rom_vs_screen_2_rle:
+nam_vs_screen_2_rle:
 .incbin "bin/vs_screen_btm.rle"
 
 ; -----------------------------------------------------------------------------
 
-rom_endurance_top_rle:
+nam_endurance_top_rle:
 	.byte $20, $00, $77, $15, $77, $15, $35, $15
 	.byte $81, $EB, $04, $EC, $81, $ED, $08, $15
 	.byte $81, $EB, $04, $EC, $82, $ED, $EB, $04
@@ -704,7 +704,7 @@ rom_endurance_top_rle:
 
 ; -----------------------------------------------------------------------------
 
-rom_endurance_btm_rle:
+nam_endurance_btm_rle:
 	.byte $28, $00, $77, $C1, $77, $C1, $35, $C1
 	.byte $81, $17, $04, $18, $82, $19, $17, $04
 	.byte $18, $81, $19, $08, $C1, $81, $17, $04
@@ -740,7 +740,7 @@ rom_endurance_btm_rle:
 
 ; -----------------------------------------------------------------------------
 
-rom_9591:
+nam_continue_rle:
 	.byte $20, $00, $77, $45, $6E, $45, $81, $48
 	.byte $14, $4C, $81, $49, $0A, $45, $81, $4D
 	.byte $14, $00, $81, $4F, $0A, $45, $81, $4D
@@ -775,7 +775,7 @@ rom_9591:
 
 ; -----------------------------------------------------------------------------
 
-rom_968C:
+nam_game_over_rle:
 	.byte $20, $00, $77, $45, $6E, $45, $81, $48
 	.byte $14, $4C, $81, $49, $0A, $45, $81, $4D
 	.byte $14, $00, $81, $4F, $0A, $45, $81, $4D
@@ -804,7 +804,7 @@ rom_968C:
 
 ; -----------------------------------------------------------------------------
 
-rom_high_scores_rle:
+nam_high_scores_rle:
 	.byte $20, $00, $44, $42, $8A, $01, $02, $03
 	.byte $04, $05, $06, $07, $00, $08, $09, $02
 	.byte $03, $8C, $09, $03, $04, $00, $06, $07

@@ -1231,7 +1231,7 @@ sub_continue_screen_state_machine:
 	jsr sub_trampoline
 ; ----------------
 ; Jump pointers
-	.word sub_rom_B6E9
+	.word sub_continue_screen_init
 	.word sub_rom_B712
 	.word sub_rom_B723
 	.word sub_rom_B776
@@ -1241,7 +1241,7 @@ sub_continue_screen_state_machine:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B6E9:
+sub_continue_screen_init:
 	lda #$05
 	jsr sub_init_screen_common
 
@@ -1442,7 +1442,7 @@ sub_high_scores_states:
 	jsr sub_trampoline
 ; ----------------
 ; Jump pointers
-	.word sub_rom_B80D
+	.word sub_high_scores_init
 	.word sub_rom_B834
 	.word sub_rom_B845
 	.word sub_rom_B864
@@ -1450,7 +1450,7 @@ sub_high_scores_states:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B80D:
+sub_high_scores_init:
 	lda #$04
 	jsr sub_init_screen_common
 
@@ -1658,7 +1658,7 @@ sub_rom_B926:
 		jmp @B956
 
 	@B941:
-	lda #$07
+	lda #$07	; Index for endurance match VS screen
 	sta zp_tmp_idx
 	jsr sub_setup_new_screen
 	jsr sub_rom_BC2B

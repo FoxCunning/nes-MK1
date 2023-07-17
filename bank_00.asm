@@ -785,7 +785,7 @@ sub_match_fade_out:
 	sta ram_irq_routine_idx
 	lda #$00
 	sta zp_scroll_y
-	jsr sub_rom_C272
+	jsr sub_hide_fighter_sprites
 	lda #$00
 	sta ram_067C
 	sta ram_plr1_rounds_won
@@ -801,20 +801,20 @@ sub_match_fade_out:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_C272:
+sub_hide_fighter_sprites:
 	ldx #$00
-	beq @C278
-
-		ldx #$80
-	@C278:
+	beq :+
+		ldx #$80	; Offset for player 2 sprites
+	:
 	lda #$F8
-	@C27A:
+	:
 	sta ram_oam_copy_ypos,X
 	inx
 	inx
 	inx
 	inx
-	bne @C27A
+	bne :-
+	
 	rts
 
 ; -----------------------------------------------------------------------------
