@@ -240,17 +240,22 @@ sfx_fight:
 ; -----------------------------------------------------------------------------
 
 ; Square 1
-rom_96C1:
-	.byte $F5, $02, $F8, $0C, $F9, $FF
-	.byte $FA, $FF, $FB, $FF
-	.byte $88, $09, $FF
+;rom_96C1:
+;	.byte $F5, $02, $F8, $0C, $F9, $FF
+;	.byte $FA, $FF, $FB, $FF
+;	.byte $88, $09, $FF
 
 ; ----------------
 
 sfx_bounce:
-	.byte $81
-	.word rom_96C1
+	;.byte $81
+	;.word rom_96C1
+	.byte $84
+	.word @sfx_bounce_ch4
 	.byte $FF
+
+	@sfx_bounce_ch4:
+	.byte $F5, $01, $0E, $FF
 
 ; -----------------------------------------------------------------------------
 

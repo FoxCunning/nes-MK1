@@ -3408,6 +3408,7 @@ tbl_dpcm_ptr:
 	.byte >(dmc_bleep<<2)		; $0B UI bleep
 	.byte >(dmc_swing<<2)		; $0C SFX punch/kick swing
 	.byte >(dmc_hit<<2)			; $0D SFX hit
+	.byte >(dmc_hit<<2)			; $0E SFX bounce	TODO
 
 ; Values for DPCM length register
 tbl_dpcm_len:
@@ -3425,6 +3426,7 @@ tbl_dpcm_len:
 	.byte $0B	; $0B UI bleep
 	.byte $08	; $0C SFX punch/kick swing
 	.byte $0F	; $0D SFX hit
+	.byte $08	; $0E SFX bounce	TODO
 
 ; Values for DPCM frequency register
 tbl_dpcm_freq:
@@ -3442,6 +3444,7 @@ tbl_dpcm_freq:
 	.byte $0A	; $0B UI bleep
 	.byte $08	; $0C SFX punch/kick swing
 	.byte $08	; $0D SFX hit
+	.byte $0A	; $0E SFX bounce	TODO
 
 ; -----------------------------------------------------------------------------
 

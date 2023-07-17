@@ -1543,7 +1543,7 @@ sub_rom_CB7F:
 
 ; -----------------------------------------------------------------------------
 
-; Punch/kick during animation 6
+; Punch/kick during animation 6 (straight jump up)
 ; Parameters:
 ; Y = 0 for player one, 1 for player two
 sub_rom_CBC7:
@@ -1557,8 +1557,13 @@ sub_rom_CBC7:
 	and #$40
 	beq @CBDE
 
-	lda #$07	; Kick swing
-	sta ram_req_sfx
+	lda zp_players_x_distance
+	adc zp_players_y_distance
+	cmp #$33
+	bcc @CBED
+		; Only play this when the hit can't connect
+		lda #$07	; Kick swing
+		sta ram_req_sfx
 	bne @CBED
 
 	@CBDE:
@@ -1566,8 +1571,13 @@ sub_rom_CBC7:
 	and #$80
 	beq @CBFB
 
-	lda #$08	; Punch swing
-	sta ram_req_sfx
+	lda zp_players_x_distance
+	adc zp_players_y_distance
+	cmp #$33
+	bcc :+
+		lda #$08	; Punch swing
+		sta ram_req_sfx
+	:
 	inx
 	inx
 	inx
@@ -1586,7 +1596,7 @@ sub_rom_CBC7:
 
 ; -----------------------------------------------------------------------------
 
-; Punch/kick during animation 7 or 8
+; Punch/kick during animation 7 or 8 (forward or backwards jump)
 ; Parameters:
 ; Y = 0 for player one, 1 for player 2
 sub_rom_CBFC:
@@ -1604,17 +1614,27 @@ sub_rom_CBFC:
 	and #$80
 	beq @CC19
 
-	lda #$08	; Punch swing
-	sta ram_req_sfx
-	bne @CC27
+	lda zp_players_x_distance
+	adc zp_players_y_distance
+	cmp #$33
+	bcc @CC27
+	
+		lda #$08	; Punch swing
+		sta ram_req_sfx
+		bne @CC27
 
 	@CC19:
 	lda zp_controller1_new,Y
 	and #$40
 	beq @CC35
 
-	lda #$07	; Kick swing
-	sta ram_req_sfx
+	lda zp_players_x_distance
+	adc zp_players_y_distance
+	cmp #$33
+	bcc :+
+		lda #$07	; Kick swing
+		sta ram_req_sfx
+	:
 	inx
 	inx
 	@CC27:
@@ -2006,11 +2026,13 @@ str_name_goro:
 str_name_shangtsung:
 	.byte $0B, $53, $48, $41, $4E, $47, $5C, $54, $53, $55, $4E, $47
 str_name_empty_7spc0:
-	.byte $07, $20, $20, $20, $20, $20, $20, $20
+	;.byte $07, $20, $20, $20, $20, $20, $20, $20
 str_name_empty_7scp1:
-	.byte $07, $20, $20, $20, $20, $20, $20, $20
+	;.byte $07, $20, $20, $20, $20, $20, $20, $20
 str_name_empty_3spc:
-	.byte $03, $20, $20, $20
+	;.byte $03, $20, $20, $20
+_empty:
+	.byte $00
 
 ; Nothing seems to point to these "empty" names
 	;.byte $03, $20, $20, $20
@@ -2852,26 +2874,27 @@ tbl_bg_palette_ptrs:
 	.byte $0E, $16, $2A, $28, $0E, $0B, $18, $06
 	.byte $0E, $18, $28, $06, $0E, $00, $10, $06
 	@rom_D610:
-	.byte $0E, $06, $27, $30, $0E, $08, $18, $11
-	.byte $0E, $0B, $1B, $11, $0E, $08, $18, $28
+	;.byte $0E, $06, $27, $30, $0E, $08, $18, $11
+	;.byte $0E, $0B, $1B, $11, $0E, $08, $18, $28
 	@rom_D620:
-	.byte $0E, $05, $27, $30, $0E, $0B, $1B, $2C
-	.byte $0E, $07, $16, $26, $0E, $02, $12, $22
+	;.byte $0E, $05, $27, $30, $0E, $0B, $1B, $2C
+	;.byte $0E, $07, $16, $26, $0E, $02, $12, $22
 	@rom_D630:
-	.byte $0E, $05, $27, $30, $0E, $0B, $1B, $3B
-	.byte $0E, $08, $00, $10, $0E, $06, $16, $26
+	;.byte $0E, $05, $27, $30, $0E, $0B, $1B, $3B
+	;.byte $0E, $08, $00, $10, $0E, $06, $16, $26
 	@rom_D640:
-	.byte $0E, $31, $20, $10, $0E, $3B, $20, $10
-	.byte $0E, $31, $20, $17, $0E, $06, $38, $16
+	;.byte $0E, $31, $20, $10, $0E, $3B, $20, $10
+	;.byte $0E, $31, $20, $17, $0E, $06, $38, $16
 	@rom_D650:
-	.byte $0E, $3B, $2A, $10, $0E, $2C, $1C, $3C
-	.byte $0E, $26, $17, $36, $0E, $06, $38, $16
+	;.byte $0E, $3B, $2A, $10, $0E, $2C, $1C, $3C
+	;.byte $0E, $26, $17, $36, $0E, $06, $38, $16
 	@rom_D660:
-	.byte $0E, $06, $27, $30, $0E, $05, $10, $2B
-	.byte $0E, $06, $16, $28, $0E, $1C, $2C, $3C
+	;.byte $0E, $06, $27, $30, $0E, $05, $10, $2B
+	;.byte $0E, $06, $16, $28, $0E, $1C, $2C, $3C
 	@rom_D670:
-	.byte $0E, $8D, $00, $3E, $0E, $20, $00, $00
-	.byte $0E, $02, $00, $90, $0E, $11, $0E, $30
+	;.byte $0E, $8D, $00, $3E, $0E, $20, $00, $00
+	;.byte $0E, $02, $00, $90, $0E, $11, $0E, $30
+	.byte $FF
 
 ; -----------------------------------------------------------------------------
 
@@ -3279,14 +3302,18 @@ sub_rom_D784:
 	ldx zp_plr1_cur_anim,Y
 	lda zp_plr1_anim_frame,Y
 
-	; Frame 1 may have a sound
+	; Frame 1 may have a sound if it's an attack/projectile
 	cmp #$01
 	bne :+
 
 		lda tbl_frame_1_sfx_idx,X
 		beq :+
-
-			sta ram_req_sfx
+			tax
+			lda zp_players_x_distance
+			adc zp_players_y_distance
+			cmp #$33
+			bcc :+
+				stx ram_req_sfx
 	:
 	lda zp_18
 	beq :+
