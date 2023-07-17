@@ -28,10 +28,10 @@ for %%f in (bin\*.nam) do (
 	:: If RLE file already exists, check if it's older than source
 	if exist bin\%%~nf.rle (
 		call isnewer.cmd %%f bin\%%~nf.rle
-		REM echo Errorlevel: !errorlevel!
+		::echo Errorlevel: !errorlevel!
 		if !errorlevel! equ 1 (set compress="0")
 	) else (
-		echo bin\%%~nf.rle does not exist.
+		::echo bin\%%~nf.rle does not exist.
 		set compress="1"
 	)
 	REM echo Must compress: !compress!
