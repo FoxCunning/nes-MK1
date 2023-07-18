@@ -387,23 +387,25 @@ sub_irq_handler_02:
 
 ; -----------------------------------------------------------------------------
 
+; TODO Fix timing for bottom part of the screen in two player mode
+; Temple entrance stage
 sub_irq_handler_03:
 	lda ram_0435
 	bne :+
 
 		sta mmc3_irq_disable
 		sta mmc3_irq_enable
-		lda #$63
+		lda #$60 ;#$63
 		sta mmc3_irq_latch
 		lda PpuStatus_2002
-		lda zp_irq_hor_scroll ;a:zp_81
+		lda zp_irq_hor_scroll
 		sta PpuScroll_2005
 		ldy #$1C
 		jmp sub_rom_E41B
 	:
 	sta mmc3_irq_disable
 	lda PpuStatus_2002
-	lda zp_irq_hor_scroll ;a:zp_81
+	lda zp_irq_hor_scroll
 	sta PpuScroll_2005
 	lda #$00
 	sta ram_0435
@@ -422,7 +424,7 @@ sub_irq_handler_04:
 		lda #$40
 		sta mmc3_irq_latch
 		lda PpuStatus_2002
-		lda zp_irq_hor_scroll ;a:zp_81
+		lda zp_irq_hor_scroll
 		sta PpuScroll_2005
 		ldy #$24
 		jmp sub_rom_E41B
@@ -430,7 +432,7 @@ sub_irq_handler_04:
 	; Bottom
 	sta mmc3_irq_disable
 	lda PpuStatus_2002
-	lda zp_irq_hor_scroll ;a:zp_81
+	lda zp_irq_hor_scroll
 	sta PpuScroll_2005
 	lda #$00
 	sta ram_0435
@@ -447,14 +449,14 @@ sub_irq_handler_05:
 		lda #$48
 		sta mmc3_irq_latch
 		lda PpuStatus_2002
-		lda zp_irq_hor_scroll ;a:zp_81
+		lda zp_irq_hor_scroll
 		sta PpuScroll_2005
 		ldy #$2C
 		jmp sub_rom_E41B
 	:
 	sta mmc3_irq_disable
 	lda PpuStatus_2002
-	lda zp_irq_hor_scroll ;a:zp_81
+	lda zp_irq_hor_scroll
 	sta PpuScroll_2005
 	lda #$00
 	sta ram_0435
