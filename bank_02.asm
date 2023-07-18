@@ -154,45 +154,45 @@ sfx_select:
 ; -----------------------------------------------------------------------------
 
 ; Square 0
-rom_8A5E:
-	.byte $F5, $02, $F8, $08, $F9, $02
-	.byte $FA, $00, $FB, $FF
-	.byte $F8, $02, $8C, $2B, $B0, $2D, $FF
+;rom_8A5E:
+;	.byte $F5, $02, $F8, $08, $F9, $02
+;	.byte $FA, $00, $FB, $FF
+;	.byte $F8, $02, $8C, $2B, $B0, $2D, $FF
 
 ; Square 1
-rom_8A6D:
-	.byte $F8, $08, $F9, $02
-	.byte $FA, $00, $FB, $FF
-	.byte $8C, $2B, $B0, $2D, $FF
+;rom_8A6D:
+;	.byte $F8, $08, $F9, $02
+;	.byte $FA, $00, $FB, $FF
+;	.byte $8C, $2B, $B0, $2D, $FF
 
 ; Triangle
-rom_8A7A:
-	.byte $F9, $00, $FA, $00
-	.byte $FB, $FF
-	.byte $8C, $29, $B0, $28, $FF
+;rom_8A7A:
+;	.byte $F9, $00, $FA, $00
+;	.byte $FB, $FF
+;	.byte $8C, $29, $B0, $28, $FF
 
 ; Noise
-rom_8A87:
-	.byte $F9, $FF, $FA, $00, $F8, $00
-	.byte $FB, $FF
-	.byte $83, $24, $24, $24, $24, $86, $24, $24
-	.byte $24, $24, $24, $24, $24, $FF
+;rom_8A87:
+;	.byte $F9, $FF, $FA, $00, $F8, $00
+;	.byte $FB, $FF
+;	.byte $83, $24, $24, $24, $24, $86, $24, $24
+;	.byte $24, $24, $24, $24, $24, $FF
 
 ; Silent channel	
 rom_8A9D:
-	.byte $FF
+	.byte $F8, $FF, $F9, $FF, $FA, $FF, $81, $00, $FF
 
 ; ----------------
 
 mus_victory_jingle:
 	.byte $00
-	.word rom_8A5E
+	.word rom_8A9D ;rom_8A5E
 	.byte $01
-	.word rom_8A6D
+	.word rom_8A9D ;rom_8A6D
 	.byte $02
-	.word rom_8A7A
+	.word rom_8A9D ;rom_8A7A
 	.byte $03
-	.word rom_8A87
+	.word rom_8A9D ;rom_8A87
 	.byte $04
 	.word rom_8A9D
 	.byte $FF
