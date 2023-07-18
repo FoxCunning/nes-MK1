@@ -24,7 +24,7 @@ sub_state_machine_0:
 	.word sub_vs_state_machine				; 0,3
 	.word sub_continue_screen_state_machine	; 0,4
 	.word sub_high_scores_states		; 0,5
-	.word sub_rom_BF1E				; 0,6
+	.word sub_rom_BF1E					; 0,6
 
 ; -----------------------------------------------------------------------------
 
@@ -890,10 +890,10 @@ sub_rom_B393:
 	lda rom_B414+1,Y
 	sta zp_ptr1_hi
 	lda zp_plr1_selection,X
-	bpl @B3A6
+	bpl :+
 		rts
 ; ----------------
-	@B3A6:
+	:
 	asl A
 	tay
 	lda (zp_ptr1_lo),Y
@@ -1065,19 +1065,15 @@ sub_rom_B556:
 	ldx #$00
 	lda zp_5C,X
 	cmp #$05
-	bne @B56F
-
+	bne :+
 		jsr sub_rom_B578
-	@B56F:
+	:
 	ldx #$01
 	lda zp_5C,X
 	cmp #$05
 	beq sub_rom_B578
-
-	rts
-
-; -----------------------------------------------------------------------------
-
+		rts
+; ----------------
 sub_rom_B578:
 	inc zp_5C,X
 	lda zp_plr1_selection,X
@@ -2488,27 +2484,24 @@ sub_titles_fade_in:
 sub_titles_loop:
 	lda zp_frame_counter
 	cmp zp_last_execution_frame
-	bne :+
-		; Already executed on this frame
-		rts
-; ----------------
-	:
-	sta zp_last_execution_frame
+	beq @BFE9_rts
 
-	lda zp_controller1_new
-	and #$D0	; A, B or START
-	bne :+
-		lda zp_frame_counter
-		and #$1F
-		bne @BFE9
-		dec zp_counter_param
-		bne @BFE9
-	:
-	lda #$00
-	sta zp_counter_param
-	inc zp_machine_state_2	; Move to next sub-state
+		sta zp_last_execution_frame
 
-	@BFE9:
+		lda zp_controller1_new
+		and #$D0	; A, B or START
+		bne :+
+			lda zp_frame_counter
+			and #$1F
+			bne @BFE9_rts
+			dec zp_counter_param
+			bne @BFE9_rts
+		:
+		lda #$00
+		sta zp_counter_param
+		inc zp_machine_state_2	; Move to next sub-state
+
+	@BFE9_rts:
 	rts
 
 ; -----------------------------------------------------------------------------

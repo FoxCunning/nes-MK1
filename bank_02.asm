@@ -47,7 +47,7 @@ tbl_track_ptrs:
 	.word mus_opening			; $20
 	.word mus_player_select		; $21
 	.word mus_and_sfx_silence	; $22
-	.word mus_game_over		; $23	Game Over
+	.word mus_game_over			; $23	Game Over
 	.word mus_silence			; $24
 	; ---- Stage background music starts here
 	.word mus_goros_lair		; $25	Goro's Lair
@@ -240,17 +240,22 @@ sfx_fight:
 ; -----------------------------------------------------------------------------
 
 ; Square 1
-rom_96C1:
-	.byte $F5, $02, $F8, $0C, $F9, $FF
-	.byte $FA, $FF, $FB, $FF
-	.byte $88, $09, $FF
+;rom_96C1:
+;	.byte $F5, $02, $F8, $0C, $F9, $FF
+;	.byte $FA, $FF, $FB, $FF
+;	.byte $88, $09, $FF
 
 ; ----------------
 
 sfx_bounce:
-	.byte $81
-	.word rom_96C1
+	;.byte $81
+	;.word rom_96C1
+	.byte $84
+	.word @sfx_bounce_ch4
 	.byte $FF
+
+	@sfx_bounce_ch4:
+	.byte $F5, $01, $0E, $FF
 
 ; -----------------------------------------------------------------------------
 
@@ -289,17 +294,22 @@ sfx_kick:
 ; -----------------------------------------------------------------------------
 
 ; Noise
-rom_9705:
-	.byte $F5, $03, $F8, $FF
-	.byte $FA, $FF, $FB, $FF
-	.byte $84, $09, $FF
+;rom_9705:
+;	.byte $F5, $03, $F8, $FF
+;	.byte $FA, $FF, $FB, $FF
+;	.byte $84, $09, $FF
 
 ; ----------------
 
 sfx_hit:
-	.byte $83
-	.word rom_9705
+	;.byte $83
+	;.word rom_9705
+	.byte $84
+	.word @sfx_hit_ch4
 	.byte $FF
+
+	@sfx_hit_ch4:
+	.byte $F5, $01, $0D, $FF
 	
 ; -----------------------------------------------------------------------------
 
