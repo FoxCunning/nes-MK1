@@ -2036,6 +2036,9 @@ sub_apply_note_pitch:
 	; The DPCM channel will start playing the sample immediately
 	tax
 
+	lda #$0F	; Stop previous sample playback (if any)
+	sta ApuStatus_4015
+
 	lda tbl_dpcm_ptr,X
 	;sta ram_dmc_addr
 	sta DmcAddress_4012
@@ -3404,11 +3407,12 @@ tbl_dpcm_ptr:
 	.byte >(dmc_kano<<2)		; $07 "Kano"
 	.byte >(dmc_cage<<2)		; $08 "Johnny Cage"
 	.byte >(dmc_liukang<<2)		; $09 "Liu Kang"
-	.byte $FF;>(dmc_wins<<2)		; $0A "...wins"
+	.byte >(dmc_wins<<2)		; $0A "...wins"
 	.byte >(dmc_bleep<<2)		; $0B UI bleep
 	.byte >(dmc_swing<<2)		; $0C SFX punch/kick swing
 	.byte >(dmc_hit<<2)			; $0D SFX hit
-	.byte >(dmc_hit<<2)			; $0E SFX bounce	TODO
+	.byte >(dmc_hit<<2)			; $0E SFX bounce
+	.byte >(dmc_hit<<2)+1		; $0F SFX land
 
 ; Values for DPCM length register
 tbl_dpcm_len:
@@ -3426,7 +3430,8 @@ tbl_dpcm_len:
 	.byte $0B	; $0B UI bleep
 	.byte $08	; $0C SFX punch/kick swing
 	.byte $0F	; $0D SFX hit
-	.byte $08	; $0E SFX bounce	TODO
+	.byte $0A	; $0E SFX bounce
+	.byte $04	; $0F SFX land
 
 ; Values for DPCM frequency register
 tbl_dpcm_freq:
@@ -3444,7 +3449,8 @@ tbl_dpcm_freq:
 	.byte $0A	; $0B UI bleep
 	.byte $08	; $0C SFX punch/kick swing
 	.byte $08	; $0D SFX hit
-	.byte $0A	; $0E SFX bounce	TODO
+	.byte $08	; $0E SFX bounce
+	.byte $08	; $0F SFX land
 
 ; -----------------------------------------------------------------------------
 

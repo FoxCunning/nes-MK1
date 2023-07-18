@@ -214,8 +214,8 @@ sub_main_menu_loop:
 	;lda #$31	; This will stop music and play the "selection" sound instead
 	;sta ram_req_song
 	; TODO Use a DMC "gong" sample?
-	lda #$0C
-	sta ram_req_sfx	; Let's not stop the music instead
+	lda #$0C	; "Select" sound
+	sta ram_req_sfx
 
 	inc zp_machine_state_2
 	lda #$05
@@ -792,7 +792,7 @@ sub_fighter_selection_input:
 		bmi @B34A
 
 			sta zp_plr1_selection,X
-			lda #$03
+			lda #$03	; Bleep sound
 			sta ram_req_sfx
 		@B34A:
 		lda zp_controller1_new,X
@@ -1292,7 +1292,7 @@ sub_rom_B723:
 	and #$3F
 	bne @B775
 
-	lda #$10
+	lda #$10	; Countdown sound
 	sta ram_req_sfx
 	dec zp_counter_param
 	bpl @B775

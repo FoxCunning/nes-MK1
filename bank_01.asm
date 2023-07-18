@@ -33,7 +33,7 @@ sub_state_machine_1:
 	.word sub_match_start		; Substate 2
 	.word sub_match_loop		; Substate 3	Match ongoing
 	.word sub_match_hit			; Substate 4	Someone was hit
-	.word sub_match_victory		; Substate 5	Victory pose and score
+	.word sub_match_end			; Substate 5	End, victory pose and score
 	.word sub_match_eval		; Substate 6	Evaluate result (choose either 7 or 8 for next state)
 	.word sub_match_fade_out	; Substate 7	Fade out
 	.word sub_match_fade_out	; Substate 8	Fade out (to next round)
@@ -76,7 +76,8 @@ sub_match_loop:
 	cmp zp_92
 	bcs @C15E
 
-	jsr sub_rom_CCA8
+		; Determine winner
+		jsr sub_rom_CD19 ;sub_rom_CCA8
 	@C15E:
 	inc zp_23
 	jsr sub_rom_CC9A
@@ -108,59 +109,73 @@ sub_match_hit:
 
 ; -----------------------------------------------------------------------------
 
-sub_match_victory:
+sub_match_end:
 	lda zp_match_time
-	beq @C197
+	beq @C197	; Branch if time over
+
 	lda zp_4B
 	bpl @C192
 
-		jmp sub_rom_D3DE ;jsr sub_rom_D3DE
-	;rts
+		jmp sub_rom_D3DE
 ; ----------------
 	@C192:
 	dec zp_match_time
-	jsr sub_rom_CD34
+	jsr sub_rom_CD34	; Score calculation based on remaining time
+
 	@C197:
-	lda zp_A1
+	lda zp_16bit_hi	; Score left to add, high byte
 	bne @C19F
 
-	lda zp_A0
-	beq @C1F6
+	lda zp_16bit_lo	; Score left to add, low byte
+	beq @victory_end
 
 	@C19F:
-	lda zp_frame_counter
-	and #$03
-	bne @C1AF
+	; Unfortunately, this causes graphical glitches when we also have to play DPCM samples
+	; That is because of the extra cycles due to the sound driver constantly
+	; changing the currently playing SFX
+	;lda zp_frame_counter
+	;and #$03	; Short pause between bleeps
+	;bne @C1AF
 
-	lda #$22	; Silence everything
-	sta ram_req_song
-	lda #$09	; Pulse bleep
-	sta ram_req_sfx
+		;lda #$22	; Silence everything
+		;sta ram_req_song
+		;lda #$09	; Pulse bleep (score counter)
+		;sta ram_req_sfx
+		
+	; Determine winner based on damagetaken
 	@C1AF:
 	ldy #$00
 	ldx #$00
 	lda zp_plr1_damage
 	cmp zp_plr2_damage
-	bcc @C1C3
+	bcc @C1C3	; Branch if player 1 wins
 
-	beq @C1F6
+		beq @victory_end	; Branch if same health
 
-	lda ram_040F
+			lda ram_040F
 
-	beq @C1F6
+			beq @victory_end
 
-	iny
-	ldx #$03
+				iny		; Player 2 wins
+				ldx #$03
 	@C1C3:
-	sty zp_7C
+	sty zp_7C	; Index of winning player
 	stx zp_7B
+	
+	lda zp_counter_param
+	beq :+
+		jsr sub_announce_winner_name
+	:
+
 	jsr sub_clear_score_display
+
 	ldx zp_7B
 	lda #$01
 	sta zp_05
 	lda #$00
 	sta zp_06
-	jsr sub_rom_C6CC
+	jsr sub_update_score_display
+
 	lda zp_7C
 	eor #$01
 	sta zp_7C
@@ -169,23 +184,56 @@ sub_match_victory:
 	tax
 	stx zp_7B
 	jsr sub_rom_C6E2
-	jsr sub_rom_C6BA
-	lda zp_A0
+	; jsr sub_rom_C6BA this is just a rts
+
+	lda zp_16bit_lo
 	sec
 	sbc #$01
-	sta zp_A0
-	bcs @C1F5
-
-	dec zp_A1
-	@C1F5:
+	sta zp_16bit_lo
+	bcs :+
+		dec zp_16bit_hi
+	:
 	rts
 ; ----------------
-	@C1F6:
+	@victory_end:
 	inc zp_game_substate
 	rts
 
 ; -----------------------------------------------------------------------------
 
+sub_announce_winner_name:
+	inc zp_counter_param
+	lda zp_counter_param
+	cmp #$14
+	bne @wait_for_name
+		
+		; Announce name after 20 frames
+		ldx zp_7C	; Winner index
+		lda zp_plr1_fgtr_idx_clean,X
+		cmp #$06	; Skip Goro and Shang-Tsung
+		bcs @winner_name_rts
+
+			clc
+			adc #$11
+			sta ram_req_sfx
+			rts
+
+	@wait_for_name:
+	cmp #$54
+	bne @winner_name_rts
+
+		; Time to say "wins"
+		lda #$18
+		sta ram_req_sfx
+		lda #$00
+		sta zp_counter_param
+
+	@winner_name_rts:
+	rts
+
+; -----------------------------------------------------------------------------
+
+; Is this even used?
 sub_rom_C284:
 	jsr sub_fade_palettes_out
 	bcc :+
@@ -196,7 +244,7 @@ sub_rom_C284:
 		sta ram_067D
 		sta ram_067C
 		sta zp_game_substate
-		lda #$1F
+		lda #$1F	; Currently silenced
 		sta ram_req_sfx
 	:
 	rts
@@ -732,7 +780,7 @@ sub_rom_C6BB:
 	
 	ldx zp_7B
 ; ----------------
-sub_rom_C6CC:
+sub_update_score_display:
 	clc
 	lda ram_0403,X
 	adc zp_05
@@ -741,7 +789,8 @@ sub_rom_C6CC:
 	adc zp_06
 	sta ram_0404,X
 	bcc sub_rom_C6E2
-	inc ram_0405,X
+
+		inc ram_0405,X
 ; ----------------
 sub_rom_C6E2:
 	lda ram_0403,X
@@ -756,6 +805,7 @@ sub_rom_C6E2:
 	ldy zp_7C
 	ldx rom_C76A,Y
 	ldy #$04
+
 	@C6FF:
 	lda ram_066D,Y
 	sta ram_ppu_data_buffer,X
@@ -806,6 +856,7 @@ sub_rom_C6E2:
 	sta ram_040A
 	lda ram_0405,X
 	sta ram_040B
+
 	@C75F:
 	rts
 
@@ -859,7 +910,7 @@ sub_match_hit_loop:
 		sta zp_gained_score_idx
 		sta zp_F0
 		sta zp_player_hit_counter
-		dec zp_game_substate
+		dec zp_game_substate	 ; Back to match main loop
 		rts
 ; ----------------
 	:
@@ -1221,7 +1272,10 @@ sub_rom_C9F2:
 	cmp #$05
 	bcc @CA18
 
-	lda #$05
+	lda #$01	; The match end state will use this to sync DPCM sample playback
+	sta zp_counter_param
+
+	lda #$05	; Match end state
 	sta zp_game_substate
 	jsr sub_rom_CA19
 	pla
@@ -1237,20 +1291,20 @@ sub_rom_CA19:
 
 	lda #$00
 	sta zp_match_time
-	sta zp_A0
-	sta zp_A1
+	sta zp_16bit_lo
+	sta zp_16bit_hi
 	rts
 ; ----------------
 	@CA26:
 	lda #$01
-	sta zp_A1
+	sta zp_16bit_hi
 	lda zp_match_time
 	clc
 	adc #$2C
-	sta zp_A0
+	sta zp_16bit_lo
 	bcc @CA35
 
-	inc zp_A1
+	inc zp_16bit_hi
 	@CA35:
 	ldx zp_plr1_damage
 	cpx zp_plr2_damage
@@ -1261,13 +1315,13 @@ sub_rom_CA19:
 	dex
 	beq @CA4E
 
-	lda zp_A0
+	lda zp_16bit_lo
 	sec
 	sbc #$01
-	sta zp_A0
+	sta zp_16bit_lo
 	bcs @CA4B
 
-	dec zp_A1
+	dec zp_16bit_hi
 	@CA4B:
 	jmp @CA3D
 
@@ -1333,8 +1387,8 @@ sub_rom_CA66:
 	@CA94:
 	ldy zp_7C
 	jsr sub_rom_CB0C
-	jsr sub_rom_CB7F
-	rts
+	jmp sub_rom_CB7F ;jsr sub_rom_CB7F
+	;rts
 
 ; -----------------------------------------------------------------------------
 
@@ -1495,7 +1549,7 @@ sub_rom_CB0C:
 
 sub_rom_CB7F:
 	lda zp_plr1_cur_anim,Y
-	cmp #$26
+	cmp #$26	 ; Knocked out
 	bne @CBC6
 
 	lda zp_plr1_anim_frame,Y
@@ -1514,7 +1568,7 @@ sub_rom_CB7F:
 	lda zp_plr1_anim_frame,X
 	bne @CBC6
 
-	lda #$2A
+	lda #$2A	; Victory pose
 	sta zp_plr1_cur_anim,X
 	lda zp_plr1_fgtr_idx_clean,X
 	tay
@@ -1532,10 +1586,12 @@ sub_rom_CB7F:
 	rts
 ; ----------------
 	@CBB7:
-	lda #$27
-	sta zp_plr1_cur_anim,Y
+	lda #$27		; Get up? Probably if the timer ran out and player was
+	sta zp_plr1_cur_anim,Y	; knocked out, but with some health left
+
 	lda #$00
 	sta zp_plr1_anim_frame,Y
+
 	lda zp_sprites_base_y
 	sta zp_plr1_y_pos,Y
 	@CBC6:
@@ -1557,13 +1613,9 @@ sub_rom_CBC7:
 	and #$40
 	beq @CBDE
 
-	lda zp_players_x_distance
-	adc zp_players_y_distance
-	cmp #$33
-	bcc @CBED
-		; Only play this when the hit can't connect
-		lda #$07	; Kick swing
-		sta ram_req_sfx
+
+	lda #$07	; Kick swing
+	sta ram_req_sfx
 	bne @CBED
 
 	@CBDE:
@@ -1571,13 +1623,9 @@ sub_rom_CBC7:
 	and #$80
 	beq @CBFB
 
-	lda zp_players_x_distance
-	adc zp_players_y_distance
-	cmp #$33
-	bcc :+
-		lda #$08	; Punch swing
-		sta ram_req_sfx
-	:
+
+	lda #$08	; Punch swing
+	sta ram_req_sfx
 	inx
 	inx
 	inx
@@ -1614,27 +1662,18 @@ sub_rom_CBFC:
 	and #$80
 	beq @CC19
 
-	lda zp_players_x_distance
-	adc zp_players_y_distance
-	cmp #$33
-	bcc @CC27
-	
-		lda #$08	; Punch swing
-		sta ram_req_sfx
-		bne @CC27
+	lda #$08	; Punch swing
+	sta ram_req_sfx
+	bne @CC27
 
 	@CC19:
 	lda zp_controller1_new,Y
 	and #$40
 	beq @CC35
 
-	lda zp_players_x_distance
-	adc zp_players_y_distance
-	cmp #$33
-	bcc :+
-		lda #$07	; Kick swing
-		sta ram_req_sfx
-	:
+
+	lda #$07	; Kick swing
+	sta ram_req_sfx
 	inx
 	inx
 	@CC27:
@@ -1753,9 +1792,10 @@ sub_rom_CC9A:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_CCA8:
-	jsr sub_rom_CD19
-	rts
+; This was pointless
+;sub_rom_CCA8:
+;	jsr sub_rom_CD19
+;	rts
 
 ; -----------------------------------------------------------------------------
 
@@ -2602,7 +2642,7 @@ sub_rom_D215:
 	beq @D22A
 
 	sta zp_F4,Y
-	lda #$05
+	lda #$0A	; Short bounce sound when landing
 	sta ram_req_sfx
 	rts
 ; ----------------
@@ -2615,35 +2655,36 @@ sub_rom_D215:
 sub_rom_D3DE:
 	lda zp_4B
 	cmp #$FF
-	bne @D3F0
-
-	jsr sub_show_fighter_names
-	lda #$00
-	sta zp_4B
-	lda #$03
-	sta zp_game_substate
-	rts
+	bne :+
+		jsr sub_show_fighter_names
+		lda #$00
+		sta zp_4B
+		lda #$03
+		sta zp_game_substate
+		rts
 ; ----------------
-	@D3F0:
+	:
 	ldx #$00
 	lda zp_plr1_fighter_idx
-	bmi @D3F7
-
-	inx
-	@D3F7:
+	bmi :+
+		; Skip CPU-controlled fighter
+		inx
+	:
 	lda zp_4B
 	and #$7F
 	sta zp_plr1_fgtr_idx_clean,X
+
 	lda #$00
 	sta zp_plr1_cur_anim,X
 	sta zp_plr1_anim_frame,X
 	sta zp_plr1_damage,X
 	sta zp_plr1_dmg_counter,X
+
 	lda #$FF
 	sta zp_4B
 	stx zp_7C
-	jsr sub_load_fighters_palettes
-	rts
+	jmp sub_load_fighters_palettes ;jsr sub_load_fighters_palettes
+	;rts
 
 ; -----------------------------------------------------------------------------
 .export sub_fade_palettes_in
@@ -2933,6 +2974,7 @@ sub_clear_oam_data:
 sub_rom_D6AE:
 	lda #$00
 	ldx #$18
+
 	@D6B2:
 	asl zp_07
 	rol zp_08
@@ -2943,6 +2985,7 @@ sub_rom_D6AE:
 
 	sbc zp_16
 	inc zp_07
+
 	@D6C1:
 	dex
 	bne @D6B2
@@ -2959,6 +3002,7 @@ sub_rom_D6C7:
 	sta zp_16
 	@D6CF:
 	jsr sub_rom_D6AE
+
 	lda zp_ptr1_lo
 	clc
 	adc zp_0D
@@ -3305,15 +3349,9 @@ sub_rom_D784:
 	; Frame 1 may have a sound if it's an attack/projectile
 	cmp #$01
 	bne :+
-
 		lda tbl_frame_1_sfx_idx,X
 		beq :+
-			tax
-			lda zp_players_x_distance
-			adc zp_players_y_distance
-			cmp #$33
-			bcc :+
-				stx ram_req_sfx
+			sta ram_req_sfx
 	:
 	lda zp_18
 	beq :+

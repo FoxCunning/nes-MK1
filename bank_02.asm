@@ -17,12 +17,12 @@ tbl_track_ptrs:
 	.word sfx_hit				; $02	Any hit
 	.word sfx_dmcbleep			; $03	Cursor movement bleep
 	.word sfx_projectile		; $04	Projectile/special attack
-	.word sfx_bounce			; $05	Bounce/land after jump
+	.word sfx_bounce			; $05	Bounce
 	.word sfx_fight				; $06	Announcer "Fight!"
 	.word sfx_kick				; $07	Kick swing
 	.word sfx_kick				; $08	Punch swing
 	.word sfx_bleep				; $09	Pulse bleep (score counter)
-	.word sfx_silence			; $0A
+	.word sfx_land				; $0A	Landing bounce (after a jump)
 	.word sfx_silence			; $0B
 	.word sfx_select			; $0C	"Siren" sound (selection confirmed)
 	.word sfx_happy_jingle		; $0D	A weird three-note jingle
@@ -36,7 +36,7 @@ tbl_track_ptrs:
 	.word sfx_kano				; $15	Announcer "Kano"
 	.word sfx_cage				; $16	Announcer "Johnny Cage"
 	.word sfx_liukang			; $17	Announcer "Liu Kang"
-	.word sfx_silence			; $18
+	.word sfx_wins				; $18	Announcer "...wins"
 	.word sfx_silence			; $19
 	.word sfx_silence			; $1A
 	.word sfx_silence			; $1B
@@ -239,13 +239,17 @@ sfx_fight:
 
 ; -----------------------------------------------------------------------------
 
-; Square 1
-;rom_96C1:
-;	.byte $F5, $02, $F8, $0C, $F9, $FF
-;	.byte $FA, $FF, $FB, $FF
-;	.byte $88, $09, $FF
+sfx_land:
+	;.byte $81
+	;.word rom_96C1
+	.byte $84
+	.word @sfx_land_ch4
+	.byte $FF
 
-; ----------------
+	@sfx_land_ch4:
+	.byte $F5, $01, $0F, $FF
+
+; -----------------------------------------------------------------------------
 
 sfx_bounce:
 	;.byte $81
@@ -490,5 +494,15 @@ sfx_liukang:
 
 	@sfx_liukang_ch4:
 	.byte $F5, $01, $09, $FF
+
+; -----------------------------------------------------------------------------
+
+sfx_wins:
+	.byte $84
+	.word @sfx_wins_ch4
+	.byte $FF
+
+	@sfx_wins_ch4:
+	.byte $F5, $01, $0A, $FF
 
 ; -----------------------------------------------------------------------------

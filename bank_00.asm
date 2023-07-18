@@ -25,8 +25,7 @@ sub_load_stage_background:
 	jsr sub_prepare_stage_rle_pointer
 	lda #$01
 	sta zp_05
-	jmp sub_stage_rle_unpack ;jsr sub_stage_rle_unpack
-	;rts
+	jmp sub_stage_rle_unpack
 
 ; -----------------------------------------------------------------------------
 
@@ -484,8 +483,10 @@ sub_match_eval:
 	ldy #$00
 	sty zp_player_hit_counter
 	jsr sub_rom_C207
+
 	iny
 	jsr sub_rom_C207
+
 	rts
 
 ; -----------------------------------------------------------------------------

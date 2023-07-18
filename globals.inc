@@ -163,8 +163,8 @@ zp_players_y_distance = $9D ;
 zp_9E = $9E     ;
 zp_match_time = $9F ;
 
-zp_A0 = $A0     ;
-zp_A1 = $A1     ;
+zp_16bit_lo = $A0     ;
+zp_16bit_hi = $A1     ;
 zp_A2 = $A2     ;
 zp_plr1_fgtr_idx_clean = $A3    ; Fighter index without flags
 zp_plr2_fgtr_idx_clean = $A4    ; Fighter index without flags

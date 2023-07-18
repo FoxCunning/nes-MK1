@@ -383,6 +383,12 @@ dmc_bleep:
 ;dmc_bounce:
 ;.incbin "audio/bounce.dmc"
 
+; ----------------
+.export dmc_wins
+
+dmc_wins:
+.incbin "audio/wins.dmc"
+
 ; -----------------------------------------------------------------------------
 
 .segment "VECTORS"

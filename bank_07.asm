@@ -101,7 +101,7 @@ rom_8004:
 	.word anim_subzero_staggered
 	.byte $08			; $29
 	.word rom_8262
-	.byte $08			; $2A
+	.byte $08			; $2A = victory pose
 	.word rom_8268
 	.byte $07			; $2B
 	.word rom_80AD
