@@ -24,16 +24,18 @@ reset:
 	sta PpuMask_2001
 	sta PpuControl_2000
 
+	; Wait for two vblanks
 	ldx #$02
-	@E00F:
+	@reset_wait:
 	bit PpuStatus_2002
-	bpl @E00F
+	bpl @reset_wait
 	:
 		lda PpuStatus_2002
 	bmi :-
 	dex
-	bne @E00F
+	bne @reset_wait
 
+	; Init some registers
 	lda #$0F
 	sta ApuStatus_4015
 	lda #$00
@@ -41,10 +43,42 @@ reset:
 	lda #$40
 	sta Ctrl2_FrameCtr_4017
 	sta mmc3_irq_disable
-	lda #$80
+	lda #$C0
 	sta mmc3_ram_protect
-	lda PpuStatus_2002
 
+	; ---- Transfer some code to RAM ----
+	lda #$87
+	sta mmc3_bank_select
+	lda #$06
+	sta mmc3_bank_data
+
+	; Source: $B000-$BFFF (bank 6)
+	; Destination: $7000-$7FFF (WRAM)
+	lda #$00
+	sta zp_00
+	sta zp_ptr1_lo
+
+	lda #$B0
+	sta zp_01
+
+	lda #$70
+	sta zp_ptr1_hi
+
+	ldy #$00
+	:
+		lda (zp_00),Y
+		sta (zp_ptr1_lo),Y
+	iny
+	bne :-
+
+	inc zp_01
+	inc zp_ptr1_lo
+	lda zp_01
+	cmp #$DF
+	bne :-
+	; -----------------------------------
+
+	lda PpuStatus_2002
 	;lda #$10
 	;tax
 	lax #$10
@@ -65,7 +99,7 @@ reset:
 	lda #$0C
 	sta ram_irq_routine_idx
 
-	jsr sub_rom_E22A
+	jsr sub_clear_ram
 
 	lda #$00
 	jsr sub_clear_nametable
@@ -303,74 +337,6 @@ nmi:
 	pla
 	plp
 	rti
-
-; -----------------------------------------------------------------------------
-sub_rom_E22A:
-	lda #$00
-	tay
-	sta zp_00
-	sta zp_01
-	@E231:
-	sta (zp_00),Y
-	iny
-	bne @E231
-
-	ldx #$02
-	stx zp_01
-	@E23A:
-	sta (zp_00),Y
-	iny
-	bne @E23A
-
-	inc zp_01
-	inx
-	cpx #$08
-	bcc @E23A
-
-	sta zp_01
-	rts
-
-; -----------------------------------------------------------------------------
-.export sub_clear_nametable
-
-; Fills a nametable with $FF (including attribute table area)
-; Parameters:
-; A = index of nametable to clear (0: $2000-$23FF, 1: $2400-$27FF etc.)
-sub_clear_nametable:
-	asl A
-	asl A
-	clc
-	adc #$20
-	ldx #$00
-	sta PpuAddr_2006
-	stx PpuAddr_2006
-	ldy #$03
-	lda #$FF
-	:
-	sta PpuData_2007
-	dex
-	bne :-
-	
-	dey
-	bpl :-
-
-	rts
-
-; -----------------------------------------------------------------------------
-.export sub_hide_all_sprites
-
-sub_hide_all_sprites:
-	lda #$F8
-	ldx #$00
-	:
-	sta ram_oam_copy_ypos,X
-	inx
-	inx
-	inx
-	inx
-	bne :-
-
-	rts
 
 ; -----------------------------------------------------------------------------
 

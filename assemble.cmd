@@ -11,6 +11,9 @@ if exist "..\..\..\Mesen\Mesen.exe" (
 if exist "..\..\..\..\Mesen\Mesen.exe" (
 	set emulator="..\..\..\..\Mesen\Mesen.exe"
 )
+if exist "..\Mesen\Mesen.exe" (
+	set emulator="..\Mesen\Mesen.exe"
+)
 
 if exist "out\MK1.nes" (copy "out\MK1.nes" "out\MK1.backup.nes" >nul)
 
