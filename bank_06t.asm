@@ -1,4 +1,4 @@
-.segment "BANK_06"
+.segment "BANK_06t"
 ; $8000-$9FFF
 .setcpu "6502X"
 
@@ -675,5 +675,3 @@ rom_8C5B:
 	.byte $FF, $FF, $FF
 
 ; -----------------------------------------------------------------------------
-
-; The rest of this bank seems to be duplicated junk

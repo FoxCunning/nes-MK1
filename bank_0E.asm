@@ -45,9 +45,10 @@ dmc_kano:
 ;.incbin "audio/wins.dmc"
 
 ; ----------------
-.export dmc_bleep
+.export dmc_hit
 
-dmc_bleep:
-.incbin "audio/bleep.dmc"
+dmc_hit:
+.incbin "audio/hit_08.dmc"
+
 
 ; -----------------------------------------------------------------------------
