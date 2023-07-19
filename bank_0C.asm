@@ -118,7 +118,7 @@ rom_8004:
 	.byte $29
 	.word rom_828C
 	.byte $19
-	.word rom_8298
+	.word rom_8277 ;rom_8298
 	.byte $1F
 	.word rom_82A7
 	.byte $04
