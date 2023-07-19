@@ -1695,17 +1695,18 @@ sub_init_new_track:
 	iny
 	tya
 	pha
-		ldy #$00
-		lda ram_cur_apu_channel
-		bpl :+
+		;ldy #$00
+		;lda ram_cur_apu_channel
+		;bpl :+
 			; SFX offset
-			ldy #$80
-		:
+		;	ldy #$80
+		;:
 		lda ram_cur_apu_channel
 		and #$0F
 		tay		; Y = APU channel (0-4)
 		
 		lda #$00
+		sta ram_cur_note_idx,X
 		sta ram_track_speed_counter,X
 		sta ram_note_ticks_left,X
 		
