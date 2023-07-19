@@ -2111,6 +2111,7 @@ sub_calc_players_distance:
 	sbc zp_plr2_x_pos
 	@CF2F:
 	sta zp_players_x_distance
+	
 	ldx #$00
 	lda zp_plr1_y_pos
 	cmp zp_plr2_y_pos
