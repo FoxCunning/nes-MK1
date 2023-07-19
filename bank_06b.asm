@@ -258,62 +258,73 @@ sub_irq_handler_00:
 
 ; This controls the parallax scrolling effect for the Pit
 sub_irq_handler_01:
-	lda ram_0435
+	lda ram_irq_state_var	; 0 = top, 1 = mid, 2 = bottom
 
-	bne :+
-		; Top
+	bne @pit_mid_clouds
+
+		; Top (clouds)
 		sta mmc3_irq_disable
 		sta mmc3_irq_enable
 		lda #$1B
 		sta mmc3_irq_latch
+
 		lda PpuStatus_2002
 
 		lda zp_frame_counter
 		and #$07
-		bne @E497
-			inc ram_043F
-		@E497:
-		lda ram_043F
+		bne :+
+			inc ram_irq_counter_0
+		:
+		lda ram_irq_counter_0
 		clc
 		adc zp_irq_hor_scroll
 		sta PpuScroll_2005
-		ldy #$E0		
-		jmp sub_rom_E41B
-	:
+		ldy #$E0
+		jmp sub_change_state_and_chr
+
+	@pit_mid_clouds:
 	cmp #$01
-	bne :+
-		; Middle
+	bne @pit_bottom
+	
+		; Middle clouds
 		sta mmc3_irq_disable
 		sta mmc3_irq_enable
 		lda #$15
 		sta mmc3_irq_latch
+
 		lda PpuStatus_2002
 
 		lda zp_frame_counter
 		and #$03
-		bne @E4BD
-			inc ram_0440
-		@E4BD:
-		lda ram_0440
+		bne :+
+			inc ram_irq_counter_1
+		:
+		lda ram_irq_counter_1
 		clc
 		adc zp_irq_hor_scroll
 		sta PpuScroll_2005
-		inc ram_0435
-	:
+		inc ram_irq_state_var
+		rts
+
+	@pit_bottom:
 	; Bottom
 	sta mmc3_irq_disable
 	lda PpuStatus_2002
 	lda zp_irq_hor_scroll
 	sta PpuScroll_2005
+
 	lda #$00
-	sta ram_0435
+	sta ram_irq_state_var
+
 	rts
 
 ; -----------------------------------------------------------------------------
 
+; Warrior Shrine split-screen
 sub_irq_handler_02:
-	lda ram_0435
+	lda ram_irq_state_var
 	bne :+
+		; Top
 		sta mmc3_irq_disable
 		sta mmc3_irq_enable
 		lda #$40
@@ -322,13 +333,14 @@ sub_irq_handler_02:
 		lda zp_irq_hor_scroll
 		sta PpuScroll_2005
 		ldy #$E4
-		jmp sub_rom_E41B
+		jmp sub_change_state_and_chr
 	:
+	; Bottom
 	sta mmc3_irq_disable
 
 	ldy #$E8
 	lda #$00
-	sta ram_0435
+	sta ram_irq_state_var
 	lda #$82
 	ora zp_bank_select_mask
 	tax
@@ -353,9 +365,9 @@ sub_irq_handler_02:
 		and #$1F
 
 	bne :+
-		inc ram_043F
+		inc ram_irq_counter_0
 	:	
-	lda ram_043F
+	lda ram_irq_counter_0
 	and #$01
 	tax
 	ldy @rom_E564,X
@@ -366,9 +378,9 @@ sub_irq_handler_02:
 	lda zp_frame_counter
 	and #$07
 	bne :+
-		inc ram_043F
+		inc ram_irq_counter_0
 	:	
-	lda ram_043F
+	lda ram_irq_counter_0
 	and #$01
 	tax
 	ldy @rom_E566,X
@@ -390,7 +402,7 @@ sub_irq_handler_02:
 ; TODO Fix timing for bottom part of the screen in two player mode
 ; Temple entrance stage
 sub_irq_handler_03:
-	lda ram_0435
+	lda ram_irq_state_var
 	bne :+
 
 		sta mmc3_irq_disable
@@ -401,21 +413,21 @@ sub_irq_handler_03:
 		lda zp_irq_hor_scroll
 		sta PpuScroll_2005
 		ldy #$1C
-		jmp sub_rom_E41B
+		jmp sub_change_state_and_chr
 	:
 	sta mmc3_irq_disable
 	lda PpuStatus_2002
 	lda zp_irq_hor_scroll
 	sta PpuScroll_2005
 	lda #$00
-	sta ram_0435
+	sta ram_irq_state_var
 	ldy #$20
 	jmp sub_rom_E41E
 
 ; -----------------------------------------------------------------------------
 
 sub_irq_handler_04:
-	lda ram_0435
+	lda ram_irq_state_var
 
 	bne :+
 		; Top
@@ -427,7 +439,7 @@ sub_irq_handler_04:
 		lda zp_irq_hor_scroll
 		sta PpuScroll_2005
 		ldy #$24
-		jmp sub_rom_E41B
+		jmp sub_change_state_and_chr
 	:
 	; Bottom
 	sta mmc3_irq_disable
@@ -435,14 +447,14 @@ sub_irq_handler_04:
 	lda zp_irq_hor_scroll
 	sta PpuScroll_2005
 	lda #$00
-	sta ram_0435
+	sta ram_irq_state_var
 	ldy #$28
 	jmp sub_rom_E41E
 
 ; -----------------------------------------------------------------------------
 
 sub_irq_handler_05:
-	lda ram_0435
+	lda ram_irq_state_var
 	bne :+
 		sta mmc3_irq_disable
 		sta mmc3_irq_enable
@@ -452,14 +464,14 @@ sub_irq_handler_05:
 		lda zp_irq_hor_scroll
 		sta PpuScroll_2005
 		ldy #$2C
-		jmp sub_rom_E41B
+		jmp sub_change_state_and_chr
 	:
 	sta mmc3_irq_disable
 	lda PpuStatus_2002
 	lda zp_irq_hor_scroll
 	sta PpuScroll_2005
 	lda #$00
-	sta ram_0435
+	sta ram_irq_state_var
 	ldy #$30
 	jmp sub_rom_E41E
 
@@ -519,7 +531,7 @@ sub_irq_handler_06:
 	sta mmc3_bank_data
 
 	lda #$00
-	sta ram_0435
+	sta ram_irq_state_var
 	lda ram_0421
 	beq @E406
 
@@ -544,8 +556,8 @@ sub_rom_E408:
 	sta PpuScroll_2005
 	ldy #$DC
 ; ----------------
-sub_rom_E41B:
-	inc ram_0435
+sub_change_state_and_chr:
+	inc ram_irq_state_var
 ; ----------------
 sub_rom_E41E:
 	lda #$82
@@ -572,7 +584,7 @@ sub_rom_E41E:
 sub_irq_handler_0C:
 	sta mmc3_irq_disable
 	lda #$00
-	sta ram_0435
+	sta ram_irq_state_var
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -627,13 +639,13 @@ sub_irq_handler_0D:
 	sta PpuScroll_2005
 	sta PpuScroll_2005
 	lda #$00
-	sta ram_0435
+	sta ram_irq_state_var
 
 	rts
 
 ; -----------------------------------------------------------------------------
 sub_irq_handler_0E:
-	lda ram_0435
+	lda ram_irq_state_var
 	beq :+
 		lda PpuStatus_2002
 		lda #$88
@@ -647,7 +659,7 @@ sub_irq_handler_0E:
 	lda PpuStatus_2002
 	lda #$89
 	sta PpuControl_2000
-	inc ram_0435
+	inc ram_irq_state_var
 
 	rts
 
@@ -684,7 +696,7 @@ sub_irq_handler_0F:
 sub_irq_handler_10:
 	sta mmc3_irq_disable
 
-	lda ram_0435
+	lda ram_irq_state_var
 	bne :+
 		; We only need to do this set up once
 		ldx #$00
@@ -703,7 +715,7 @@ sub_irq_handler_10:
 		dey
 		bne @irq10_setup_loop
 
-		inc ram_0435
+		inc ram_irq_state_var
 	:
 	; Read volume and show a sprite for each channel depending on the value
 	; TODO Change the palette depending on volume?
@@ -732,7 +744,7 @@ sub_irq_handler_10:
 sub_irq_handler_11:
 	sta mmc3_irq_disable
 	lda #$00
-	sta ram_0435
+	sta ram_irq_state_var
 	rts
 
 ; -----------------------------------------------------------------------------

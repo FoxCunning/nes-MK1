@@ -266,7 +266,7 @@ sub_init_game_mode:
 	sta ram_req_song
 
 	lda #$00
-	sta ram_0435
+	sta ram_irq_state_var
 	sta ram_042D
 	sta zp_scroll_x
 	sta ram_0438
@@ -310,8 +310,8 @@ sub_init_game_mode:
 ; $A000-$BFFF = Bank $01
 sub_call_load_stage_bg:
 	lda #$00
-	sta ram_043F
-	sta ram_0440
+	sta ram_irq_counter_0
+	sta ram_irq_counter_1
 
 	; Not needed after code relocation
 	; Bank $00 in $8000-$9FFF

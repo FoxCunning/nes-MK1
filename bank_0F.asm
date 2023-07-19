@@ -154,7 +154,7 @@ reset:
 	lda #$1F
 	sta ram_0400
 	lda #$00
-	sta ram_0435
+	sta ram_irq_state_var
 	lda #$4C
 	sta ram_irq_trampoline
 	cli

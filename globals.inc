@@ -312,13 +312,13 @@ ram_042A = $042A    ;
 ; Very Easy to Very Hard (0-4)
 ram_difficulty_setting = $042C    ;
 ram_042D = $042D    ;
-ram_0435 = $0435    ;
+ram_irq_state_var = $0435 ; Used in IRQ routines as a substate indicator
 ram_ranged_atk_x_pos = $0436    ; Ranged attack hit box coordinate
 ram_0438 = $0438    ;
 ram_043D = $043D    ;
 ram_043E = $043E    ;
-ram_043F = $043F    ;
-ram_0440 = $0440    ;
+ram_irq_counter_0 = $043F ; Used in IRQ routines as a counter (e.g. for parallax scrolling)
+ram_irq_counter_1 = $0440    ;
 
 ; This buffer will be copied to the PPU during vblank
 ram_ppu_data_buffer = $0600 ; Size=63
