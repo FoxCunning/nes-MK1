@@ -176,6 +176,7 @@ reset:
 
 		jsr sub_state_machine_start
 		jsr sub_oam_update
+
 		jsr sub_sound_playlist
 
 		lda #$80

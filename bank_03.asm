@@ -103,7 +103,7 @@ sub_rom_A00C:
 	bcs @A02A_rts
 
 	iny
-	lda zp_8D
+	lda zp_y_plane_skew
 	bne @A08A
 
 	cpx #$00
@@ -1507,30 +1507,6 @@ sub_apu_init:
 	rts
 
 ; -----------------------------------------------------------------------------
-.export sub_play_new_song_or_sfx
-
-; Parameters:
-; A = index of the SFX or music track to play
-sub_play_new_song_or_sfx:
-	tax
-	ldy #$FF
-	@AAEF:
-	cpy #$07
-	beq :+
-
-		; Read from $0701 to $0707, or until a value with bit 7 set is found
-		iny
-		lda ram_snd_stack,Y
-
-		bpl @AAEF
-
-		; ...then put the sound index where that value was found
-		txa
-		sta ram_snd_stack,Y
-	:
-	rts
-
-; -----------------------------------------------------------------------------
 .export sub_process_all_sound
 
 sub_process_all_sound:
@@ -2809,7 +2785,7 @@ sub_next_duty_envelope:
 		beq @skip_duty_env
 
 			ldx ram_cur_chan_ptr_offset
-			
+
 			; Add one to the pointer
 			lda #$01
 			clc

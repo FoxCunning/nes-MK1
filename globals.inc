@@ -144,7 +144,7 @@ zp_plr2_y_pos = $89 ;
 zp_plr1_facing_dir = $8A    ; 0 = forward, 1 = backwards
 zp_plr2_facing_dir = $8B    ; 0 = forward, 1 = backwards
 zp_8C = $8C     ;
-zp_8D = $8D     ;
+zp_y_plane_skew = $8D   ; Set to 1 if one player is airborne while the other isn't
 
 zp_plr1_cur_anim = $8E  ;
 zp_plr2_cur_anim = $8F  ;
@@ -190,8 +190,8 @@ zp_consecutive_hits_taken = $E5     ;
 zp_E6 = $E6     ;
 zp_E7 = $E7     ;
 zp_E9 = $E9     ;
-zp_EB = $EB     ;
-zp_ED = $ED     ;
+;zp_EB = $EB     ;
+;zp_ED = $ED     ;
 
 ; Determines how many points to add to a player's score
 zp_gained_score_idx = $EF   ; 0 to 4 (low to high)

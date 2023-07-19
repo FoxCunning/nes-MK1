@@ -407,7 +407,7 @@ sub_irq_handler_03:
 
 		sta mmc3_irq_disable
 		sta mmc3_irq_enable
-		lda #$63
+		lda #$62
 		sta mmc3_irq_latch
 		lda PpuStatus_2002
 		lda zp_irq_hor_scroll
@@ -944,8 +944,33 @@ sub_sound_playlist:
 	sta ram_cur_song
 	@E8F9:
 	jsr sub_play_new_song_or_sfx
+
 	lda #$00
 	sta ram_req_sfx
+	rts
+
+; -----------------------------------------------------------------------------
+;.export sub_play_new_song_or_sfx
+
+; Parameters:
+; A = index of the SFX or music track to play
+sub_play_new_song_or_sfx:
+	tax
+	ldy #$FF
+	@AAEF:
+	cpy #$07
+	beq :+
+
+		; Read from $0701 to $0707, or until a value with bit 7 set is found
+		iny
+		lda ram_snd_stack,Y
+
+		bpl @AAEF
+
+		; ...then put the sound index where that value was found
+		txa
+		sta ram_snd_stack,Y
+	:
 	rts
 
 ; -----------------------------------------------------------------------------

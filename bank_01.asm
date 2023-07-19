@@ -2128,7 +2128,7 @@ sub_calc_players_distance:
 	sbc zp_plr2_y_pos
 	@CF44:
 	sta zp_players_y_distance
-	stx zp_8D
+	stx zp_y_plane_skew
 	lda #$1C
 	sta ram_067E
 	rts
