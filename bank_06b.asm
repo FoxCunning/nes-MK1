@@ -407,7 +407,7 @@ sub_irq_handler_03:
 
 		sta mmc3_irq_disable
 		sta mmc3_irq_enable
-		lda #$60 ;#$63
+		lda #$63
 		sta mmc3_irq_latch
 		lda PpuStatus_2002
 		lda zp_irq_hor_scroll
