@@ -59,7 +59,7 @@ sub_rom_A00C:
 	sta zp_ptr4_hi
 	lda zp_plr1_cur_anim,X
 	sec
-	sbc #$0B
+	sbc #$0B	; Index of first attack animation
 	asl A
 	tay
 	lda (zp_ptr4_lo),Y
@@ -176,13 +176,13 @@ sub_rom_A00C:
 	bne @A0DA_assign_anim
 
 	@hit_uppercut_check:
-	lda zp_attacker_anim
-	cmp #$13
-	bne @A0D2_check_consecutive_hits
+	;lda zp_attacker_anim
+	;cmp #$13
+	;bne @A0D2_check_consecutive_hits
 
-		; Special animation for flying up in the air when hit by uppercut
-		lda #$30	; TODO
-		bne @A0DA_assign_anim
+	;	; Special animation for flying up in the air when hit by uppercut
+	;	lda #$30	; TODO
+	;	bne @A0DA_assign_anim
 
 	@A0D2_check_consecutive_hits:
 	lda zp_consecutive_hits_taken,X
@@ -217,15 +217,15 @@ sub_rom_A00C:
 	txa
 	eor #$01
 	tax
-	lda rom_A108,Y
+	lda @tbl_dmg_to_counter,Y
 	sta zp_plr1_dmg_counter,X
 	lda #$01
 	sta zp_player_hit_counter
 	rts
 
-; -----------------------------------------------------------------------------
+; ----------------
 
-rom_A108:
+	@tbl_dmg_to_counter:
 	.byte $04, $08, $0C, $10
 
 ; -----------------------------------------------------------------------------
@@ -236,115 +236,146 @@ rom_A108:
 ; Then it tells the engine which animation should be assigned to the player
 ; who's been hit
 tbl_hit_data_ptrs:
-	.word rom_A124, rom_A15A, rom_A190, rom_A1C6
-	.word rom_A1FC, rom_A232, rom_A268, rom_A29E
-	.word rom_A2D4, rom_A30A, rom_A340, rom_A190
+	.word tbl_hit_ptrs_rayden
+	.word tbl_hit_ptrs_sonya
+	.word tbl_hit_ptrs_subzero
+	.word tbl_hit_ptrs_scorpion
+	.word tbl_hit_ptrs_kano
+	.word tbl_hit_ptrs_cage
+	.word tbl_hit_ptrs_liukang
+	.word tbl_hit_ptrs_goro
+	.word tbl_hit_ptrs_shangtsung
+	; Unused:
+	.word rom_A30A
+	.word rom_A340
+	.word tbl_hit_ptrs_subzero
 
 ; -----------------------------------------------------------------------------
 
 ; Pointers table
-rom_A124:
-	.word rom_A376, rom_A37F, rom_AA1A, rom_A38F
-	.word rom_A398, rom_A3A1, rom_A3A8, rom_A3B1
-	.word rom_A3BA, rom_A526, rom_A40A, rom_A3CF
-	.word rom_AA3D, rom_A48E, rom_A3E6, rom_A3EF
-	.word rom_A3F8, rom_A401, rom_A40A, rom_A5DD
-	.word rom_A418, rom_A421, rom_A3F8, rom_A401
-	.word rom_A43C, rom_A443, rom_A44A
+tbl_hit_ptrs_rayden:
+	.word hit_data_kick	; $00
+	.word rom_A37F
+	.word rom_AA1A
+	.word rom_A38F
+	.word rom_A398
+	.word rom_A3A1
+	.word rom_A3A8
+	.word rom_A3B1
+	.word hit_data_uppercut	; $08
+	.word rom_A526
+	.word rom_A40A
+	.word rom_A3CF
+	.word rom_AA3D
+	.word rom_A48E
+	.word rom_A3E6
+	.word rom_A3EF
+	.word rom_A3F8	; $10
+	.word rom_A401
+	.word rom_A40A
+	.word hit_data_13
+	.word rom_A418
+	.word rom_A421
+	.word rom_A3F8
+	.word rom_A401
+	.word rom_A43C	; $18
+	.word rom_A443
+	.word rom_A44A
 
 ; -----------------------------------------------------------------------------
 
 ; Pointers table
-rom_A15A:
+tbl_hit_ptrs_sonya:
 	.word rom_A55B, rom_A37F, rom_AA1A, rom_A38F
 	.word rom_A398, rom_A554, rom_A3A8, rom_A3B1
-	.word rom_A554, rom_A526, rom_A3C8, rom_A3CF
+	.word hit_data_uppercut ;rom_A554
+	.word rom_A526, rom_A3C8, rom_A3CF
 	.word rom_AA21, rom_A48E, rom_A3E6, rom_A3EF
-	.word rom_A3F8, rom_A401, rom_A40A, rom_A5DD
+	.word rom_A3F8, rom_A401, rom_A40A, hit_data_13
 	.word rom_A576, rom_A57F, rom_A588, rom_A591
 	.word rom_A43C, rom_A443, rom_A44A
 
 ; -----------------------------------------------------------------------------
 
 ; Pointers table
-rom_A190:
+tbl_hit_ptrs_subzero:
 	.word rom_A42A, rom_A465, rom_A49E, rom_A38F
 	.word rom_A398, rom_A453, rom_A3A8, rom_A3B1
-	.word rom_A3BA, rom_A5D6, rom_A3C8, rom_A3CF
+	.word hit_data_uppercut, rom_A5D6, rom_A3C8, rom_A3CF
 	.word rom_A495, rom_A48E, rom_A3E6, rom_A3EF
-	.word rom_A3F8, rom_A401, rom_A40A, rom_A5DD
+	.word rom_A3F8, rom_A401, rom_A40A, hit_data_13
 	.word rom_A418, rom_A421, rom_A3F8, rom_A401
 	.word rom_A43C, rom_A443, rom_A44A
 
 ; -----------------------------------------------------------------------------
 
 ; Pointers table
-rom_A1C6:
+tbl_hit_ptrs_scorpion:
 	.word rom_A59A, rom_A37F, rom_A5B3, rom_A38F
 	.word rom_A398, rom_A59A, rom_A3A8, rom_A3B1
-	.word rom_A3BA, rom_A526, rom_A3C8, rom_A3CF
+	.word hit_data_uppercut, rom_A526, rom_A3C8, rom_A3CF
 	.word rom_A5BA, rom_A48E, rom_A3E6, rom_A3EF
-	.word rom_A3F8, rom_A401, rom_A40A, rom_A5DD
+	.word rom_A3F8, rom_A401, rom_A40A, hit_data_13
 	.word rom_A3F8, rom_A401, rom_A3F8, rom_A401
 	.word rom_A43C, rom_A443, rom_A44A
 
 ; -----------------------------------------------------------------------------
 
 ; Pointers table
-rom_A1FC:
-	.word rom_A376, rom_A465, rom_A47E, rom_A38F
+tbl_hit_ptrs_kano:
+	.word hit_data_kick, rom_A465, rom_A47E, rom_A38F
 	.word rom_A398, rom_A453, rom_A3A8, rom_A3B1
-	.word rom_A3BA, rom_A3C1, rom_A3C8, rom_A3CF
+	.word hit_data_uppercut, rom_A3C1, rom_A3C8, rom_A3CF
 	.word rom_A487, rom_A48E, rom_A3E6, rom_A3EF
-	.word rom_A3F8, rom_A401, rom_A40A, rom_A5DD
+	.word rom_A3F8, rom_A401, rom_A40A, hit_data_13
 	.word rom_A418, rom_A421, rom_A3F8, rom_A401
 	.word rom_A43C, rom_A443, rom_A44A
 
 ; -----------------------------------------------------------------------------
 
 ; Pointers table
-rom_A232:
-	.word rom_A376, rom_A37F, rom_A54D, rom_A38F
+tbl_hit_ptrs_cage:
+	.word hit_data_kick, rom_A37F, rom_A54D, rom_A38F
 	.word rom_A398, rom_A3A1, rom_A3A8, rom_A3B1
-	.word rom_A3BA, rom_A526, rom_A3C8, rom_A3CF
+	.word hit_data_uppercut, rom_A526, rom_A3C8, rom_A3CF
 	.word rom_AA36, rom_A48E, rom_A3E6, rom_A3EF
-	.word rom_A3F8, rom_A401, rom_A40A, rom_A5DD
+	.word rom_A3F8, rom_A401, rom_A40A, hit_data_13
 	.word rom_A418, rom_A421, rom_A3F8, rom_A401
 	.word rom_A43C, rom_A443, rom_A44A
 
 ; -----------------------------------------------------------------------------
 
 ; Pointers table
-rom_A268:
+tbl_hit_ptrs_liukang:
 	.word rom_A5A1, rom_A5A1, rom_AA2F, rom_A38F
 	.word rom_A398, rom_A3A1, rom_A3A8, rom_A3B1
-	.word rom_A3BA, rom_A526, rom_A3C8, rom_A3CF
+	.word hit_data_uppercut, rom_A526, rom_A3C8, rom_A3CF
 	.word rom_A495, rom_A48E, rom_A3E6, rom_A3EF
-	.word rom_A3F8, rom_A401, rom_A40A, rom_A5DD
+	.word rom_A3F8, rom_A401, rom_A40A, hit_data_13
 	.word rom_A418, rom_A421, rom_A3F8, rom_A401
 	.word rom_A43C, rom_A443, rom_A44A
 
 ; -----------------------------------------------------------------------------
 
 ; Pointers table
-rom_A29E:
+tbl_hit_ptrs_goro:
 	.word rom_A504, rom_A465, rom_A38F, rom_A398
 	.word rom_A4B7, rom_A453, rom_A3A8, rom_A3B1
-	.word rom_A3BA, rom_A4FD, rom_A3C8, rom_A3CF
+	.word hit_data_uppercut, rom_A4FD, rom_A3C8, rom_A3CF
 	.word rom_A3EF, rom_A48E, rom_A3E6, rom_A3EF
-	.word rom_A3F8, rom_A401, rom_A40A, rom_A5DD
+	.word rom_A3F8, rom_A401, rom_A40A, hit_data_13
 	.word rom_A418, rom_A421, rom_A4C0, rom_A4C9
 	.word rom_A43C, rom_A443, rom_A44A
 
 ; -----------------------------------------------------------------------------
 
 ; Pointers table
-rom_A2D4:
-	.word rom_A376, rom_A37F, rom_A5C1, rom_A38F
+tbl_hit_ptrs_shangtsung:
+	.word hit_data_kick, rom_A37F, rom_A5C1, rom_A38F
 	.word rom_A398, rom_A59A, rom_A3A8, rom_A3B1
-	.word rom_A3BA, rom_A526, rom_A3C8, rom_A3CF
+	.word hit_data_uppercut, rom_A526, rom_A3C8, rom_A3CF
 	.word rom_A5C8, rom_A48E, rom_A3E6, rom_A3EF
-	.word rom_A3F8, rom_A401, rom_A40A, rom_A5DD
+	.word rom_A3F8, rom_A401, rom_A40A, hit_data_13
 	.word rom_A418, rom_A421, rom_A3F8, rom_A401
 	.word rom_A43C, rom_A443, rom_A44A
 
@@ -352,11 +383,11 @@ rom_A2D4:
 
 ; Pointers table
 rom_A30A:
-	.word rom_A5AA, rom_A5AA, rom_A386, rom_A38F
+	.word rom_A5AA_unused, rom_A5AA_unused, rom_A386_unused, rom_A38F
 	.word rom_A398, rom_A3A1, rom_A3A8, rom_A3B1
-	.word rom_A3BA, rom_A5AA, rom_A3C8, rom_A3CF
+	.word hit_data_uppercut, rom_A5AA_unused, rom_A3C8, rom_A3CF
 	.word rom_A546, rom_A48E, rom_A3E6, rom_A3EF
-	.word rom_A3F8, rom_A401, rom_A40A, rom_A5DD
+	.word rom_A3F8, rom_A401, rom_A40A, hit_data_13
 	.word rom_A418, rom_A421, rom_A3F8, rom_A401
 	.word rom_A43C, rom_A443, rom_A44A
 
@@ -364,24 +395,24 @@ rom_A30A:
 
 ; Pointers table
 rom_A340:
-	.word rom_A4D2, rom_A4DB, rom_A4AE, rom_A433
+	.word rom_A4D2_unused, rom_A4DB, rom_A4AE, rom_A433
 	.word rom_A4B7, rom_A3A1, rom_A3A8, rom_A3B1
-	.word rom_A3BA, rom_A3C1, rom_A3C8, rom_A3CF
-	.word rom_A495, rom_A4F6, rom_A3E6, rom_A3EF
-	.word rom_A4C0, rom_A4C9, rom_A40A, rom_A5DD
+	.word hit_data_uppercut, rom_A3C1, rom_A3C8, rom_A3CF
+	.word rom_A495, rom_A4F6_unused, rom_A3E6, rom_A3EF
+	.word rom_A4C0, rom_A4C9, rom_A40A, hit_data_13
 	.word rom_A418, rom_A421, rom_A4C0, rom_A4C9
 	.word rom_A43C, rom_A443, rom_A4ED
 
 ; -----------------------------------------------------------------------------
 
-rom_A376:
-	.byte $02, $03
-	.byte $29
-	.byte $30
-	.byte $30
-	.byte $09, $00
-	.byte $28
-	.byte $40
+hit_data_kick:
+	.byte $02, $03	; Anim frame min/max (min: bit 7 set = only when pressing down?)
+	.byte $29		; Min X distance
+	.byte $30, $30	; Y distance min/max
+	.byte $09		; Next anim index
+	.byte $00		; Score -1
+	.byte $28		; Unused
+	.byte $40		; Unused
 
 ; -----------------------------------------------------------------------------
 
@@ -390,7 +421,7 @@ rom_A37F:
 
 ; -----------------------------------------------------------------------------
 
-rom_A386:
+rom_A386_unused:
 	.byte $02, $04, $38, $30, $30, $09, $02, $30
 	.byte $30
 
@@ -425,8 +456,8 @@ rom_A3B1:
 
 ; -----------------------------------------------------------------------------
 
-rom_A3BA:
-	.byte $02, $03, $28, $30, $20, $0A, $01
+hit_data_uppercut:
+	.byte $02, $03, $28, $30, $20, $32, $01 ;$0A, $01
 
 ; -----------------------------------------------------------------------------
 
@@ -441,8 +472,10 @@ rom_A3C8:
 ; -----------------------------------------------------------------------------
 
 rom_A3CF:
-	.byte $08, $0B, $10, $30, $00, $0A, $02, $83
-	.byte $09, $40, $21, $60, $09, $02, $30, $30
+	.byte $08, $0B, $10, $30, $00, $0A, $02
+
+; Probably unused
+	.byte $83, $09, $40, $21, $60, $09, $02, $30, $30
 	.byte $00, $03, $24, $00, $00, $2D, $02
 
 ; -----------------------------------------------------------------------------
@@ -472,8 +505,10 @@ rom_A401:
 ; -----------------------------------------------------------------------------
 
 rom_A40A:
-	.byte $07, $0E, $10, $30, $00, $0A, $02, $0B
-	.byte $0F, $10, $30, $00, $0A, $02
+	.byte $07, $0E, $10, $30, $00, $0A, $02
+
+; Probably unused
+	.byte $0B, $0F, $10, $30, $00, $0A, $02
 
 ; -----------------------------------------------------------------------------
 
@@ -519,16 +554,21 @@ rom_A44A:
 
 rom_A453:
 	.byte $02, $03, $30, $30, $30, $09, $00, $20
-	.byte $40, $02, $03, $30, $30, $30, $09, $01
+	.byte $40
+
+; Probably unused
+	.byte $02, $03, $30, $30, $30, $09, $01
 	.byte $20, $44
 
 ; -----------------------------------------------------------------------------
 
 rom_A465:
 	.byte $02, $03, $24, $30, $30, $09, $01, $18
-	.byte $40, $00, $03, $24, $00, $00, $09, $02
-	.byte $02, $03, $34, $30, $30, $09, $00, $30
-	.byte $20
+	.byte $40
+
+; Probably unused
+	.byte $00, $03, $24, $00, $00, $09, $02, $02
+	.byte $03, $34, $30, $30, $09, $00, $30, $20
 
 ; -----------------------------------------------------------------------------
 
@@ -556,7 +596,10 @@ rom_A495:
 
 rom_A49E:
 	.byte $84, $1B, $30, $30, $60, $09, $02, $30
-	.byte $30, $00, $03, $1E, $00, $00, $32, $02
+	.byte $30
+
+; Probably unused
+	.byte $00, $03, $1E, $00, $00, $32, $02
 
 ; -----------------------------------------------------------------------------
 
@@ -584,7 +627,7 @@ rom_A4C9:
 
 ; -----------------------------------------------------------------------------
 
-rom_A4D2:
+rom_A4D2_unused:
 	.byte $02, $03, $35, $30, $30, $09, $00, $28
 	.byte $40
 
@@ -592,7 +635,10 @@ rom_A4D2:
 
 rom_A4DB:
 	.byte $02, $03, $35, $30, $30, $09, $01, $28
-	.byte $40, $02, $03, $35, $30, $30, $09, $00
+	.byte $40
+
+; Probably unused
+	.byte $02, $03, $35, $30, $30, $09, $00
 	.byte $28, $40
 
 ; -----------------------------------------------------------------------------
@@ -603,7 +649,7 @@ rom_A4ED:
 
 ; -----------------------------------------------------------------------------
 
-rom_A4F6:
+rom_A4F6_unused:
 	.byte $00, $03, $24, $00, $00, $33, $02
 
 ; -----------------------------------------------------------------------------
@@ -615,18 +661,24 @@ rom_A4FD:
 
 rom_A504:
 	.byte $02, $03, $30, $30, $30, $09, $00, $28
-	.byte $40, $02, $0B, $36, $30, $00, $09, $02
-	.byte $38, $20, $0B, $0F, $10, $30, $00, $0A
-	.byte $01, $06, $0A, $36, $30, $00, $09, $02
-	.byte $38, $20
+	.byte $40
+
+; Probably unused
+	.byte $02, $0B, $36, $30, $00, $09, $02, $38
+	.byte $20, $0B, $0F, $10, $30, $00, $0A, $01
+	.byte $06, $0A, $36, $30, $00, $09, $02, $38
+	.byte $20
 
 ; -----------------------------------------------------------------------------
 
 rom_A526:
-	.byte $00, $01, $24, $00, $00, $2E, $00, $02
-	.byte $03, $40, $30, $30, $09, $00, $28, $40
-	.byte $02, $03, $41, $00, $00, $2E, $00, $00
-	.byte $30, $28, $30, $30, $2E, $02, $20, $40
+	.byte $00, $01, $24, $00, $00, $2E, $00
+
+; Probably unused
+	.byte $02, $03, $40, $30, $30, $09, $00, $28
+	.byte $40, $02, $03, $41, $00, $00, $2E, $00
+	.byte $00, $30, $28, $30, $30, $2E, $02, $20
+	.byte $40
 
 ; -----------------------------------------------------------------------------
 
@@ -647,9 +699,12 @@ rom_A554:
 
 rom_A55B:
 	.byte $02, $03, $29, $30, $30, $09, $00, $28
-	.byte $40, $05, $07, $30, $30, $30, $09, $00
-	.byte $18, $30, $09, $0A, $30, $30, $30, $09
-	.byte $00, $18, $30
+	.byte $40
+
+; Probably unused
+	.byte $05, $07, $30, $30, $30, $09, $00, $18
+	.byte $30, $09, $0A, $30, $30, $30, $09, $00
+	.byte $18, $30
 
 ; -----------------------------------------------------------------------------
 
@@ -688,7 +743,7 @@ rom_A5A1:
 
 ; -----------------------------------------------------------------------------
 
-rom_A5AA:
+rom_A5AA_unused:
 	.byte $02, $03, $40, $30, $30, $09, $00, $28
 	.byte $40
 
@@ -710,8 +765,11 @@ rom_A5C1:
 ; -----------------------------------------------------------------------------
 
 rom_A5C8:
-	.byte $08, $0B, $3A, $30, $30, $0A, $00, $0D
-	.byte $11, $3A, $30, $30, $0A, $00
+	.byte $08, $0B, $3A, $30, $30, $0A
+
+; Probably unused
+	.byte $00, $0D, $11, $3A, $30, $30, $0A
+	.byte $00
 
 ; -----------------------------------------------------------------------------
 
@@ -720,7 +778,7 @@ rom_A5D6:
 
 ; -----------------------------------------------------------------------------
 
-rom_A5DD:
+hit_data_13:
 	.byte $7F, $7F, $00, $00, $00, $2E, $00
 
 ; -----------------------------------------------------------------------------

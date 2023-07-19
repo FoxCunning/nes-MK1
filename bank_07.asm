@@ -38,10 +38,11 @@ rom_8004:
 	.byte $07			; $09 = strong hit? hit by flying kick? (still shoved backwards)
 	.word rom_80FD
 	.byte $07			; $0A = regular hit (shoved backwards)
+	; Attack animations
 	.word rom_8105
 	.byte $08			; $0B = base kick
 	.word rom_810D
-	.byte $0A			; $0C = 
+	.byte $0A			; $0C = close/combo kick
 	.word rom_8113
 	.byte $1D			; $0D
 	.word rom_8117
@@ -61,7 +62,7 @@ rom_8004:
 	.word rom_8177
 	.byte $05			; $15
 	.word rom_817B
-	.byte $02			; $16
+	.byte $02			; $16 = jumping up punch
 	.word rom_817C
 	.byte $2C			; $17
 	.word rom_817D
@@ -92,17 +93,21 @@ rom_8004:
 	.byte $04			; $24
 	.word rom_8239
 	.byte $06			; $25
+
 	.word rom_823A
-	.byte $0E			; $26 = falling on his back
+	.byte $0E			; $26 = falling on his back (bounce)
 	.word rom_823B
 	.byte $08			; $27 = getting up
 	.word rom_8248
 	.byte $18			; $28 = staggered
 	.word anim_subzero_staggered
-	.byte $08			; $29
+	
+	.byte $08			; $29 = victory pose
 	.word rom_8262
-	.byte $08			; $2A = victory pose
+	.byte $08			; $2A = disappointment pose
 	.word rom_8268
+
+	; More hit animations
 	.byte $07			; $2B = crouching parried hit
 	.word rom_80AD
 	.byte $07			; $2C = standing parried hit
@@ -118,7 +123,7 @@ rom_8004:
 	.byte $29			; $31
 	.word rom_8286
 	.byte $19			; $32
-	.word rom_8292
+	.word rom_8271 ;rom_8292
 	.byte $1F			; $33
 	.word rom_82A1
 	.byte $04			; $34 = Jumping back (start at frame $0A for the downward movement part)
@@ -256,7 +261,7 @@ rom_8270:
 rom_8271:
 	.byte $22, $22, $22, $23, $23, $23, $24, $24
 	.byte $37, $37, $24, $24, $24, $24
-    ; Potentially unused portion
+    ; Portion used when landing after mid-air hit?
 	.byte $24, $24, $24, $24, $24, $00, $00
 rom_8286:
 	.byte $38, $38, $38

@@ -1484,13 +1484,15 @@ sub_rom_CB0C:
 	cmp #$2E
 	beq @CB1B
 
-	cmp #$30
-	beq @CB1B
+	; Return if < $30 and >= $33
+	cmp #$30	
+	bcc @CB7E
 
-	cmp #$31
-	bne @CB7E
+	cmp #$33
+	bcs @CB7E
 
 	@CB1B:
+	; Only reached if animation is $2E, $31 or $32
 	lda #$06
 	cmp zp_plr1_anim_frame,Y
 	bcs @CB7E
@@ -1509,6 +1511,10 @@ sub_rom_CB0C:
 	cmp zp_ptr1_hi
 	bcc @CB7E
 
+	lda zp_plr1_cur_anim,Y
+	cmp #$32
+	beq @CB5A
+	
 	lda zp_consecutive_hits_taken,Y
 	cmp #$03
 	bcs @CB5A
@@ -1517,7 +1523,7 @@ sub_rom_CB0C:
 	cmp #$58
 	bcs @CB5A
 
-	; "Falling back" animation
+	; "Falling back" animation with safe landing
 	; (this is the downward movement part of the backwards jump anim)
 	lda #$34
 	sta zp_plr1_cur_anim,Y
@@ -1538,16 +1544,17 @@ sub_rom_CB0C:
 	cmp zp_ptr1_lo
 	bcc @CB7E
 
-	lda #$02
-	sta zp_92
-	lda #$26	; Fall on back
-	sta zp_plr1_cur_anim,Y
-	lda #$00
-	sta zp_plr1_anim_frame,Y
-	lda zp_sprites_base_y
-	clc
-	adc #$08
-	sta zp_plr1_y_pos,Y
+		lda #$02
+		sta zp_92
+		lda #$26	; Fall on back
+		sta zp_plr1_cur_anim,Y
+		lda #$00
+		sta zp_plr1_anim_frame,Y
+		lda zp_sprites_base_y
+		clc
+		adc #$08
+		sta zp_plr1_y_pos,Y
+	
 	@CB7E:
 	rts
 
@@ -2111,7 +2118,7 @@ sub_calc_players_distance:
 	sbc zp_plr2_x_pos
 	@CF2F:
 	sta zp_players_x_distance
-	
+
 	ldx #$00
 	lda zp_plr1_y_pos
 	cmp zp_plr2_y_pos
@@ -4078,7 +4085,7 @@ tbl_anim_data_ptrs:
 	.word @rom_DB85
 	.word @rom_DC38
 	.word @rom_DC59
-	.word @knockback_20_frames
+	.word @knockback_19_frames
 	.word @rom_DC8D
 	.word @rom_DCA8
 	.word @still_20_frames	; $10
@@ -4090,7 +4097,7 @@ tbl_anim_data_ptrs:
 	.word @rom_DD53
 	.word @rom_DD68
 	.word @still_30_frames	; $18
-	.word @rom_DD89
+	.word @knocked_up_21_frames ;@rom_DD89
 	.word @rom_DDA8
 	.word @rom_DDC1
 	.word @rom_DDC2
@@ -4104,7 +4111,7 @@ tbl_anim_data_ptrs:
 	.word @rom_DE48
 	.word @rom_DB8E
 	.word @rom_DBAD
-	.word @rom_DE6D
+	.word @knocked_up_21_frames
 	.word @rom_DE8E	; $28
 	.word @rom_DE9B
 	.word @rom_DEB4
@@ -4114,87 +4121,87 @@ tbl_anim_data_ptrs:
 ; ----------------
 
 ; Index for this data is current animation frame * 2
-@still_30_frames:
+	@still_30_frames:
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $00, $00, $00, $00
 
 ; ----------------
 
-@still_20_frames:
+	@still_20_frames:
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 
 ; ----------------
 
 ; No movement, 16 frames
-@still_16_frames:
+	@still_16_frames:
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 
 ; ----------------
 
-@rom_DB75:
+	@rom_DB75:
 	.byte $00, $00, $00, $00
 	.byte $00, $00, $00, $00
 
 ; ----------------
 
-@rom_DB7D:
+	@rom_DB7D:
 	.byte $00, $00, $00, $00
 
 ; ----------------
 
-@rom_DB81:
+	@rom_DB81:
 	.byte $00, $00, $00, $00
 
 ; ----------------
 
-@rom_DB85:
+	@rom_DB85:
 	.byte $00, $00
 
 ; ----------------
 
-@rom_DB87:
+	@rom_DB87:
 	.byte $00, $00
 
 ; ----------------
 
-@rom_DB89:
+	@rom_DB89:
 	.byte $00, $00
 
 ; ----------------
 
-@rom_DB8B:
+	@rom_DB8B:
 	.byte $00, $00, $80
 
 ; ----------------
 
-@rom_DB8E:
+	@rom_DB8E:
 	.byte $04, $00, $04, $00, $04, $00, $04, $00
 	.byte $04, $00
 
 ; ----------------
 
-@rom_DB98:
+	@rom_DB98:
 	.byte $04, $00, $04, $00, $04, $00, $04, $00
 	.byte $04, $00, $04, $00, $04, $00, $04, $00
 	.byte $04, $00, $04, $00, $80
 
 ; ----------------
 
-@rom_DBAD:
+	@rom_DBAD:
 	.byte $FC, $00, $FC, $00, $FC, $00, $FC, $00
 	.byte $FC, $00
 
 ; ----------------
 
-@rom_DBB7:
+	@rom_DBB7:
 	.byte $FC, $00, $FC, $00, $FC, $00, $FC, $00
 	.byte $FC, $00, $FC, $00, $FC, $00, $FC, $00
 	.byte $FC, $00, $FC, $00, $80
 
 ; ----------------
 
-@rom_DBCC:
+	@rom_DBCC:
 	.byte $00, $ED	; 0, -19
 	.byte $00, $F0	; 0, -16
 	.byte $00, $F2	; 0, -14
@@ -4211,14 +4218,14 @@ tbl_anim_data_ptrs:
 
 ; ----------------
 
-@rom_DBE5:
+	@rom_DBE5:
 	.byte $F8, $00, $F8, $00, $F8, $00, $FB, $00
 	.byte $F8, $00, $FB, $00, $FD, $00, $FE, $00
 	.byte $80
 
 ; ----------------
 
-@rom_DBF6:
+	@rom_DBF6:
 	.byte $FE, $EE, $FE, $F0, $FE, $F2, $FE, $F4
 	.byte $FC, $F6, $FA, $F8, $F8, $FA, $F6, $FC
 	.byte $F6, $04, $F8, $06, $FA, $08, $FC, $0A
@@ -4227,7 +4234,7 @@ tbl_anim_data_ptrs:
 
 ; ----------------
 
-@rom_DC17:
+	@rom_DC17:
 	.byte $02, $EE, $02, $F0, $02, $F2, $02, $F4
 	.byte $04, $F6, $06, $F8, $08, $FA, $0A, $FC
 	.byte $0A, $04, $08, $06, $06, $08, $04, $0A
@@ -4236,7 +4243,7 @@ tbl_anim_data_ptrs:
 
 ; ----------------
 
-@rom_DC38:
+	@rom_DC38:
 	.byte $00, $00, $00, $00, $06, $E8, $0C, $00
 	.byte $0C, $00, $0C, $00, $08, $00, $08, $00
 	.byte $08, $00, $06, $00, $06, $00, $06, $00
@@ -4245,14 +4252,14 @@ tbl_anim_data_ptrs:
 
 ; ----------------
 
-@rom_DC59:
+	@rom_DC59:
 	.byte $10, $00, $00, $00, $00, $00, $00, $00
 	.byte $00, $00, $00, $00, $80
 
 ; ----------------
 
 ; Knockback / airborne hit
-@knockback_20_frames:
+	@knockback_19_frames:
 	.byte $F0, $F4	; -16, -12
 	.byte $F2, $F6	; -14, -10
 	.byte $F4, $F8	; -12, -8
@@ -4276,7 +4283,7 @@ tbl_anim_data_ptrs:
 
 ; ----------------
 
-@rom_DC8D:
+	@rom_DC8D:
 	.byte $F6, $F8, $F8, $FA, $FA, $FC, $FC, $FE
 	.byte $FE, $02, $FF, $04, $00, $06, $00, $00
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
@@ -4284,7 +4291,7 @@ tbl_anim_data_ptrs:
 
 ; ----------------
 
-@rom_DCA8:
+	@rom_DCA8:
 	.byte $00, $00, $0A, $F8, $F6, $00, $00, $00
 	.byte $F6, $08, $0A, $00, $F6, $08, $00, $00
 	.byte $F6, $F8, $F8, $FA, $FA, $FC, $FC, $FE
@@ -4294,7 +4301,7 @@ tbl_anim_data_ptrs:
 
 ; ----------------
 
-@rom_DCD3:
+	@rom_DCD3:
 	.byte $F6, $F8, $F8, $FA, $FA, $FC, $FC, $FE
 	.byte $FE, $02, $FF, $04, $00, $06, $00, $00
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
@@ -4302,7 +4309,7 @@ tbl_anim_data_ptrs:
 
 ; ----------------
 
-@rom_DCEE:
+	@rom_DCEE:
 	.byte $00, $00, $0A, $F8, $F6, $00, $00, $00
 	.byte $F6, $08, $0A, $00, $F6, $00, $00, $00
 	.byte $F6, $F8, $F8, $FA, $FA, $FC, $FC, $FE
@@ -4419,11 +4426,34 @@ tbl_anim_data_ptrs:
 
 ; ----------------
 
-@rom_DE6D:
-	.byte $02, $EE, $02, $F0, $02, $F2, $02, $F4
-	.byte $04, $F6, $06, $F8, $08, $FA, $0A, $FC
-	.byte $0A, $04, $08, $06, $08, $08, $08, $0A
-	.byte $08, $0C, $08, $0E, $08, $10, $08, $12
+@knocked_up_21_frames:
+	.byte $00, $F0	; -0, -16
+	.byte $00, $F0	; -0, -16
+	.byte $00, $F0	; -0, -16
+	.byte $FE, $F0	; -2, -16
+	.byte $FE, $F2	; -2, -14
+	.byte $FE, $F4	; -2, -12
+	.byte $FE, $F6	; -2, -10
+	.byte $FE, $F8	; -2, -8
+	.byte $FE, $FC	; -2, -4
+	.byte $FE, $00	; -2, 0
+	.byte $FE, $01	; -2, 1
+	.byte $FE, $02	; -2, 2
+	.byte $FE, $04	; -2, 4
+	.byte $FE, $08	; -2, 8
+	.byte $FE, $0A	; -2, 10
+	.byte $FE, $0C	; -2, 12
+	.byte $FE, $0E	; -2, 14
+	.byte $FE, $10	; -2, 16
+	.byte $00, $10	; 0, 16
+	.byte $00, $10	; 0, 16
+	.byte $00, $10	; 0, 16
+
+	; This was unused
+	;.byte $02, $EE, $02, $F0, $02, $F2, $02, $F4
+	;.byte $04, $F6, $06, $F8, $08, $FA, $0A, $FC
+	;.byte $0A, $04, $08, $06, $08, $08, $08, $0A
+	;.byte $08, $0C, $08, $0E, $08, $10, $08, $12
 	.byte $80
 
 ; ----------------
