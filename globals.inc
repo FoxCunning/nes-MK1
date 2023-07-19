@@ -185,7 +185,7 @@ zp_BD = $BD     ;
 
 zp_D1 = $D1     ;
 
-zp_E5 = $E5     ;
+zp_consecutive_hits_taken = $E5     ;
 zp_E6 = $E6     ;
 zp_E7 = $E7     ;
 zp_E9 = $E9     ;

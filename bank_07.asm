@@ -21,7 +21,7 @@ rom_8004:
     .word anim_subzero_idle
     .byte $06			; $01 = crouching
     .word rom_80A9
-    .byte $08			; $02 = ???
+    .byte $08			; $02 = standing still???
 	.word rom_80AD
 	.byte $01			; $03 = walking forward
 	.word rom_80B5
@@ -41,11 +41,11 @@ rom_8004:
 	.word rom_8105
 	.byte $08			; $0B = base kick
 	.word rom_810D
-	.byte $0A			; $0C
+	.byte $0A			; $0C = 
 	.word rom_8113
 	.byte $1D			; $0D
 	.word rom_8117
-	.byte $02			; $0E
+	.byte $02			; $0E = jumping kick (straight up)
 	.word rom_8137
 	.byte $02			; $0F
 	.word rom_8143
@@ -103,11 +103,11 @@ rom_8004:
 	.word rom_8262
 	.byte $08			; $2A = victory pose
 	.word rom_8268
-	.byte $07			; $2B
+	.byte $07			; $2B = crouching parried hit
 	.word rom_80AD
-	.byte $07			; $2C
+	.byte $07			; $2C = standing parried hit
 	.word rom_80C9
-	.byte $0F			; $2D
+	.byte $0F			; $2D = quick knockback
 	.word rom_8270
 	.byte $0D			; $2E = strong hit (knocked down or hit in the air)
 	.word rom_8271
@@ -121,7 +121,7 @@ rom_8004:
 	.word rom_8292
 	.byte $1F			; $33
 	.word rom_82A1
-	.byte $04			; $34 = ???
+	.byte $04			; $34 = Jumping back (start at frame $0A for the downward movement part)
 	.word rom_80ED
 
 ; -----------------------------------------------------------------------------
@@ -339,16 +339,19 @@ rom_83C3:
 
 rom_83EC:
 	.byte $04, $05, $10, $5C, $00
-	.byte $6C, $6D, $6E, $6F, $70
-	.byte $71, $72, $73, $74, $75
-	.byte $76, $77, $78, $79, $7A
-	.byte $7B, $7C, $FF, $7D, $7E
+	.byte $6C, $6D, $6E, $6F
+	.byte $70, $71, $72, $73
+	.byte $74, $75, $76, $77
+	.byte $78, $79, $7A, $7B
+	.byte $7C, $FF, $7D, $7E
 rom_8405:
 	.byte $04, $06, $10, $5E, $00
-	.byte $82, $83, $84
-	.byte $FF, $8B, $8C, $8D, $8E, $98, $99, $9A
-	.byte $9B, $A4, $A5, $A6, $A7, $B1, $B2, $B3
-	.byte $B4, $BD, $92, $BE, $BF
+	.byte $82, $83, $84, $FF
+	.byte $8B, $8C, $8D, $8E
+	.byte $98, $99, $9A, $9B
+	.byte $A4, $A5, $A6, $A7
+	.byte $B1, $B2, $B3, $B4
+	.byte $BD, $92, $BE, $BF
 rom_8422:
 	.byte $04, $0A, $10, $5C, $00
 	.byte $FF, $01, $02

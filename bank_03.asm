@@ -23,39 +23,39 @@ sub_rom_A00C:
 	stx zp_7C
 	lda zp_plr1_cur_anim,X
 	cmp #$0B
-	bcc @A02A
+	bcc @A02A_rts
 
 	cmp #$26
-	bcs @A02A
+	bcs @A02A_rts
 
-	txa
-	eor #$01
-	tay
-	lda zp_plr1_x_pos,X
-	cmp zp_plr1_x_pos,Y
-	beq @A030
+		txa
+		eor #$01
+		tay
+		lda zp_plr1_x_pos,X
+		cmp zp_plr1_x_pos,Y
+		beq @A030_rts
 
-	bcs @A02B
+		bcs @A02B_check_facing
 
-	lda zp_plr1_facing_dir,X
-	beq @A030
+		lda zp_plr1_facing_dir,X
+		beq @A030_rts
 
-	@A02A:
+	@A02A_rts:
 	rts
 ; ----------------
-	@A02B:
+	@A02B_check_facing:
 	lda zp_plr1_facing_dir,X
-	bne @A030
+	bne @A030_rts
 
-	rts
+		rts
 ; ----------------
-	@A030:
+	@A030_rts:
 	lda zp_plr1_fgtr_idx_clean,X
 	asl A
 	tay
-	lda rom_A10C+0,Y
+	lda tbl_hit_data_ptrs+0,Y
 	sta zp_ptr4_lo
-	lda rom_A10C+1,Y
+	lda tbl_hit_data_ptrs+1,Y
 	sta zp_ptr4_hi
 	lda zp_plr1_cur_anim,X
 	sec
@@ -71,36 +71,36 @@ sub_rom_A00C:
 	lda (zp_ptr3_lo),Y
 	sta zp_ptr1_lo
 	cmp #$FF
-	beq @A02A
+	beq @A02A_rts
 
 	bpl @A068
 
-	and #$0F
-	sta zp_ptr1_lo
-	txa
-	eor #$01
-	tax
-	lda zp_controller1,X
-	and #$04
-	bne @A02A
+		and #$0F
+		sta zp_ptr1_lo
+		txa
+		eor #$01
+		tax
+		lda zp_controller1,X
+		and #$04
+		bne @A02A_rts
 
 	@A068:
 	ldx zp_7C
 	lda zp_plr1_anim_frame,X
 	cmp zp_ptr1_lo
-	bcc @A02A
+	bcc @A02A_rts
 
 	iny
 	cmp (zp_ptr3_lo),Y
 	bcc @A077
 
-	bne @A02A
+	bne @A02A_rts
 
 	@A077:
 	iny
 	lda zp_players_x_distance
 	cmp (zp_ptr3_lo),Y
-	bcs @A02A
+	bcs @A02A_rts
 
 	iny
 	lda zp_8D
@@ -120,66 +120,66 @@ sub_rom_A00C:
 	@A08F:
 	lda (zp_ptr3_lo),Y
 	cmp zp_players_y_distance
-	bcc @A0BD
+	bcc @A0BD_rts
 
-	ldy #$05
-	txa
-	eor #$01
-	tax
-	lda zp_plr1_cur_anim,X
-	cmp #$27
-	beq @A0BD
+		ldy #$05
+		txa
+		eor #$01
+		tax
+		lda zp_plr1_cur_anim,X
+		cmp #$27
+		beq @A0BD_rts
 
-	cmp #$2B
-	beq @A0BD
+		cmp #$2B
+		beq @A0BD_rts
 
-	cmp #$2C
-	beq @A0BD
+		cmp #$2C
+		beq @A0BD_rts
 
-	cmp #$02
-	bne @A0B1
+		cmp #$02
+		bne @A0B1
 
-	lda #$2B
-	bne @A0B7
+		lda #$2B
+		bne @A0B7
 
-	@A0B1:
-	cmp #$05
-	bne @A0BE
+		@A0B1:
+		cmp #$05
+		bne @A0BE
 
-	lda #$2C
-	@A0B7:
-	sta zp_plr1_cur_anim,X
-	lda #$00
-	sta zp_plr1_anim_frame,X
-	@A0BD:
+		lda #$2C
+		@A0B7:
+		sta zp_plr1_cur_anim,X
+		lda #$00
+		sta zp_plr1_anim_frame,X
+	@A0BD_rts:
 	rts
 ; ----------------
 	@A0BE:
 	lda (zp_ptr3_lo),Y
 	cmp #$09
-	beq @A0C8
+	beq @A0C8_airborne_check
 
-	cmp #$0A
-	bne @A0DA
+		cmp #$0A
+		bne @A0DA
 
-	@A0C8:
+	@A0C8_airborne_check:
 	lda zp_plr1_y_pos,X
 	cmp zp_sprites_base_y
 	beq @A0D2
 
 	@A0CE:
-	lda #$2E
+	lda #$2E	; Strong knock back
 	bne @A0DA
 
 	@A0D2:
-	lda zp_E5,X
-	cmp #$03
+	lda zp_consecutive_hits_taken,X
+	cmp #$03	; Number of consecutive hits before opponent is knocked out
 	bcs @A0CE
 
 	lda (zp_ptr3_lo),Y
 	@A0DA:
 	cmp zp_plr1_cur_anim,X
-	beq @A0BD
+	beq @A0BD_rts
 
 	sta zp_plr1_cur_anim,X
 	lda #$00
@@ -215,7 +215,11 @@ rom_A108:
 ; -----------------------------------------------------------------------------
 
 ; Pointers table
-rom_A10C:
+; Data has to do with minimum hit distance and current animation index / frame
+; Probably used to determine whether an attack connects with the opponent
+; Then it tells the engine which animation should be assigned to the player
+; who's been hit
+tbl_hit_data_ptrs:
 	.word rom_A124, rom_A15A, rom_A190, rom_A1C6
 	.word rom_A1FC, rom_A232, rom_A268, rom_A29E
 	.word rom_A2D4, rom_A30A, rom_A340, rom_A190
@@ -1323,43 +1327,44 @@ sub_update_health_bars:
 
 sub_rom_D359:
 	lda zp_plr1_damage,X
-	cmp #$58
-	bcc @D387
+	cmp #$58	; $58 damage = dead
+	bcc @D387_check_damage
 
-	lda zp_plr1_cur_anim,X
-	cmp #$2E
-	beq @D375
+		lda zp_plr1_cur_anim,X
+		cmp #$2E	; Already knocked back
+		beq @D375_check_victory
 
-	cmp #$31
-	beq @D375
+		cmp #$31
+		beq @D375_check_victory
 
-	cmp #$26
-	beq @D38B
+		cmp #$26
+		beq @D38B_rts
 
-	lda #$2E
-	sta zp_plr1_cur_anim,X
-	lda #$00
-	sta zp_plr1_anim_frame,X
-	@D375:
-	lda zp_4B
-	bmi @D38B
+		lda #$2E	; Strong hit knockback
+		sta zp_plr1_cur_anim,X
+		lda #$00
+		sta zp_plr1_anim_frame,X
 
-	; Play the "victory jingle"
-	lda #$32
-	sta ram_req_song
-	lda #$10
-	sta zp_92
-	sta ram_0438
-	bne @D38B
+		@D375_check_victory:
+		lda zp_4B
+		bmi @D38B_rts
 
-	@D387:
+			; Play the "victory jingle"
+			lda #$32
+			sta ram_req_song
+			lda #$10
+			sta zp_92
+			sta ram_0438
+			bne @D38B_rts
+
+	@D387_check_damage:
 	lda zp_plr1_dmg_counter,X
-	bne @D38C
+	bne @D38C_apply_damage
 
-	@D38B:
-	rts
+		@D38B_rts:
+		rts
 ; ----------------
-	@D38C:
+	@D38C_apply_damage:
 	dec zp_plr1_dmg_counter,X
 	inc zp_plr1_damage,X
 	lda #$20
@@ -1372,7 +1377,7 @@ sub_rom_D359:
 	lsr A
 	sta zp_ptr1_lo
 	txa
-	bne @D3B7
+	bne @D3B7_plr2_health
 
 	lda #$64
 	clc
@@ -1384,9 +1389,9 @@ sub_rom_D359:
 	and #$07
 	tay
 	lda @plr1_health_bar,Y
-	bne @D3CA
+	bne @D3CA_write_ppu
 
-	@D3B7:
+	@D3B7_plr2_health:
 	lda #$7B
 	sec
 	sbc zp_ptr1_lo
@@ -1397,7 +1402,8 @@ sub_rom_D359:
 	and #$07
 	tay
 	lda @plr2_health_bar,Y
-	@D3CA:
+
+	@D3CA_write_ppu:
 	sta PpuData_2007
 	rts
 

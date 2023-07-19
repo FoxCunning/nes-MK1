@@ -643,6 +643,8 @@ sub_rom_C572:
 
 ; Parameters:
 ; Y = index of player launching the attack (0 for player one, 1 for player two)
+; NOTE: Does NOT return to called. It pulls from the stack to go back to
+; 		caller's caller.
 sub_ranged_attack:
 	tya
 	eor #$01	; Sets X = !Y (This might be unnecessary, because it was already
@@ -660,20 +662,21 @@ sub_ranged_attack:
 	cmp #$10	; Hit box "width" = 16 pixels
 	bcs @ranged_atk_return
 
+	; Cheeck opponent's animation
 	lda zp_plr1_cur_anim,X
 	cmp #$01	; Crouching = no hit
 	beq @ranged_atk_return
 
-	cmp #$2B
+	cmp #$2B	; Already parried (crouching)
 	beq @C60D
 
-	cmp #$2C
+	cmp #$2C	; Already hit (recovering)
 	beq @C60D
 
-	cmp #$02
+	cmp #$02	; ???
 	beq @C5FF
 
-	cmp #$05
+	cmp #$05	; Parry
 	beq @C5FB
 
 	lda #$01	; Start the counter
@@ -695,20 +698,21 @@ sub_ranged_attack:
 	bne @player_hit_anim
 
 	@C5F7:
-	lda #$2E
+	lda #$2E	; Strong hit knockback
 	bne @player_hit_anim
 
 	@C5FB:
-	lda #$2C
+	lda #$2C	; Standing parry
 	bne @player_hit_anim
 
 	@C5FF:
-	lda #$2B
+	lda #$2B	; Crouched parry
 
 	@player_hit_anim:
 	sta zp_plr1_cur_anim,X	; Oppoent
 	lda #$00
 	sta zp_plr1_anim_frame,X
+	
 	sta zp_plr1_cur_anim,Y	; Attacker
 	sta zp_plr1_anim_frame,Y
 	@C60D:
@@ -1400,7 +1404,7 @@ sub_rom_CA9D:
 ; -----------------------------------------------------------------------------
 
 sub_rom_CAA3:
-	lda zp_E5,X
+	lda zp_consecutive_hits_taken,X
 	cmp #$03
 	bcs @CABF
 
@@ -1416,7 +1420,7 @@ sub_rom_CAA3:
 	cmp #$01
 	bne @CABF
 
-	inc zp_E5,X
+	inc zp_consecutive_hits_taken,X
 	lda #$00
 	sta zp_E9,X
 	@CABF:
@@ -1426,7 +1430,7 @@ sub_rom_CAA3:
 
 sub_rom_CAC0:
 	ldy zp_7C
-	lda zp_E5,Y
+	lda zp_consecutive_hits_taken,Y
 	cmp #$03
 	bcc @CAE4
 
@@ -1442,7 +1446,7 @@ sub_rom_CAC0:
 	sta zp_plr1_cur_anim,Y
 
 	lda #$00
-	sta zp_E5,Y
+	sta zp_consecutive_hits_taken,Y
 	sta zp_plr1_anim_frame,Y
 
 	@CAE4:
@@ -1452,12 +1456,12 @@ sub_rom_CAC0:
 
 	lda #$00
 	sta zp_E9,Y
-	lda zp_E5,Y
+	lda zp_consecutive_hits_taken,Y
 	cmp zp_E7,Y
 	bne @CAFD
 
 	lda #$00
-	sta zp_E5,Y
+	sta zp_consecutive_hits_taken,Y
 	@CAFD:
 	sta zp_E7,Y
 	@CB00:
@@ -1505,7 +1509,7 @@ sub_rom_CB0C:
 	cmp zp_ptr1_hi
 	bcc @CB7E
 
-	lda zp_E5,Y
+	lda zp_consecutive_hits_taken,Y
 	cmp #$03
 	bcs @CB5A
 
@@ -1513,6 +1517,8 @@ sub_rom_CB0C:
 	cmp #$58
 	bcs @CB5A
 
+	; "Falling back" animation
+	; (this is the downward movement part of the backwards jump anim)
 	lda #$34
 	sta zp_plr1_cur_anim,Y
 	lda #$0A
@@ -1534,7 +1540,7 @@ sub_rom_CB0C:
 
 	lda #$02
 	sta zp_92
-	lda #$26
+	lda #$26	; Fall on back
 	sta zp_plr1_cur_anim,Y
 	lda #$00
 	sta zp_plr1_anim_frame,Y
@@ -1552,48 +1558,48 @@ sub_rom_CB7F:
 	cmp #$26	 ; Knocked out
 	bne @CBC6
 
-	lda zp_plr1_anim_frame,Y
-	cmp #$0C
-	bcc @CBC6
+		lda zp_plr1_anim_frame,Y
+		cmp #$0C
+		bcc @CBC6
 
-	ldx zp_plr1_damage,Y
-	cpx #$58
-	bcc @CBB7
+		ldx zp_plr1_damage,Y
+		cpx #$58
+		bcc @CBB7
 
-	lda #$0B
-	sta zp_plr1_anim_frame,Y
-	tya
-	eor #$01
-	tax
-	lda zp_plr1_anim_frame,X
-	bne @CBC6
+		lda #$0B
+		sta zp_plr1_anim_frame,Y
+		tya
+		eor #$01
+		tax
+		lda zp_plr1_anim_frame,X
+		bne @CBC6
 
-	lda #$2A	; Victory pose
-	sta zp_plr1_cur_anim,X
-	lda zp_plr1_fgtr_idx_clean,X
-	tay
-	lda zp_sprites_base_y
-	sta zp_plr1_y_pos,X
-	lda zp_plr1_fighter_idx,X
-	bmi @CBB3
+		lda #$2A	; Victory pose end
+		sta zp_plr1_cur_anim,X
+		lda zp_plr1_fgtr_idx_clean,X
+		tay
+		lda zp_sprites_base_y
+		sta zp_plr1_y_pos,X
+		lda zp_plr1_fighter_idx,X
+		bmi @CBB3
 
-	lda zp_4B
-	bmi @CBB6
+		lda zp_4B
+		bmi @CBB6
 
-	@CBB3:
-	inc ram_plr1_rounds_won,X
-	@CBB6:
-	rts
-; ----------------
-	@CBB7:
-	lda #$27		; Get up? Probably if the timer ran out and player was
-	sta zp_plr1_cur_anim,Y	; knocked out, but with some health left
+		@CBB3:
+		inc ram_plr1_rounds_won,X
+		@CBB6:
+		rts
+	; ----------------
+		@CBB7:
+		lda #$27		; Get up? Probably if the timer ran out and player was
+		sta zp_plr1_cur_anim,Y	; knocked out, but with some health left
 
-	lda #$00
-	sta zp_plr1_anim_frame,Y
+		lda #$00
+		sta zp_plr1_anim_frame,Y
 
-	lda zp_sprites_base_y
-	sta zp_plr1_y_pos,Y
+		lda zp_sprites_base_y
+		sta zp_plr1_y_pos,Y
 	@CBC6:
 	rts
 
@@ -1604,41 +1610,41 @@ sub_rom_CB7F:
 ; Y = 0 for player one, 1 for player two
 sub_rom_CBC7:
 	lda zp_plr1_cur_anim,Y
-	cmp #$06
+	cmp #$06	; Upwards jump
 	bne @CBFB
 
-	ldx #$0E
+		ldx #$0E	; Animation $0E = upwards jump kick
 
-	lda zp_controller1_new,Y
-	and #$40
-	beq @CBDE
-
-
-	lda #$07	; Kick swing
-	sta ram_req_sfx
-	bne @CBED
-
-	@CBDE:
-	lda zp_controller1_new,Y
-	and #$80
-	beq @CBFB
+		lda zp_controller1_new,Y
+		and #$40
+		beq @CBDE
 
 
-	lda #$08	; Punch swing
-	sta ram_req_sfx
-	inx
-	inx
-	inx
-	@CBED:
-	lda zp_plr1_anim_frame,Y
-	cmp #$07
-	bcc @CBF5
+		lda #$07	; Kick swing
+		sta ram_req_sfx
+		bne @CBED
 
-	inx
-	@CBF5:
-	txa
-	sta zp_plr1_cur_anim,Y
-	sty zp_8C
+		@CBDE:
+		lda zp_controller1_new,Y
+		and #$80
+		beq @CBFB
+
+
+		lda #$08	; Punch swing
+		sta ram_req_sfx
+		inx
+		inx
+		inx	; Animation $0B = base kick
+		@CBED:
+		lda zp_plr1_anim_frame,Y
+		cmp #$07
+		bcc @CBF5
+
+			inx	; Animation $0C = Close up kick
+		@CBF5:
+		txa
+		sta zp_plr1_cur_anim,Y
+		sty zp_8C
 	@CBFB:
 	rts
 
@@ -2157,7 +2163,7 @@ sub_finish_match_init:
 	sta zp_plr2_damage
 	sta zp_plr1_dmg_counter
 	sta zp_plr2_dmg_counter
-	sta zp_E5
+	sta zp_consecutive_hits_taken
 	sta zp_E6
 	sta zp_7F
 	sta ram_0411
@@ -2458,42 +2464,42 @@ sub_rom_D129:
 	lda zp_plr1_cur_anim,Y
 	beq @D136
 
-	cmp #$03
-	beq @D136
+		cmp #$03	; Waling forward
+		beq @D136
 
-	cmp #$04
-	bne @D163
+			cmp #$04	; Walking backwards
+			bne @D163
 
-	@D136:
-	tya
-	eor #$01
-	tax
-	lda zp_plr1_cur_anim,X
-	cmp #$0B
-	bcc @D163
+		@D136:
+		tya
+		eor #$01
+		tax
+		lda zp_plr1_cur_anim,X
+		cmp #$0B
+		bcc @D163
 
-	cmp #$26
-	bcs @D163
+		cmp #$26
+		bcs @D163
 
-	cmp #$14
-	beq @D163
+		cmp #$14
+		beq @D163
 
-	cmp #$18
-	beq @D163
+		cmp #$18
+		beq @D163
 
-	lda #$01
-	ldx zp_plr1_facing_dir,Y
-	bne @D154
+		lda #$01
+		ldx zp_plr1_facing_dir,Y
+		bne @D154
 
-	lda #$02
-	@D154:
-	and zp_controller1,Y
-	beq @D163
+		lda #$02
+		@D154:
+		and zp_controller1,Y
+		beq @D163
 
-	lda #$05
-	sta zp_plr1_cur_anim,Y
-	lda #$00
-	sta zp_plr1_anim_frame,Y
+		lda #$05
+		sta zp_plr1_cur_anim,Y
+		lda #$00
+		sta zp_plr1_anim_frame,Y
 	@D163:
 	rts
 
