@@ -125,6 +125,7 @@ zp_66 = $66     ;
 zp_game_substate = $7A     ;
 zp_7B = $7B     ;
 zp_7C = $7C     ;
+zp_attacker_anim = $7D  ;
 zp_7F = $7F     ;
 
 ;zp_80 = $80     ;

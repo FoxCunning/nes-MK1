@@ -123,6 +123,9 @@ sub_rom_A00C:
 	bcc @A0BD_rts
 
 		ldy #$05
+		; Save attacker's anim index (used for uppercuts and special attacks)
+		lda zp_plr1_cur_anim,X
+		sta zp_attacker_anim
 		txa
 		eor #$01
 		tax
@@ -144,7 +147,7 @@ sub_rom_A00C:
 
 		@A0B1:
 		cmp #$05
-		bne @A0BE
+		bne @A0BE_hit_check
 
 		lda #$2C
 		@A0B7:
@@ -154,30 +157,40 @@ sub_rom_A00C:
 	@A0BD_rts:
 	rts
 ; ----------------
-	@A0BE:
+	@A0BE_hit_check:
 	lda (zp_ptr3_lo),Y
-	cmp #$09
+	cmp #$09	 ; Shoved backwards (after hit)
 	beq @A0C8_airborne_check
 
-		cmp #$0A
-		bne @A0DA
+		cmp #$0A	; Basically the same backwards shove
+		bne @A0DA_assign_anim
 
 	@A0C8_airborne_check:
 	lda zp_plr1_y_pos,X
 	cmp zp_sprites_base_y
-	beq @A0D2
+	beq @hit_uppercut_check ;@A0D2_check_consecutive_hits
 
-	@A0CE:
+	; Mid-air hit or 3rd consecutive hit
+	@A0CE_knockback:
 	lda #$2E	; Strong knock back
-	bne @A0DA
+	bne @A0DA_assign_anim
 
-	@A0D2:
+	@hit_uppercut_check:
+	lda zp_attacker_anim
+	cmp #$13
+	bne @A0D2_check_consecutive_hits
+
+		; Special animation for flying up in the air when hit by uppercut
+		lda #$30	; TODO
+		bne @A0DA_assign_anim
+
+	@A0D2_check_consecutive_hits:
 	lda zp_consecutive_hits_taken,X
 	cmp #$03	; Number of consecutive hits before opponent is knocked out
-	bcs @A0CE
+	bcs @A0CE_knockback
 
 	lda (zp_ptr3_lo),Y
-	@A0DA:
+	@A0DA_assign_anim:
 	cmp zp_plr1_cur_anim,X
 	beq @A0BD_rts
 
@@ -189,15 +202,18 @@ sub_rom_A00C:
 	ldx zp_7C
 	sta zp_gained_score_idx,X
 	inc zp_gained_score_idx,X
-	pha
-	iny
-	lda (zp_ptr3_lo),Y
-	sta zp_EB,X
-	iny
-	lda (zp_ptr3_lo),Y
-	sta zp_ED,X
-	pla
+	
+	; Unused data? Nothing reads those values
+	;pha
+	;iny
+	;lda (zp_ptr3_lo),Y
+	;sta zp_EB,X
+	;iny
+	;lda (zp_ptr3_lo),Y
+	;sta zp_ED,X
+	;pla
 	tay
+
 	txa
 	eor #$01
 	tax
@@ -359,7 +375,12 @@ rom_A340:
 ; -----------------------------------------------------------------------------
 
 rom_A376:
-	.byte $02, $03, $29, $30, $30, $09, $00, $28
+	.byte $02, $03
+	.byte $29
+	.byte $30
+	.byte $30
+	.byte $09, $00
+	.byte $28
 	.byte $40
 
 ; -----------------------------------------------------------------------------
@@ -2782,11 +2803,13 @@ sub_next_duty_envelope:
 	bpl @skip_duty_env
 
 		; First, make sure this channel is using a duty envelope
-		ldx ram_cur_chan_ptr_offset
+		ldx ram_cur_channel_offset
 		lda ram_duty_env_idx,X
 		cmp #$FF
 		beq @skip_duty_env
 
+			ldx ram_cur_chan_ptr_offset
+			
 			; Add one to the pointer
 			lda #$01
 			clc
