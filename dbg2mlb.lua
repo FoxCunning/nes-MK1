@@ -208,6 +208,9 @@ for line in io.lines("_debug.txt") do
                             local value = string.format("G:%04X:%s", address, name)
                             -- table.insert(Output, value)
                             Output[value] = true
+                        elseif (get_type(line) == "lab") then
+                            local value = string.format("S:%04X:%s", address - 0x6000, name)
+                            Output[value] = true
                         end
                     else
                         -- ROM label
