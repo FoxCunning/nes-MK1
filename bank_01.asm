@@ -4428,15 +4428,15 @@ tbl_anim_data_ptrs:
 
 @knocked_up_21_frames:
 	.byte $00, $F0	; -0, -16
-	.byte $00, $F0	; -0, -16
-	.byte $00, $F0	; -0, -16
+	.byte $FF, $F0	; -1, -16
+	.byte $FE, $F0	; -2, -16
 	.byte $FE, $F0	; -2, -16
 	.byte $FE, $F2	; -2, -14
 	.byte $FE, $F4	; -2, -12
 	.byte $FE, $F6	; -2, -10
 	.byte $FE, $F8	; -2, -8
 	.byte $FE, $FC	; -2, -4
-	.byte $FE, $00	; -2, 0
+	.byte $FC, $00	; -4, 0
 	.byte $FE, $01	; -2, 1
 	.byte $FE, $02	; -2, 2
 	.byte $FE, $04	; -2, 4
