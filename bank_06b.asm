@@ -979,7 +979,7 @@ sub_play_new_song_or_sfx:
 sub_oam_update:
 	ldx #$20
 	lda zp_players_x_distance
-	cmp #$18
+	cmp #$18	; Throw move
 	bcs @E910
 
 	lda zp_players_y_distance

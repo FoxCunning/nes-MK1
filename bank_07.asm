@@ -21,7 +21,7 @@ rom_8004:
     .word anim_subzero_idle
     .byte $06			; $01 = crouching
     .word rom_80A9
-    .byte $08			; $02 = standing still???
+    .byte $08			; $02 = crouching parry
 	.word rom_80AD
 	.byte $01			; $03 = walking forward
 	.word rom_80B5
@@ -78,7 +78,7 @@ rom_8004:
 	.word rom_81C9
 	.byte $05			; $1D
 	.word rom_81D9
-	.byte $18			; $1E
+	.byte $18			; $1E = ranged attack
 	.word rom_81DA
 	.byte $04			; $1F = jumping backwards punch
 	.word rom_81F8
@@ -92,7 +92,7 @@ rom_8004:
 	.word rom_8238
 	.byte $04			; $24
 	.word rom_8239
-	.byte $06			; $25
+	.byte $06			; $25 = quick standing punch? (only up close)
 
 	.word rom_823A
 	.byte $0E			; $26 = falling on his back (bounce)
@@ -116,15 +116,15 @@ rom_8004:
 	.word rom_8270
 	.byte $0D			; $2E = strong hit (knocked down or hit in the air)
 	.word rom_8271
-	.byte $14			; $2F
+	.byte $14			; $2F = bigger knockback
 	.word rom_8286
-	.byte $0D			; $30
+	.byte $0D			; $30 = another knockback
 	.word rom_8271
-	.byte $29			; $31
+	.byte $29			; $31 = being thrown
 	.word rom_8286
-	.byte $19			; $32
+	.byte $19			; $32 = hit by uppercut
 	.word rom_8271 ;rom_8292
-	.byte $1F			; $33
+	.byte $1F			; $33 = this one glithces all over the place
 	.word rom_82A1
 	.byte $04			; $34 = Jumping back (start at frame $0A for the downward movement part)
 	.word rom_80ED

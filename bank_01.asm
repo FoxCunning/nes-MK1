@@ -91,7 +91,7 @@ sub_match_loop:
 	jsr sub_load_fighter_sprite_data
 	jsr sub_rom_D20A
 	
-	jsr sub_rom_D02F
+	jsr sub_adjust_facing
 	jsr sub_rom_C9EC
 	@C177:
 	jmp sub_rom_C29E ;jsr sub_rom_C29E
@@ -1043,14 +1043,14 @@ sub_rom_C838:
 	ldx zp_7C
 	lda zp_plr1_y_pos,X
 	cmp zp_sprites_base_y
-	bne @C875
+	bne @C875_rts
 
 	lda ram_043D
 	bne @C84B
 
 	lda zp_controller1,X
 	and #$04	; Button down?
-	bne @C875
+	bne @C875_rts
 
 	@C84B:
 	jsr sub_rom_C876
@@ -1060,7 +1060,7 @@ sub_rom_C838:
 	bne @C86A
 
 	lda zp_4C,Y
-	bmi @C875
+	bmi @C875_rts
 
 	ldx zp_4C,Y
 	inx
@@ -1073,11 +1073,11 @@ sub_rom_C838:
 	@C86A:
 	lda ram_043E
 	cmp zp_plr1_cur_anim,Y
-	beq @C875
+	beq @C875_rts
 
 		jsr sub_change_fighter_anim
 
-	@C875:
+	@C875_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1425,6 +1425,7 @@ sub_rom_CA66:
 	jsr sub_rom_D0E1
 	jsr sub_rom_D129
 	jsr sub_rom_CAC0
+
 	@CA94:
 	ldy zp_7C
 	jsr sub_rom_CB0C
@@ -1479,28 +1480,32 @@ sub_rom_CAC0:
 	cmp #$01
 	bne @CAE4
 
-	lda #$28	; Staggered animation
-	sta zp_plr1_cur_anim,Y
+		; Staggered if getting up after enough hits taken
 
-	lda #$00
-	sta zp_consecutive_hits_taken,Y
-	sta zp_plr1_anim_frame,Y
+		lda #$28	; Staggered animation
+		sta zp_plr1_cur_anim,Y
+
+		lda #$00
+		sta zp_consecutive_hits_taken,Y
+		sta zp_plr1_anim_frame,Y
 
 	@CAE4:
 	lda zp_E9,Y
 	cmp #$70
 	bcc @CB00
 
-	lda #$00
-	sta zp_E9,Y
-	lda zp_consecutive_hits_taken,Y
-	cmp zp_E7,Y
-	bne @CAFD
+		lda #$00
+		sta zp_E9,Y
+		lda zp_consecutive_hits_taken,Y
+		cmp zp_E7,Y
+		bne @CAFD
 
-	lda #$00
-	sta zp_consecutive_hits_taken,Y
-	@CAFD:
-	sta zp_E7,Y
+			lda #$00
+			sta zp_consecutive_hits_taken,Y
+
+		@CAFD:
+		sta zp_E7,Y
+
 	@CB00:
 	lda zp_E9,Y
 	clc
@@ -1516,6 +1521,7 @@ tbl_player_oam_offsets:
 
 ; -----------------------------------------------------------------------------
 
+; Does something if animation is $2E, $31 or $32
 sub_rom_CB0C:
 	lda zp_plr1_cur_anim,Y
 	cmp #$2E
@@ -1523,16 +1529,16 @@ sub_rom_CB0C:
 
 	; Return if < $30 and >= $33
 	cmp #$30	
-	bcc @CB7E
+	bcc @CB7E_rts
 
 	cmp #$33
-	bcs @CB7E
+	bcs @CB7E_rts
 
 	@CB1B:
 	; Only reached if animation is $2E, $31 or $32
 	lda #$06
 	cmp zp_plr1_anim_frame,Y
-	bcs @CB7E
+	bcs @CB7E_rts
 
 	lda zp_sprites_base_y
 	sec
@@ -1546,7 +1552,7 @@ sub_rom_CB0C:
 	bcs @CB5A
 
 	cmp zp_ptr1_hi
-	bcc @CB7E
+	bcc @CB7E_rts
 
 	lda zp_plr1_cur_anim,Y
 	cmp #$32
@@ -1579,7 +1585,7 @@ sub_rom_CB0C:
 	sta zp_ptr1_lo
 	lda zp_plr1_y_pos,Y
 	cmp zp_ptr1_lo
-	bcc @CB7E
+	bcc @CB7E_rts
 
 		lda #$02
 		sta zp_92
@@ -1592,19 +1598,20 @@ sub_rom_CB0C:
 		adc #$08
 		sta zp_plr1_y_pos,Y
 	
-	@CB7E:
+	@CB7E_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
 
+; After a knockout, either get up or end the match
 sub_rom_CB7F:
 	lda zp_plr1_cur_anim,Y
 	cmp #$26	 ; Knocked out
-	bne @CBC6
+	bne @CBC6_rts
 
 		lda zp_plr1_anim_frame,Y
 		cmp #$0C
-		bcc @CBC6
+		bcc @CBC6_rts
 
 		ldx zp_plr1_damage,Y
 		cpx #$58
@@ -1616,7 +1623,7 @@ sub_rom_CB7F:
 		eor #$01
 		tax
 		lda zp_plr1_anim_frame,X
-		bne @CBC6
+		bne @CBC6_rts
 
 		lda #$2A	; Victory pose end
 		sta zp_plr1_cur_anim,X
@@ -1628,11 +1635,11 @@ sub_rom_CB7F:
 		bmi @CBB3
 
 		lda zp_4B
-		bmi @CBB6
+		bmi @CBB6_rts
 
 		@CBB3:
 		inc ram_plr1_rounds_won,X
-		@CBB6:
+		@CBB6_rts:
 		rts
 	; ----------------
 		@CBB7:
@@ -1644,7 +1651,8 @@ sub_rom_CB7F:
 
 		lda zp_sprites_base_y
 		sta zp_plr1_y_pos,Y
-	@CBC6:
+
+	@CBC6_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1704,68 +1712,69 @@ sub_rom_CBFC:
 	beq @CC0B
 
 	cmp #$08
-	bne @CC35
+	bne @CC35_rts
 
-	ldx #$1F
-	@CC0B:
-	lda zp_controller1_new,Y
-	and #$80
-	beq @CC19
+		ldx #$1F
+		@CC0B:
+		lda zp_controller1_new,Y
+		and #$80
+		beq @CC19
 
-	lda #$08	; Punch swing
-	sta ram_req_sfx
-	bne @CC27
+		lda #$08	; Punch swing
+		sta ram_req_sfx
+		bne @CC27
 
-	@CC19:
-	lda zp_controller1_new,Y
-	and #$40
-	beq @CC35
+		@CC19:
+		lda zp_controller1_new,Y
+		and #$40
+		beq @CC35_rts
 
 
-	lda #$07	; Kick swing
-	sta ram_req_sfx
-	inx
-	inx
-	@CC27:
-	lda zp_plr1_anim_frame,Y
-	cmp #$07
-	bcc @CC2F
+		lda #$07	; Kick swing
+		sta ram_req_sfx
+		inx
+		inx
+		@CC27:
+		lda zp_plr1_anim_frame,Y
+		cmp #$07
+		bcc :+
+			inx
+		:
+		txa
+		sta zp_plr1_cur_anim,Y
+		sty zp_8C
 
-	inx
-	@CC2F:
-	txa
-	sta zp_plr1_cur_anim,Y
-	sty zp_8C
-	@CC35:
+	@CC35_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
 
 sub_rom_CC36:
 	jsr sub_rom_D0D1
+
 	lda zp_controller1,Y
-	and #$04
-	bne @CC5B
+	and #$04	; D-pad down
+	bne @CC5B_rts
 
-	lda zp_controller1_new,Y
-	and #$40
-	beq @CC4F
+		lda zp_controller1_new,Y
+		and #$40	; Button B
+		beq @CC4F
 
-	jsr sub_rom_CC82
-	@CC4A:
-	txa
-	jsr sub_change_fighter_anim
-	rts
-; ----------------
-	@CC4F:
-	lda zp_controller1_new,Y
-	and #$80
-	beq @CC5B
+			jsr sub_rom_CC82
+			@CC4A:
+			txa
+			jmp sub_change_fighter_anim ;jsr sub_change_fighter_anim
+			;rts
+	; ----------------
+		@CC4F:
+		lda zp_controller1_new,Y
+		and #$80	; Button A
+		beq @CC5B_rts
 
-	jsr sub_rom_CC5C
-	bne @CC4A
+		jsr sub_rom_CC5C
+		bne @CC4A
 
-	@CC5B:
+	@CC5B_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1773,33 +1782,35 @@ sub_rom_CC36:
 sub_rom_CC5C:
 	lda zp_players_x_distance
 	cmp #$1E
-	bcs @CC7F
+	bcs @CC7F_normal_punch
 
 	lda #$01
 	ldx zp_plr1_facing_dir,Y
-	beq @CC6A
-
-	lda #$02
-	@CC6A:
+	beq :+
+		lda #$02
+	:
 	and zp_controller1,Y
-	beq @CC7C
+	beq @CC7C_quick_punch
 
 	tya
 	eor #$01
 	tax
 	lda zp_plr1_y_pos,X
 	cmp zp_sprites_base_y
-	bne @CC7C
+	bne @CC7C_quick_punch
 
-	ldx #$18
+	lda zp_plr1_facing_dir,Y
+	eor #$01
+	sta zp_plr1_facing_dir,Y
+	ldx #$18	; Throw
 	rts
 ; ----------------
-	@CC7C:
-	ldx #$25
+	@CC7C_quick_punch:
+	ldx #$25	; Up close punch
 	rts
 ; ----------------
-	@CC7F:
-	ldx #$10
+	@CC7F_normal_punch:
+	ldx #$10	; Basic punch
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -2219,6 +2230,7 @@ sub_finish_match_init:
 	sta zp_irq_hor_scroll
 	sta ram_0414
 
+	; "Flip" player 2
 	lda #$01
 	sta zp_plr2_facing_dir
 
@@ -2312,65 +2324,76 @@ sub_read_fighter_palette:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_D02F:
+sub_adjust_facing:
 	lda zp_plr1_cur_anim
 	cmp #$06
-	bcc @D045
+	bcc @D045_plr1
 
 	cmp #$26
-	bcc @D055
+	bcc @D055_plr2
 
 	cmp #$2D
-	beq @D055
+	beq @D055_plr2
 
 	cmp #$2E
-	beq @D055
+	beq @D055_plr2
 
-	cmp #$18
-	beq @D055
+	cmp #$31
+	beq @D055_plr2
 
-	@D045:
+	; Can't be $18 here: we already skipped if it was < $26
+	;cmp #$18	; Player 1: Throw move
+	;beq @D055_plr2
+
+	@D045_plr1:
 	ldx #$00
+	
+	; This basically only affects the Carry bit
 	sec
 	lda zp_82
 	sbc zp_84
+
 	lda zp_plr1_spr_x_offset
 	sbc zp_plr2_spr_x_offset
-	bmi @D053
-
-	inx
-	@D053:
+	bmi :+
+		; Change facing if players is on the other side
+		inx
+	:
 	stx zp_plr1_facing_dir
-	@D055:
+	@D055_plr2:
 	lda zp_plr2_cur_anim
-	cmp #$06
-	bcc @D06B
+	cmp #$06	; Upwards jump
+	bcc @D06B_facing_dir
 
 	cmp #$26
-	bcc @D07B
+	bcc @D07B_rts
 
 	cmp #$2D
-	beq @D07B
+	beq @D07B_rts
 
 	cmp #$2E
-	beq @D07B
+	beq @D07B_rts
 
-	cmp #$18
-	beq @D07B
+	cmp #$31
+	beq @D07B_rts
 
-	@D06B:
+	; Can't be $18 here: we already skipped if it was < $26
+	;cmp #$18	; Player 2: Throw move
+	;beq @D07B_rts
+	
+	; Change facing dir if needed
+	@D06B_facing_dir:
 	ldx #$00
 	sec
 	lda zp_82
 	sbc zp_84
 	lda zp_plr1_spr_x_offset
 	sbc zp_plr2_spr_x_offset
-	bpl @D079
-
-	inx
-	@D079:
+	bpl :+
+		inx
+	:
 	stx zp_plr2_facing_dir
-	@D07B:
+	@D07B_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -2385,23 +2408,23 @@ sub_rom_D082:
 	beq @D08B
 
 	cmp #$04
-	bne @D09D
+	bne @D09D_clean_rts
 
-	@D08B:
-	lda zp_plr1_cur_anim,Y
-	cmp #$18
-	bne @D09D
+		@D08B:
+		lda zp_plr1_cur_anim,Y
+		cmp #$18	; Throw move
+		bne @D09D_clean_rts
 
-	lda zp_plr1_anim_frame,Y
-	cmp #$0A
-	bcs @D09D
+		lda zp_plr1_anim_frame,Y
+		cmp #$0A
+		bcs @D09D_clean_rts
 
-	pla
-	pla
-	sec
-	rts
+			pla
+			pla
+			sec
+			rts
 ; ----------------
-	@D09D:
+	@D09D_clean_rts:
 	clc
 	rts
 
@@ -2441,70 +2464,82 @@ rom_D0C5:
 
 sub_rom_D0D1:
 	lda zp_plr1_cur_anim,Y
-	beq sub_rom_D0E0
+	beq sub_rom_D0E0_rts
 ; ----------------
 sub_rom_D0D6:
 	cmp #$02
 	bcc @D0DE
 
 	cmp #$06
-	bcc sub_rom_D0E0
+	bcc sub_rom_D0E0_rts
 
 	@D0DE:
 	pla
 	pla
 ; ----------------
-sub_rom_D0E0:
+sub_rom_D0E0_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
 
+; Y = Attacking player's index (0/1)
 sub_rom_D0E1:
 	lda zp_plr1_fgtr_idx_clean,Y
-	beq @D0EE
+	beq @D0EE	; Branch if Sonya
+
 	cmp #$03
-	beq @D0EE
-	cmp #$04
+	beq @D0EE	; Branch if Scorpion
+
+	cmp #$04	; Kano
 	bne @D0F3
+
 	@D0EE:
+	; This extra check is only for Sonya, Scorpion and Kano
 	lda zp_AD,Y
-	bne @D124
+	bne @D124_rts
+
 	@D0F3:
-	jsr sub_rom_D0D1
+	jsr sub_rom_D0D1	; This will return to previous caller if animation is 1 or > 5
+
 	lda zp_controller1,Y
 	and #$08
-	beq @D124
+	beq @D124_rts	; Return if not pressing D-pad Up
+
 	lda zp_controller1,Y
 	and #$01
 	beq @D111
+
 	ldx #$08
 	lda zp_plr1_facing_dir,Y
 	bne @D10C
 	dex
+
 	@D10C:
 	txa
-	jsr sub_change_fighter_anim
-	rts
+	jmp sub_change_fighter_anim ;jsr sub_change_fighter_anim
+	;rts
 ; ----------------
 	@D111:
 	lda zp_controller1,Y
 	and #$02
 	beq @D125
-	ldx #$08
-	lda zp_plr1_facing_dir,Y
-	beq @D120
-	dex
-	@D120:
-	txa
-	@D121:
-	jsr sub_change_fighter_anim
-	@D124:
-	rts
+
+		ldx #$08
+		lda zp_plr1_facing_dir,Y
+		beq :+
+			dex
+		:
+		txa
+		@D121:
+		jmp sub_change_fighter_anim ;jsr sub_change_fighter_anim
+		@D124_rts:
+		rts
 ; ----------------
 	@D125:
 	lda #$06
 	bne @D121
 ; ----------------
+; Will execute if animation is idle or walking, otherwise it will return
 sub_rom_D129:
 	lda zp_plr1_cur_anim,Y
 	beq @D136
@@ -2513,7 +2548,7 @@ sub_rom_D129:
 		beq @D136
 
 			cmp #$04	; Walking backwards
-			bne @D163
+			bne @D163_rts
 
 		@D136:
 		tya
@@ -2521,16 +2556,16 @@ sub_rom_D129:
 		tax
 		lda zp_plr1_cur_anim,X
 		cmp #$0B
-		bcc @D163
+		bcc @D163_rts
 
 		cmp #$26
-		bcs @D163
+		bcs @D163_rts
 
 		cmp #$14
-		beq @D163
+		beq @D163_rts
 
-		cmp #$18
-		beq @D163
+		cmp #$18	; Throw move
+		beq @D163_rts
 
 		lda #$01
 		ldx zp_plr1_facing_dir,Y
@@ -2539,13 +2574,14 @@ sub_rom_D129:
 		lda #$02
 		@D154:
 		and zp_controller1,Y
-		beq @D163
+		beq @D163_rts
 
 		lda #$05
 		sta zp_plr1_cur_anim,Y
 		lda #$00
 		sta zp_plr1_anim_frame,Y
-	@D163:
+
+	@D163_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -2611,15 +2647,22 @@ sub_rom_D164:
 
 ; -----------------------------------------------------------------------------
 
+; Parameters:
+; Y = Attacker's index (0 for player one, 1 for player 2)
 sub_rom_D1B6:
 	tya
 	eor #$01
 	tax	; Opponent player's index in X (0 for player one, 1 for player 2)
 		; Used to check the opponent's animation
 
+	; Y = attacker
+	; X = opponent
+
 	lda zp_plr1_cur_anim,Y
 	cmp #$06		; 6 = jumping up animation
-	bcs @D209_rts	; Anything lower is idle, parrying, crouching or walking
+	bcs @D209_rts
+
+	; Anything lower is idle, parrying, crouching or walking
 
 	lda zp_controller1,Y
 	and #$04	; D-pad down
@@ -2671,6 +2714,7 @@ sub_rom_D1B6:
 	lda #$01
 	@D206_set_anim:
 	jsr sub_change_fighter_anim
+
 	@D209_rts:
 	rts
 
@@ -4150,8 +4194,8 @@ tbl_anim_data_ptrs:
 	.word @rom_DBAD
 	.word @knocked_up_21_frames
 	.word @rom_DE8E	; $28
-	.word @rom_DE9B
-	.word @rom_DEB4
+	.word @thrown
+	.word @throw_move
 	.word @rom_DECD
 	.word @rom_DEEE	; $2C
 
@@ -4502,18 +4546,36 @@ tbl_anim_data_ptrs:
 
 ; ----------------
 
-@rom_DE9B:
-	.byte $00, $00, $00, $00, $20, $00, $00, $F0
-	.byte $00, $00, $00, $00, $00, $F4, $00, $00
-	.byte $30, $00, $00, $00, $E0, $14, $E0, $00
+@thrown:
+	.byte $00, $00
+	.byte $00, $00
+	.byte $10, $00
+	.byte $20, $F0
+	.byte $00, $00
+	.byte $10, $00
+	.byte $20, $F4
+	.byte $00, $00
+	.byte $10, $00
+	.byte $08, $00
+	.byte $06, $14
+	.byte $04, $00
 	.byte $80
 
 ; ----------------
 
-@rom_DEB4:
-	.byte $10, $00, $00, $00, $00, $00, $00, $00
-	.byte $00, $00, $00, $00, $00, $00, $00, $00
-	.byte $00, $00, $00, $00, $00, $00, $00, $00
+@throw_move:
+	.byte $F0, $00
+	.byte $00, $00
+	.byte $00, $00
+	.byte $00, $00
+	.byte $00, $00
+	.byte $00, $00
+	.byte $00, $00
+	.byte $00, $00
+	.byte $00, $00
+	.byte $00, $00
+	.byte $00, $00
+	.byte $00, $00
 	.byte $80
 
 ; ----------------

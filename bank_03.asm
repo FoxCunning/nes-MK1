@@ -25,6 +25,10 @@ sub_rom_A00C:
 	cmp #$0B
 	bcc @A02A_rts
 
+	; Ignore facing for throw moves
+	cmp #$18
+	beq @A030
+
 	cmp #$26
 	bcs @A02A_rts
 
@@ -33,23 +37,23 @@ sub_rom_A00C:
 		tay
 		lda zp_plr1_x_pos,X
 		cmp zp_plr1_x_pos,Y
-		beq @A030_rts
+		beq @A030
 
 		bcs @A02B_check_facing
 
 		lda zp_plr1_facing_dir,X
-		beq @A030_rts
+		beq @A030
 
 	@A02A_rts:
 	rts
 ; ----------------
 	@A02B_check_facing:
 	lda zp_plr1_facing_dir,X
-	bne @A030_rts
+	bne @A030
 
 		rts
 ; ----------------
-	@A030_rts:
+	@A030:
 	lda zp_plr1_fgtr_idx_clean,X
 	asl A
 	tay
@@ -123,9 +127,9 @@ sub_rom_A00C:
 	bcc @A0BD_rts
 
 		ldy #$05
-		; Save attacker's anim index (used for uppercuts and special attacks)
-		lda zp_plr1_cur_anim,X
-		sta zp_attacker_anim
+		; Save attacker's anim index (can be used for uppercuts and special attacks)
+		;lda zp_plr1_cur_anim,X
+		;sta zp_attacker_anim
 		txa
 		eor #$01
 		tax
@@ -154,6 +158,7 @@ sub_rom_A00C:
 		sta zp_plr1_cur_anim,X
 		lda #$00
 		sta zp_plr1_anim_frame,X
+
 	@A0BD_rts:
 	rts
 ; ----------------
@@ -168,14 +173,14 @@ sub_rom_A00C:
 	@A0C8_airborne_check:
 	lda zp_plr1_y_pos,X
 	cmp zp_sprites_base_y
-	beq @hit_uppercut_check ;@A0D2_check_consecutive_hits
+	beq @A0D2_check_consecutive_hits ;@hit_uppercut_check
 
 	; Mid-air hit or 3rd consecutive hit
 	@A0CE_knockback:
 	lda #$2E	; Strong knock back
 	bne @A0DA_assign_anim
 
-	@hit_uppercut_check:
+	;@hit_uppercut_check:
 	;lda zp_attacker_anim
 	;cmp #$13
 	;bne @A0D2_check_consecutive_hits
@@ -221,20 +226,19 @@ sub_rom_A00C:
 	sta zp_plr1_dmg_counter,X
 	lda #$01
 	sta zp_player_hit_counter
+
 	rts
 
 ; ----------------
 
+	; TODO This could be a simple calculation:
+	; (A + 1) << 2
 	@tbl_dmg_to_counter:
 	.byte $04, $08, $0C, $10
 
 ; -----------------------------------------------------------------------------
 
-; Pointers table
-; Data has to do with minimum hit distance and current animation index / frame
-; Probably used to determine whether an attack connects with the opponent
-; Then it tells the engine which animation should be assigned to the player
-; who's been hit
+; Pointers table to hit data per character
 tbl_hit_data_ptrs:
 	.word tbl_hit_ptrs_rayden
 	.word tbl_hit_ptrs_sonya
@@ -267,7 +271,7 @@ tbl_hit_ptrs_rayden:
 	.word rom_A40A
 	.word rom_A3CF
 	.word rom_AA3D
-	.word rom_A48E
+	.word hit_data_throw
 	.word rom_A3E6
 	.word rom_A3EF
 	.word rom_A3F8	; $10
@@ -290,7 +294,7 @@ tbl_hit_ptrs_sonya:
 	.word rom_A398, rom_A554, rom_A3A8, rom_A3B1
 	.word hit_data_uppercut ;rom_A554
 	.word rom_A526, rom_A3C8, rom_A3CF
-	.word rom_AA21, rom_A48E, rom_A3E6, rom_A3EF
+	.word rom_AA21, hit_data_throw, rom_A3E6, rom_A3EF
 	.word rom_A3F8, rom_A401, rom_A40A, hit_data_13
 	.word rom_A576, rom_A57F, rom_A588, rom_A591
 	.word rom_A43C, rom_A443, rom_A44A
@@ -302,7 +306,7 @@ tbl_hit_ptrs_subzero:
 	.word rom_A42A, rom_A465, rom_A49E, rom_A38F
 	.word rom_A398, rom_A453, rom_A3A8, rom_A3B1
 	.word hit_data_uppercut, rom_A5D6, rom_A3C8, rom_A3CF
-	.word rom_A495, rom_A48E, rom_A3E6, rom_A3EF
+	.word rom_A495, hit_data_throw, rom_A3E6, rom_A3EF
 	.word rom_A3F8, rom_A401, rom_A40A, hit_data_13
 	.word rom_A418, rom_A421, rom_A3F8, rom_A401
 	.word rom_A43C, rom_A443, rom_A44A
@@ -311,13 +315,33 @@ tbl_hit_ptrs_subzero:
 
 ; Pointers table
 tbl_hit_ptrs_scorpion:
-	.word rom_A59A, rom_A37F, rom_A5B3, rom_A38F
-	.word rom_A398, rom_A59A, rom_A3A8, rom_A3B1
-	.word hit_data_uppercut, rom_A526, rom_A3C8, rom_A3CF
-	.word rom_A5BA, rom_A48E, rom_A3E6, rom_A3EF
-	.word rom_A3F8, rom_A401, rom_A40A, hit_data_13
-	.word rom_A3F8, rom_A401, rom_A3F8, rom_A401
-	.word rom_A43C, rom_A443, rom_A44A
+	.word rom_A59A
+	.word rom_A37F
+	.word rom_A5B3
+	.word rom_A38F
+	.word rom_A398
+	.word rom_A59A
+	.word rom_A3A8
+	.word rom_A3B1
+	.word hit_data_uppercut
+	.word rom_A526
+	.word rom_A3C8
+	.word rom_A3CF
+	.word rom_A5BA
+	.word hit_data_throw
+	.word rom_A3E6
+	.word rom_A3EF
+	.word rom_A3F8
+	.word rom_A401
+	.word rom_A40A
+	.word hit_data_13
+	.word rom_A3F8
+	.word rom_A401
+	.word rom_A3F8
+	.word rom_A401
+	.word rom_A43C
+	.word rom_A443
+	.word rom_A44A
 
 ; -----------------------------------------------------------------------------
 
@@ -326,7 +350,7 @@ tbl_hit_ptrs_kano:
 	.word hit_data_kick, rom_A465, rom_A47E, rom_A38F
 	.word rom_A398, rom_A453, rom_A3A8, rom_A3B1
 	.word hit_data_uppercut, rom_A3C1, rom_A3C8, rom_A3CF
-	.word rom_A487, rom_A48E, rom_A3E6, rom_A3EF
+	.word rom_A487, hit_data_throw, rom_A3E6, rom_A3EF
 	.word rom_A3F8, rom_A401, rom_A40A, hit_data_13
 	.word rom_A418, rom_A421, rom_A3F8, rom_A401
 	.word rom_A43C, rom_A443, rom_A44A
@@ -338,7 +362,7 @@ tbl_hit_ptrs_cage:
 	.word hit_data_kick, rom_A37F, rom_A54D, rom_A38F
 	.word rom_A398, rom_A3A1, rom_A3A8, rom_A3B1
 	.word hit_data_uppercut, rom_A526, rom_A3C8, rom_A3CF
-	.word rom_AA36, rom_A48E, rom_A3E6, rom_A3EF
+	.word rom_AA36, hit_data_throw, rom_A3E6, rom_A3EF
 	.word rom_A3F8, rom_A401, rom_A40A, hit_data_13
 	.word rom_A418, rom_A421, rom_A3F8, rom_A401
 	.word rom_A43C, rom_A443, rom_A44A
@@ -350,7 +374,7 @@ tbl_hit_ptrs_liukang:
 	.word rom_A5A1, rom_A5A1, rom_AA2F, rom_A38F
 	.word rom_A398, rom_A3A1, rom_A3A8, rom_A3B1
 	.word hit_data_uppercut, rom_A526, rom_A3C8, rom_A3CF
-	.word rom_A495, rom_A48E, rom_A3E6, rom_A3EF
+	.word rom_A495, hit_data_throw, rom_A3E6, rom_A3EF
 	.word rom_A3F8, rom_A401, rom_A40A, hit_data_13
 	.word rom_A418, rom_A421, rom_A3F8, rom_A401
 	.word rom_A43C, rom_A443, rom_A44A
@@ -362,7 +386,7 @@ tbl_hit_ptrs_goro:
 	.word rom_A504, rom_A465, rom_A38F, rom_A398
 	.word rom_A4B7, rom_A453, rom_A3A8, rom_A3B1
 	.word hit_data_uppercut, rom_A4FD, rom_A3C8, rom_A3CF
-	.word rom_A3EF, rom_A48E, rom_A3E6, rom_A3EF
+	.word rom_A3EF, hit_data_throw, rom_A3E6, rom_A3EF
 	.word rom_A3F8, rom_A401, rom_A40A, hit_data_13
 	.word rom_A418, rom_A421, rom_A4C0, rom_A4C9
 	.word rom_A43C, rom_A443, rom_A44A
@@ -374,7 +398,7 @@ tbl_hit_ptrs_shangtsung:
 	.word hit_data_kick, rom_A37F, rom_A5C1, rom_A38F
 	.word rom_A398, rom_A59A, rom_A3A8, rom_A3B1
 	.word hit_data_uppercut, rom_A526, rom_A3C8, rom_A3CF
-	.word rom_A5C8, rom_A48E, rom_A3E6, rom_A3EF
+	.word rom_A5C8, hit_data_throw, rom_A3E6, rom_A3EF
 	.word rom_A3F8, rom_A401, rom_A40A, hit_data_13
 	.word rom_A418, rom_A421, rom_A3F8, rom_A401
 	.word rom_A43C, rom_A443, rom_A44A
@@ -386,7 +410,7 @@ rom_A30A:
 	.word rom_A5AA_unused, rom_A5AA_unused, rom_A386_unused, rom_A38F
 	.word rom_A398, rom_A3A1, rom_A3A8, rom_A3B1
 	.word hit_data_uppercut, rom_A5AA_unused, rom_A3C8, rom_A3CF
-	.word rom_A546, rom_A48E, rom_A3E6, rom_A3EF
+	.word rom_A546, hit_data_throw, rom_A3E6, rom_A3EF
 	.word rom_A3F8, rom_A401, rom_A40A, hit_data_13
 	.word rom_A418, rom_A421, rom_A3F8, rom_A401
 	.word rom_A43C, rom_A443, rom_A44A
@@ -583,8 +607,12 @@ rom_A487:
 
 ; -----------------------------------------------------------------------------
 
-rom_A48E:
-	.byte $03, $1E, $00, $00, $31, $02
+hit_data_throw:
+	.byte $03, $03
+	.byte $1E
+	.byte $00, $31
+	.byte $31
+	.byte $02
 
 ; -----------------------------------------------------------------------------
 
@@ -823,21 +851,21 @@ sub_rom_A5F0:
 	cmp #$14
 	bcs @A61C
 
-	jsr sub_rom_A67A
+	jsr sub_special_move_0
 	rts
 ; ----------------
 	@A61C:
 	cmp #$28
 	bcs @A624
 
-	jsr sub_rom_A6BC
+	jsr sub_special_move_1
 	rts
 ; ----------------
 	@A624:
 	cmp #$80
 	bcs @A62C
 
-	jsr sub_rom_A6FE
+	jsr sub_special_move_2
 	rts
 ; ----------------
 	@A62C:
@@ -846,8 +874,8 @@ sub_rom_A5F0:
 	and #$1F
 	tax
 	lda #$03
-	jsr sub_rom_A773
-	rts
+	jmp sub_rom_A773 ;jsr sub_rom_A773
+	;rts
 
 ; -----------------------------------------------------------------------------
 
@@ -874,7 +902,7 @@ sub_rom_A63B:
 	@A659:
 	jsr sub_rom_A9FD
 	and #$07
-	bne @A679
+	bne @A679_rts
 
 	@A660:
 	lda zp_plr1_fgtr_idx_clean,X
@@ -888,17 +916,17 @@ sub_rom_A63B:
 	lda zp_plr1_cur_anim,X
 	tay
 	lda (zp_ptr4_lo),Y
-	bmi @A679
+	bmi @A679_rts
 
 	jsr sub_rom_A773
 	pla
 	pla
-	@A679:
+	@A679_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_A67A:
+sub_special_move_0:
 	lda zp_plr1_fgtr_idx_clean,Y
 	asl A
 	tax
@@ -906,18 +934,20 @@ sub_rom_A67A:
 	sta zp_ptr3_lo
 	lda rom_A7BF+1,X
 	sta zp_ptr3_hi
+
 	jsr sub_rom_A63B
 	jsr sub_rom_A9EB
 	jsr sub_rom_A9FD
+
 	and #$1F
 	tax
-	lda rom_A69C,X
-	jsr sub_rom_A773
-	rts
+	lda @rom_A69C,X
+	jmp sub_rom_A773 ;jsr sub_rom_A773
+	;rts
 
-; -----------------------------------------------------------------------------
+; ----------------
 
-rom_A69C:
+	@rom_A69C:
 	.byte $25, $18, $0C, $18, $25, $18, $0C, $18
 	.byte $25, $18, $0C, $18, $25, $18, $0C, $18
 	.byte $25, $18, $0C, $18, $25, $18, $0C, $18
@@ -925,7 +955,7 @@ rom_A69C:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_A6BC:
+sub_special_move_1:
 	lda zp_plr1_fgtr_idx_clean,Y
 	asl A
 	tax
@@ -933,18 +963,20 @@ sub_rom_A6BC:
 	sta zp_ptr3_lo
 	lda rom_A7D7+1,X
 	sta zp_ptr3_hi
+
 	jsr sub_rom_A63B
 	jsr sub_rom_A9EB
 	jsr sub_rom_A9FD
+
 	and #$1F
 	tax
-	lda rom_A6DE,X
-	jsr sub_rom_A773
-	rts
+	lda @rom_A6DE,X
+	jmp sub_rom_A773 ;jsr sub_rom_A773
+	;rts
 
-; -----------------------------------------------------------------------------
+; ----------------
 
-rom_A6DE:
+	@rom_A6DE:
 	.byte $0B, $13, $10, $17, $13, $0D, $14, $0B
 	.byte $0B, $0D, $10, $17, $13, $14, $14, $10
 	.byte $0B, $13, $10, $17, $13, $0D, $14, $0B
@@ -952,7 +984,7 @@ rom_A6DE:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_A6FE:
+sub_special_move_2:
 	lda zp_plr1_fgtr_idx_clean,Y
 	asl A
 	tax
@@ -965,24 +997,33 @@ sub_rom_A6FE:
 	jsr sub_rom_A9FD
 	and #$1F
 	tax
-	lda rom_A733,X
+	lda @rom_A733,X
 	bpl @A723
 
 	ldx zp_plr1_fgtr_idx_clean,Y
-	lda rom_A727,X
+	lda @rom_A727,X
 	@A723:
-	jsr sub_rom_A773
-	rts
+	jmp sub_rom_A773 ;jsr sub_rom_A773
+	;rts
 
-; -----------------------------------------------------------------------------
+; ----------------
 
-rom_A727:
-	.byte $0D, $17, $1E, $1B, $1E, $17, $0D, $0D
-	.byte $1E, $1B, $1E, $1E
+	@rom_A727:
+	.byte $0D	; Rayden
+	.byte $17	; Sonya's Square Flight
+	.byte $1E	; Sub-Zero's Ice Freeze
+	.byte $1B	; Scorpion
+	.byte $1E	; Kano's Knife Throw
+	.byte $17	; Johnny Cage
+	.byte $0D	; Liu Kang
+	.byte $0D	; Goro
+	.byte $1E	; Shang-Tsung's unused fireball
+	; Unused
+	.byte $1B, $1E, $1E
 
-; -----------------------------------------------------------------------------
+; ----------------
 
-rom_A733:
+	@rom_A733:
 	.byte $03, $80, $03, $03, $03, $03, $03, $03
 	.byte $03, $03, $03, $03, $03, $03, $03, $03
 	.byte $03, $03, $03, $03, $1A, $03, $03, $03
@@ -1000,77 +1041,104 @@ sub_rom_A773:
 	cmp #$03
 	beq @A7AB
 
-	cmp #$18
-	bne @A7B0
+	cmp #$18	; Throw move?
+	bne @A7B0_reset_anim_frame
 
-	ldx zp_7B
-	lda zp_plr1_y_pos,X
-	cmp zp_sprites_base_y
-	bne @A7A5
+		ldx zp_7B
+		lda zp_plr1_y_pos,X
+		cmp zp_sprites_base_y
+		bne @A7A5
 
-	lda zp_plr1_cur_anim,X
-	cmp #$09
-	beq @A7A5
+		lda zp_plr1_cur_anim,X
+		cmp #$09	; Hit received
+		beq @A7A5
 
-	cmp #$0A
-	beq @A7A5
+		cmp #$0A	; Hit received
+		beq @A7A5
 
-	cmp #$26
-	beq @A7A5
+		cmp #$26	; Knockdown
+		beq @A7A5
 
-	cmp #$2D
-	bcs @A7A5
+		cmp #$2D	; Knockback
+		bcs @A7A5
 
-	lda zp_frame_counter
-	and #$01
-	beq @A7B0
+			lda zp_frame_counter
+			and #$01
+			beq @A7B0_reset_anim_frame
 
-	lda #$1E
-	sta zp_ptr1_lo
-	bne @A7B0
+			lda #$1E	; New animation = ranged attack
+			sta zp_ptr1_lo
+			bne @A7B0_reset_anim_frame
 
-	@A7A5:
-	lda #$04
-	sta zp_ptr1_lo
-	bne @A7B0
+		@A7A5:
+		lda #$04
+		sta zp_ptr1_lo
+		bne @A7B0_reset_anim_frame
 
 	@A7AB:
 	cmp zp_plr1_cur_anim,Y
-	beq @A7B5
+	beq @A7B5_assign_anim_idx
     
-	@A7B0:
+	@A7B0_reset_anim_frame:
 	lda #$00
 	sta zp_plr1_anim_frame,Y
-	@A7B5:
+
+	@A7B5_assign_anim_idx:
 	lda zp_ptr1_lo
-	and #$3F
+	and #$3F	; TODO Is this necessary?
 	sta zp_plr1_cur_anim,Y
 	sty zp_8C
 	rts
 
 ; -----------------------------------------------------------------------------
 
+; TODO It's always the same pointer, no need to read it from a table
 rom_A7BF:
-	.word rom_A807, rom_A807, rom_A807, rom_A807
-	.word rom_A807, rom_A807, rom_A807, rom_A807
-	.word rom_A807, rom_A807, rom_A807, rom_A8F9
+	.word rom_A807	; Rayden
+	.word rom_A807	; Sonya
+	.word rom_A807	; Sub-Zero
+	.word rom_A807	; Scorpion
+	.word rom_A807	; Kano
+	.word rom_A807	; Johnny Cage
+	.word rom_A807	; Liu Kang
+	.word rom_A807	; Goro
+	.word rom_A807	; Shang-Tsung
+	; Unused
+	.word rom_A807, rom_A807, rom_A8F9
 
 ; -----------------------------------------------------------------------------
 
+; TODO It's always the same pointer, no need to read it from a table
 rom_A7D7:
-	.word rom_A81F, rom_A81F, rom_A81F, rom_A81F
-	.word rom_A81F, rom_A81F, rom_A81F, rom_A81F
-	.word rom_A81F, rom_A81F, rom_A81F, rom_A911
+	.word rom_A81F
+	.word rom_A81F
+	.word rom_A81F
+	.word rom_A81F
+	.word rom_A81F
+	.word rom_A81F
+	.word rom_A81F
+	.word rom_A81F
+	.word rom_A81F
+	.word rom_A81F, rom_A81F, rom_A911
 
 ; -----------------------------------------------------------------------------
 
+; TODO It's always the same pointer, no need to read it from a table
 rom_A7EF:
-	.word rom_A837, rom_A837, rom_A837, rom_A837
-	.word rom_A837, rom_A837, rom_A837, rom_A837
-	.word rom_A837, rom_A837, rom_A837, rom_A929
+	.word rom_A837
+	.word rom_A837
+	.word rom_A837
+	.word rom_A837
+	.word rom_A837
+	.word rom_A837
+	.word rom_A837
+	.word rom_A837
+	.word rom_A837
+	.word rom_A837, rom_A837, rom_A929
 
 ; -----------------------------------------------------------------------------
 
+; TODO It's always the same pointer, no need to read it from a table
 rom_A807:
 	.word rom_A84F, rom_A84F, rom_A84F, rom_A84F
 	.word rom_A84F, rom_A84F, rom_A84F, rom_A84F
@@ -1126,6 +1194,7 @@ rom_A8B9:
 
 ; -----------------------------------------------------------------------------
 
+; TODO It's always the same pointer, no need to read it from a table
 rom_A8F9:
 	.word rom_A941, rom_A941, rom_A941, rom_A941
 	.word rom_A941, rom_A941, rom_A941, rom_A941
@@ -1133,6 +1202,7 @@ rom_A8F9:
 
 ; -----------------------------------------------------------------------------
 
+; TODO It's always the same pointer, no need to read it from a table
 rom_A911:
 	.word rom_A976, rom_A976, rom_A976, rom_A976
 	.word rom_A976, rom_A976, rom_A976, rom_A976
@@ -1140,6 +1210,7 @@ rom_A911:
 
 ; -----------------------------------------------------------------------------
 
+; TODO It's always the same pointer, no need to read it from a table
 rom_A929:
 	.word rom_A9AB, rom_A9AB, rom_A9AB, rom_A9AB
 	.word rom_A9AB, rom_A9AB, rom_A9AB, rom_A9AB
