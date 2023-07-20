@@ -15,7 +15,7 @@ tbl_track_ptrs:
 	.word sfx_silence			; $00
 	.word sfx_97A7				; $01	A glitchy sound that sometimes plays when a match starts
 	.word sfx_hit				; $02	Any hit
-	.word sfx_bleep ;sfx_dmcbleep			; $03	Cursor movement bleep
+	.word sfx_bleep				; $03	Cursor movement bleep
 	.word sfx_projectile		; $04	Projectile/special attack
 	.word sfx_bounce			; $05	Bounce
 	.word sfx_fight				; $06	Announcer "Fight!"

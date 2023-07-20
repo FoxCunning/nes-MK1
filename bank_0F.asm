@@ -373,18 +373,6 @@ dmc_swing:
 .incbin "audio/swing_08.dmc"
 
 ; ----------------
-.export dmc_bleep
-
-dmc_bleep:
-.incbin "audio/bleep.dmc"
-
-; ----------------
-;.export dmc_bounce
-
-;dmc_bounce:
-;.incbin "audio/bounce.dmc"
-
-; ----------------
 .export dmc_wins
 
 dmc_wins:

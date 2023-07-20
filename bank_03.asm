@@ -3492,7 +3492,7 @@ tbl_dpcm_ptr:
 	.byte >(dmc_cage<<2)		; $08 "Johnny Cage"
 	.byte >(dmc_liukang<<2)		; $09 "Liu Kang"
 	.byte >(dmc_wins<<2)		; $0A "...wins"
-	.byte >(dmc_bleep<<2)		; $0B UI bleep
+	.byte $FF ;>(dmc_bleep<<2)		; $0B UI bleep
 	.byte >(dmc_swing<<2)		; $0C SFX punch/kick swing
 	.byte >(dmc_hit<<2)			; $0D SFX hit
 	.byte >(dmc_hit<<2)			; $0E SFX bounce
