@@ -2555,13 +2555,13 @@ sub_start_all_envelopes:
 	ora #$80
 	sta ram_note_period_hi,X
 
-	; TODO Remove these, just execute them sequentially
-	jsr sub_start_volume_envelope
-	jsr sub_start_duty_envelope
-	jsr sub_start_pitch_envelope
-	jsr sub_start_arpeggio
+	; Remove these, just execute them sequentially
+	;jsr sub_start_volume_envelope
+	;jsr sub_start_duty_envelope
+	;jsr sub_start_pitch_envelope
+	;jsr sub_start_arpeggio
 
-	rts
+	;rts
 
 ; -----------------------------------------------------------------------------
 
@@ -2578,14 +2578,16 @@ sub_start_volume_envelope:
 		sta TrgLinear_4008
 		and #$0F
 		sta ram_apu_output_volume+2
-		rts
+		;rts
+		jmp @skip_vol_env_start
 	:
 	cpx #$04
-	bmi :+
+	bpl @skip_vol_env_start
+	;bmi :+
 		; DPCM channel: return immediately
-		rts
+	;	rts
 ; ----------------
-	:
+	;:
 	ldx ram_cur_channel_offset
 	ldy ram_cur_chan_ptr_offset
 	
@@ -2614,7 +2616,7 @@ sub_start_volume_envelope:
 		sta ram_cur_vol_env_duration,X
 
 	@skip_vol_env_start:
-	rts
+	;rts
 
 ; -----------------------------------------------------------------------------
 
@@ -2624,11 +2626,12 @@ sub_start_duty_envelope:
 	and #$0F
 	tax
 	cpx #$02	; Only pulse channels (0-1) can use this envelope
-	bmi :+
+	bpl @skip_duty_env_start
+	;bmi :+
 
-		rts
+	;	rts
 ; ----------------
-:
+	;:
 	ldx ram_cur_channel_offset
 	ldy ram_cur_chan_ptr_offset
 
@@ -2650,7 +2653,7 @@ sub_start_duty_envelope:
 		;sta ram_cur_duty_env_duration,X
 
 	@skip_duty_env_start:
-	rts
+	;rts
 
 ; -----------------------------------------------------------------------------
 
@@ -2690,7 +2693,7 @@ sub_start_pitch_envelope:
 			sta ram_cur_pitch_env_duration,X
 
 	@skip_pitch_env_start:
-	rts
+	;rts
 
 ; -----------------------------------------------------------------------------
 

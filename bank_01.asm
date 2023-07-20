@@ -430,10 +430,12 @@ sub_rom_C36B:
 			ora #$40
 		:
 		sta ram_0372,X	; Attributes
-		dex
-		dex
-		dex
-		dex
+		;dex
+		;dex
+		;dex
+		;dex
+		txa
+		axs #$04
 
 	@C397:
 	ldy zp_7C
