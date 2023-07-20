@@ -2149,7 +2149,7 @@ tbl_track_cmd_ptrs:
 	.word sub_cmd_set_duty_env		; $F9
 	.word sub_cmd_set_pitch_env		; $FA
 	.word sub_cmd_set_arpeggio		; $FB
-	.word sub_cmd_note_slide_up		; $FC	TODO
+	.word sub_cmd_note_slide_up		; $FC
 	.word sub_cmd_note_duration		; $FD	Not used ($8x in track data directly)
 	.word sub_get_next_track_byte	; $FE	(this byte is skipped)
 	.word sub_cmd_stop_playing		; $FF
@@ -2472,6 +2472,19 @@ sub_cmd_stop_playing:
 	lda #$00
 	sta ram_track_ptr_lo,X
 	sta ram_track_ptr_hi,X
+
+	; Make sure they next channel re-applies the high period byte if needed
+	lda ram_cur_apu_channel
+	cmp #$14	; Skip DMC
+	bcs :+
+		ldy ram_note_period_hi,X
+		txa
+		eor #$80
+		tax
+		tya
+		sta ram_note_period_hi,X
+	:
+	
 	lda ram_cur_apu_channel
 	and #$0F
 	asl A
@@ -2536,6 +2549,8 @@ sub_cmd_set_arpeggio:
 sub_start_all_envelopes:
 	ldx ram_cur_chan_ptr_offset
 	; This will set bit 7 of length counter load
+	; to make sure the high byte of the period value is written in the
+	; apply_note_pitch subroutine
 	lda ram_note_period_hi,X
 	ora #$80
 	sta ram_note_period_hi,X
@@ -2987,6 +3002,7 @@ sub_sound_output:
 
 ; -----------------------------------------------------------------------------
 
+; TODO This can be optimised
 sub_sq0_output:
 	ldx #$80		; SFX indices
 	ldy #$80
@@ -3002,7 +3018,7 @@ sub_sq0_output:
 	lda zp_sndptr_lo
 
 	pha
-	jsr sub_get_duty_envelope
+	jsr sub_get_duty_envelope	; Make this write in sndptr_hi so we can avoid using the stack
 	pla
 
 	ora zp_sndptr_lo
@@ -3254,34 +3270,35 @@ sub_get_duty_envelope:
 
 ; -----------------------------------------------------------------------------
 
+; TODO Avoid using the stack
 ; Returns:
 ; zp_sndptr_lo: current value of pitch envelope
 sub_get_pitch_envelope:
 	tya
 	pha
 
-	lda ram_cur_pitch_env_duration,X
-	tay
-	cpy #$FF
-	bne :+
+		lda ram_cur_pitch_env_duration,X
+		tay
+		cpy #$FF
+		bne :+
 
-		lda #$00
-		jmp @B2AC
-:
-	pla
-	pha
-	tay
-	; Get pointer to current envelope entry
-	lda ram_pitch_env_ptr_lo,Y
-	sta zp_sndptr_lo
-	lda ram_pitch_env_ptr_hi,Y
-	sta zp_sndptr_hi
-	; Read value (second byte, the first is duration)
-	ldy #$01
-	lda (zp_sndptr_lo),Y
+			lda #$00
+			jmp @B2AC
+		:
+		pla
+		pha
+		tay
+		; Get pointer to current envelope entry
+		lda ram_pitch_env_ptr_lo,Y
+		sta zp_sndptr_lo
+		lda ram_pitch_env_ptr_hi,Y
+		sta zp_sndptr_hi
+		; Read value (second byte, the first is duration)
+		ldy #$01
+		lda (zp_sndptr_lo),Y
 
-	@B2AC:
-	sta zp_sndptr_lo	; Use this as noise period modifier
+		@B2AC:
+		sta zp_sndptr_lo	; Use this as noise period modifier
 
 	pla
 	tay
