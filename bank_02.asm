@@ -15,7 +15,7 @@ tbl_track_ptrs:
 	.word sfx_silence			; $00
 	.word sfx_97A7				; $01	A glitchy sound that sometimes plays when a match starts
 	.word sfx_hit				; $02	Any hit
-	.word sfx_dmcbleep			; $03	Cursor movement bleep
+	.word sfx_bleep ;sfx_dmcbleep			; $03	Cursor movement bleep
 	.word sfx_projectile		; $04	Projectile/special attack
 	.word sfx_bounce			; $05	Bounce
 	.word sfx_fight				; $06	Announcer "Fight!"
@@ -48,7 +48,7 @@ tbl_track_ptrs:
 	.word mus_player_select		; $21
 	.word mus_and_sfx_silence	; $22
 	.word mus_game_over			; $23	Game Over
-	.word mus_silence			; $24
+	.word mus_test				; $24	Test music, previously mus_silence
 	; ---- Stage background music starts here
 	.word mus_goros_lair		; $25	Goro's Lair
 	.word mus_pit				; $26	The Pit
@@ -115,6 +115,29 @@ mus_game_over:
 
 ; -----------------------------------------------------------------------------
 
+mus_test:
+	.byte $00
+	.word rom_8A19
+	.byte $01
+	.word @test_ch1
+	.byte $02
+	.word rom_8A19
+	.byte $03
+	.word rom_8A19
+	.byte $FF
+
+	@test_ch1:
+	.byte $F5, $0A
+	@loop:
+	.byte $F8, $21, $F9, $0B, $FA, $06, $FB, $FF
+	.byte $82, $29, $00
+	.byte $F4
+	.word @loop
+
+	.byte $00, $00, $00, $00, $00, $00, $00, $00
+
+; -----------------------------------------------------------------------------
+
 ; Silent channel
 rom_8A19:
 	.byte $FF
@@ -153,49 +176,8 @@ sfx_select:
 
 ; -----------------------------------------------------------------------------
 
-; Square 0
-;rom_8A5E:
-;	.byte $F5, $02, $F8, $08, $F9, $02
-;	.byte $FA, $00, $FB, $FF
-;	.byte $F8, $02, $8C, $2B, $B0, $2D, $FF
-
-; Square 1
-;rom_8A6D:
-;	.byte $F8, $08, $F9, $02
-;	.byte $FA, $00, $FB, $FF
-;	.byte $8C, $2B, $B0, $2D, $FF
-
-; Triangle
-;rom_8A7A:
-;	.byte $F9, $00, $FA, $00
-;	.byte $FB, $FF
-;	.byte $8C, $29, $B0, $28, $FF
-
-; Noise
-;rom_8A87:
-;	.byte $F9, $FF, $FA, $00, $F8, $00
-;	.byte $FB, $FF
-;	.byte $83, $24, $24, $24, $24, $86, $24, $24
-;	.byte $24, $24, $24, $24, $24, $FF
-
-; Silent channel	
-rom_8A9D:
-	.byte $F8, $FF, $F9, $FF, $FA, $FF, $81, $00, $FF
-
-; ----------------
-
 mus_victory_jingle:
-	.byte $00
-	.word rom_8A9D ;rom_8A5E
-	.byte $01
-	.word rom_8A9D ;rom_8A6D
-	.byte $02
-	.word rom_8A9D ;rom_8A7A
-	.byte $03
-	.word rom_8A9D ;rom_8A87
-	.byte $04
-	.word rom_8A9D
-	.byte $FF
+.include "audio/victory_jingle.asm"
 
 ; -----------------------------------------------------------------------------
 
@@ -381,8 +363,8 @@ sfx_countdown:
 
 ; Square 1
 rom_9778:
-	.byte $F5, $04, $F8, $0C, $F9, $FF, $FA, $FF
-	.byte $FB, $FF
+	.byte $F5, $02, $F8, $0C
+	.byte $F9, $FF, $FA, $FF, $FB, $FF
 	.byte $81, $30, $81, $3A, $00, $FF
 
 ; ----------------
