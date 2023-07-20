@@ -2096,7 +2096,7 @@ tbl_fighter_name_ptrs:
 ; -----------------------------------------------------------------------------
 
 ; Byte 0 = lengh, Bytes 1 to (length) = name
-; TODO: Probably safe to use ASCII, otherwise custom encoding
+; TODO custom string encoding
 str_name_rayden:
 	.byte $06, $52, $41, $59, $44, $45, $4E
 str_name_sonya:
@@ -4482,9 +4482,9 @@ tbl_anim_data_ptrs:
 	.byte $FE, $0C	; -2, 12
 	.byte $FE, $0E	; -2, 14
 	.byte $FE, $10	; -2, 16
-	.byte $00, $10	; 0, 16
-	.byte $00, $10	; 0, 16
-	.byte $00, $10	; 0, 16
+	.byte $00, $12	; 0, 18
+	.byte $00, $14	; 0, 20
+	.byte $00, $16	; 0, 22
 
 	; This was unused
 	;.byte $02, $EE, $02, $F0, $02, $F2, $02, $F4
