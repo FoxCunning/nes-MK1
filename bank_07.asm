@@ -102,9 +102,9 @@ rom_8004:
 	.byte $18			; $28 = staggered
 	.word anim_subzero_staggered
 	
-	.byte $08			; $29 = victory pose
+	.byte $08			; $29 = "shame" pose
 	.word rom_8262
-	.byte $08			; $2A = disappointment pose
+	.byte $08			; $2A = victory pose
 	.word rom_8268
 
 	; More hit animations

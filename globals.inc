@@ -132,10 +132,10 @@ zp_7F = $7F     ;
 
 ; Horizontal scroll value used in IRQ routines
 zp_irq_hor_scroll = $81 ;
-zp_82 = $82 ;
-zp_plr1_spr_x_offset = $83  ; How much the player has moved from the starting position
-zp_84 = $84     ;
-zp_plr2_spr_x_offset = $85  ; How much the player has moved from the starting position
+zp_plr1_x_lo = $82 ;
+zp_plr1_x_hi = $83  ; How much the player has moved from the starting position
+zp_plr2_x_lo = $84     ;
+zp_plr2_x_hi = $85  ; How much the player has moved from the starting position
 ; Hitbox coordinates
 zp_plr1_x_pos = $86 ;
 zp_plr2_x_pos = $87 ;

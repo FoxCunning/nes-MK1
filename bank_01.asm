@@ -84,7 +84,7 @@ sub_match_loop:
 	bcc @C177
 
 	jsr sub_rom_CCAC
-	jsr sub_rom_D09F
+	jsr sub_set_irq_x_scroll
 	jsr sub_rom_CA9D
 	
 	;jsr sub_rom_D76D
@@ -2212,8 +2212,8 @@ sub_finish_match_init:
 	sta zp_plr2_cur_anim
 	sta zp_plr1_anim_frame
 	sta zp_plr2_anim_frame
-	sta zp_plr1_spr_x_offset
-	sta zp_plr2_spr_x_offset
+	sta zp_plr1_x_hi
+	sta zp_plr2_x_hi
 	sta zp_plr1_facing_dir
 	sta zp_plr1_damage
 	sta zp_plr2_damage
@@ -2235,10 +2235,11 @@ sub_finish_match_init:
 	sta zp_plr2_facing_dir
 
 	lda #$90
-	sta zp_82
+	sta zp_plr1_x_lo
 
 	lda #$F0
-	sta zp_84
+	sta zp_plr2_x_lo
+	
 	lda zp_sprites_base_y
 	sta zp_plr1_y_pos
 	sta zp_plr2_y_pos
@@ -2350,11 +2351,11 @@ sub_adjust_facing:
 	
 	; This basically only affects the Carry bit
 	sec
-	lda zp_82
-	sbc zp_84
+	lda zp_plr1_x_lo
+	sbc zp_plr2_x_lo
 
-	lda zp_plr1_spr_x_offset
-	sbc zp_plr2_spr_x_offset
+	lda zp_plr1_x_hi
+	sbc zp_plr2_x_hi
 	bmi :+
 		; Change facing if players is on the other side
 		inx
@@ -2385,10 +2386,10 @@ sub_adjust_facing:
 	@D06B_facing_dir:
 	ldx #$00
 	sec
-	lda zp_82
-	sbc zp_84
-	lda zp_plr1_spr_x_offset
-	sbc zp_plr2_spr_x_offset
+	lda zp_plr1_x_lo
+	sbc zp_plr2_x_lo
+	lda zp_plr1_x_hi
+	sbc zp_plr2_x_hi
 	bpl :+
 		inx
 	:
@@ -2430,35 +2431,53 @@ sub_rom_D082:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_D09F:
+sub_set_irq_x_scroll:
 	jsr sub_rom_D07C
-	bcs @D0C4
+	; TODO is the check needed?
+	; The sub pulls from the stack to return to caller when setting carry
+	bcs @D0C4_rts
 
-	clc
-	lda zp_82
-	adc zp_84
-	sta zp_ptr1_lo
-	lda zp_plr1_spr_x_offset
-	adc zp_plr2_spr_x_offset
-	sta zp_ptr1_hi
-	lsr zp_ptr1_hi
-	ror zp_ptr1_lo
-	lda zp_ptr1_lo
-	sec
-	sbc #$80
-	ldx ram_irq_routine_idx
-	cmp rom_D0C5,X
-	bcs @D0C4
+		clc
+		lda zp_plr1_x_lo
+		adc zp_plr2_x_lo
+		sta zp_ptr1_lo
 
-	sta zp_irq_hor_scroll
-	@D0C4:
+		lda zp_plr1_x_hi
+		adc zp_plr2_x_hi
+		sta zp_ptr1_hi
+
+		lsr zp_ptr1_hi
+		ror zp_ptr1_lo
+		lda zp_ptr1_lo
+
+		sec
+		sbc #$80
+		
+		ldx ram_irq_routine_idx
+		cmp @tbl_max_x_scroll,X
+		bcs @D0C4_rts
+
+			sta zp_irq_hor_scroll
+
+	@D0C4_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
 
-rom_D0C5:
-	.byte $68, $68, $68, $68, $68, $68, $68, $68
-	.byte $68, $50, $50, $88
+	@tbl_max_x_scroll:
+	.byte $68	; Goro's Lair stage
+	.byte $68	; The Pit stage
+	.byte $68	; Warrior Shrine stage
+	.byte $68	; Palace Gates stage
+	.byte $68	; Courtyard stage
+	.byte $68	; Throne Room stage
+	; Potentially unused
+	.byte $68	; $06
+	.byte $68	; $07
+	.byte $68	; $08
+	.byte $50	; $09
+	.byte $50	; $0A
+	.byte $88	; $0B
 
 ; -----------------------------------------------------------------------------
 
@@ -3145,13 +3164,13 @@ sub_check_left_border_proximity:
 		cmp #$20
 		bcc sub_skip_bump_check
 
-			lda zp_82,X
+			lda zp_plr1_x_lo,X
 			sec
 			sbc zp_ptr1_lo
-			sta zp_82,X
+			sta zp_plr1_x_lo,X
 			bcs sub_skip_bump_check
 
-				dec zp_plr1_spr_x_offset,X
+				dec zp_plr1_x_hi,X
 ; ----------------
 sub_skip_bump_check:
 	rts
@@ -3162,13 +3181,13 @@ sub_check_right_border_proximity:
 	cmp #$D0
 	bcs sub_skip_bump_check
 
-		lda zp_82,X
+		lda zp_plr1_x_lo,X
 		clc
 		adc zp_ptr1_lo
-		sta zp_82,X
+		sta zp_plr1_x_lo,X
 		bcc sub_skip_bump_check
 
-			inc zp_plr1_spr_x_offset,X
+			inc zp_plr1_x_hi,X
 			rts
 
 ; -----------------------------------------------------------------------------
@@ -3324,13 +3343,13 @@ sub_rom_D784:
 			cmp #$20
 			bcc @D834
 
-			lda zp_82,X
+			lda zp_plr1_x_lo,X
 			sec
 			sbc zp_05
-			sta zp_82,X
+			sta zp_plr1_x_lo,X
 			bcs @D834
 
-			dec zp_plr1_spr_x_offset,X
+			dec zp_plr1_x_hi,X
 			beq @D834
 
 	@D81A:
@@ -3344,13 +3363,13 @@ sub_rom_D784:
 	cmp #$D0
 	bcs @D834
 
-		lda zp_82,X
+		lda zp_plr1_x_lo,X
 		clc
 		adc zp_05
-		sta zp_82,X
+		sta zp_plr1_x_lo,X
 		bcc @D834
 
-			inc zp_plr1_spr_x_offset,X
+			inc zp_plr1_x_hi,X
 
 	@D834:
 	lda zp_plr1_y_pos,Y
@@ -3422,7 +3441,7 @@ sub_rom_D784:
 	:
 	sta zp_1B
 	
-	lda zp_82,X
+	lda zp_plr1_x_lo,X
 	sec
 	sbc zp_irq_hor_scroll
 	sta zp_plr1_x_pos,Y
