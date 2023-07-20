@@ -349,7 +349,10 @@ sub_rom_C2A8:
 
 	@C327:
 	ldx zp_plr1_fgtr_idx_clean,Y
-	lda rom_C3BD,X
+	lda zp_sprites_base_y
+	sec
+	sbc rom_C3BD,X
+	;lda rom_C3BD,X
 	@C32C:
 	sta zp_06
 	lda tbl_player_oam_offsets,Y
@@ -362,12 +365,13 @@ sub_rom_C2A8:
 	asl A
 	tay
 	@C33D:
-	jsr sub_rom_C36B
-	ldy zp_ptr2_lo
-	tya
-	iny
-	and #$03
-	cmp #$03
+		; Update all four sprites for the ranged attack
+		jsr sub_rom_C36B
+		ldy zp_ptr2_lo
+		tya
+		iny
+		and #$03
+		cmp #$03
 	bne @C33D
 
 	jsr sub_rom_C3F9
@@ -385,23 +389,37 @@ sub_rom_C2A8:
 
 ; ----------------
 
+	; These are added to ranged attack sprite's X position to make it move
+	; (or subtracted, depending on direction)
 	@rom_C35F:
-	.byte $20, $18, $18, $20, $00, $20, $20, $28
-	.byte $28, $20, $00, $18
+	.byte $20	; Rayden
+	.byte $18	; Sonya
+	.byte $18	; Sub-Zero
+	.byte $20	; Scorpion
+	.byte $00	; Kano
+	.byte $20	; Johnny Cage
+	.byte $20	; Liu Kang
+	.byte $28	; Goro
+	.byte $28	; Shang-Tsung
+	; Probably unused
+	.byte $20, $00, $18
 
 ; -----------------------------------------------------------------------------
 
+; Parameters:
+; X = offset of ranged attack sprites in OAM data
+; Y = fighter index * 4 (for indexing)
 sub_rom_C36B:
 	sty zp_ptr2_lo
 	lda rom_C3C9,Y
 	bmi @C397
 
 		ora zp_ptr1_lo
-		sta ram_0371,X
+		sta ram_0371,X	; Sprite tile index
 		lda zp_05
-		sta ram_0373,X
+		sta ram_0373,X	; X position
 		lda zp_06
-		sta ram_0370,X
+		sta ram_0370,X	; Y position
 		ldy zp_7C
 		lda zp_plr1_facing_dir,Y
 		tay
@@ -411,7 +429,7 @@ sub_rom_C36B:
 		beq :+
 			ora #$40
 		:
-		sta ram_0372,X
+		sta ram_0372,X	; Attributes
 		dex
 		dex
 		dex
@@ -448,19 +466,36 @@ sub_rom_C36B:
 
 ; -----------------------------------------------------------------------------
 
+; Y coordinate for ranged attack sprite
 rom_C3BD:
-	.byte $9C, $98, $9C, $9C, $9C, $9C, $9C, $9C
-	.byte $A1, $9C, $9C, $A6
+	.byte $DA-$9C	; Rayden
+	.byte $DA-$98	; Sonya
+	.byte $DA-$9C	; Sub-Zero
+	.byte $DA-$9C	; Scorpion
+	.byte $DA-$9C	; Kano
+	.byte $DA-$9C	; Johnny Cage
+	.byte $DA-$9C	; Liu Kang
+	.byte $DA-$9C	; Goro
+	.byte $DA-$A1	; Shang-Tsung
+	; Likely unused
+	.byte $9C, $9C, $A6
 
 ; -----------------------------------------------------------------------------
 
+; Tile indices for ranged attacks - up to 4 sprites per attack
 rom_C3C9:
-	.byte $7A, $7B, $72, $73
-	.byte $77, $78, $79, $7A, $6F, $70, $71, $72
-	.byte $1F, $20, $FF, $FF, $74, $75, $7A, $FF
-	.byte $77, $78, $FF, $FF, $67, $68, $FF, $FF
-	.byte $75, $76, $FF, $FF, $3E, $3F, $FF, $FF
-	.byte $7D, $FF, $7E, $FF, $74, $76, $FF, $78
+	.byte $7A, $7B, $72, $73	; Rayden
+	.byte $77, $78, $79, $7A	; Sonya
+	.byte $6F, $70, $71, $72	; Sub-Zero
+	.byte $1F, $20, $FF, $FF	; Scorpion
+	.byte $74, $75, $7A, $FF	; Kano
+	.byte $77, $78, $FF, $FF	; Johnny Cage
+	.byte $67, $68, $FF, $FF	; Liu Kang
+	.byte $75, $76, $FF, $FF	; Goro
+	.byte $3E, $3F, $FF, $FF	; Shang-Tsung
+	; Probably unused
+	.byte $7D, $FF, $7E, $FF
+	.byte $74, $76, $FF, $78
 	.byte $03, $04, $05, $06
 
 ; -----------------------------------------------------------------------------
@@ -643,7 +678,7 @@ sub_rom_C572:
 
 ; Parameters:
 ; Y = index of player launching the attack (0 for player one, 1 for player two)
-; NOTE: Does NOT return to called. It pulls from the stack to go back to
+; NOTE: Does NOT return to caller. It pulls from the stack to go back to
 ; 		caller's caller.
 sub_ranged_attack:
 	tya
