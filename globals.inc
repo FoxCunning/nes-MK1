@@ -152,8 +152,8 @@ zp_plr2_cur_anim = $8F  ;
 zp_plr1_anim_frame = $90     ;
 zp_plr2_anim_frame = $91     ;
 
-zp_92 = $92     ;
-zp_94 = $94     ;
+zp_short_counter_target = $92     ;
+zp_short_counter = $94     ;
 zp_chr_bank_0 = $96     ;
 zp_chr_bank_1 = $97     ;
 zp_99 = $99     ;
@@ -286,7 +286,7 @@ ram_040B = $040B    ;
 ram_040C = $040C    ;
 ram_plr1_rounds_won = $040D    ;
 ram_plr2_rounds_won = $040E    ;
-ram_040F = $040F    ;
+ram_game_mode_initialised = $040F    ;
 ; Index for tables of pointers
 ; Used choose an IRQ handling routine and others
 ram_irq_routine_idx = $0410 ;
@@ -324,8 +324,8 @@ ram_irq_counter_1 = $0440    ;
 ; This buffer will be copied to the PPU during vblank
 ram_ppu_data_buffer = $0600 ; Size=63
 ; The last two bytes are also used to store the tile indices for the match timer
-ram_063E = $063E    ;
-ram_063F = $063F    ; 
+ram_match_time_tens = $063E     ; Tile ID for tens
+ram_match_timer_units = $063F   ; Tile ID for units
 
 ram_0640 = $0640    ;
 ram_066D = $066D    ;

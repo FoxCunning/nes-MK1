@@ -218,7 +218,7 @@ sub_init_game_mode:
 	sta zp_ppu_mask_backup
 
 	lda #$01
-	sta ram_040F
+	sta ram_game_mode_initialised
 
 	; Check if the two players are using the same fighter
 	; Then either add or subtract $0C to the index in order to load

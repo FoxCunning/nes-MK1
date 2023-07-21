@@ -1410,9 +1410,9 @@ sub_update_health_bars:
 	bne @D2EA
 
 	@D2E1:
-	ldx ram_063E
+	ldx ram_match_time_tens
 	stx PpuData_2007
-	ldx ram_063F
+	ldx ram_match_timer_units
 	@D2EA:
 	stx PpuData_2007
 	@D2ED:
@@ -1503,7 +1503,7 @@ sub_rom_D359:
 			lda #$32
 			sta ram_req_song
 			lda #$10
-			sta zp_92
+			sta zp_short_counter_target
 			sta ram_0438
 			bne @D38B_rts
 

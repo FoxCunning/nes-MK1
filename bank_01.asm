@@ -72,28 +72,28 @@ sub_match_loop:
 	;jsr sub_rom_03_A000
 	jsr sub_call_gfx_routines
 
-	lda zp_94
-	cmp zp_92
-	bcs @C15E
-
-		; Determine winner
-		jsr sub_rom_CD19 ;sub_rom_CCA8
-	@C15E:
+	lda zp_short_counter
+	cmp zp_short_counter_target	; Typically every 2 frames
+	bcs :+
+		; If needed, show victory/shame animation
+		; Update match time display
+		jsr sub_upd_anim_and_timer ;sub_rom_CCA8
+	:
 	inc zp_23
-	jsr sub_rom_CC9A
-	bcc @C177
-
-	jsr sub_rom_CCAC
-	jsr sub_set_irq_x_scroll
-	jsr sub_rom_CA9D
-	
-	;jsr sub_rom_D76D
-	jsr sub_load_fighter_sprite_data
-	jsr sub_rom_D20A
-	
-	jsr sub_adjust_facing
-	jsr sub_rom_C9EC
-	@C177:
+	jsr sub_rom_CC9A	; TODO Inline this
+	bcc :+
+		; Also normally every 2 frames
+		jsr sub_rom_CCAC
+		jsr sub_set_irq_x_scroll
+		jsr sub_rom_CA9D
+		
+		;jsr sub_rom_D76D
+		jsr sub_load_fighter_sprite_data
+		jsr sub_rom_D20A
+		
+		jsr sub_adjust_facing
+		jsr sub_rom_C9EC
+	:
 	jmp sub_rom_C29E ;jsr sub_rom_C29E
 	;rts
 
@@ -120,7 +120,7 @@ sub_match_end:
 ; ----------------
 	@C192:
 	dec zp_match_time
-	jsr sub_rom_CD34	; Score calculation based on remaining time
+	jsr sub_update_match_time	; Score calculation based on remaining time
 
 	@C197:
 	lda zp_16bit_hi	; Score left to add, high byte
@@ -142,8 +142,8 @@ sub_match_end:
 		;lda #$09	; Pulse bleep (score counter)
 		;sta ram_req_sfx
 		
-	; Determine winner based on damagetaken
-	@C1AF:
+	; Determine winner based on damage taken
+	;@C1AF:
 	ldy #$00
 	ldx #$00
 	lda zp_plr1_damage
@@ -152,7 +152,7 @@ sub_match_end:
 
 		beq @victory_end	; Branch if same health
 
-			lda ram_040F
+			lda ram_game_mode_initialised
 
 			beq @victory_end
 
@@ -162,6 +162,7 @@ sub_match_end:
 	sty zp_7C	; Index of winning player
 	stx zp_7B
 	
+	inc zp_counter_param
 	lda zp_counter_param
 	beq :+
 		jsr sub_announce_winner_name
@@ -196,14 +197,22 @@ sub_match_end:
 	rts
 ; ----------------
 	@victory_end:
-	inc zp_game_substate
-	rts
+	lda zp_counter_param
+	bne :+
+		; Wait for the announcer, if needed
+		inc zp_game_substate
+		rts
+	:
+	inc zp_counter_param
+	lda zp_counter_param
+	jmp sub_announce_winner_name
+	;rts
 
 ; -----------------------------------------------------------------------------
 
 sub_announce_winner_name:
-	inc zp_counter_param
-	lda zp_counter_param
+	;inc zp_counter_param
+	;lda zp_counter_param
 	cmp #$14
 	bne @wait_for_name
 		
@@ -219,7 +228,7 @@ sub_announce_winner_name:
 			rts
 
 	@wait_for_name:
-	cmp #$54
+	cmp #$50
 	bne @winner_name_rts
 
 		; Time to say "wins"
@@ -798,7 +807,7 @@ sub_rom_C69C:
 	ldx #$00
 	stx zp_7B
 	jsr sub_rom_C6BB
-	lda ram_040F
+	lda ram_game_mode_initialised
 	beq sub_rom_C6BA
 	inc zp_7C
 	ldy zp_7C
@@ -1313,7 +1322,7 @@ sub_rom_C9F2:
 	cmp #$05
 	bcc @CA18
 
-	lda #$01	; The match end state will use this to sync DPCM sample playback
+	lda #$00	; The match end state will use this to sync DPCM sample playback
 	sta zp_counter_param
 
 	lda #$05	; Match end state
@@ -1588,7 +1597,7 @@ sub_rom_CB0C:
 	bcc @CB7E_rts
 
 		lda #$02
-		sta zp_92
+		sta zp_short_counter_target
 		lda #$26	; Fall on back
 		sta zp_plr1_cur_anim,Y
 		lda #$00
@@ -1839,16 +1848,15 @@ sub_rom_CC82:
 ; -----------------------------------------------------------------------------
 
 sub_rom_CC9A:
-	lda zp_94
-	cmp zp_92
-	bcc @CCA5
-
-	lda #$00
-	sta zp_94
-	rts
+	lda zp_short_counter
+	cmp zp_short_counter_target
+	bcc :+
+		lda #$00
+		sta zp_short_counter
+		rts
 ; ----------------
-	@CCA5:
-	inc zp_94
+	:
+	inc zp_short_counter
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1862,7 +1870,7 @@ sub_rom_CC9A:
 
 sub_rom_CCAC:
 	lda zp_player_hit_counter
-	beq @CCC2
+	beq @CCC2_rts
 
 	cmp #$01
 	bcc @CCC0
@@ -1876,42 +1884,51 @@ sub_rom_CCAC:
 ; ----------------
 	@CCC0:
 	inc zp_player_hit_counter
-	@CCC2:
+	@CCC2_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_CD19:
-	jsr sub_rom_CD81
+sub_upd_anim_and_timer:
+	jsr sub_match_end_animations
+
+	; Check if one the players has zero health (i.e. max damage)
 	lda #$58
 	cmp zp_plr1_damage
-	beq sub_rom_CD34
+	beq sub_update_match_time
 	cmp zp_plr2_damage
-	beq sub_rom_CD34
+	beq sub_update_match_time
+
+	; Increase round number?
 	inc zp_A2
 	lda zp_A2
 	cmp #$2D
-	bcc sub_rom_CD34
+	bcc sub_update_match_time
+
 	lda #$00
 	sta zp_A2
 	dec zp_match_time
 ; ----------------
-sub_rom_CD34:
+sub_update_match_time:
 	lda zp_match_time
 	sta zp_07
+
 	lda #$00
 	sta zp_08
 	sta zp_09
 	sta zp_0D
+
 	jsr sub_rom_D6C7
+
 	lda ram_066E
 	clc
 	adc #$B0
-	sta ram_063E
+	sta ram_match_time_tens
 	lda ram_066D
 	clc
 	adc #$B0
-	sta ram_063F
+	sta ram_match_timer_units
+
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1944,61 +1961,67 @@ sub_rom_CD56:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_CD81:
+; Returns to caller's caller (pulling from the stack) if this was already
+; executed this round, or if a player is airborne
+; Does nothing if the match ended because the time ran out
+; Otherwise, change players animations to victory/shame poses as needed
+sub_match_end_animations:
 	lda ram_0411
-	bne @CDD2
+	bne @CDD2_rts_back_2
 
 	lda zp_match_time
-	bne @CDD4
+	bne @CDD4_rts
 
-	lda zp_sprites_base_y
-	cmp zp_plr1_y_pos
-	bne @CDD2
+		lda zp_sprites_base_y
+		cmp zp_plr1_y_pos
+		bne @CDD2_rts_back_2
 
-	cmp zp_plr2_y_pos
-	bne @CDD2
+		cmp zp_plr2_y_pos
+		bne @CDD2_rts_back_2
 
-	lda zp_plr1_damage
-	cmp zp_plr2_damage
-	bcc @CDA5
+		lda zp_plr1_damage
+		cmp zp_plr2_damage
+		bcc @CDA5_victory
 
-	bne @CDB7
+		bne @CDB7_shame
 
-	lda #$29
-	sta zp_plr1_cur_anim
-	sta zp_plr2_cur_anim
-	jmp @CDC7
+		lda #$29
+		sta zp_plr1_cur_anim
+		sta zp_plr2_cur_anim
+		jmp @CDC7_frame_reset
 
-	@CDA5:
-	ldx zp_plr1_fgtr_idx_clean
-	lda zp_sprites_base_y
-	sta zp_plr1_y_pos
-	ldx #$2A
-	stx zp_plr1_cur_anim
-	dex
-	stx zp_plr2_cur_anim
-	inc ram_plr1_rounds_won
-	bne @CDC7
+		@CDA5_victory:
+		ldx zp_plr1_fgtr_idx_clean
+		lda zp_sprites_base_y
+		sta zp_plr1_y_pos
+		ldx #$2A
+		stx zp_plr1_cur_anim
+		dex
+		stx zp_plr2_cur_anim
+		inc ram_plr1_rounds_won
+		bne @CDC7_frame_reset
 
-	@CDB7:
-	ldx zp_plr2_fgtr_idx_clean
-	lda zp_sprites_base_y
-	sta zp_plr2_y_pos
-	ldx #$29
-	stx zp_plr1_cur_anim
-	inx
-	stx zp_plr2_cur_anim
-	inc ram_plr2_rounds_won
-	@CDC7:
-	lda #$00
-	sta zp_plr1_anim_frame
-	sta zp_plr2_anim_frame
-	lda #$01
-	sta ram_0411
-	@CDD2:
+			@CDB7_shame:
+			ldx zp_plr2_fgtr_idx_clean
+			lda zp_sprites_base_y
+			sta zp_plr2_y_pos
+			ldx #$29
+			stx zp_plr1_cur_anim
+			inx
+			stx zp_plr2_cur_anim
+			inc ram_plr2_rounds_won
+
+		@CDC7_frame_reset:
+		lda #$00
+		sta zp_plr1_anim_frame
+		sta zp_plr2_anim_frame
+		lda #$01
+		sta ram_0411
+
+	@CDD2_rts_back_2:
 	pla
 	pla
-	@CDD4:
+	@CDD4_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -2200,7 +2223,7 @@ sub_finish_match_init:
 	sta ram_0640+$10
 
 	lda #$02
-	sta zp_92
+	sta zp_short_counter_target
 	lda #$01
 	sta zp_48
 
@@ -3085,24 +3108,24 @@ sub_clear_oam_data:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_D6AE:
+; Returns:
+; zp_ptr1_lo = result
+sub_divide:
 	lda #$00
 	ldx #$18
 
-	@D6B2:
-	asl zp_07
-	rol zp_08
-	rol zp_09
-	rol A
-	cmp zp_16
-	bcc @D6C1
-
-	sbc zp_16
-	inc zp_07
-
-	@D6C1:
-	dex
-	bne @D6B2
+	@D6B2_loop:
+		asl zp_07
+		rol zp_08
+		rol zp_09
+		rol A
+		cmp zp_16
+		bcc :+
+			sbc zp_16
+			inc zp_07
+		:
+		dex
+	bne @D6B2_loop
 
 	sta zp_ptr1_lo
 	rts
@@ -3114,16 +3137,17 @@ sub_rom_D6C7:
 	sty zp_17
 	lda #$0A
 	sta zp_16
-	@D6CF:
-	jsr sub_rom_D6AE
 
-	lda zp_ptr1_lo
-	clc
-	adc zp_0D
-	sta ram_066D,Y
-	iny
-	cpy #$05
-	bcc @D6CF
+	:
+		jsr sub_divide
+
+		lda zp_ptr1_lo
+		clc
+		adc zp_0D
+		sta ram_066D,Y
+		iny
+		cpy #$05
+	bcc :-
 
 	rts
 
