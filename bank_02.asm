@@ -256,16 +256,21 @@ sfx_dmcbleep:
 ; -----------------------------------------------------------------------------
 
 ; Noise
-rom_96D2:
-	.byte $F5, $03, $F8, $00, $FB, $FF
-	.byte $84, $0D, $FF
+;rom_96D2:
+;	.byte $F5, $03, $F8, $00, $FB, $FF
+;	.byte $84, $0D, $FF
 
 ; ----------------
 
 sfx_projectile:
-	.byte $83
-	.word rom_96D2
+	;.byte $83
+	;.word rom_96D2
+	.byte $84
+	.word @projectile_ch4
 	.byte $FF
+
+	@projectile_ch4:
+	.byte $F5, $01, $10, $FF
 	
 ; -----------------------------------------------------------------------------
 

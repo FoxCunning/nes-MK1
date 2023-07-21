@@ -384,6 +384,12 @@ dmc_wins:
 dmc_comehere:
 .incbin "audio/comehere_sp6up.dmc"
 
+; ----------------
+.export dmc_rangedatk
+
+dmc_rangedatk:
+.incbin "audio/ranged_sp06up.dmc"
+
 ; -----------------------------------------------------------------------------
 
 .segment "VECTORS"

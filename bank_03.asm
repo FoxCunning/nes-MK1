@@ -3574,6 +3574,7 @@ tbl_dpcm_ptr:
 	.byte >(dmc_hit<<2)			; $0D SFX hit
 	.byte >(dmc_hit<<2)			; $0E SFX bounce
 	.byte >(dmc_hit<<2)+1		; $0F SFX land
+	.byte >(dmc_rangedatk<<2)	; $10 SFX ranged attack
 
 ; Values for DPCM length register
 tbl_dpcm_len:
@@ -3593,6 +3594,7 @@ tbl_dpcm_len:
 	.byte $0F	; $0D SFX hit
 	.byte $0A	; $0E SFX bounce
 	.byte $04	; $0F SFX land
+	.byte $10	; $10 SFX ranged attack
 
 ; Values for DPCM frequency register
 tbl_dpcm_freq:
@@ -3612,6 +3614,7 @@ tbl_dpcm_freq:
 	.byte $08	; $0D SFX hit
 	.byte $08	; $0E SFX bounce
 	.byte $08	; $0F SFX land
+	.byte $01	; $10 SFX ranged attack
 
 ; -----------------------------------------------------------------------------
 
