@@ -119,8 +119,8 @@ rom_8004:
 	.word rom_828C
 	.byte $19
 	.word rom_8277 ;rom_8298
-	.byte $1F
-	.word rom_82A7
+	.byte $18
+	.word anim_special_hit ;rom_82A7
 	.byte $04
 	.word rom_80F3
 
@@ -147,6 +147,11 @@ rom_80E3:
 rom_80F3:
 	.byte $0A, $0A, $0A, $0A, $0A, $0A, $0A, $0A
 	.byte $0A, $0A, $0A, $0A, $0A, $0A, $0A, $0A
+	
+; Also use the next two, for a total of 30 frames
+anim_special_hit:
+	.byte $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
+	.byte $0E, $0E, $0E, $0E, $0E, $0E
 rom_8103:
 	.byte $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
 rom_810B:

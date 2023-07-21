@@ -769,7 +769,7 @@ sub_ranged_attack:
 	lda #$2B	; Crouched parry knockback
 
 	@player_hit_anim:
-	sta zp_plr1_cur_anim,X	; Oppoent
+	sta zp_plr1_cur_anim,X	; Opponent
 	lda #$00
 	sta zp_plr1_anim_frame,X
 	
@@ -1882,8 +1882,6 @@ sub_rom_CC9A:
 
 ; -----------------------------------------------------------------------------
 
-; Parameters:
-; X = attacker's index (0/1)
 sub_request_hit_sound:
 	lda zp_player_hit_counter
 	beq @CCC2_rts
@@ -1891,7 +1889,25 @@ sub_request_hit_sound:
 	cmp #$01
 	bcc @CCC0
 
+		ldx #$01	; X will be the index of the target
+		ldy #$00	; Y will be the index of the attacker
+		@special_hit_check:
+		lda zp_plr1_cur_anim,X
+		cmp #$33	; Special hit animation
+		beq @ranged_hit
+		iny
+		dex
+		bpl @special_hit_check
+		bmi @regular_hit
+
+			@ranged_hit:
+			ldx zp_plr1_fgtr_idx_clean,Y
+			lda @tbl_special_hit_sfx,X
+			bne @request_hit_sfx
+
+		@regular_hit:
 		lda #$02	; Hit SFX
+		@request_hit_sfx:
 		sta ram_req_sfx
 
 		lda #$00
@@ -1903,6 +1919,18 @@ sub_request_hit_sound:
 	inc zp_player_hit_counter
 	@CCC2_rts:
 	rts
+
+; ----------------
+	@tbl_special_hit_sfx:
+	.byte $02	; Rayden
+	.byte $02	; Sonya
+	.byte $02	; Sub-Zero
+	.byte $1B	; Scorpion
+	.byte $02	; Kano
+	.byte $02	; Johnny Cage
+	.byte $02	; Liu Kang
+	.byte $02	; Goro
+	.byte $02	; Shang-Tsung
 
 ; -----------------------------------------------------------------------------
 
@@ -2040,154 +2068,6 @@ sub_match_end_animations:
 	pla
 	@CDD4_rts:
 	rts
-
-; -----------------------------------------------------------------------------
-.export sub_show_fighter_names
-
-sub_show_fighter_names:
-	lda zp_plr1_fgtr_idx_clean
-	asl A
-	tax
-	lda tbl_fighter_name_ptrs,X
-	sta zp_ptr3_lo
-	lda tbl_fighter_name_ptrs+1,X
-	sta zp_ptr3_hi
-	lda #$01
-	sta zp_nmi_ppu_rows
-	lda #$1C
-	sta zp_nmi_ppu_cols
-	lda #$20
-	sta zp_nmi_ppu_ptr_hi
-	ldx #$84
-	stx zp_nmi_ppu_ptr_lo
-	ldx #$00
-	lda #$FF
-	@CDF7:
-	sta ram_ppu_data_buffer,X
-	inx
-	cpx #$38
-	bcc @CDF7
-
-	ldx #$00
-	ldy #$00
-	lda (zp_ptr3_lo),Y
-	sta zp_07
-	iny
-	@CE08:
-	lda (zp_ptr3_lo),Y
-	cmp #$20
-	beq @CE14
-
-	clc
-	adc #$80
-	sta ram_ppu_data_buffer,X
-	@CE14:
-	iny
-	inx
-	cpx zp_07
-	bcc @CE08
-
-	lda zp_plr2_fgtr_idx_clean
-	asl A
-	tax
-	lda tbl_fighter_name_ptrs,X
-	sta zp_ptr3_lo
-	lda tbl_fighter_name_ptrs+1,X
-	sta zp_ptr3_hi
-	ldy #$00
-	ldx #$17
-	lda (zp_ptr3_lo),Y
-	tay
-	@CE2F:
-	lda (zp_ptr3_lo),Y
-	cmp #$20
-	beq @CE3B
-
-	clc
-	adc #$80
-	sta ram_ppu_data_buffer,X
-	@CE3B:
-	dex
-	dey
-	bne @CE2F
-
-	rts
-
-; -----------------------------------------------------------------------------
-
-; Pointers to name strings
-tbl_fighter_name_ptrs:
-	; Player 1
-	.word str_name_rayden
-	.word str_name_sonya
-	.word str_name_subzero
-	.word str_name_scorpion
-	.word str_name_kano
-	.word str_name_cage
-	.word str_name_liukang
-	.word str_name_goro
-	.word str_name_shangtsung
-	.word str_name_empty_7spc0
-	.word str_name_empty_7scp1
-	.word str_name_empty_3spc
-	; Player 2
-	.word str_name_rayden
-	.word str_name_sonya
-	.word str_name_subzero
-	.word str_name_scorpion
-	.word str_name_kano
-	.word str_name_cage
-	.word str_name_liukang
-	.word str_name_goro
-	.word str_name_shangtsung
-	.word str_name_empty_7spc0
-	.word str_name_empty_7scp1
-	.word str_name_empty_3spc
-
-; -----------------------------------------------------------------------------
-
-; Byte 0 = lengh, Bytes 1 to (length) = name
-; TODO custom string encoding
-str_name_rayden:
-	.byte $06, $52, $41, $59, $44, $45, $4E
-str_name_sonya:
-	.byte $05, $53, $4F, $4E, $59, $41
-str_name_subzero:
-	.byte $08, $53, $55, $42, $5C, $5A, $45, $52, $4F
-str_name_scorpion:
-	.byte $08, $53, $43, $4F, $52, $50, $49, $4F, $4E
-str_name_kano:
-	.byte $04, $4B, $41, $4E, $4F
-str_name_cage:
-	.byte $04, $43, $41, $47, $45
-str_name_liukang:
-	.byte $08, $4C, $49, $55, $5C, $4B, $41, $4E, $47
-str_name_goro:
-	.byte $04, $47, $4F, $52, $4F
-str_name_shangtsung:
-	.byte $0B, $53, $48, $41, $4E, $47, $5C, $54, $53, $55, $4E, $47
-str_name_empty_7spc0:
-	;.byte $07, $20, $20, $20, $20, $20, $20, $20
-str_name_empty_7scp1:
-	;.byte $07, $20, $20, $20, $20, $20, $20, $20
-str_name_empty_3spc:
-	;.byte $03, $20, $20, $20
-_empty:
-	.byte $00
-
-; Nothing seems to point to these "empty" names
-	;.byte $03, $20, $20, $20
-	;.byte $05, $20, $20, $20, $20, $20
-	;.byte $03, $20, $20, $20
-	;.byte $07, $20, $20, $20, $20, $20, $20, $4B
-	;.byte $03, $20, $41, $20
-	;.byte $06, $41, $20, $20, $20, $20, $4C
-	;.byte $06, $20, $20, $20, $20, $20, $20
-	;.byte $06, $20, $20, $20, $20, $20, $20
-	;.byte $04, $42, $20, $20, $20
-	;.byte $06, $20, $20, $20, $20, $20, $4F
-	;.byte $07, $42, $20, $20, $20, $20, $20, $20
-	;.byte $04, $20, $20, $20, $47
 
 ; -----------------------------------------------------------------------------
 
@@ -3364,6 +3244,7 @@ sub_inner_move_sprites:
 		; Animation will be set to zero when this is >0
 		inc zp_18
 	:
+	jsr sub_scorpion_spear_pull
 	ldx zp_7B	; 2-byte data / pointer offset for current player
 	ldy zp_7C	; 1-byte data offset for current player
 	lda zp_05	; X movement for current animation
@@ -3550,11 +3431,50 @@ tbl_fighter_sprite_banks:
 	.byte $0B	; Liu Kang
 	.byte $0C	; Goro
 	.byte $0D	; Shang-Tsung
-	.byte $05, $05, $05	; Potentially unused
+	;.byte $05, $05, $05	; Potentially unused
 ; This portion is also potentially unused
 ;rom_D8E4:
 ;	.byte $00, $01, $00, $02, $00, $01, $00, $01
 ;	.byte $02, $00, $01, $00
+
+; -----------------------------------------------------------------------------
+
+; If the player has been hit by Scorpion's spear, move it towards the attacker
+; Stop the animation when they are close enough
+sub_scorpion_spear_pull:
+	lax zp_7C	; Target's index (0/1)
+	eor #$01
+	tay			; Attacker's index
+
+	; Check target's animation
+
+	lda zp_plr1_cur_anim,X
+	cmp #$33	; Special ranged hit animation
+	bne @spear_pull_rts
+
+	; Check if attacker is Scorpion
+
+	lda zp_plr1_fgtr_idx_clean,Y
+	cmp #$03	; Scorpion
+	bne @spear_pull_rts
+
+	; Horizontal movement
+	lda #$04
+	sta zp_05
+
+	; Check distance
+	lda zp_players_x_distance
+	cmp #$1E
+	bcs @spear_pull_rts
+
+		inc zp_18	; Force stop animation (will transition to stunned)
+
+	;lda #$00	; Scorpion -> idle
+	;sta zp_plr1_cur_anim,Y
+	;sta zp_plr1_anim_frame,Y
+
+	@spear_pull_rts:
+	rts
 
 ; -----------------------------------------------------------------------------
 
@@ -4480,7 +4400,7 @@ tbl_anim_data_ptrs:
 
 ; ----------------
 
-@rom_DD19:
+	@rom_DD19:
 	.byte $00, $00, $00, $00, $0A, $F8, $F6, $00
 	.byte $00, $00, $F6, $08, $00, $00, $F6, $00
 	.byte $00, $00, $F6, $F8, $F8, $FA, $FA, $FC
@@ -4490,20 +4410,20 @@ tbl_anim_data_ptrs:
 
 ; ----------------
 
-@rom_DD46:
+	@rom_DD46:
 	.byte $00, $EC, $00, $F1, $00, $F6, $00, $0A
 	.byte $00, $0F, $00, $14, $80
 
 ; ----------------
 
-@rom_DD53:
+	@rom_DD53:
 	.byte $00, $F4, $00, $F6, $00, $F8, $00, $FA
 	.byte $00, $FC, $00, $04, $00, $06, $00, $08
 	.byte $00, $0A, $00, $0C, $80
 
 ; ----------------
 
-@rom_DD68:
+	@rom_DD68:
 	.byte $00, $EE, $00, $F0, $FF, $F2, $FE, $F4
 	.byte $FD, $F6, $FC, $F8, $00, $00, $00, $00
 	.byte $00, $00, $00, $00, $F8, $08, $F9, $0A
@@ -4512,15 +4432,15 @@ tbl_anim_data_ptrs:
 
 ; ----------------
 
-@rom_DD89:
-	.byte $00, $00, $00, $00, $00, $EA, $0A, $EC
-	.byte $19, $F8, $F0, $FA, $F1, $FC, $F2, $FE
-	.byte $F3, $02, $F4, $04, $F5, $06, $F6, $08
-	.byte $F7, $0A, $F8, $0E, $F9, $12, $80
+;@rom_DD89:
+;	.byte $00, $00, $00, $00, $00, $EA, $0A, $EC
+;	.byte $19, $F8, $F0, $FA, $F1, $FC, $F2, $FE
+;	.byte $F3, $02, $F4, $04, $F5, $06, $F6, $08
+;	.byte $F7, $0A, $F8, $0E, $F9, $12, $80
 
 ; ----------------
 
-@rom_DDA8:
+	@rom_DDA8:
 	.byte $00, $00, $00, $00, $2A, $00, $00, $F0
 	.byte $00, $00, $00, $00, $00, $F4, $00, $00
 	.byte $2A, $00, $00, $00, $00, $14, $00, $00
@@ -4528,12 +4448,12 @@ tbl_anim_data_ptrs:
 
 ; ----------------
 
-@rom_DDC1:
+	@rom_DDC1:
 	.byte $00, $00, $80
 
 ; ----------------
 
-@rom_DDC2:
+	@rom_DDC2:
 	.byte $00, $F6, $00, $F8, $00, $FA, $00, $FC
 	.byte $06, $00, $06, $00, $06, $00, $06, $00
 	.byte $06, $00, $06, $00, $06, $00, $06, $00
@@ -4546,7 +4466,7 @@ tbl_anim_data_ptrs:
 
 ; ----------------
 
-@rom_DE03:
+	@rom_DE03:
 	.byte $00, $00, $80
 
 ; ----------------
@@ -4556,13 +4476,13 @@ tbl_anim_data_ptrs:
 
 ; ----------------
 
-@rom_DE05:
+	@rom_DE05:
 	.byte $00, $00, $00, $00, $14, $00, $0F, $00
 	.byte $0A, $00, $05, $00, $80
 
 ; ----------------
 
-@rom_DE12:
+	@rom_DE12:
 	.byte $00, $EC, $02, $F6, $04, $F6, $06, $00
 	.byte $08, $00, $14, $00, $14, $00, $14, $00
 	.byte $14, $00, $08, $00, $06, $00, $04, $0A
@@ -4570,7 +4490,7 @@ tbl_anim_data_ptrs:
 
 ; ----------------
 
-@rom_DE2F:
+	@rom_DE2F:
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $14, $00, $0F, $00, $0A, $00, $05, $00
@@ -4578,7 +4498,7 @@ tbl_anim_data_ptrs:
 
 ; ----------------
 
-@rom_DE48:
+	@rom_DE48:
 	.byte $01, $00, $02, $00, $03, $00, $04, $00
 	.byte $05, $00, $06, $00, $07, $00, $08, $00
 	.byte $08, $00, $08, $00, $08, $00, $08, $00
@@ -4587,7 +4507,7 @@ tbl_anim_data_ptrs:
 
 ; ----------------
 
-@knocked_up_21_frames:
+	@knocked_up_21_frames:
 	.byte $00, $F0	; -0, -16
 	.byte $FF, $F0	; -1, -16
 	.byte $FE, $F0	; -2, -16
@@ -4619,14 +4539,14 @@ tbl_anim_data_ptrs:
 
 ; ----------------
 
-@rom_DE8E:
+	@rom_DE8E:
 	.byte $01, $00, $01, $00, $01, $00, $01, $00
 	.byte $FF, $00, $FF, $00, $FF, $00, $FF, $00
 	.byte $80
 
 ; ----------------
 
-@thrown:
+	@thrown:
 	.byte $00, $00
 	.byte $00, $00
 	.byte $10, $00
@@ -4643,7 +4563,7 @@ tbl_anim_data_ptrs:
 
 ; ----------------
 
-@throw_move:
+	@throw_move:
 	.byte $F0, $00
 	.byte $00, $00
 	.byte $00, $00
@@ -4660,7 +4580,7 @@ tbl_anim_data_ptrs:
 
 ; ----------------
 
-@rom_DECD:
+	@rom_DECD:
 	.byte $00, $00, $00, $00, $06, $00, $06, $00
 	.byte $06, $00, $06, $00, $06, $00, $06, $00
 	.byte $06, $00, $06, $00, $06, $00, $06, $00
@@ -4669,7 +4589,7 @@ tbl_anim_data_ptrs:
 
 ; ----------------
 
-@rom_DEEE:
+	@rom_DEEE:
 	.byte $00, $00, $00, $00, $06, $FC, $0C, $00
 	.byte $0C, $00, $0C, $00, $08, $00, $08, $00
 	.byte $08, $00, $06, $00, $06, $00, $06, $00

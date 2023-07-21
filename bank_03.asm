@@ -71,6 +71,7 @@ sub_rom_A00C:
 	iny
 	lda (zp_ptr4_lo),Y
 	sta zp_ptr3_hi
+
 	ldy #$00
 	lda (zp_ptr3_lo),Y
 	sta zp_ptr1_lo
@@ -79,7 +80,7 @@ sub_rom_A00C:
 
 	bpl @A068
 
-		and #$0F
+		and #$0F	; Will compare low nibble only
 		sta zp_ptr1_lo
 		txa
 		eor #$01
@@ -91,12 +92,12 @@ sub_rom_A00C:
 	@A068:
 	ldx zp_7C
 	lda zp_plr1_anim_frame,X
-	cmp zp_ptr1_lo
+	cmp zp_ptr1_lo	; Check min frame number
 	bcc @A02A_rts
 
 	iny
 	cmp (zp_ptr3_lo),Y
-	bcc @A077
+	bcc @A077	; Check max frame number
 
 	bne @A02A_rts
 
@@ -277,7 +278,7 @@ tbl_hit_ptrs_rayden:
 	.word rom_A3F8	; $10
 	.word rom_A401
 	.word rom_A40A
-	.word hit_data_13
+	.word hit_data_ranged
 	.word rom_A418
 	.word rom_A421
 	.word rom_A3F8
@@ -295,7 +296,7 @@ tbl_hit_ptrs_sonya:
 	.word hit_data_uppercut ;rom_A554
 	.word rom_A526, rom_A3C8, rom_A3CF
 	.word rom_AA21, hit_data_throw, rom_A3E6, rom_A3EF
-	.word rom_A3F8, rom_A401, rom_A40A, hit_data_13
+	.word rom_A3F8, rom_A401, rom_A40A, hit_data_ranged
 	.word rom_A576, rom_A57F, rom_A588, rom_A591
 	.word rom_A43C, rom_A443, rom_A44A
 
@@ -307,7 +308,7 @@ tbl_hit_ptrs_subzero:
 	.word rom_A398, rom_A453, rom_A3A8, rom_A3B1
 	.word hit_data_uppercut, rom_A5D6, rom_A3C8, rom_A3CF
 	.word rom_A495, hit_data_throw, rom_A3E6, rom_A3EF
-	.word rom_A3F8, rom_A401, rom_A40A, hit_data_13
+	.word rom_A3F8, rom_A401, rom_A40A, hit_data_ranged
 	.word rom_A418, rom_A421, rom_A3F8, rom_A401
 	.word rom_A43C, rom_A443, rom_A44A
 
@@ -334,7 +335,7 @@ tbl_hit_ptrs_scorpion:
 	.word rom_A3F8
 	.word rom_A401
 	.word rom_A40A
-	.word hit_data_13
+	.word hit_data_ranged
 	.word rom_A3F8
 	.word rom_A401
 	.word rom_A3F8
@@ -351,7 +352,7 @@ tbl_hit_ptrs_kano:
 	.word rom_A398, rom_A453, rom_A3A8, rom_A3B1
 	.word hit_data_uppercut, rom_A3C1, rom_A3C8, rom_A3CF
 	.word rom_A487, hit_data_throw, rom_A3E6, rom_A3EF
-	.word rom_A3F8, rom_A401, rom_A40A, hit_data_13
+	.word rom_A3F8, rom_A401, rom_A40A, hit_data_ranged
 	.word rom_A418, rom_A421, rom_A3F8, rom_A401
 	.word rom_A43C, rom_A443, rom_A44A
 
@@ -363,7 +364,7 @@ tbl_hit_ptrs_cage:
 	.word rom_A398, rom_A3A1, rom_A3A8, rom_A3B1
 	.word hit_data_uppercut, rom_A526, rom_A3C8, rom_A3CF
 	.word rom_AA36, hit_data_throw, rom_A3E6, rom_A3EF
-	.word rom_A3F8, rom_A401, rom_A40A, hit_data_13
+	.word rom_A3F8, rom_A401, rom_A40A, hit_data_ranged
 	.word rom_A418, rom_A421, rom_A3F8, rom_A401
 	.word rom_A43C, rom_A443, rom_A44A
 
@@ -375,7 +376,7 @@ tbl_hit_ptrs_liukang:
 	.word rom_A398, rom_A3A1, rom_A3A8, rom_A3B1
 	.word hit_data_uppercut, rom_A526, rom_A3C8, rom_A3CF
 	.word rom_A495, hit_data_throw, rom_A3E6, rom_A3EF
-	.word rom_A3F8, rom_A401, rom_A40A, hit_data_13
+	.word rom_A3F8, rom_A401, rom_A40A, hit_data_ranged
 	.word rom_A418, rom_A421, rom_A3F8, rom_A401
 	.word rom_A43C, rom_A443, rom_A44A
 
@@ -387,7 +388,7 @@ tbl_hit_ptrs_goro:
 	.word rom_A4B7, rom_A453, rom_A3A8, rom_A3B1
 	.word hit_data_uppercut, rom_A4FD, rom_A3C8, rom_A3CF
 	.word rom_A3EF, hit_data_throw, rom_A3E6, rom_A3EF
-	.word rom_A3F8, rom_A401, rom_A40A, hit_data_13
+	.word rom_A3F8, rom_A401, rom_A40A, hit_data_ranged
 	.word rom_A418, rom_A421, rom_A4C0, rom_A4C9
 	.word rom_A43C, rom_A443, rom_A44A
 
@@ -399,7 +400,7 @@ tbl_hit_ptrs_shangtsung:
 	.word rom_A398, rom_A59A, rom_A3A8, rom_A3B1
 	.word hit_data_uppercut, rom_A526, rom_A3C8, rom_A3CF
 	.word rom_A5C8, hit_data_throw, rom_A3E6, rom_A3EF
-	.word rom_A3F8, rom_A401, rom_A40A, hit_data_13
+	.word rom_A3F8, rom_A401, rom_A40A, hit_data_ranged
 	.word rom_A418, rom_A421, rom_A3F8, rom_A401
 	.word rom_A43C, rom_A443, rom_A44A
 
@@ -411,7 +412,7 @@ rom_A30A:
 	.word rom_A398, rom_A3A1, rom_A3A8, rom_A3B1
 	.word hit_data_uppercut, rom_A5AA_unused, rom_A3C8, rom_A3CF
 	.word rom_A546, hit_data_throw, rom_A3E6, rom_A3EF
-	.word rom_A3F8, rom_A401, rom_A40A, hit_data_13
+	.word rom_A3F8, rom_A401, rom_A40A, hit_data_ranged
 	.word rom_A418, rom_A421, rom_A3F8, rom_A401
 	.word rom_A43C, rom_A443, rom_A44A
 
@@ -423,7 +424,7 @@ rom_A340:
 	.word rom_A4B7, rom_A3A1, rom_A3A8, rom_A3B1
 	.word hit_data_uppercut, rom_A3C1, rom_A3C8, rom_A3CF
 	.word rom_A495, rom_A4F6_unused, rom_A3E6, rom_A3EF
-	.word rom_A4C0, rom_A4C9, rom_A40A, hit_data_13
+	.word rom_A4C0, rom_A4C9, rom_A40A, hit_data_ranged
 	.word rom_A418, rom_A421, rom_A4C0, rom_A4C9
 	.word rom_A43C, rom_A443, rom_A4ED
 
@@ -806,8 +807,12 @@ rom_A5D6:
 
 ; -----------------------------------------------------------------------------
 
-hit_data_13:
-	.byte $7F, $7F, $00, $00, $00, $2E, $00
+hit_data_ranged:
+	.byte $7F, $7F
+	.byte $00
+	.byte $00, $00
+	.byte $2E
+	.byte $00
 
 ; -----------------------------------------------------------------------------
 .export sub_rom_03_A5E4
@@ -823,23 +828,23 @@ sub_rom_A5F0:
     tay
 	sty zp_7C
 	lda zp_plr1_fighter_idx,Y
-	bpl @A60B
+	bpl @A60B_rts
 
 	lda zp_plr1_cur_anim,Y
 	beq @A601
 
 	cmp #$03
-	bne @A60B
+	bne @A60B_rts
 
 	@A601:
 	lda #$58
 	cmp zp_plr1_damage
-	beq @A60B
+	beq @A60B_rts
 
 	cmp zp_plr2_damage
 	bne @A60C
 
-	@A60B:
+	@A60B_rts:
 	rts
 ; ----------------
 	@A60C:
@@ -904,23 +909,23 @@ sub_rom_A63B:
 	and #$07
 	bne @A679_rts
 
-	@A660:
-	lda zp_plr1_fgtr_idx_clean,X
-	asl A
-	tay
-	lda (zp_ptr3_lo),Y
-	sta zp_ptr4_lo
-	iny
-	lda (zp_ptr3_lo),Y
-	sta zp_ptr4_hi
-	lda zp_plr1_cur_anim,X
-	tay
-	lda (zp_ptr4_lo),Y
-	bmi @A679_rts
+		@A660:
+		lda zp_plr1_fgtr_idx_clean,X
+		asl A
+		tay
+		lda (zp_ptr3_lo),Y
+		sta zp_ptr4_lo
+		iny
+		lda (zp_ptr3_lo),Y
+		sta zp_ptr4_hi
+		lda zp_plr1_cur_anim,X
+		tay
+		lda (zp_ptr4_lo),Y
+		bmi @A679_rts
 
-	jsr sub_rom_A773
-	pla
-	pla
+			jsr sub_rom_A773
+			pla
+			pla
 	@A679_rts:
 	rts
 
@@ -1035,10 +1040,11 @@ sub_special_move_2:
 
 ; -----------------------------------------------------------------------------
 
+; Parameters: attacker's animation index
 sub_rom_A773:
 	ldy zp_7C
 	sta zp_ptr1_lo
-	cmp #$03
+	cmp #$03	; Forward walk?
 	beq @A7AB
 
 	cmp #$18	; Throw move?
@@ -1275,16 +1281,16 @@ sub_rom_A9FD:
 	adc zp_22
 	sta zp_22
 	and #$01
-	bne @AA0F
+	bne :+
 
-	txa
-	adc zp_22
-	tya
-	adc zp_22
-	sta zp_22
-	rts
+		txa
+		adc zp_22
+		tya
+		adc zp_22
+		sta zp_22
+		rts
 ; ----------------
-	@AA0F:
+	:
 	adc zp_22
 	sta zp_22
 	ror A
@@ -3563,7 +3569,7 @@ tbl_dpcm_ptr:
 	.byte >(dmc_cage<<2)		; $08 "Johnny Cage"
 	.byte >(dmc_liukang<<2)		; $09 "Liu Kang"
 	.byte >(dmc_wins<<2)		; $0A "...wins"
-	.byte $FF ;>(dmc_bleep<<2)		; $0B UI bleep
+	.byte >(dmc_comehere<<2)	; $0B "Come here!"
 	.byte >(dmc_swing<<2)		; $0C SFX punch/kick swing
 	.byte >(dmc_hit<<2)			; $0D SFX hit
 	.byte >(dmc_hit<<2)			; $0E SFX bounce
@@ -3582,7 +3588,7 @@ tbl_dpcm_len:
 	.byte $7C	; $08 "Johnny Cage"
 	.byte $73	; $09 "Liu Kang"
 	.byte $53	; $0A "...wins"
-	.byte $0B	; $0B UI bleep
+	.byte $2E	; $0B "Come here!"
 	.byte $08	; $0C SFX punch/kick swing
 	.byte $0F	; $0D SFX hit
 	.byte $0A	; $0E SFX bounce
@@ -3601,7 +3607,7 @@ tbl_dpcm_freq:
 	.byte $0C	; $08 "Johnny Cage"
 	.byte $0C	; $09 "Liu Kang"
 	.byte $0C	; $0A "...wins"
-	.byte $0A	; $0B UI bleep
+	.byte $05	; $0B "Come here!"
 	.byte $08	; $0C SFX punch/kick swing
 	.byte $08	; $0D SFX hit
 	.byte $08	; $0E SFX bounce
