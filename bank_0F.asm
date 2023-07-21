@@ -378,6 +378,12 @@ dmc_swing:
 dmc_wins:
 .incbin "audio/wins.dmc"
 
+; ----------------
+.export dmc_comehere
+
+dmc_comehere:
+.incbin "audio/comehere_sp6up.dmc"
+
 ; -----------------------------------------------------------------------------
 
 .segment "VECTORS"

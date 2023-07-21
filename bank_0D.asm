@@ -78,7 +78,7 @@ rom_8004:
 	.byte $05
 	.word rom_81D9
 	.byte $18
-	.word rom_81DA
+	.word anim_ranged_attack
 	.byte $04
 	.word rom_81F8
 	.byte $04
@@ -119,7 +119,7 @@ rom_8004:
 	.word rom_8286
 	.byte $19
 	.word rom_8271 ;rom_8292
-	.byte $1F
+	.byte $18
 	.word rom_82A1
 	.byte $04
 	.word rom_80ED
@@ -149,6 +149,11 @@ rom_80DD:
 rom_80ED:
 	.byte $22, $22, $22, $22, $22, $22, $22, $22
 	.byte $22, $22, $22, $22, $22, $22, $22, $22
+
+; Also use the next two, for a total of 30 frames
+anim_special_hit:
+	.byte $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
+	.byte $0E, $0E, $0E, $0E, $0E, $0E
 rom_80FD:
 	.byte $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
 rom_8105:
@@ -204,7 +209,7 @@ rom_81C9:
 	.byte $1F, $1F, $20, $20, $20, $20, $1F, $0B
 rom_81D9:
 	.byte $00
-rom_81DA:
+anim_ranged_attack:
 	.byte $32, $32, $32, $32, $33, $33, $33, $33
 	.byte $33, $33, $33, $33, $33, $33, $33, $33
 	.byte $33, $33, $33, $33, $33, $33, $33, $33

@@ -39,7 +39,7 @@ tbl_track_ptrs:
 	.word sfx_wins				; $18	Announcer "...wins"
 	.word sfx_silence			; $19
 	.word sfx_silence			; $1A
-	.word sfx_silence			; $1B
+	.word sfx_comehere			; $1B	Scorpion "Come here!"
 	.word sfx_silence			; $1C
 	.word sfx_silence			; $1D
 	.word sfx_silence			; $1E
@@ -486,5 +486,15 @@ sfx_wins:
 
 	@sfx_wins_ch4:
 	.byte $F5, $01, $0A, $FF
+
+; -----------------------------------------------------------------------------
+
+sfx_comehere:
+	.byte $84
+	.word @sfx_comehere_ch4
+	.byte $FF
+
+	@sfx_comehere_ch4:
+	.byte $F5, $01, $0B, $FF
 
 ; -----------------------------------------------------------------------------

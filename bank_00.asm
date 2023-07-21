@@ -587,3 +587,151 @@ sub_hide_fighter_sprites:
 	rts
 
 ; -----------------------------------------------------------------------------
+.export sub_show_fighter_names
+
+sub_show_fighter_names:
+	lda zp_plr1_fgtr_idx_clean
+	asl A
+	tax
+	lda tbl_fighter_name_ptrs,X
+	sta zp_ptr3_lo
+	lda tbl_fighter_name_ptrs+1,X
+	sta zp_ptr3_hi
+	lda #$01
+	sta zp_nmi_ppu_rows
+	lda #$1C
+	sta zp_nmi_ppu_cols
+	lda #$20
+	sta zp_nmi_ppu_ptr_hi
+	ldx #$84
+	stx zp_nmi_ppu_ptr_lo
+	ldx #$00
+	lda #$FF
+	@CDF7:
+	sta ram_ppu_data_buffer,X
+	inx
+	cpx #$38
+	bcc @CDF7
+
+	ldx #$00
+	ldy #$00
+	lda (zp_ptr3_lo),Y
+	sta zp_07
+	iny
+	@CE08:
+	lda (zp_ptr3_lo),Y
+	cmp #$20
+	beq @CE14
+
+	clc
+	adc #$80
+	sta ram_ppu_data_buffer,X
+	@CE14:
+	iny
+	inx
+	cpx zp_07
+	bcc @CE08
+
+	lda zp_plr2_fgtr_idx_clean
+	asl A
+	tax
+	lda tbl_fighter_name_ptrs,X
+	sta zp_ptr3_lo
+	lda tbl_fighter_name_ptrs+1,X
+	sta zp_ptr3_hi
+	ldy #$00
+	ldx #$17
+	lda (zp_ptr3_lo),Y
+	tay
+	@CE2F:
+	lda (zp_ptr3_lo),Y
+	cmp #$20
+	beq @CE3B
+
+	clc
+	adc #$80
+	sta ram_ppu_data_buffer,X
+	@CE3B:
+	dex
+	dey
+	bne @CE2F
+
+	rts
+
+; -----------------------------------------------------------------------------
+
+; Pointers to name strings
+tbl_fighter_name_ptrs:
+	; Player 1
+	.word str_name_rayden
+	.word str_name_sonya
+	.word str_name_subzero
+	.word str_name_scorpion
+	.word str_name_kano
+	.word str_name_cage
+	.word str_name_liukang
+	.word str_name_goro
+	.word str_name_shangtsung
+	.word str_name_empty_7spc0
+	.word str_name_empty_7scp1
+	.word str_name_empty_3spc
+	; Player 2
+	.word str_name_rayden
+	.word str_name_sonya
+	.word str_name_subzero
+	.word str_name_scorpion
+	.word str_name_kano
+	.word str_name_cage
+	.word str_name_liukang
+	.word str_name_goro
+	.word str_name_shangtsung
+	.word str_name_empty_7spc0
+	.word str_name_empty_7scp1
+	.word str_name_empty_3spc
+
+; -----------------------------------------------------------------------------
+
+; Byte 0 = lengh, Bytes 1 to (length) = name
+; TODO custom string encoding
+str_name_rayden:
+	.byte $06, $52, $41, $59, $44, $45, $4E
+str_name_sonya:
+	.byte $05, $53, $4F, $4E, $59, $41
+str_name_subzero:
+	.byte $08, $53, $55, $42, $5C, $5A, $45, $52, $4F
+str_name_scorpion:
+	.byte $08, $53, $43, $4F, $52, $50, $49, $4F, $4E
+str_name_kano:
+	.byte $04, $4B, $41, $4E, $4F
+str_name_cage:
+	.byte $04, $43, $41, $47, $45
+str_name_liukang:
+	.byte $08, $4C, $49, $55, $5C, $4B, $41, $4E, $47
+str_name_goro:
+	.byte $04, $47, $4F, $52, $4F
+str_name_shangtsung:
+	.byte $0B, $53, $48, $41, $4E, $47, $5C, $54, $53, $55, $4E, $47
+str_name_empty_7spc0:
+	;.byte $07, $20, $20, $20, $20, $20, $20, $20
+str_name_empty_7scp1:
+	;.byte $07, $20, $20, $20, $20, $20, $20, $20
+str_name_empty_3spc:
+	;.byte $03, $20, $20, $20
+_empty:
+	.byte $00
+
+; Nothing seems to point to these "empty" names
+	;.byte $03, $20, $20, $20
+	;.byte $05, $20, $20, $20, $20, $20
+	;.byte $03, $20, $20, $20
+	;.byte $07, $20, $20, $20, $20, $20, $20, $4B
+	;.byte $03, $20, $41, $20
+	;.byte $06, $41, $20, $20, $20, $20, $4C
+	;.byte $06, $20, $20, $20, $20, $20, $20
+	;.byte $06, $20, $20, $20, $20, $20, $20
+	;.byte $04, $42, $20, $20, $20
+	;.byte $06, $20, $20, $20, $20, $20, $4F
+	;.byte $07, $42, $20, $20, $20, $20, $20, $20
+	;.byte $04, $20, $20, $20, $47
+
+; -----------------------------------------------------------------------------

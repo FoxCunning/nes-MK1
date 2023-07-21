@@ -38,8 +38,8 @@ rom_8004:
 	.byte $07			; $09 = strong hit? hit by flying kick? (still shoved backwards)
 	.word rom_80FD
 	.byte $07			; $0A = regular hit (shoved backwards)
-	; Attack animations
 	.word rom_8105
+	; Attack animations
 	.byte $08			; $0B = base kick
 	.word rom_810D
 	.byte $0A			; $0C = close/combo kick
@@ -79,7 +79,7 @@ rom_8004:
 	.byte $05			; $1D
 	.word rom_81D9
 	.byte $18			; $1E = ranged attack
-	.word rom_81DA
+	.word anim_ranged_attack
 	.byte $04			; $1F = jumping backwards punch
 	.word rom_81F8
 	.byte $04			; $20
@@ -124,8 +124,8 @@ rom_8004:
 	.word rom_8286
 	.byte $19			; $32 = hit by uppercut
 	.word rom_8271 ;rom_8292
-	.byte $1F			; $33 = this one glithces all over the place
-	.word rom_82A1
+	.byte $18 ;$1F		; $33 = special hit (spear/freeze)
+	.word anim_special_hit ;rom_82A1
 	.byte $04			; $34 = Jumping back (start at frame $0A for the downward movement part)
 	.word rom_80ED
 
@@ -156,10 +156,16 @@ rom_80DD:
 rom_80ED:
 	.byte $0B, $0B, $0B, $0B, $0C, $0C, $0D, $0D
 	.byte $0C, $0C, $0D, $0D, $0C, $0B, $0B, $0B
+
+; Also use the next two, for a total of 30 frames
+anim_special_hit:
+	.byte $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
+	.byte $0E, $0E, $0E, $0E, $0E, $0E
 rom_80FD:
 	.byte $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
 rom_8105:
 	.byte $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
+	
 rom_810D:
 	.byte $0F, $0F, $10, $10, $0F, $0F
 rom_8113:
@@ -215,7 +221,7 @@ rom_81C9:
 	.byte $1F, $1F, $20, $20, $20, $20, $1F, $0B
 rom_81D9:
 	.byte $00
-rom_81DA:
+anim_ranged_attack:
 	.byte $32, $32, $32, $32, $33, $33, $33, $33
 	.byte $33, $33, $33, $33, $33, $33, $33, $33
 	.byte $33, $33, $33, $33, $33, $33, $33, $33
