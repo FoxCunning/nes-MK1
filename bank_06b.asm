@@ -320,7 +320,7 @@ sub_irq_handler_01:
 
 ; -----------------------------------------------------------------------------
 
-; Warrior Shrine split-screen
+; Courtyard split-screen
 sub_irq_handler_02:
 	lda ram_irq_state_var
 	bne :+
@@ -341,6 +341,7 @@ sub_irq_handler_02:
 	ldy #$E8
 	lda #$00
 	sta ram_irq_state_var
+
 	lda #$82
 	ora zp_bank_select_mask
 	tax
@@ -357,6 +358,7 @@ sub_irq_handler_02:
 	inx
 	iny
 	stx mmc3_bank_select
+	
 	lda zp_game_substate
 	cmp #$05
 	bcs @E54E
