@@ -691,8 +691,8 @@ sub_rom_C572:
 
 ; Parameters:
 ; Y = index of player launching the attack (0 for player one, 1 for player two)
-; NOTE: Does NOT return to caller. It pulls from the stack to go back to
-; 		caller's caller.
+; NOTE: Does NOT return to caller if the attack hits. It pulls from the stack
+;	to go back to caller's caller.
 sub_ranged_attack:
 	tya
 	eor #$01	; Sets X = !Y (This might be unnecessary, because it was already
@@ -730,8 +730,12 @@ sub_ranged_attack:
 	lda #$01	; Start the counter
 	sta zp_player_hit_counter
 
-	lda #$08
+	sty zp_backup_y
+	lda zp_plr1_fgtr_idx_clean,Y
+	tay
+	lda @tbl_ranged_hit_damage,Y
 	sta zp_plr1_dmg_counter,X	; Opponent
+	ldy zp_backup_y
 	lda #$03
 	sta zp_gained_score_idx,Y	; Attacker
 
@@ -781,6 +785,17 @@ sub_ranged_attack:
 	pla
 	@ranged_atk_return:
 	rts
+
+	@tbl_ranged_hit_damage:
+	.byte $08	; Rayden
+	.byte $08	; Sonya
+	.byte $01	; Sub-Zero
+	.byte $02	; Scorpion
+	.byte $08	; Kano
+	.byte $08	; Johnny Cage
+	.byte $08	; Liu Kang
+	.byte $09	; Goro
+	.byte $09	; Shang-Tsung
 
 ; -----------------------------------------------------------------------------
 

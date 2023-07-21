@@ -19,6 +19,9 @@ zp_0B = $0B     ;
 zp_0D = $0D     ;
 zp_0F = $0F     ;
 
+zp_backup_x = $10   ; Register backup to avoid psh/pla
+zp_backup_y = $11   ; Register backup to avoid psh/pla
+
 ; Generically used as a pointer for indirect addressing. Low byte.
 zp_ptr1_lo = $12 ;
 ; Generically used as a pointer for indirect addressing. High byte.
