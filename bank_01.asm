@@ -220,7 +220,7 @@ sub_announce_winner_name:
 		ldx zp_7C	; Winner index
 		lda zp_plr1_fgtr_idx_clean,X
 		cmp #$06	; Skip Goro and Shang-Tsung
-		bcs @winner_name_rts
+		bcs @abort_announcement
 
 			clc
 			adc #$11
@@ -234,6 +234,8 @@ sub_announce_winner_name:
 		; Time to say "wins"
 		lda #$18
 		sta ram_req_sfx
+
+		@abort_announcement:
 		lda #$00
 		sta zp_counter_param
 
