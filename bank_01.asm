@@ -83,12 +83,12 @@ sub_match_loop:
 	jsr sub_rom_CC9A	; TODO Inline this
 	bcc :+
 		; Also normally every 2 frames
-		jsr sub_rom_CCAC
+		jsr sub_request_hit_sound
 		jsr sub_set_irq_x_scroll
 		jsr sub_rom_CA9D
 		
 		;jsr sub_rom_D76D
-		jsr sub_load_fighter_sprite_data
+		jsr sub_move_fighter_sprites
 		jsr sub_rom_D20A
 		
 		jsr sub_adjust_facing
@@ -150,19 +150,20 @@ sub_match_end:
 	cmp zp_plr2_damage
 	bcc @C1C3	; Branch if player 1 wins
 
-		beq @victory_end	; Branch if same health
-
-			lda ram_game_mode_initialised
-
+		bne :+
+			; Same health: nobody wins
+			stx zp_counter_param
 			beq @victory_end
+		:
+		lda ram_game_mode_initialised
+		beq @victory_end
 
-				iny		; Player 2 wins
-				ldx #$03
+			iny		; Player 2 wins
+			ldx #$03
 	@C1C3:
 	sty zp_7C	; Index of winning player
 	stx zp_7B
 	
-	inc zp_counter_param
 	lda zp_counter_param
 	beq :+
 		jsr sub_announce_winner_name
@@ -203,16 +204,14 @@ sub_match_end:
 		inc zp_game_substate
 		rts
 	:
-	inc zp_counter_param
-	lda zp_counter_param
-	jmp sub_announce_winner_name
+	;jmp sub_announce_winner_name
 	;rts
 
 ; -----------------------------------------------------------------------------
 
 sub_announce_winner_name:
-	;inc zp_counter_param
-	;lda zp_counter_param
+	inc zp_counter_param
+	lda zp_counter_param
 	cmp #$14
 	bne @wait_for_name
 		
@@ -628,23 +627,24 @@ sub_calc_ranged_atk_distance:
 	lda zp_plr1_x_pos,X
 	sec
 	sbc ram_ranged_atk_x_pos,Y
-	bne @C55B
+	bne @C55B_rts
 
 	@C558:
 	sec
 	sbc zp_plr1_x_pos,X
-	@C55B:
+
+	@C55B_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
 
 sub_rom_C572:
 	lda zp_plr1_cur_anim,X
-	cmp #$1E	; Parry animation (opponent)
+	cmp #$1E	; Ranged attack (opponent)
 	bne @C581
 
 	lda zp_plr1_cur_anim,Y
-	cmp #$1E	; Parry animation (attacker)
+	cmp #$1E	; Ranged attack (attacker)
 	beq @C58C
 
 	bne @C5A2
@@ -721,11 +721,11 @@ sub_ranged_attack:
 	cmp #$2C	; Already hit (recovering)
 	beq @C60D
 
-	cmp #$02	; ???
-	beq @C5FF
+	cmp #$02	; Crouched parry
+	beq @C5FF_crouch_parry
 
 	cmp #$05	; Parry
-	beq @C5FB
+	beq @C5FB_parry
 
 	lda #$01	; Start the counter
 	sta zp_player_hit_counter
@@ -735,26 +735,38 @@ sub_ranged_attack:
 	lda #$03
 	sta zp_gained_score_idx,Y	; Attacker
 
-	; TODO Special ranged attacks (Scorpion / Sub-Zero)
-
+	; Scorpion's spear
+	lda zp_plr1_fgtr_idx_clean,Y
+	cmp #$03
+	bne :+
+		; Put the opponents on the ground in case they were jumping
+		lda zp_sprites_base_y
+		sta zp_plr1_y_pos,X
+		; Special hit animation
+		lda #$33
+		bne @player_hit_anim
+	:
+	; TODO Other special ranged attacks (Sub-Zero)
+	; cmp #$02
+	
 	; Check if a player was hit whilst airborne
 	lda zp_plr1_y_pos,X
 	cmp zp_sprites_base_y
-	bne @C5F7
+	bne @C5F7_hit
 
 	lda #$30	; Airborne hit
 	bne @player_hit_anim
 
-	@C5F7:
+	@C5F7_hit:
 	lda #$2E	; Strong hit knockback
 	bne @player_hit_anim
 
-	@C5FB:
-	lda #$2C	; Standing parry
+	@C5FB_parry:
+	lda #$2C	; Standing parry knockback
 	bne @player_hit_anim
 
-	@C5FF:
-	lda #$2B	; Crouched parry
+	@C5FF_crouch_parry:
+	lda #$2B	; Crouched parry knockback
 
 	@player_hit_anim:
 	sta zp_plr1_cur_anim,X	; Oppoent
@@ -763,6 +775,7 @@ sub_ranged_attack:
 	
 	sta zp_plr1_cur_anim,Y	; Attacker
 	sta zp_plr1_anim_frame,Y
+
 	@C60D:
 	pla
 	pla
@@ -1324,7 +1337,7 @@ sub_rom_C9F2:
 	cmp #$05
 	bcc @CA18
 
-	lda #$00	; The match end state will use this to sync DPCM sample playback
+	lda #$01	; The match end state will use this to sync DPCM sample playback
 	sta zp_counter_param
 
 	lda #$05	; Match end state
@@ -1435,7 +1448,7 @@ sub_rom_CA66:
 	jsr sub_rom_D1B6
 	jsr sub_rom_D0E1
 	jsr sub_rom_D129
-	jsr sub_rom_CAC0
+	jsr sub_check_stunned
 
 	@CA94:
 	ldy zp_7C
@@ -1449,35 +1462,34 @@ sub_rom_CA9D:
 	ldx #$00
 	jsr sub_rom_CAA3
 	inx
-
-; -----------------------------------------------------------------------------
-
+; ----------------
 sub_rom_CAA3:
 	lda zp_consecutive_hits_taken,X
 	cmp #$03
-	bcs @CABF
+	bcs @CABF_rts
 
 	lda zp_plr1_cur_anim,X
 	cmp #$09
 	beq @CAB3
 
 	cmp #$0A
-	bne @CABF
+	bne @CABF_rts
 
 	@CAB3:
 	lda zp_plr1_anim_frame,X
 	cmp #$01
-	bne @CABF
+	bne @CABF_rts
 
 	inc zp_consecutive_hits_taken,X
 	lda #$00
 	sta zp_E9,X
-	@CABF:
+
+	@CABF_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_CAC0:
+sub_check_stunned:
 	ldy zp_7C
 	lda zp_consecutive_hits_taken,Y
 	cmp #$03
@@ -1870,7 +1882,9 @@ sub_rom_CC9A:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_CCAC:
+; Parameters:
+; X = attacker's index (0/1)
+sub_request_hit_sound:
 	lda zp_player_hit_counter
 	beq @CCC2_rts
 
@@ -1879,6 +1893,7 @@ sub_rom_CCAC:
 
 		lda #$02	; Hit SFX
 		sta ram_req_sfx
+
 		lda #$00
 		sta zp_player_hit_counter
 		inc zp_game_substate
@@ -2280,7 +2295,7 @@ sub_finish_match_init:
 	bcc :-
 
 	jsr sub_rebase_fighter_indices
-	jsr sub_load_fighter_sprite_data
+	jsr sub_move_fighter_sprites
 	jsr sub_rom_D20A
 	
 	; Put bank 0 back in after loading sprite data
@@ -3270,18 +3285,18 @@ sub_rom_D72C:
 
 ; -----------------------------------------------------------------------------
 
-sub_load_fighter_sprite_data:
+sub_move_fighter_sprites:
 	ldx #$00
 	stx zp_7B
 	stx zp_7C
-	jsr sub_rom_D784
+	jsr sub_inner_move_sprites
 
 	ldx #$02
 	stx zp_7B
 	dex
 	stx zp_7C
 ; ----------------
-sub_rom_D784:
+sub_inner_move_sprites:
 	jsr sub_shangtsung_palettes
 	ldy zp_7C
 	ldx zp_plr1_fgtr_idx_clean,Y
@@ -3320,7 +3335,7 @@ sub_rom_D784:
 		inc zp_ptr3_hi
 	:
 	sta zp_ptr1_lo
-	; Index ready, read first byte
+	; Index ready, read pointer
 	tay
 	lda (zp_ptr3_lo),Y
 	asl A
@@ -3494,12 +3509,32 @@ sub_rom_D784:
 			sta ram_req_sfx
 	:
 	lda zp_18
-	beq :+
+	beq @animate_sprites
+		lda #$00
+		sta zp_plr1_anim_frame,Y
+
+		; If the current animation is $33 (ranged hit)
+		; and the attacker is Scorpion ($03)
+		; then stun the player
+		lda zp_plr1_cur_anim,Y
+		cmp #$33
+		bne :+
+			tya
+			eor #$01
+			tax
+			lda zp_plr1_fgtr_idx_clean,X
+			cmp #$03
+			bne @animate_sprites
+				lda #$28
+				sta zp_plr1_cur_anim,Y
+				bne @animate_sprites
+		:
+		; Otherwise, back to idle
 		lda #$00
 		sta zp_plr1_cur_anim,Y
-		sta zp_plr1_anim_frame,Y
-	:
-	jmp sub_animate_player_sprites
+
+	@animate_sprites:
+	jmp sub_animate_player_sprites	; TODO This could inlined easily
 
 ; -----------------------------------------------------------------------------
 
@@ -4229,7 +4264,7 @@ tbl_anim_data_ptrs:
 	.word @rom_DDC2
 	.word @rom_DB75
 	.word @rom_DE03
-	.word @rom_DE04
+	.word @still_16_frames ;@special_hit_16_frames
 	.word @rom_DE05	; $20
 	.word @rom_DE12
 	.word @rom_DB87
@@ -4516,8 +4551,8 @@ tbl_anim_data_ptrs:
 
 ; ----------------
 
-@rom_DE04:
-	.byte $00, $00, $80
+;@special_hit_16_frames:
+;	.byte $00, $00, $80
 
 ; ----------------
 
