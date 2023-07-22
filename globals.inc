@@ -31,8 +31,8 @@ zp_ptr2_hi = $15     ;
 zp_16 = $16     ;
 zp_17 = $17     ;
 zp_18 = $18     ;
-zp_1A = $1A     ;
-zp_1B = $1B     ;
+zp_first_oam_ofs = $1A     ;
+zp_oam_flip_flag = $1B     ;
 zp_1C = $1C     ;
 
 ; Value for X scroll, will be written to $2005 on the next vblank

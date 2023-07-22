@@ -856,22 +856,22 @@ sub_rom_A5F0:
 	cmp #$14
 	bcs @A61C
 
-	jsr sub_special_move_0
-	rts
+	jmp sub_special_move_0 ;jsr sub_special_move_0
+	;rts
 ; ----------------
 	@A61C:
 	cmp #$28
 	bcs @A624
 
-	jsr sub_special_move_1
-	rts
+	jmp sub_special_move_1 ;jsr sub_special_move_1
+	;rts
 ; ----------------
 	@A624:
 	cmp #$80
 	bcs @A62C
 
-	jsr sub_special_move_2
-	rts
+	jmp sub_special_move_2 ;jsr sub_special_move_2
+	;rts
 ; ----------------
 	@A62C:
 	jsr sub_rom_A9EB

@@ -44,20 +44,20 @@ sub_state_machine_1:
 sub_match_loop:
 	lda zp_plr1_fighter_idx
 	and #$80
-	beq @C12E
-
-	lda #$00
-	sta zp_controller1
-	sta zp_controller1_new
-	@C12E:
+	beq :+
+		; No controller input for CPU opponent
+		asl ;same as lda #$00
+		sta zp_controller1
+		sta zp_controller1_new
+	:
 	lda zp_plr2_fighter_idx
 	and #$80
-	beq @C13A
-
-	lda #$00
-	sta zp_controller2
-	sta zp_controller2_new
-	@C13A:
+	beq :+
+		; No controller input for CPU opponent
+		asl ;same as lda #$00
+		sta zp_controller2
+		sta zp_controller2_new
+	:
 	jsr sub_calc_players_distance
 	jsr sub_check_fighter_ko
 	jsr sub_rom_CA5C
@@ -294,13 +294,14 @@ sub_rom_C2A8:
 	cmp zp_plr1_cur_anim,Y
 
 	beq @C2CC
-	@C2CB:
-	rts
+
+		@C2CB_rts:
+		rts
 ; ----------------
 	@C2CC:
 	lda zp_plr1_anim_frame,Y
 	cmp #$05
-	bcc @C2CB
+	bcc @C2CB_rts
 	bne @C2F0
 
 	ldx zp_plr1_fgtr_idx_clean,Y
@@ -316,8 +317,10 @@ sub_rom_C2A8:
 	lda zp_plr1_x_pos,Y
 	sec
 	sbc @rom_C35F,X
+
 	@C2ED:
 	sta ram_ranged_atk_x_pos,Y
+
 	@C2F0:
 	lda ram_ranged_atk_x_pos,Y
 	cmp #$E8
@@ -385,13 +388,12 @@ sub_rom_C2A8:
 	bne @C33D
 
 	jsr sub_rom_C3F9
-	lda #$FD
-	ldy zp_7C
+	lda #$FD		; -3 if shooting left
+	ldy zp_7C		; Attacker's index
 	ldx zp_plr1_facing_dir,Y
-	bne @C357
-
-	lda #$03
-	@C357:
+	bne :+
+		lda #$03	; +3 if shooting right
+	:
 	clc
 	adc ram_ranged_atk_x_pos,Y
 	sta ram_ranged_atk_x_pos,Y
@@ -412,7 +414,7 @@ sub_rom_C2A8:
 	.byte $28	; Goro
 	.byte $28	; Shang-Tsung
 	; Probably unused
-	.byte $20, $00, $18
+	;.byte $20, $00, $18
 
 ; -----------------------------------------------------------------------------
 
@@ -490,7 +492,7 @@ rom_C3BD:
 	.byte $DA-$9C	; Goro
 	.byte $DA-$A1	; Shang-Tsung
 	; Likely unused
-	.byte $9C, $9C, $A6
+	;.byte $9C, $9C, $A6
 
 ; -----------------------------------------------------------------------------
 
@@ -506,9 +508,9 @@ rom_C3C9:
 	.byte $75, $76, $FF, $FF	; Goro
 	.byte $3E, $3F, $FF, $FF	; Shang-Tsung
 	; Probably unused
-	.byte $7D, $FF, $7E, $FF
-	.byte $74, $76, $FF, $78
-	.byte $03, $04, $05, $06
+	;.byte $7D, $FF, $7E, $FF
+	;.byte $74, $76, $FF, $78
+	;.byte $03, $04, $05, $06
 
 ; -----------------------------------------------------------------------------
 
@@ -517,18 +519,19 @@ sub_rom_C3F9:
 	lda zp_plr1_fgtr_idx_clean,Y
 	jsr sub_game_trampoline
 ; ----------------
-	.word sub_rom_C419
-	.word sub_rom_C419
-	.word sub_rom_C419
-	.word sub_rom_C419
-	.word sub_rom_C4B2
-	.word sub_rom_C419
-	.word sub_rom_C419
-	.word sub_rom_C419
-	.word sub_rom_C419
-	.word sub_rom_C419
-	.word sub_rom_C419
-	.word sub_rom_C419
+	.word sub_rom_C419	; Rayden
+	.word sub_rom_C419	; Sonya
+	.word sub_rom_C419	; Sub-Zero
+	.word sub_rom_C419	; Scorpion
+	.word sub_rom_C4B2	; Kano
+	.word sub_rom_C419	; Johnny Cage
+	.word sub_rom_C419	; Liu Kang
+	.word sub_rom_C419	; Goro
+	.word sub_rom_C419	; Shang-Tsung
+	; Unused fighters
+	;.word sub_rom_C419
+	;.word sub_rom_C419
+	;.word sub_rom_C419
 
 ; -----------------------------------------------------------------------------
 
@@ -3370,13 +3373,13 @@ sub_inner_move_sprites:
 		inx
 
 	@D88E:
-	stx zp_1A
+	stx zp_first_oam_ofs
 	ldx zp_7B
 	lda zp_plr1_facing_dir,Y
 	beq :+
 		lda #$40	; Sprite's horizontal flip flag
 	:
-	sta zp_1B
+	sta zp_oam_flip_flag
 	
 	lda zp_plr1_x_lo,X
 	sec
@@ -3654,7 +3657,7 @@ sub_animate_player_sprites:
 	lda zp_05
 	sta zp_09
 
-	lda zp_1B	; Probably a "direction" flag to indicate whether to move left or right
+	lda zp_oam_flip_flag	; This depends on current facing direction
 	bne :+
 		; ptr1_lo = $08
 		; zp_07 = zp_07 - zp_0F
@@ -3694,7 +3697,7 @@ sub_animate_player_sprites:
 	sta zp_0B
 	dec zp_0B	; Base Y position (incremented by 8 for each row)
 
-	ldx zp_1A	; OAM offset of first sprite
+	ldx zp_first_oam_ofs	; OAM offset of first sprite
 
 	@next_frame_data_byte:
 	lda (zp_ptr3_lo),Y
@@ -3763,57 +3766,59 @@ sub_animate_player_sprites:
 	rts
 ; ----------------
 	@set_sprite_flags:
-	tya	; Preserve animation data offset
-	pha
+	;tya	; Preserve animation data offset
+	;pha
+	sty zp_backup_y
 
-	ldy ram_0429 ;lda ram_0429
-	;tay
-	lda rom_01_B000+0,Y
-	sta zp_ptr4_lo
-	lda rom_01_B000+1,Y
-	sta zp_ptr4_hi
+		ldy ram_0429 ;lda ram_0429
+		;tay
+		lda rom_01_B000+0,Y
+		sta zp_ptr4_lo
+		lda rom_01_B000+1,Y
+		sta zp_ptr4_hi
 
-	lda ram_oam_copy_tileid,X
-	and #$07
-	tay
-	lda @rom_DAB4,Y	; Index by tile ID % 8
-	pha
 		lda ram_oam_copy_tileid,X
-		and #$7F
-		lsr A
-		lsr A
-		lsr A
+		and #$07
 		tay
-	pla
-	and (zp_ptr4_lo),Y
-	beq :+
-		lda #$01
-	:
-	ora ram_042A	; Add flags from fighter's anim frame data
-	eor zp_1B		; Horizontal flip flag depending on current facing direction
-	tay
-	lda zp_7C		; Player index
-	beq @DA9D		; Branch for player one
+		lda @rom_DAB4,Y	; Index by tile ID % 8
+		pha
+			lda ram_oam_copy_tileid,X
+			and #$7F
+			lsr A
+			lsr A
+			lsr A
+			tay
+		pla
+		and (zp_ptr4_lo),Y
+		beq :+
+			lda #$01
+		:
+		ora ram_042A	; Add flags from fighter's anim frame data
+		eor zp_oam_flip_flag		; Horizontal flip flag depending on current facing direction
+		tay
+		lda zp_7C		; Player index
+		beq @DA9D		; Branch for player one
 
-		tya			; Player 2 changes palette index
-		ora #$02
-		bne @DA9E
+			tya			; Player 2 changes palette index
+			ora #$02
+			bne @DA9E
 
-	@DA9D:
-	tya				; Player 1 uses value as it is (keep palette index)
+		@DA9D:
+		tya				; Player 1 uses value as it is (keep palette index)
 
-	@DA9E:
-	ldy ram_irq_routine_idx
-	cpy #$06
-	bne :+
-		; This is only used in the Continue screen...
-		; probably leftover from a different game
-		ora #$20	; Move sprite behind the background
-	:
-	sta ram_oam_copy_attr,X
+		@DA9E:
+		ldy ram_irq_routine_idx
+		cpy #$06
+		bne :+
+			; This is only used in the Continue screen...
+			; probably leftover from a different game
+			ora #$20	; Move sprite behind the background
+		:
+		sta ram_oam_copy_attr,X
 
-	pla
-	tay
+	;pla
+	;tay
+	ldy zp_backup_y
 
 	lda #$FB
 	sta ram_067F	; Probably unused

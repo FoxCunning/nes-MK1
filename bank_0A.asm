@@ -269,7 +269,7 @@ rom_82A1:
 ; -----------------------------------------------------------------------------
 
 rom_82C7:
-	.word cage_frame_00, rom_83C3, rom_83F5, rom_840E
+	.word cage_frame_00, frame_idle_01, rom_83F5, rom_840E
 	.word rom_842F, rom_846A, rom_849C, rom_84CE
 	.word rom_8500, rom_8532, rom_855B, rom_8578
 	.word rom_8598, rom_85B1, rom_85CA, rom_85FC
@@ -306,7 +306,7 @@ cage_frame_00:
 	.byte $4F, $50, $FF, $55, $56, $57, $58, $FF
 	.byte $5A, $FF, $5B, $5C, $FF, $5F, $FF, $FF
 	.byte $60, $FF
-rom_83C3:
+frame_idle_01:
 	.byte $05, $09, $10, $8E, $00, $FF, $80, $81
 	.byte $FF, $FF, $FF, $85, $86, $FF, $FF, $93
 	.byte $94, $95, $96, $97, $A7, $A8, $A9, $AA
