@@ -17,6 +17,7 @@ zp_09 = $09     ;
 zp_0A = $0A     ;
 zp_0B = $0B     ;
 zp_0D = $0D     ;
+zp_backup_a = $0E   ; Register backup to avoid psh/pla
 zp_0F = $0F     ;
 
 zp_backup_x = $10   ; Register backup to avoid psh/pla
@@ -352,8 +353,8 @@ ram_0675 = $0675    ;
 
 ram_067C = $067C    ; Set twice, but potentially unused
 ram_067D = $067D    ; Set twice, but potentially unused
-ram_067E = $067E    ; Set once, but potentially unused
-ram_067F = $067F    ; Set once, but potentially unused
+;ram_067E = $067E    ; Set once, but potentially unused
+;ram_067F = $067F    ; Set once, but potentially unused
 
 ram_0680 = $0680    ;
 ram_0681 = $0681    ;

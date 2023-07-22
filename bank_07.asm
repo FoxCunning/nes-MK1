@@ -287,37 +287,83 @@ rom_82A1:
 ; -----------------------------------------------------------------------------
 
 rom_82C7:
-	.word subzero_frame_00, rom_83C3, rom_83EC, rom_8405
-	.word rom_8422, rom_844F, rom_847C, rom_84A5
-	.word rom_84CE, rom_84F7, rom_8520, rom_854D
-	.word rom_857A, rom_858E, rom_85A2, rom_85D4
-	.word rom_8609, rom_8646, rom_8678, rom_86AA
-	.word rom_86D9, rom_8714, rom_873D, rom_8778
-	.word rom_87A5, rom_87CA, rom_87FB, rom_883C
-	.word rom_886B, rom_88A6, rom_88BB, rom_88F1
-	.word rom_890E, rom_8944, rom_8976, rom_89A3
-	.word rom_89BC, rom_89E5, rom_89FE, rom_8A17
-	.word rom_8A2B, rom_8A40, rom_8A63, rom_8A8C
-	.word rom_8AB5, rom_8ADE, rom_8B0B, rom_8B3C
-	.word rom_8B69, rom_8B98, rom_8BCA, rom_8BF3
-	.word rom_8C20, rom_8C45, rom_8C86, rom_8CB7
-	.word rom_8CD4, rom_8D06, rom_8D33, subzero_frame_00
-	.word subzero_frame_00, subzero_frame_00, subzero_frame_00, subzero_frame_00
-	.word subzero_frame_00, subzero_frame_00, subzero_frame_00, subzero_frame_00
-	.word subzero_frame_00, subzero_frame_00, subzero_frame_00, subzero_frame_00
-	.word subzero_frame_00, subzero_frame_00, subzero_frame_00, subzero_frame_00
-	.word subzero_frame_00, subzero_frame_00, subzero_frame_00, subzero_frame_00
-	.word subzero_frame_00, subzero_frame_00, subzero_frame_00, subzero_frame_00
-	.word subzero_frame_00, subzero_frame_00, subzero_frame_00, subzero_frame_00
-	.word subzero_frame_00, subzero_frame_00, subzero_frame_00, subzero_frame_00
-	.word subzero_frame_00, subzero_frame_00, subzero_frame_00, subzero_frame_00
-	.word subzero_frame_00, subzero_frame_00, subzero_frame_00, subzero_frame_00
-	.word subzero_frame_00
+	.word frame_idle_00		; $00
+	.word frame_idle_01		; $01
+	.word rom_83EC		; $02
+	.word rom_8405		; $03
+	.word rom_8422		; $04
+	.word rom_844F		; $05
+	.word rom_847C		; $06
+	.word rom_84A5		; $07
+	.word rom_84CE		; $08
+	.word rom_84F7		; $09
+	.word rom_8520		; $0A
+	.word rom_854D		; $0B
+	.word rom_857A		; $0C
+	.word rom_858E		; $0D
+	.word rom_85A2		; $0E
+	.word rom_85D4		; $0F
+	.word rom_8609		; $10
+	.word rom_8646		; $11
+	.word rom_8678		; $12
+	.word rom_86AA		; $13
+	.word rom_86D9		; $14
+	.word rom_8714		; $15
+	.word rom_873D		; $16
+	.word rom_8778		; $17
+	.word rom_87A5		; $18
+	.word rom_87CA		; $19
+	.word rom_87FB		; $1A
+	.word rom_883C		; $1B
+	.word rom_886B		; $1C
+	.word rom_88A6		; $1D
+	.word rom_88BB		; $1E
+	.word rom_88F1		; $1F
+	.word rom_890E		; $20
+	.word rom_8944		; $21
+	.word rom_8976		; $22
+	.word rom_89A3		; $23
+	.word rom_89BC		; $24
+	.word rom_89E5		; $25
+	.word rom_89FE		; $26
+	.word rom_8A17		; $27
+	.word rom_8A2B		; $28
+	.word rom_8A40		; $29
+	.word rom_8A63		; $2A
+	.word rom_8A8C		; $2B
+	.word rom_8AB5		; $2C
+	.word rom_8ADE		; $2D
+	.word rom_8B0B		; $2E
+	.word rom_8B3C		; $2F
+	.word rom_8B69		; $30
+	.word rom_8B98		; $31
+	.word rom_8BCA		; $32
+	.word rom_8BF3		; $33
+	.word rom_8C20		; $34
+	.word rom_8C45		; $35
+	.word rom_8C86		; $36
+	.word rom_8CB7		; $37
+	.word rom_8CD4		; $38
+	.word rom_8D06		; $39
+	.word rom_8D33		; $3A
+
+	.word frame_idle_00
+	.word frame_idle_00, frame_idle_00, frame_idle_00, frame_idle_00
+	.word frame_idle_00, frame_idle_00, frame_idle_00, frame_idle_00
+	.word frame_idle_00, frame_idle_00, frame_idle_00, frame_idle_00
+	.word frame_idle_00, frame_idle_00, frame_idle_00, frame_idle_00
+	.word frame_idle_00, frame_idle_00, frame_idle_00, frame_idle_00
+	.word frame_idle_00, frame_idle_00, frame_idle_00, frame_idle_00
+	.word frame_idle_00, frame_idle_00, frame_idle_00, frame_idle_00
+	.word frame_idle_00, frame_idle_00, frame_idle_00, frame_idle_00
+	.word frame_idle_00, frame_idle_00, frame_idle_00, frame_idle_00
+	.word frame_idle_00, frame_idle_00, frame_idle_00, frame_idle_00
+	.word frame_idle_00
 
 ; -----------------------------------------------------------------------------
 
 ; Idle animation, frame 0
-subzero_frame_00:
+frame_idle_00:
 	.byte $05	; Horizontal tiles count
 	.byte $09	; Vertical tiles count
 	.byte $10	; X offset (8 = neutral, higher = move forward, lower = backwards)
@@ -336,7 +382,7 @@ subzero_frame_00:
 	.byte $FF, $65, $FF, $66, $67	; These are the feet
 
 ; Idle animation, frame 1
-rom_83C3:
+frame_idle_01:
 	.byte $04, $09, $08, $58, $00
 	.byte $FF, $03, $04, $FF
 	.byte $09, $0A, $0B, $0C
@@ -365,12 +411,16 @@ rom_8405:
 	.byte $BD, $92, $BE, $BF
 rom_8422:
 	.byte $04, $0A, $10, $5C, $00
-	.byte $FF, $01, $02
-	.byte $FF, $FF, $05, $06, $FF, $0B, $0C, $0D
-	.byte $FF, $14, $15, $16, $04, $1D, $1E, $1F
-	.byte $20, $29, $2A, $2B, $2C, $37, $38, $39
-	.byte $FF, $44, $45, $46, $FF, $51, $52, $53
-	.byte $FF, $5F, $FF, $60, $FF
+	.byte $FF, $01, $02, $FF
+	.byte $FF, $05, $06, $FF
+	.byte $0B, $0C, $0D, $FF
+	.byte $14, $15, $16, $04
+	.byte $1D, $1E, $1F, $20
+	.byte $29, $2A, $2B, $2C
+	.byte $37, $38, $39, $FF
+	.byte $44, $45, $46, $FF
+	.byte $51, $52, $53, $FF
+	.byte $5F, $FF, $60, $FF
 rom_844F:
 	.byte $04, $0A, $10, $5C, $00, $FF, $03, $04
 	.byte $FF, $FF, $07, $08, $FF, $0E, $0F, $10

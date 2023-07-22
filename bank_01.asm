@@ -2123,7 +2123,7 @@ sub_calc_players_distance:
 	sta zp_players_y_distance
 	stx zp_y_plane_skew
 	lda #$1C
-	sta ram_067E
+	;sta ram_067E
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -3238,9 +3238,9 @@ sub_inner_move_sprites:
 	lda (zp_ptr3_lo),Y
 	asl A
 	tax
-	lda tbl_anim_data_ptrs+0,X
+	lda tbl_movement_data_ptrs+0,X
 	sta zp_ptr4_lo
-	lda tbl_anim_data_ptrs+1,X
+	lda tbl_movement_data_ptrs+1,X
 	sta zp_ptr4_hi
 
 	ldy zp_7C	; Player index (0 for player one, 1 for player two)
@@ -3433,7 +3433,234 @@ sub_inner_move_sprites:
 		sta zp_plr1_cur_anim,Y
 
 	@animate_sprites:
-	jmp sub_animate_player_sprites	; TODO This could inlined easily
+;	jmp sub_animate_player_sprites	; TODO This could inlined easily
+; ----------------
+;sub_animate_player_sprites:
+	ldx tbl_player_oam_offsets,Y
+	ldy #$00
+	lda #$F8
+	; This loop moves all sprites off-screen for the current player
+	:
+		sta ram_oam_copy_ypos,X
+		inx
+		inx
+		inx
+		inx
+	iny
+	cpy #$20
+	bcc :-
+
+	ldy #$00
+	lda (zp_ptr3_lo),Y
+	sta zp_05
+	sta zp_ptr2_lo	; This may be unused
+	iny
+	lda (zp_ptr3_lo),Y
+	sta zp_06
+	sta zp_16
+	iny
+	lda (zp_ptr3_lo),Y
+	sta zp_0F
+	iny
+	lda (zp_ptr3_lo),Y
+	ldx zp_7C
+	sta zp_chr_bank_0,X
+	sta ram_0429
+	iny
+	lda (zp_ptr3_lo),Y
+	sta ram_042A
+	iny
+	lda zp_05
+	sta zp_09
+
+	lda zp_oam_flip_flag	; This depends on current facing direction
+	bne :+
+		; ptr1_lo = $08
+		; zp_07 = zp_07 - zp_0F
+		lda #$08
+		sta zp_ptr1_lo	; X increment (+8)
+
+		lda zp_07
+		sec
+		sbc zp_0F
+		jmp @DA07
+	:
+	; ptr1_lo = $F8
+	; zp_07 = zp_0F - $08 + zp_07
+	lda #$F8
+	sta zp_ptr1_lo	; X decrement (-8)
+
+	lda zp_0F
+	sec
+	sbc #$08
+	clc
+	adc zp_07
+
+	@DA07:
+	sta zp_07	; Starting X offset for first tile in a row
+	sta zp_08	; Current X offset (updated for each column)
+
+	ldx zp_06	; Vertical updates count?
+
+	:
+		lda zp_0A	; It seems this was player Y pos - 8 before this loop
+		sec
+		sbc #$08
+		sta zp_0A
+	dex
+	bne :-
+
+	sta zp_0B
+	dec zp_0B	; Base Y position (incremented by 8 for each row)
+
+	ldx zp_first_oam_ofs	; OAM offset of first sprite
+
+	@next_frame_data_byte:
+	lda (zp_ptr3_lo),Y
+	cmp #$FF
+	beq @skip_sprite
+
+		; Ignore the MSB because we use this as an offset: we don't know yet
+		; if we are in the top half of CHR ROM or the bottom
+		and #$7F
+
+		sta zp_backup_a
+
+			lda zp_7C	; Player index
+			beq @DA2F	; Nothing to change for player 1
+
+		lda zp_backup_a
+
+			ora #$80	; Move to the bottom of CHR ROM for player 2
+			bne @set_tile_id
+
+		@DA2F:
+		lda zp_backup_a
+
+		@set_tile_id:
+		sta ram_oam_copy_tileid,X
+		jmp @set_sprite_flags
+
+		@set_xy_pos:
+		lda zp_0B	; Current row's Y pos
+		sta ram_oam_copy_ypos,X
+		lda zp_08	; Current tile's X pos
+		sta ram_oam_copy_xpos,X
+		; Move to next OAM entry
+		;inx
+		;inx
+		;inx
+		;inx
+		txa
+		axs #$FC
+
+	@skip_sprite:
+	iny	; Animation frame data offset
+
+	; Increase X position offset for next tile in this row
+	lda zp_ptr1_lo	; This is a signed value (negative to draw right-to-left)
+	clc
+	adc zp_08
+	sta zp_08
+
+	dec zp_09	; X counter
+	bne @next_frame_data_byte
+
+	; Increase Y position offset for next row
+	lda zp_0B
+	clc
+	adc #$08	; Fixed offset: we always draw top-to-bottom
+	sta zp_0B
+
+	lda zp_05	; Horizontal tiles count reload
+	sta zp_09
+
+	lda zp_07	; Starting X pos for next row of sprites
+	sta zp_08
+
+	dec zp_06	; Y counter
+	bne @next_frame_data_byte
+
+	rts
+; ----------------
+	@set_sprite_flags:
+	; Preserve animation data offset
+	sty zp_backup_y
+
+		ldy ram_0429 ;lda ram_0429
+		;tay
+		lda rom_01_B000+0,Y
+		sta zp_ptr4_lo
+		lda rom_01_B000+1,Y
+		sta zp_ptr4_hi
+
+		lda ram_oam_copy_tileid,X
+		and #$07
+		tay
+		lda @rom_DAB4,Y	; Index by tile ID % 8
+		sta zp_backup_a
+			lda ram_oam_copy_tileid,X
+			and #$7F
+			lsr A
+			lsr A
+			lsr A
+			tay
+		lda zp_backup_a
+		and (zp_ptr4_lo),Y
+		beq :+
+			lda #$01
+		:
+		ora ram_042A	; Add flags from fighter's anim frame data
+		eor zp_oam_flip_flag		; Horizontal flip flag depending on current facing direction
+		tay
+		lda zp_7C		; Player index
+		beq @DA9D		; Branch for player one
+
+			tya			; Player 2 changes palette index
+			ora #$02
+			bne @DA9E
+
+		@DA9D:
+		tya				; Player 1 uses value as it is (keep palette index)
+
+		@DA9E:
+		ldy ram_irq_routine_idx
+		cpy #$06
+		bne :+
+			; This is only used in the Continue screen...
+			; probably leftover from a different game
+			ora #$20	; Move sprite behind the background
+		:
+		sta ram_oam_copy_attr,X
+
+	ldy zp_backup_y
+
+	lda #$FB
+	;sta ram_067F	; Probably unused
+	jmp @set_xy_pos
+
+; -----------------------------------------------------------------------------
+
+; Probably an index/mask conversion table
+	@rom_DAB4:
+	.byte $01, $02, $04, $08, $10, $20, $40, $80
+	; Potentially unused bytes (index is masked with and #$07)
+	;.byte $2C, $AC
+
+; -----------------------------------------------------------------------------
+
+; SFX indices for frame 1 of each animation
+; 0 = no sound
+; Index = animation number
+tbl_frame_1_sfx_idx:
+	.byte $00, $00, $00, $00, $00, $00, $00, $00	; $00-$07
+	.byte $00, $00, $00, $07, $07, $08, $00, $00	; $08-$0F
+	.byte $08, $00, $00, $08, $07, $08, $00, $04	; $10-$17
+	.byte $08, $00, $00, $00, $00, $00, $04, $00	; $18-$1F
+	.byte $00, $00, $00, $00, $00, $00, $00, $00	; $20-$27
+	.byte $00, $00, $00, $00, $00, $00, $00, $00	; $28-$2F
+	.byte $00, $00, $00, $00, $00, $00, $00, $00	; $30-$37
+	; .byte $FF
 
 ; -----------------------------------------------------------------------------
 
@@ -3619,234 +3846,6 @@ rom_D977:
 
 ; -----------------------------------------------------------------------------
 
-sub_animate_player_sprites:
-	ldx tbl_player_oam_offsets,Y
-	ldy #$00
-	lda #$F8
-	; This loop moves all sprites off-screen for the current player
-	:
-		sta ram_oam_copy_ypos,X
-		inx
-		inx
-		inx
-		inx
-	iny
-	cpy #$20
-	bcc :-
-
-	ldy #$00
-	lda (zp_ptr3_lo),Y
-	sta zp_05
-	sta zp_ptr2_lo	; This may be unused
-	iny
-	lda (zp_ptr3_lo),Y
-	sta zp_06
-	sta zp_16
-	iny
-	lda (zp_ptr3_lo),Y
-	sta zp_0F
-	iny
-	lda (zp_ptr3_lo),Y
-	ldx zp_7C
-	sta zp_chr_bank_0,X
-	sta ram_0429
-	iny
-	lda (zp_ptr3_lo),Y
-	sta ram_042A
-	iny
-	lda zp_05
-	sta zp_09
-
-	lda zp_oam_flip_flag	; This depends on current facing direction
-	bne :+
-		; ptr1_lo = $08
-		; zp_07 = zp_07 - zp_0F
-		lda #$08
-		sta zp_ptr1_lo	; X increment (+8)
-
-		lda zp_07
-		sec
-		sbc zp_0F
-		jmp @DA07
-	:
-	; ptr1_lo = $F8
-	; zp_07 = zp_0F - $08 + zp_07
-	lda #$F8
-	sta zp_ptr1_lo	; X decrement (-8)
-
-	lda zp_0F
-	sec
-	sbc #$08
-	clc
-	adc zp_07
-
-	@DA07:
-	sta zp_07	; Starting X offset for first tile in a row
-	sta zp_08	; Current X offset (updated for each column)
-
-	ldx zp_06	; Vertical updates count?
-
-	:
-		lda zp_0A	; It seems this was player Y pos - 8 before this loop
-		sec
-		sbc #$08
-		sta zp_0A
-	dex
-	bne :-
-
-	sta zp_0B
-	dec zp_0B	; Base Y position (incremented by 8 for each row)
-
-	ldx zp_first_oam_ofs	; OAM offset of first sprite
-
-	@next_frame_data_byte:
-	lda (zp_ptr3_lo),Y
-	cmp #$FF
-	beq @skip_sprite
-
-		; Ignore the MSB because we use this as an offset: we don't know yet
-		; if we are in the top half of CHR ROM or the bottom
-		and #$7F
-
-		pha
-		lda zp_7C	; Player index
-		beq @DA2F	; Nothing to change for player 1
-
-		pla
-		ora #$80	; Move to the bottom of CHR ROM for player 2
-		bne @set_tile_id
-
-		@DA2F:
-		pla
-
-		@set_tile_id:
-		sta ram_oam_copy_tileid,X
-		jmp @set_sprite_flags
-
-		@set_xy_pos:
-		lda zp_0B	; Current row's Y pos
-		sta ram_oam_copy_ypos,X
-		lda zp_08	; Current tile's X pos
-		sta ram_oam_copy_xpos,X
-		; Move to next OAM entry
-		;inx
-		;inx
-		;inx
-		;inx
-		txa
-		axs #$FC
-
-	@skip_sprite:
-	iny	; Animation frame data offset
-
-	; Increase X position offset for next tile in this row
-	lda zp_ptr1_lo	; This is a signed value (negative to draw right-to-left)
-	clc
-	adc zp_08
-	sta zp_08
-
-	dec zp_09	; X counter
-	bne @next_frame_data_byte
-
-	; Increase Y position offset for next row
-	lda zp_0B
-	clc
-	adc #$08	; Fixed offset: we always draw top-to-bottom
-	sta zp_0B
-
-	lda zp_05	; Horizontal tiles count reload
-	sta zp_09
-
-	lda zp_07	; Starting X pos for next row of sprites
-	sta zp_08
-
-	dec zp_06	; Y counter
-	bne @next_frame_data_byte
-
-	rts
-; ----------------
-	@set_sprite_flags:
-	;tya	; Preserve animation data offset
-	;pha
-	sty zp_backup_y
-
-		ldy ram_0429 ;lda ram_0429
-		;tay
-		lda rom_01_B000+0,Y
-		sta zp_ptr4_lo
-		lda rom_01_B000+1,Y
-		sta zp_ptr4_hi
-
-		lda ram_oam_copy_tileid,X
-		and #$07
-		tay
-		lda @rom_DAB4,Y	; Index by tile ID % 8
-		pha
-			lda ram_oam_copy_tileid,X
-			and #$7F
-			lsr A
-			lsr A
-			lsr A
-			tay
-		pla
-		and (zp_ptr4_lo),Y
-		beq :+
-			lda #$01
-		:
-		ora ram_042A	; Add flags from fighter's anim frame data
-		eor zp_oam_flip_flag		; Horizontal flip flag depending on current facing direction
-		tay
-		lda zp_7C		; Player index
-		beq @DA9D		; Branch for player one
-
-			tya			; Player 2 changes palette index
-			ora #$02
-			bne @DA9E
-
-		@DA9D:
-		tya				; Player 1 uses value as it is (keep palette index)
-
-		@DA9E:
-		ldy ram_irq_routine_idx
-		cpy #$06
-		bne :+
-			; This is only used in the Continue screen...
-			; probably leftover from a different game
-			ora #$20	; Move sprite behind the background
-		:
-		sta ram_oam_copy_attr,X
-
-	;pla
-	;tay
-	ldy zp_backup_y
-
-	lda #$FB
-	sta ram_067F	; Probably unused
-	jmp @set_xy_pos
-
-; -----------------------------------------------------------------------------
-
-; Probably an index/mask conversion table
-	@rom_DAB4:
-	.byte $01, $02, $04, $08, $10, $20, $40, $80
-; Potentially unused bytes
-	.byte $2C, $AC
-
-; -----------------------------------------------------------------------------
-
-; SFX indices for frame 1 of each animation
-; 0 = no sound
-tbl_frame_1_sfx_idx:
-	.byte $00, $00, $00, $00, $00, $00, $00, $00
-	.byte $00, $00, $00, $07, $07, $08, $00, $00
-	.byte $08, $00, $00, $08, $07, $08, $00, $04
-	.byte $08, $00, $00, $00, $00, $00, $04, $00
-	.byte $00, $00, $00, $00, $00, $00, $00, $00
-	.byte $00, $00, $00, $00, $00, $00, $00, $00
-	.byte $00, $00, $00, $00, $00, $00, $00, $00
-	.byte $FF
-
-; -----------------------------------------------------------------------------
 
 
 ; -----------------------------------------------------------------------------
@@ -4172,7 +4171,7 @@ rom_B6A8:
 ; Data pointers for sprite animation sequences
 ; Index for these pointers is first byte from 3-byte data on top of fighter's
 ; PRG ROM bank
-tbl_anim_data_ptrs:
+tbl_movement_data_ptrs:
 	.word @rom_DB7D	; $00
 	.word @rom_DB98	; $01
 	.word @rom_DBCC
