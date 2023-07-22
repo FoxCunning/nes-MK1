@@ -481,7 +481,7 @@ sub_announcer_text:
 sub_match_eval:
 	inc zp_9E
 	ldy #$00
-	sty zp_player_hit_counter
+	sty zp_counter_var_F1
 	jsr sub_rom_C207
 
 	iny
@@ -515,11 +515,11 @@ sub_rom_C207:
 .export sub_match_fade_out
 
 sub_match_fade_out:
-	lda zp_player_hit_counter
+	lda zp_counter_var_F1
 	cmp #$40
 	bcs @C227
 
-	inc zp_player_hit_counter
+	inc zp_counter_var_F1
 	rts
 ; ----------------
 	@C227:
@@ -564,7 +564,7 @@ sub_match_fade_out:
 	lda #$00
 	sta ram_067D
 	sta zp_game_substate
-	sta zp_player_hit_counter
+	sta zp_counter_var_F1
 	@C271:
 	rts
 

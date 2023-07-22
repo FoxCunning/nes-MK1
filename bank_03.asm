@@ -181,15 +181,6 @@ sub_rom_A00C:
 	lda #$2E	; Strong knock back
 	bne @A0DA_assign_anim
 
-	;@hit_uppercut_check:
-	;lda zp_attacker_anim
-	;cmp #$13
-	;bne @A0D2_check_consecutive_hits
-
-	;	; Special animation for flying up in the air when hit by uppercut
-	;	lda #$30	; TODO
-	;	bne @A0DA_assign_anim
-
 	@A0D2_check_consecutive_hits:
 	lda zp_consecutive_hits_taken,X
 	cmp #$03	; Number of consecutive hits before opponent is knocked out
@@ -223,10 +214,17 @@ sub_rom_A00C:
 	txa
 	eor #$01
 	tax
+	stx zp_last_player_hit
 	lda @tbl_dmg_to_counter,Y
 	sta zp_plr1_dmg_counter,X
+
 	lda #$01
-	sta zp_player_hit_counter
+	sta zp_counter_var_F1
+		
+	lda zp_frozen_timer,X
+	beq :+
+		inc zp_thaw_flag,X
+	:
 
 	rts
 
@@ -842,12 +840,15 @@ sub_rom_A5F0:
 	beq @A60B_rts
 
 	cmp zp_plr2_damage
-	bne @A60C
+	bne @A60C_ai_move
 
 	@A60B_rts:
 	rts
 ; ----------------
-	@A60C:
+	@A60C_ai_move:
+	lda zp_frozen_timer,Y
+	bne @A60B_rts
+	
 	tya
 	eor #$01
 	tax
@@ -856,31 +857,31 @@ sub_rom_A5F0:
 	cmp #$14
 	bcs @A61C
 
-	jmp sub_special_move_0 ;jsr sub_special_move_0
-	;rts
+	jsr sub_special_move_0
+	rts
 ; ----------------
 	@A61C:
 	cmp #$28
 	bcs @A624
 
-	jmp sub_special_move_1 ;jsr sub_special_move_1
-	;rts
+	jsr sub_special_move_1
+	rts
 ; ----------------
 	@A624:
 	cmp #$80
 	bcs @A62C
 
-	jmp sub_special_move_2 ;jsr sub_special_move_2
-	;rts
+	jsr sub_special_move_2
+	rts
 ; ----------------
 	@A62C:
-	jsr sub_rom_A9EB
+	jsr sub_cpu_opponent_delay
 	jsr sub_rom_A9FD
 	and #$1F
 	tax
 	lda #$03
-	jmp sub_rom_A773 ;jsr sub_rom_A773
-	;rts
+	jsr sub_rom_A773
+	rts
 
 ; -----------------------------------------------------------------------------
 
@@ -889,7 +890,7 @@ sub_rom_A63B:
 	lda zp_5E
 	bne @A659
 
-	jsr sub_rom_A9EB
+	jsr sub_cpu_opponent_delay
 	ldx zp_7B
 	lda zp_9E
 	cmp #$01
@@ -941,7 +942,7 @@ sub_special_move_0:
 	sta zp_ptr3_hi
 
 	jsr sub_rom_A63B
-	jsr sub_rom_A9EB
+	jsr sub_cpu_opponent_delay
 	jsr sub_rom_A9FD
 
 	and #$1F
@@ -970,7 +971,7 @@ sub_special_move_1:
 	sta zp_ptr3_hi
 
 	jsr sub_rom_A63B
-	jsr sub_rom_A9EB
+	jsr sub_cpu_opponent_delay
 	jsr sub_rom_A9FD
 
 	and #$1F
@@ -998,7 +999,7 @@ sub_special_move_2:
 	lda rom_A7EF+1,X
 	sta zp_ptr3_hi
 	jsr sub_rom_A63B
-	jsr sub_rom_A9EB
+	jsr sub_cpu_opponent_delay
 	jsr sub_rom_A9FD
 	and #$1F
 	tax
@@ -1085,15 +1086,15 @@ sub_rom_A773:
 	cmp zp_plr1_cur_anim,Y
 	beq @A7B5_assign_anim_idx
     
-	@A7B0_reset_anim_frame:
-	lda #$00
-	sta zp_plr1_anim_frame,Y
+		@A7B0_reset_anim_frame:
+		lda #$00
+		sta zp_plr1_anim_frame,Y
 
 	@A7B5_assign_anim_idx:
 	lda zp_ptr1_lo
 	and #$3F	; TODO Is this necessary?
 	sta zp_plr1_cur_anim,Y
-	sty zp_8C
+	sty zp_last_anim_plr
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1258,20 +1259,23 @@ rom_A9AB:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_A9EB:
+; The "delay" is based on difficulty
+; Easier difficulties will abort the calling sub more often
+sub_cpu_opponent_delay:
 	ldx ram_difficulty_setting
 	lda zp_frame_counter
-	and rom_A9F8,X
-	beq @A9F7
+	and @rom_A9F8,X
+	beq @A9F7_rts
 
-	pla
-	pla
-	@A9F7:
+	; "Abort" calling sub and return to caller's caller
+		pla
+		pla
+	@A9F7_rts:
 	rts
 
-; -----------------------------------------------------------------------------
+; ----------------
 
-rom_A9F8:
+	@rom_A9F8:
 	.byte $1F, $0F, $07, $03, $00
 
 ; -----------------------------------------------------------------------------

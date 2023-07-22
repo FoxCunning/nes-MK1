@@ -44,53 +44,53 @@ rom_8004:
 	.word rom_810D
 	.byte $0A			; $0C = close/combo kick
 	.word rom_8113
-	.byte $1D			; $0D
+	.byte $1D			; $0D = Special move 1
 	.word rom_8117
 	.byte $02			; $0E = jumping kick (straight up)
 	.word rom_8137
-	.byte $02			; $0F
+	.byte $02			; $0F = another straight up jumping kick
 	.word rom_8143
 	.byte $00			; $10 = base punch
 	.word rom_814F
 	.byte $02			; $11 = jumping up punch
 	.word rom_8157
-	.byte $02			; $12
+	.byte $02			; $12 = another straight up jumping punch
 	.word rom_8163
 	.byte $00			; $13 = uppercut
 	.word rom_816F
 	.byte $0A			; $14 = crouching kick
 	.word rom_8177
-	.byte $05			; $15
+	.byte $05			; $15 = forward jump kick
 	.word rom_817B
 	.byte $02			; $16 = jumping up punch
 	.word rom_817C
-	.byte $2C			; $17
+	.byte $2C			; $17 = Special move 2
 	.word rom_817D
 	.byte $2A			; $18 = throw move
 	.word rom_818D
 	.byte $05			; $19 = jumping forward punch
 	.word rom_8199
-	.byte $05			; $1A
+	.byte $05			; $1A = another forward jump punch
 	.word rom_81A9
 	.byte $05			; $1B = jumping forward kick
 	.word rom_81B9
-	.byte $05			; $1C
+	.byte $05			; $1C = another forward jump kick
 	.word rom_81C9
-	.byte $05			; $1D
+	.byte $05			; $1D = forward jumping ranged attack (doesn't actually shoot)
 	.word rom_81D9
 	.byte $18			; $1E = ranged attack
 	.word anim_ranged_attack
 	.byte $04			; $1F = jumping backwards punch
 	.word rom_81F8
-	.byte $04			; $20
+	.byte $04			; $20 = another backwards jump punch
 	.word rom_8208
 	.byte $04			; $21 = jumping backwards kick
 	.word rom_8218
-	.byte $04			; $22
+	.byte $04			; $22 = another backwards jump kick
 	.word rom_8228
-	.byte $04			; $23
+	.byte $04			; $23 = mid-air fall on back
 	.word rom_8238
-	.byte $04			; $24
+	.byte $04			; $24 = another (larger?) mid-air fall on back
 	.word rom_8239
 	.byte $06			; $25 = quick standing punch? (only up close)
 
