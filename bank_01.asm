@@ -717,7 +717,7 @@ sub_ranged_attack:
 	cmp #$05	; Parry
 	beq @C5FB_parry
 
-	lda #$01	; Start the counter
+	lda #$01	; Start the "hit" counter
 	sta zp_counter_var_F1
 
 	sty zp_backup_y
@@ -993,8 +993,8 @@ sub_match_hit_loop:
 		lda #$00
 		sta zp_gained_score_idx
 		; sta zp_F0
-		sta zp_counter_var_F1
-		dec zp_game_substate	 ; Back to match main loop
+		sta zp_counter_var_F1	; Stop the "hit" counter
+		dec zp_game_substate	; Back to match main loop
 		rts
 ; ----------------
 	:
@@ -1614,7 +1614,7 @@ sub_check_apply_knockdown:
 	sta zp_plr1_cur_anim,Y
 	lda #$0A
 	sta zp_plr1_anim_frame,Y
-	
+
 	lda zp_ptr1_hi
 	clc
 	adc #$0C
@@ -2554,6 +2554,10 @@ sub_parry_button_input:
 		tya
 		eor #$01
 		tax
+		; Don't try to parry attacks from frozen players
+		lda zp_frozen_timer,X
+		bne @D163_rts
+
 		lda zp_plr1_cur_anim,X
 		cmp #$0B	; Base kick
 		bcc @D163_rts
@@ -2575,10 +2579,10 @@ sub_parry_button_input:
 		and zp_controller1,Y
 		beq @D163_rts
 
-		lda #$05	; Parry
-		sta zp_plr1_cur_anim,Y
-		lda #$00
-		sta zp_plr1_anim_frame,Y
+			lda #$05	; Parry
+			sta zp_plr1_cur_anim,Y
+			lda #$00
+			sta zp_plr1_anim_frame,Y
 
 	@D163_rts:
 	rts
@@ -2691,6 +2695,10 @@ sub_crouching_input:
 	bne @D206_set_anim
 
 	@D1DE:
+	; Don't try to parry attacks from frozen players
+	lda zp_frozen_timer,X
+	bne @D1FD
+
 	lda zp_plr1_cur_anim,X
 	cmp #$0B	; $0B = base kick
 	bcc @D1FD
@@ -2715,7 +2723,7 @@ sub_crouching_input:
 
 	@D1FD:
 	lda zp_plr1_fgtr_idx_clean,Y
-	cmp #$07
+	cmp #$07	; Goro doesn't crouch
 	beq @D209_rts
 
 		lda #$01	; Crouching

@@ -1259,7 +1259,7 @@ sub_call_gfx_routines:
 	sta mmc3_bank_data
 
 	jsr sub_rom_03_A5E4
-	jsr sub_rom_03_A000
+	jsr sub_regular_hit_check
 
 	lda #$87
 	ora zp_bank_select_mask

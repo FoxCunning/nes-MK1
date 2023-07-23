@@ -8,52 +8,61 @@
 .include "globals.inc"
 
 ; -----------------------------------------------------------------------------
-.export sub_rom_03_A000
+.export sub_regular_hit_check
 
-sub_rom_03_A000:
+; Non-ranged attacks hit check
+sub_regular_hit_check:
 	jsr sub_rom_A9FD
 	and #$01
-	jsr sub_rom_A00C
+	jsr sub_inner_reg_hit_check
 
+	; Change index for player 2
 	lda zp_7C
 	eor #$01
 ; ----------------
-sub_rom_A00C:
-	tax
+sub_inner_reg_hit_check:
+	tax				; X = attacker
 	stx zp_7C
+
+	eor #$01
+	tay				; Y = player potentially being hit
+
+	lda zp_frozen_timer,X
+	bne @A02A_rts	; Ignore attacks from frozen players
+
 	lda zp_plr1_cur_anim,X
 	cmp #$0B
 	bcc @A02A_rts
 
 	; Ignore facing for throw moves
 	cmp #$18
-	beq @A030
+	beq @A030_player_hit
 
 	cmp #$26
 	bcs @A02A_rts
 
-		txa
-		eor #$01
-		tay
+		;txa
+		;eor #$01
+		;tay
 		lda zp_plr1_x_pos,X
 		cmp zp_plr1_x_pos,Y
-		beq @A030
+		beq @A030_player_hit
 
 		bcs @A02B_check_facing
 
 		lda zp_plr1_facing_dir,X
-		beq @A030
+		beq @A030_player_hit
 
 	@A02A_rts:
 	rts
 ; ----------------
 	@A02B_check_facing:
 	lda zp_plr1_facing_dir,X
-	bne @A030
+	bne @A030_player_hit
 
 		rts
 ; ----------------
-	@A030:
+	@A030_player_hit:
 	lda zp_plr1_fgtr_idx_clean,X
 	asl A
 	tay
@@ -199,16 +208,7 @@ sub_rom_A00C:
 	ldx zp_7C
 	sta zp_gained_score_idx,X
 	inc zp_gained_score_idx,X
-	
-	; Unused data? Nothing reads those values
-	;pha
-	;iny
-	;lda (zp_ptr3_lo),Y
-	;sta zp_EB,X
-	;iny
-	;lda (zp_ptr3_lo),Y
-	;sta zp_ED,X
-	;pla
+
 	tay
 
 	txa
@@ -219,7 +219,7 @@ sub_rom_A00C:
 	sta zp_plr1_dmg_counter,X
 
 	lda #$01
-	sta zp_counter_var_F1
+	sta zp_counter_var_F1	; Start the "hit" counter
 		
 	lda zp_frozen_timer,X
 	beq :+
