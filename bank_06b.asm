@@ -993,7 +993,7 @@ sub_oam_update:
 	bne @E91D
 
 	@E917:
-	lda zp_8C
+	lda zp_last_anim_plr
 	jmp @E920
 
 	@E91D:
@@ -1259,13 +1259,82 @@ sub_call_gfx_routines:
 	sta mmc3_bank_data
 
 	jsr sub_rom_03_A5E4
-	jsr sub_rom_03_A000
+	jsr sub_regular_hit_check
 
 	lda #$87
 	ora zp_bank_select_mask
 	sta mmc3_bank_select
 	lda #$01
 	sta mmc3_bank_data
+
+	ldx #$01
+	@thaw_check:
+		lda zp_thaw_flag,X
+		beq @thaw_check_next
+			lda #$00
+			sta zp_thaw_flag,X
+			sta zp_frozen_timer,X
+
+			; "Land" airborne players when thawing, if needed
+			lda zp_plr1_cur_anim,X
+			cmp #$2D
+			bcs :+
+				lda zp_sprites_base_y
+				cmp zp_plr1_y_pos,X
+				beq :+
+					lda #$34
+					sta zp_plr1_cur_anim,X
+					lda #$0A
+					sta zp_plr1_anim_frame,X
+					lda zp_sprites_base_y
+					sec
+					sbc #$4E
+					sta zp_plr1_y_pos,X
+			:
+
+			stx zp_7C
+			jmp sub_reload_fighters_palettes
+		@thaw_check_next:
+		dex
+	bpl @thaw_check
+
 	rts
 
 ; -----------------------------------------------------------------------------
+
+sub_reload_fighters_palettes:
+	lda zp_plr1_fgtr_idx_clean,X
+	asl A
+	tax
+	lda tbl_fighter_palette_ptrs+0,X
+	sta zp_ptr1_lo
+	lda tbl_fighter_palette_ptrs+1,X
+	sta zp_ptr1_hi
+
+	ldy #$01
+	ldx zp_7C
+	;sty zp_48,X
+	;sty zp_plr1_anim_frame,X
+	ldx #$00
+	:
+		lda (zp_ptr1_lo),Y
+		sta ram_ppu_data_buffer,X
+		inx
+		iny
+	cpy #$08
+	bcc :-
+
+	dey	; We skipped the first byte
+	sty zp_nmi_ppu_cols
+	lda #$01
+	sta zp_nmi_ppu_rows
+	lda #$3F
+	sta zp_nmi_ppu_ptr_hi
+	ldy #$11		; Player 1 offset
+	lda zp_7C
+	beq :+
+		ldy #$19	; Player 2 offset
+	:
+	sty zp_nmi_ppu_ptr_lo
+
+	rts

@@ -13,7 +13,7 @@
 ; Track pointers
 tbl_track_ptrs:
 	.word sfx_silence			; $00
-	.word sfx_97A7				; $01	A glitchy sound that sometimes plays when a match starts
+	.word sfx_silence ;sfx_97A7	; $01	A glitchy sound that sometimes plays when a match starts
 	.word sfx_hit				; $02	Any hit
 	.word sfx_bleep				; $03	Cursor movement bleep
 	.word sfx_projectile		; $04	Projectile/special attack
@@ -399,18 +399,18 @@ sfx_9796_unused:
 ; -----------------------------------------------------------------------------
 
 ; Noise
-rom_979A:
-	.byte $F5, $03, $F8, $FF, $F9, $FF
-	.byte $FA, $FF, $FB, $FF
-	.byte $F8, $00, $85, $17, $FF
+;rom_979A:
+;	.byte $F5, $03, $F8, $FF, $F9, $FF
+;	.byte $FA, $FF, $FB, $FF
+;	.byte $F8, $00, $85, $17, $FF
 
 ; ----------------
 
 ; This glitchy sound sometimes plays just before a match begins
-sfx_97A7:
-	.byte $83
-	.word rom_979A
-	.byte $FF
+;sfx_97A7:
+;	.byte $83
+;	.word rom_979A
+;	.byte $FF
 
 ; -----------------------------------------------------------------------------
 

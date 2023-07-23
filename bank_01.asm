@@ -60,16 +60,8 @@ sub_match_loop:
 	:
 	jsr sub_calc_players_distance
 	jsr sub_check_fighter_ko
-	jsr sub_rom_CA5C
+	jsr sub_match_controller_input
 
-	; Bank $03 in $A000-$BFFF
-	;lda #$87
-	;sta zp_prg_bank_select_backup
-	;sta mmc3_bank_select
-	;lda #$03
-	;sta mmc3_bank_data
-	;jsr sub_rom_03_A5E4
-	;jsr sub_rom_03_A000
 	jsr sub_call_gfx_routines
 
 	lda zp_short_counter
@@ -80,7 +72,7 @@ sub_match_loop:
 		jsr sub_upd_anim_and_timer ;sub_rom_CCA8
 	:
 	inc zp_23
-	jsr sub_rom_CC9A	; TODO Inline this
+	jsr sub_short_counter_tick	; TODO Inline this
 	bcc :+
 		; Also normally every 2 frames
 		jsr sub_request_hit_sound
@@ -101,6 +93,8 @@ sub_match_loop:
 
 sub_match_hit:
 	jsr sub_match_hit_loop
+	lda #$00
+
 	lda zp_5E
 	bne :+
 		jmp sub_rom_C695
@@ -480,7 +474,7 @@ sub_rom_C36B:
 
 ; -----------------------------------------------------------------------------
 
-; Y coordinate for ranged attack sprite
+; Relative Y coordinate for ranged attack sprite
 rom_C3BD:
 	.byte $DA-$9C	; Rayden
 	.byte $DA-$98	; Sonya
@@ -491,8 +485,6 @@ rom_C3BD:
 	.byte $DA-$9C	; Liu Kang
 	.byte $DA-$9C	; Goro
 	.byte $DA-$A1	; Shang-Tsung
-	; Likely unused
-	;.byte $9C, $9C, $A6
 
 ; -----------------------------------------------------------------------------
 
@@ -507,13 +499,12 @@ rom_C3C9:
 	.byte $67, $68, $FF, $FF	; Liu Kang
 	.byte $75, $76, $FF, $FF	; Goro
 	.byte $3E, $3F, $FF, $FF	; Shang-Tsung
-	; Probably unused
-	;.byte $7D, $FF, $7E, $FF
-	;.byte $74, $76, $FF, $78
-	;.byte $03, $04, $05, $06
 
 ; -----------------------------------------------------------------------------
 
+; This is called when setting OAM data for the ranged attack sprite
+; The only one that does somehing is Kano's, who seems to use more than
+; four sprites
 sub_rom_C3F9:
 	ldy zp_7C
 	lda zp_plr1_fgtr_idx_clean,Y
@@ -528,10 +519,6 @@ sub_rom_C3F9:
 	.word sub_rom_C419	; Liu Kang
 	.word sub_rom_C419	; Goro
 	.word sub_rom_C419	; Shang-Tsung
-	; Unused fighters
-	;.word sub_rom_C419
-	;.word sub_rom_C419
-	;.word sub_rom_C419
 
 ; -----------------------------------------------------------------------------
 
@@ -719,10 +706,10 @@ sub_ranged_attack:
 	beq @ranged_atk_return
 
 	cmp #$2B	; Already parried (crouching)
-	beq @C60D
+	beq @C60D_rts_x2
 
 	cmp #$2C	; Already hit (recovering)
-	beq @C60D
+	beq @C60D_rts_x2
 
 	cmp #$02	; Crouched parry
 	beq @C5FF_crouch_parry
@@ -730,8 +717,8 @@ sub_ranged_attack:
 	cmp #$05	; Parry
 	beq @C5FB_parry
 
-	lda #$01	; Start the counter
-	sta zp_player_hit_counter
+	lda #$01	; Start the "hit" counter
+	sta zp_counter_var_F1
 
 	sty zp_backup_y
 	lda zp_plr1_fgtr_idx_clean,Y
@@ -754,7 +741,19 @@ sub_ranged_attack:
 		bne @player_hit_anim
 	:
 	; TODO Other special ranged attacks (Sub-Zero)
-	; cmp #$02
+	cmp #$02
+	bne :+
+		lda #$00
+		sta zp_plr1_cur_anim,Y
+		sta zp_plr1_anim_frame,Y
+
+		lda #$20
+		sta zp_frozen_timer,X
+
+		jsr sub_frozen_palette
+
+		jmp @C60D_rts_x2
+	:
 	
 	; Check if a player was hit whilst airborne
 	lda zp_plr1_y_pos,X
@@ -783,7 +782,7 @@ sub_ranged_attack:
 	sta zp_plr1_cur_anim,Y	; Attacker
 	sta zp_plr1_anim_frame,Y
 
-	@C60D:
+	@C60D_rts_x2:
 	pla
 	pla
 	@ranged_atk_return:
@@ -828,7 +827,7 @@ sub_clear_score_display:
 .export sub_rom_C69C
 
 sub_rom_C695:
-	lda zp_player_hit_counter
+	lda zp_counter_var_F1
 	cmp #$02
 	beq sub_rom_C69C
 		rts
@@ -842,11 +841,13 @@ sub_rom_C69C:
 	jsr sub_rom_C6BB
 	lda ram_game_mode_initialised
 	beq sub_rom_C6BA
-	inc zp_7C
-	ldy zp_7C
-	ldx #$03
-	stx zp_7B
-	jmp sub_rom_C6BB ;jsr sub_rom_C6BB
+
+		inc zp_7C
+		ldy zp_7C
+		ldx #$03
+		stx zp_7B
+		jmp sub_rom_C6BB ;jsr sub_rom_C6BB
+	
 sub_rom_C6BA:
 	rts
 
@@ -985,33 +986,33 @@ sub_rom_C789:
 ; Acts as a counter from 15 to 0, after which the machine state returns to
 ; the main match loop
 sub_match_hit_loop:
-	lda zp_player_hit_counter
+	lda zp_counter_var_F1
 	cmp #$0F
 	bcc :+
 
 		lda #$00
 		sta zp_gained_score_idx
-		sta zp_F0
-		sta zp_player_hit_counter
-		dec zp_game_substate	 ; Back to match main loop
+		; sta zp_F0
+		sta zp_counter_var_F1	; Stop the "hit" counter
+		dec zp_game_substate	; Back to match main loop
 		rts
 ; ----------------
 	:
-	inc zp_player_hit_counter
+	inc zp_counter_var_F1
 	rts
 
 ; -----------------------------------------------------------------------------
 
 sub_check_fighter_ko:
-	lda #$58
+	lda #$58	; Max damage
 	cmp zp_plr1_damage
-	beq @C7BA
+	beq @C7BA_rts
 
-	cmp zp_plr2_damage
-	bne @C7BB
+		cmp zp_plr2_damage
+		bne @C7BB
 
-	@C7BA:
-	rts
+			@C7BA_rts:
+			rts
 ; ----------------
 	@C7BB:
 	ldx #$00
@@ -1023,62 +1024,73 @@ sub_check_fighter_ko:
 sub_rom_C7C6:
 	lda zp_plr1_cur_anim,X
 	cmp #$28
-	beq @C800
+	beq @C800_rts
 
-	lda zp_plr1_fgtr_idx_clean,X
-	asl A
-	clc
-	adc zp_plr1_fgtr_idx_clean,X
-	tay
-	sty ram_0422
-	lda rom_C801,Y
-	bmi @C7E1
+	lda zp_frozen_timer,X
+	bne @C800_rts
 
-	sta ram_043D
-	jsr sub_rom_C825
-	@C7E1:
-	ldy ram_0422
-	iny
-	lda rom_C801,Y
-	bmi @C7F0
+		; Index = fighter id * 3
+		lda zp_plr1_fgtr_idx_clean,X
+		asl A
+		clc
+		adc zp_plr1_fgtr_idx_clean,X
+		tay
+		sty ram_0422
+		lda @rom_C801,Y
+		bmi :+
+			sta ram_043D
+			jsr sub_rom_C825
+		:
+		ldy ram_0422
+		iny
+		lda @rom_C801,Y
+		bmi :+
+			sta ram_043D
+			jsr sub_rom_C82C
+		:
+		ldy ram_0422
+		iny
+		iny
+		lda @rom_C801,Y
+		bmi @C800_rts
 
-	sta ram_043D
-	jsr sub_rom_C82C
-	@C7F0:
-	ldy ram_0422
-	iny
-	iny
-	lda rom_C801,Y
-	bmi @C800
+			sta ram_043D
+			jmp sub_rom_C833 ;jsr sub_rom_C833
 
-	sta ram_043D
-	jsr sub_rom_C833
-	@C800:
+	@C800_rts:
 	rts
 
-; -----------------------------------------------------------------------------
+; ----------------
 
-rom_C801:
-	.byte $00, $01, $02, $03, $04, $05, $06, $07
-	.byte $08, $09, $0A, $0B, $0C, $0D, $0E, $0F
-	.byte $10, $11, $12, $13, $14, $FF, $16, $FF
-	.byte $FF, $19, $FF, $1B, $1C, $1D, $1E, $1F
-	.byte $FF, $06, $07, $08
+	@rom_C801:
+	.byte $00, $01, $02	; Rayden
+	.byte $03, $04, $05	; Sonya
+	.byte $06, $07, $08	; Sub-Zero
+	.byte $09, $0A, $0B	; Scorpion
+	.byte $0C, $0D, $0E	; Kano
+	.byte $0F, $10, $11	; Johnny Cage
+	.byte $12, $13, $14	; Liu Kang
+	.byte $FF, $16, $FF	; Goro
+	.byte $FF, $19, $FF	; Shang-Tsung
+	; Probably unused
+	;.byte $1B, $1C, $1D
+	;.byte $1E, $1F, $FF
+	;.byte $06, $07, $08
 
 ; -----------------------------------------------------------------------------
 
 sub_rom_C825:
-	lda #$0D
+	lda #$0D	; Special move 1
 	sta ram_043E
 	bne sub_rom_C838
 ; ----------------
 sub_rom_C82C:
-	lda #$1E
+	lda #$1E	; Ranged attack
 	sta ram_043E
 	bne sub_rom_C838
 ; ----------------
 sub_rom_C833:
-	lda #$17
+	lda #$17	; Special move 2
 	sta ram_043E
 ; ----------------
 sub_rom_C838:
@@ -1087,37 +1099,37 @@ sub_rom_C838:
 	cmp zp_sprites_base_y
 	bne @C875_rts
 
-	lda ram_043D
-	bne @C84B
+		lda ram_043D
+		bne @C84B
 
-	lda zp_controller1,X
-	and #$04	; Button down?
-	bne @C875_rts
+			lda zp_controller1,X
+			and #$04	; Button down?
+			bne @C875_rts
 
-	@C84B:
-	jsr sub_rom_C876
-	ldy zp_7C
-	lda ram_043E
-	cmp #$1E
-	bne @C86A
+				@C84B:
+				jsr sub_rom_C876
+				ldy zp_7C
+				lda ram_043E
+				cmp #$1E	; Ranged attack
+				bne @C86A
 
-	lda zp_4C,Y
-	bmi @C875_rts
+				lda zp_4C,Y
+				bmi @C875_rts
 
-	ldx zp_4C,Y
-	inx
-	stx zp_4C,Y
-	cpx #$02
-	bcc @C86A
+				ldx zp_4C,Y
+				inx
+				stx zp_4C,Y
+				cpx #$02
+				bcc @C86A
 
-	lda #$80
-	sta zp_4C,Y
-	@C86A:
-	lda ram_043E
-	cmp zp_plr1_cur_anim,Y
-	beq @C875_rts
+				lda #$80
+				sta zp_4C,Y
+				@C86A:
+				lda ram_043E
+				cmp zp_plr1_cur_anim,Y
+				beq @C875_rts
 
-		jsr sub_change_fighter_anim
+					jmp sub_change_fighter_anim ;jsr sub_change_fighter_anim
 
 	@C875_rts:
 	rts
@@ -1132,15 +1144,18 @@ sub_rom_C876:
 	sta zp_ptr3_lo
 	lda tbl_ctrl_move_ptrs+1,Y
 	sta zp_ptr3_hi
+
 	ldx ram_043D
-	lda rom_C8D5,X
+	lda @rom_C8D5,X
 	clc
 	adc zp_7C
 	tax
 	stx zp_7B
+
 	lda zp_A9,X
 	sta zp_ptr1_lo
 	inc zp_ptr1_lo
+
 	ldx zp_7C
 	lda zp_plr1_facing_dir,X
 	tay
@@ -1186,9 +1201,9 @@ sub_rom_C876:
 	sta zp_A9,X
 	rts
 
-; -----------------------------------------------------------------------------
+; ----------------
 
-rom_C8D5:
+	@rom_C8D5:
 	.byte $00, $02, $04, $00, $02, $04, $00, $02
 	.byte $04, $00, $02, $04, $00, $02, $04, $00
 	.byte $02, $04, $00, $02, $04, $00, $02, $04
@@ -1203,16 +1218,16 @@ sub_rom_C8F9:
 	cmp #$0F
 	bcc @C911
 
-	lda #$00
-	sta zp_BD,X
-	lda zp_A9,X
-	cmp zp_D1,X
-	bne @C90F
-	
-	lda #$00
-	sta zp_A9,X
-	@C90F:
-	sta zp_D1,X
+		lda #$00
+		sta zp_BD,X
+		lda zp_A9,X
+		cmp zp_D1,X
+		bne :+
+			lda #$00
+			sta zp_A9,X
+		:
+		sta zp_D1,X
+
 	@C911:
 	inc zp_BD,X
 	rts
@@ -1311,22 +1326,6 @@ rom_C9C2:
 rom_C9CA:
 	.byte $03, $02, $10, $80
 
-; Unused 0
-;rom_C9CE:
-;	.byte $06, $80, $80, $80, $80, $80, $80
-;rom_C9D5:
-;	.byte $03, $02, $01, $40
-;rom_C9D9:
-;	.byte $03, $01, $04, $80
-
-; Unused 1
-;rom_C9DD:
-;	.byte $06, $80, $80, $80, $80, $80, $80
-;rom_C9E4:
-;	.byte $03, $01, $04, $80
-;rom_C9E8:
-;	.byte $03, $04, $01, $80
-
 ; -----------------------------------------------------------------------------
 
 sub_rom_C9EC:
@@ -1414,7 +1413,7 @@ sub_rom_CA19:
 ; -----------------------------------------------------------------------------
 
 ; Changes a player's animation index and resets current frame to zero
-; Saves Y in zp_8C
+; Saves player index in zp_8C
 ; Parameters:
 ; zp_7C = player index (0 for player one, 1 for player 2)
 ; A = new animation index
@@ -1423,55 +1422,55 @@ sub_change_fighter_anim:
 	sta zp_plr1_cur_anim,Y
 	lda #$00
 	sta zp_plr1_anim_frame,Y
-	sty zp_8C
+	sty zp_last_anim_plr
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_CA5C:
+sub_match_controller_input:
 	ldy #$00
 	sty zp_7C
-	jsr sub_rom_CA66
+	jsr sub_inner_match_input
+
 	iny
 	sty zp_7C
-
-; -----------------------------------------------------------------------------
-
-sub_rom_CA66:
+; ----------------
+sub_inner_match_input:
 	lda #$58
 	cmp zp_plr1_damage
-	beq @CA70
+	beq @CA70_delay_y
 
 	cmp zp_plr2_damage
-	bne @CA7C
+	bne @CA7C_process_inputs
 
-	@CA70:
+	; The delay below causes the "slowmo" effect at the final blow
+	@CA70_delay_y:
 	ldy #$01
-	@CA72:
+
+	@CA72_delay_x:
 	ldx #$68
-	@CA74:
-	dex
-	bne @CA74
+	:
+		dex
+	bne :-
 
 	dey
-	bne @CA72
-
+	bne @CA72_delay_x
 	beq @CA94
 
-	@CA7C:
-	jsr sub_rom_D164
-	jsr sub_rom_CC36
-	jsr sub_rom_CBC7
-	jsr sub_rom_CBFC
-	jsr sub_rom_D1B6
-	jsr sub_rom_D0E1
-	jsr sub_rom_D129
-	jsr sub_check_stunned
+		@CA7C_process_inputs:
+		jsr sub_left_right_walk_input
+		jsr sub_standing_atk_buttons_input
+		jsr sub_jumping_atk_buttons_input
+		jsr sub_sidejump_atk_buttons_input
+		jsr sub_crouching_input
+		jsr sub_jump_button_input
+		jsr sub_parry_button_input
+		jsr sub_check_apply_stunned
 
 	@CA94:
 	ldy zp_7C
-	jsr sub_rom_CB0C
-	jmp sub_rom_CB7F ;jsr sub_rom_CB7F
+	jsr sub_check_apply_knockdown
+	jmp sub_post_knockdown ;jsr sub_rom_CB7F
 	;rts
 
 ; -----------------------------------------------------------------------------
@@ -1507,7 +1506,8 @@ sub_rom_CAA3:
 
 ; -----------------------------------------------------------------------------
 
-sub_check_stunned:
+; Starts the "stunned" animation if needed (e.g. 3 consecutive hits)
+sub_check_apply_stunned:
 	ldy zp_7C
 	lda zp_consecutive_hits_taken,Y
 	cmp #$03
@@ -1548,10 +1548,11 @@ sub_check_stunned:
 		sta zp_E7,Y
 
 	@CB00:
-	lda zp_E9,Y
-	clc
-	adc #$01
-	sta zp_E9,Y
+	;lda zp_E9,Y
+	;clc
+	;adc #$01
+	;sta zp_E9,Y
+	isc a:zp_E9,Y
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1563,23 +1564,23 @@ tbl_player_oam_offsets:
 ; -----------------------------------------------------------------------------
 
 ; Does something if animation is $2E, $31 or $32
-sub_rom_CB0C:
+sub_check_apply_knockdown:
 	lda zp_plr1_cur_anim,Y
 	cmp #$2E
 	beq @CB1B
 
 	; Return if < $30 and >= $33
 	cmp #$30	
-	bcc @CB7E_rts
+	bcc @fall_back_rts
 
 	cmp #$33
-	bcs @CB7E_rts
+	bcs @fall_back_rts
 
 	@CB1B:
 	; Only reached if animation is $2E, $31 or $32
 	lda #$06
 	cmp zp_plr1_anim_frame,Y
-	bcs @CB7E_rts
+	bcs @fall_back_rts
 
 	lda zp_sprites_base_y
 	sec
@@ -1593,7 +1594,7 @@ sub_rom_CB0C:
 	bcs @CB5A
 
 	cmp zp_ptr1_hi
-	bcc @CB7E_rts
+	bcc @fall_back_rts
 
 	lda zp_plr1_cur_anim,Y
 	cmp #$32
@@ -1613,10 +1614,13 @@ sub_rom_CB0C:
 	sta zp_plr1_cur_anim,Y
 	lda #$0A
 	sta zp_plr1_anim_frame,Y
+
 	lda zp_ptr1_hi
 	clc
 	adc #$0C
 	sta zp_plr1_y_pos,Y
+
+	@fall_back_rts:
 	rts
 ; ----------------
 	@CB5A:
@@ -1628,6 +1632,7 @@ sub_rom_CB0C:
 	cmp zp_ptr1_lo
 	bcc @CB7E_rts
 
+		; Falling on their back after hit
 		lda #$02
 		sta zp_short_counter_target
 		lda #$26	; Fall on back
@@ -1645,7 +1650,7 @@ sub_rom_CB0C:
 ; -----------------------------------------------------------------------------
 
 ; After a knockout, either get up or end the match
-sub_rom_CB7F:
+sub_post_knockdown:
 	lda zp_plr1_cur_anim,Y
 	cmp #$26	 ; Knocked out
 	bne @CBC6_rts
@@ -1701,10 +1706,13 @@ sub_rom_CB7F:
 ; Punch/kick during animation 6 (straight jump up)
 ; Parameters:
 ; Y = 0 for player one, 1 for player two
-sub_rom_CBC7:
+sub_jumping_atk_buttons_input:
+	lda zp_frozen_timer
+	bne @CBFB_rts
+
 	lda zp_plr1_cur_anim,Y
 	cmp #$06	; Upwards jump
-	bne @CBFB
+	bne @CBFB_rts
 
 		ldx #$0E	; Animation $0E = upwards jump kick
 
@@ -1720,7 +1728,7 @@ sub_rom_CBC7:
 		@CBDE:
 		lda zp_controller1_new,Y
 		and #$80
-		beq @CBFB
+		beq @CBFB_rts
 
 
 		lda #$08	; Punch swing
@@ -1737,8 +1745,8 @@ sub_rom_CBC7:
 		@CBF5:
 		txa
 		sta zp_plr1_cur_anim,Y
-		sty zp_8C
-	@CBFB:
+		sty zp_last_anim_plr
+	@CBFB_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1746,7 +1754,10 @@ sub_rom_CBC7:
 ; Punch/kick during animation 7 or 8 (forward or backwards jump)
 ; Parameters:
 ; Y = 0 for player one, 1 for player 2
-sub_rom_CBFC:
+sub_sidejump_atk_buttons_input:
+	lda zp_frozen_timer,Y
+	bne @CC35_rts
+
 	ldx #$19
 	lda zp_plr1_cur_anim,Y
 	cmp #$07
@@ -1783,15 +1794,19 @@ sub_rom_CBFC:
 		:
 		txa
 		sta zp_plr1_cur_anim,Y
-		sty zp_8C
+		sty zp_last_anim_plr
 
 	@CC35_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_CC36:
-	jsr sub_rom_D0D1
+; Inputs that would make the player perform a standing attack
+sub_standing_atk_buttons_input:
+	lda zp_frozen_timer
+	bne @CC5B_rts
+
+	jsr sub_check_is_moving
 
 	lda zp_controller1,Y
 	and #$04	; D-pad down
@@ -1801,7 +1816,7 @@ sub_rom_CC36:
 		and #$40	; Button B
 		beq @CC4F
 
-			jsr sub_rom_CC82
+			jsr sub_sel_kick_type
 			@CC4A:
 			txa
 			jmp sub_change_fighter_anim ;jsr sub_change_fighter_anim
@@ -1812,7 +1827,7 @@ sub_rom_CC36:
 		and #$80	; Button A
 		beq @CC5B_rts
 
-		jsr sub_rom_CC5C
+		jsr sub_sel_punch_type
 		bne @CC4A
 
 	@CC5B_rts:
@@ -1820,7 +1835,10 @@ sub_rom_CC36:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_CC5C:
+; Selects basic punch, close up punch or throw depending on X distance
+; Returns:
+; X = selected animation index
+sub_sel_punch_type:
 	lda zp_players_x_distance
 	cmp #$1E
 	bcs @CC7F_normal_punch
@@ -1856,30 +1874,33 @@ sub_rom_CC5C:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_CC82:
+; Selects regular or up-close kick animation based on X distance
+; Returns:
+; X = selected animation index
+sub_sel_kick_type:
 	lda zp_players_x_distance
 	cmp #$30
-	bcs @CC97
+	bcs @CC97_ret_0B
 
-	lda #$1B
-	ldx zp_plr1_fgtr_idx_clean,Y
-	bne @CC90
+		lda #$1B
+		;ldx zp_plr1_fgtr_idx_clean,Y	Pointless, it compares with $1B anyway
+		;bne @CC90
 
-	lda #$1B
-	@CC90:
-	cmp zp_players_x_distance
-	bcc @CC97
+		;	lda #$1B
+		;@CC90:
+		cmp zp_players_x_distance
+		bcc @CC97_ret_0B
 
-	ldx #$0C
-	rts
+			ldx #$0C	; Close up kick
+			rts
 ; ----------------
-	@CC97:
-	ldx #$0B
+	@CC97_ret_0B:
+	ldx #$0B	; Base kick
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_CC9A:
+sub_short_counter_tick:
 	lda zp_short_counter
 	cmp zp_short_counter_target
 	bcc :+
@@ -1901,14 +1922,14 @@ sub_rom_CC9A:
 ; -----------------------------------------------------------------------------
 
 sub_request_hit_sound:
-	lda zp_player_hit_counter
+	lda zp_counter_var_F1
 	beq @CCC2_rts
 
 	cmp #$01
 	bcc @CCC0
 
-		ldx #$01	; X will be the index of the target
-		ldy #$00	; Y will be the index of the attacker
+		ldx #$01	; X will be the index of the target for special attacks
+		ldy #$00	; Y will be the index of the attacker for special attacks
 		@special_hit_check:
 		lda zp_plr1_cur_anim,X
 		cmp #$33	; Special hit animation
@@ -1929,12 +1950,12 @@ sub_request_hit_sound:
 		sta ram_req_sfx
 
 		lda #$00
-		sta zp_player_hit_counter
+		sta zp_counter_var_F1
 		inc zp_game_substate
 		rts
 ; ----------------
 	@CCC0:
-	inc zp_player_hit_counter
+	inc zp_counter_var_F1
 	@CCC2_rts:
 	rts
 
@@ -2093,15 +2114,16 @@ sub_calc_players_distance:
 	lda zp_plr1_x_pos
 	cmp zp_plr2_x_pos
 	bcs @CF2C
-
-	lda zp_plr2_x_pos
-	sec
-	sbc zp_plr1_x_pos
+		; Player 2 to the right
+		lda zp_plr2_x_pos
+		sec
+		sbc zp_plr1_x_pos
 	bne @CF2F
 
 	@CF2C:
-	sec
-	sbc zp_plr2_x_pos
+		; Player 1 to the right
+		sec
+		sbc zp_plr2_x_pos
 	@CF2F:
 	sta zp_players_x_distance
 
@@ -2119,11 +2141,12 @@ sub_calc_players_distance:
 	inx
 	sec
 	sbc zp_plr2_y_pos
+
 	@CF44:
 	sta zp_players_y_distance
 	stx zp_y_plane_skew
-	lda #$1C
-	sta ram_067E
+	;lda #$1C
+	;sta ram_067E
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -2157,6 +2180,10 @@ sub_finish_match_init:
 	sta zp_plr2_damage
 	sta zp_plr1_dmg_counter
 	sta zp_plr2_dmg_counter
+	sta zp_frozen_timer+0
+	sta zp_frozen_timer+1
+	sta zp_thaw_flag+0
+	sta zp_thaw_flag+1
 	sta zp_consecutive_hits_taken
 	sta zp_E6
 	sta zp_7F
@@ -2419,18 +2446,23 @@ sub_set_irq_x_scroll:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_D0D1:
+; Returns to caller's caller if animation is = 0 or <=2 or >= 6
+sub_check_is_moving:
 	lda zp_plr1_cur_anim,Y
-	beq sub_rom_D0E0_rts
+	beq sub_rom_D0E0_rts	; Just return if animation is 0 = idle
 ; ----------------
-sub_rom_D0D6:
-	cmp #$02
-	bcc @D0DE
+; Returns to caller's caller if animation is <=2 or >=6
+; Parameters:
+; A = animation index
+sub_check_abort_move:
+	cmp #$02	; Crouching
+	bcc @D0DE_rts_x2	; Fail if < =2
 
-	cmp #$06
-	bcc sub_rom_D0E0_rts
+		cmp #$06	; Jumping up
+		bcc sub_rom_D0E0_rts	; Fail if >= 6
 
-	@D0DE:
+	@D0DE_rts_x2:
+	; Aborts calling sub and returns to caller's caller
 	pla
 	pla
 ; ----------------
@@ -2440,64 +2472,75 @@ sub_rom_D0E0_rts:
 ; -----------------------------------------------------------------------------
 
 ; Y = Attacking player's index (0/1)
-sub_rom_D0E1:
+sub_jump_button_input:
+	lda zp_frozen_timer,Y
+	bne @D124_rts
+	
 	lda zp_plr1_fgtr_idx_clean,Y
-	beq @D0EE	; Branch if Sonya
+	beq @D0EE_downup_combo	; Branch if Rayden
 
 	cmp #$03
-	beq @D0EE	; Branch if Scorpion
+	beq @D0EE_downup_combo	; Branch if Scorpion
 
 	cmp #$04	; Kano
-	bne @D0F3
+	bne @D0F3_check_movement
 
-	@D0EE:
-	; This extra check is only for Sonya, Scorpion and Kano
+	; This extra check is only for Rayden, Scorpion and Kano
+	; These three have moves performed with a D-pad Down-Up combo
+	@D0EE_downup_combo:
 	lda zp_AD,Y
 	bne @D124_rts
 
-	@D0F3:
-	jsr sub_rom_D0D1	; This will return to previous caller if animation is 1 or > 5
+	; Everyone else skips here
+	@D0F3_check_movement:
+	jsr sub_check_is_moving	; This will return to previous caller if animation is 1 or > 5
 
 	lda zp_controller1,Y
 	and #$08
 	beq @D124_rts	; Return if not pressing D-pad Up
 
 	lda zp_controller1,Y
-	and #$01
-	beq @D111
+	and #$01	; D-pad Right
+	beq @D111_dpad_left
 
-	ldx #$08
-	lda zp_plr1_facing_dir,Y
-	bne @D10C
-	dex
-
-	@D10C:
-	txa
-	jmp sub_change_fighter_anim ;jsr sub_change_fighter_anim
-	;rts
-; ----------------
-	@D111:
-	lda zp_controller1,Y
-	and #$02
-	beq @D125
-
-		ldx #$08
+		ldx #$08	; Jump backwards
 		lda zp_plr1_facing_dir,Y
-		beq :+
-			dex
+		bne :+
+			dex		; Jump forward
 		:
 		txa
-		@D121:
 		jmp sub_change_fighter_anim ;jsr sub_change_fighter_anim
+		;rts
+; ----------------
+	@D111_dpad_left:
+	lda zp_controller1,Y
+	and #$02	; D-pad Left
+	beq @D125_dpad_up
+
+		ldx #$08	; Jump backwards
+		lda zp_plr1_facing_dir,Y
+		beq :+
+			dex		; Jump forward
+		:
+		txa
+		@D121_set_anim:
+		jmp sub_change_fighter_anim ;jsr sub_change_fighter_anim
+
 		@D124_rts:
 		rts
 ; ----------------
-	@D125:
-	lda #$06
-	bne @D121
-; ----------------
+	@D125_dpad_up:
+	lda #$06	; Jump upwards
+	bne @D121_set_anim
+
+; -----------------------------------------------------------------------------
+
+; Inputs that would make the player perform a parry
 ; Will execute if animation is idle or walking, otherwise it will return
-sub_rom_D129:
+sub_parry_button_input:
+	lda zp_frozen_timer,Y
+	bne @D163_rts
+	
 	lda zp_plr1_cur_anim,Y
 	beq @D136
 
@@ -2511,14 +2554,18 @@ sub_rom_D129:
 		tya
 		eor #$01
 		tax
+		; Don't try to parry attacks from frozen players
+		lda zp_frozen_timer,X
+		bne @D163_rts
+
 		lda zp_plr1_cur_anim,X
-		cmp #$0B
+		cmp #$0B	; Base kick
 		bcc @D163_rts
 
-		cmp #$26
+		cmp #$26	; Falling back
 		bcs @D163_rts
 
-		cmp #$14
+		cmp #$14	; Crouched kick
 		beq @D163_rts
 
 		cmp #$18	; Throw move
@@ -2526,25 +2573,28 @@ sub_rom_D129:
 
 		lda #$01
 		ldx zp_plr1_facing_dir,Y
-		bne @D154
-
-		lda #$02
-		@D154:
+		bne :+
+			lda #$02
+		:
 		and zp_controller1,Y
 		beq @D163_rts
 
-		lda #$05
-		sta zp_plr1_cur_anim,Y
-		lda #$00
-		sta zp_plr1_anim_frame,Y
+			lda #$05	; Parry
+			sta zp_plr1_cur_anim,Y
+			lda #$00
+			sta zp_plr1_anim_frame,Y
 
 	@D163_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_D164:
+; Inputs that would make the player walk
+sub_left_right_walk_input:
 	lda zp_5E
+	bne @D190_rts
+
+	lda zp_frozen_timer,Y
 	bne @D190_rts
 
 	lda zp_plr1_fighter_idx,Y
@@ -2598,15 +2648,19 @@ sub_rom_D164:
 	bne @D1A4_rts	; Return if pressing left or right
 
 	lda zp_plr1_cur_anim,Y
-	jsr sub_rom_D0D6
+	jsr sub_check_abort_move
 	lda #$00	; This will reset the animation to idle when a player stops walking
 	beq @D1A1_set_anim	; This always branches
 
 ; -----------------------------------------------------------------------------
 
+; Inputs that make the player perform attacks or parry while crouched
 ; Parameters:
 ; Y = Attacker's index (0 for player one, 1 for player 2)
-sub_rom_D1B6:
+sub_crouching_input:
+	lda zp_frozen_timer,Y
+	bne @D209_rts
+	
 	tya
 	eor #$01
 	tax	; Opponent player's index in X (0 for player one, 1 for player 2)
@@ -2641,6 +2695,10 @@ sub_rom_D1B6:
 	bne @D206_set_anim
 
 	@D1DE:
+	; Don't try to parry attacks from frozen players
+	lda zp_frozen_timer,X
+	bne @D1FD
+
 	lda zp_plr1_cur_anim,X
 	cmp #$0B	; $0B = base kick
 	bcc @D1FD
@@ -2651,26 +2709,26 @@ sub_rom_D1B6:
 	cmp #$18	; $18 = executing a throw move
 	beq @D1FD
 
-	lda #$01
+	lda #$01	; D-pad Right
 	ldx zp_plr1_facing_dir,Y
-	bne @D1F4
+	bne @D1F4	; Flip if facing the other direction
 
-	lda #$02
+	lda #$02	; D-pad Left
 	@D1F4:
 	and zp_controller1,Y
 	beq @D1FD
 
-	lda #$02
-	bne @D206_set_anim
+		lda #$02	; Crouching parry
+		bne @D206_set_anim
 
 	@D1FD:
 	lda zp_plr1_fgtr_idx_clean,Y
-	cmp #$07
+	cmp #$07	; Goro doesn't crouch
 	beq @D209_rts
 
-	lda #$01
-	@D206_set_anim:
-	jsr sub_change_fighter_anim
+		lda #$01	; Crouching
+		@D206_set_anim:
+		jsr sub_change_fighter_anim
 
 	@D209_rts:
 	rts
@@ -2852,6 +2910,7 @@ tbl_pal_cycle_ppumasks:
 	.byte $1E, $FE, $1E, $FE, $1E, $1E, $1E
 
 ; -----------------------------------------------------------------------------
+.export tbl_fighter_palette_ptrs
 
 tbl_fighter_palette_ptrs:
 	.word @pal_rayden			; $00 Rayden
@@ -2933,6 +2992,7 @@ tbl_fighter_palette_ptrs:
 
 ; -----------------------------------------------------------------------------
 
+; Don't forget to also change the global BG colour in tbl_stage_bg_colours
 tbl_bg_palette_ptrs:
 	.word @pal_goros_lair
 	.word @pal_pit
@@ -3158,12 +3218,12 @@ sub_rom_D72C:
 		beq @D752
 
 		cmp #$2E
-		bne @D76C
+		bne @D76C_rts
 
 		@D752:
 		lda zp_plr1_anim_frame,Y
 		cmp #$02
-		bne @D76C
+		bne @D76C_rts
 
 	@D759:
 	lda #$01
@@ -3178,7 +3238,7 @@ sub_rom_D72C:
 	sta zp_ptr1_lo
 	jmp sub_check_left_border_proximity ;jsr sub_rom_D701
 
-	@D76C:
+	@D76C_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -3208,20 +3268,14 @@ sub_inner_move_sprites:
 	sta mmc3_bank_select
 	lda zp_05
 	sta mmc3_bank_data
-	; Bank $01 in $A000-$BFFF
-	;lda #$87
-	;sta zp_prg_bank_select_backup
-	; Not needed after relocation
-	;sta mmc3_bank_select
-	;lda #$01
-	;sta mmc3_bank_data
 
 	; Read a pointer from the top of the new ROM in $8000
 	lda rom_8000+0
 	sta zp_ptr3_lo
 	lda rom_8000+1
 	sta zp_ptr3_hi
-	; Index = animation idx * 3
+
+	; Index for movement data = animation idx * 3
 	lda zp_plr1_cur_anim,Y
 	asl A
 	bcc :+
@@ -3232,15 +3286,15 @@ sub_inner_move_sprites:
 	bcc :+
 		inc zp_ptr3_hi
 	:
-	sta zp_ptr1_lo
-	; Index ready, read pointer
+	sta zp_ptr1_lo	 ; Will also be used to index animation frame data
+	
 	tay
 	lda (zp_ptr3_lo),Y
 	asl A
 	tax
-	lda tbl_anim_data_ptrs+0,X
+	lda tbl_movement_data_ptrs+0,X
 	sta zp_ptr4_lo
-	lda tbl_anim_data_ptrs+1,X
+	lda tbl_movement_data_ptrs+1,X
 	sta zp_ptr4_hi
 
 	ldy zp_7C	; Player index (0 for player one, 1 for player two)
@@ -3252,6 +3306,15 @@ sub_inner_move_sprites:
 	iny
 	lda (zp_ptr4_lo),Y
 	sta zp_06	; Player's Y movement (signed value)
+
+	; Ignore movement if player is frozen
+	ldx zp_7C
+	lda zp_frozen_timer,X
+	beq :+
+		lda #$00
+		sta zp_06
+		sta zp_05
+	:
 
 	iny
 	lda #$00
@@ -3266,14 +3329,14 @@ sub_inner_move_sprites:
 	ldx zp_7B	; 2-byte data / pointer offset for current player
 	ldy zp_7C	; 1-byte data offset for current player
 	lda zp_05	; X movement for current animation
-	bpl @D81A
+	bpl @D81A_facing
 
 		; Negative movement (against current facing direction)
 		eor #$FF
 		sta zp_05
 		inc zp_05
 		lda zp_plr1_facing_dir,Y	; Will determine whether to move forward or backwards
-		bne @D81F
+		bne @D81F_set_x
 
 			; Recalculate the distance between player hit boxes
 			@D803:
@@ -3281,37 +3344,37 @@ sub_inner_move_sprites:
 			sec
 			sbc zp_05
 			cmp #$20
-			bcc @D834
+			bcc @D834_set_y
 
 			lda zp_plr1_x_lo,X
 			sec
 			sbc zp_05
 			sta zp_plr1_x_lo,X
-			bcs @D834
+			bcs @D834_set_y
 
 			dec zp_plr1_x_hi,X
-			beq @D834
+			beq @D834_set_y
 
-	@D81A:
+	@D81A_facing:
 	lda zp_plr1_facing_dir,Y
 	bne @D803
 
-	@D81F:
+	@D81F_set_x:
 	lda zp_plr1_x_pos,Y
 	clc
 	adc zp_05
 	cmp #$D0
-	bcs @D834
+	bcs @D834_set_y
 
 		lda zp_plr1_x_lo,X
 		clc
 		adc zp_05
 		sta zp_plr1_x_lo,X
-		bcc @D834
+		bcc @D834_set_y
 
 			inc zp_plr1_x_hi,X
 
-	@D834:
+	@D834_set_y:
 	lda zp_plr1_y_pos,Y
 	clc
 	adc zp_06
@@ -3356,13 +3419,13 @@ sub_inner_move_sprites:
 	ldx tbl_player_oam_offsets,Y
 	lda zp_plr1_cur_anim,Y
 
-	cmp #$09
+	cmp #$09	; Knocked backwards
 	beq @D88A
 
-	cmp #$2E
+	cmp #$2E	; Knocked down
 	beq @D88A
 
-	cmp #$28	; Staggered animation
+	cmp #$28	; Staggered
 	bne @D88E
 
 		@D88A:
@@ -3394,9 +3457,23 @@ sub_inner_move_sprites:
 	sbc zp_ptr1_lo
 	sta zp_0A
 
-	ldx zp_7C
-	inc zp_plr1_anim_frame,X
 	ldy zp_7C
+	lda zp_frozen_timer,Y
+	beq :+
+		; Don't animate frozen players
+		; Instead, decrement the counter to "thaw" them gradually
+		lda #$00
+		dcp zp_frozen_timer,Y		
+		bne sub_animate_sprites
+
+		; If timer just reached zero, change the palette back to normal
+		isc zp_thaw_flag,Y
+		bne @check_frame_sfx
+	:
+	;ldx zp_7C
+	isc zp_plr1_anim_frame,Y ;inc zp_plr1_anim_frame,X
+	;ldy zp_7C
+	@check_frame_sfx:
 	ldx zp_plr1_cur_anim,Y
 	lda zp_plr1_anim_frame,Y
 
@@ -3408,7 +3485,7 @@ sub_inner_move_sprites:
 			sta ram_req_sfx
 	:
 	lda zp_18
-	beq @animate_sprites
+	beq sub_animate_sprites
 		lda #$00
 		sta zp_plr1_anim_frame,Y
 
@@ -3423,17 +3500,244 @@ sub_inner_move_sprites:
 			tax
 			lda zp_plr1_fgtr_idx_clean,X
 			cmp #$03
-			bne @animate_sprites
+			bne sub_animate_sprites
 				lda #$28
 				sta zp_plr1_cur_anim,Y
-				bne @animate_sprites
+				bne sub_animate_sprites
 		:
 		; Otherwise, back to idle
 		lda #$00
 		sta zp_plr1_cur_anim,Y
 
-	@animate_sprites:
-	jmp sub_animate_player_sprites	; TODO This could inlined easily
+; ----------------
+
+sub_animate_sprites:
+	ldx tbl_player_oam_offsets,Y
+	ldy #$00
+	lda #$F8
+	; This loop moves all sprites off-screen for the current player
+	:
+		sta ram_oam_copy_ypos,X
+		inx
+		inx
+		inx
+		inx
+	iny
+	cpy #$20
+	bcc :-
+
+	ldy #$00
+	lda (zp_ptr3_lo),Y
+	sta zp_05			; Horizontal tiles count
+	sta zp_ptr2_lo		; This may be unused
+	iny
+	lda (zp_ptr3_lo),Y
+	sta zp_06			; Vertical tiles count
+	sta zp_16			; Maybe also unused
+	iny
+	lda (zp_ptr3_lo),Y
+	sta zp_0F			; X offset
+	iny
+	lda (zp_ptr3_lo),Y
+	ldx zp_7C
+	sta zp_chr_bank_0,X	; CHR ROM bank
+	sta ram_0429
+	iny
+	lda (zp_ptr3_lo),Y
+	sta ram_042A		; Sprite attributes OR mask
+	iny
+	lda zp_05
+	sta zp_09	; Counter for horizontal sprites
+
+	lda zp_oam_flip_flag	; This depends on current facing direction
+	bne :+
+		; ptr1_lo = $08
+		; zp_07 = zp_07 - zp_0F
+		lda #$08
+		sta zp_ptr1_lo	; X increment (+8)
+
+		lda zp_07
+		sec
+		sbc zp_0F
+		jmp @DA07
+	:
+	; ptr1_lo = $F8
+	; zp_07 = zp_0F - $08 + zp_07
+	lda #$F8
+	sta zp_ptr1_lo	; X decrement (-8)
+
+	lda zp_0F
+	sec
+	sbc #$08
+	clc
+	adc zp_07
+
+	@DA07:
+	sta zp_07	; Starting X offset for first tile in a row
+	sta zp_08	; Current X offset (updated for each column)
+
+	ldx zp_06	; Vertical updates count?
+
+	:
+		lda zp_0A	; It seems this was player Y pos - 8 before this loop
+		sec
+		sbc #$08
+		sta zp_0A
+	dex
+	bne :-
+
+	sta zp_0B
+	dec zp_0B	; Base Y position (incremented by 8 for each row)
+
+	ldx zp_first_oam_ofs	; OAM offset of first sprite
+
+	@next_frame_data_byte:
+	lda (zp_ptr3_lo),Y
+	cmp #$FF
+	beq @skip_sprite
+
+		; Ignore the MSB because we use this as an offset: we don't know yet
+		; if we are in the top half of CHR ROM or the bottom
+		and #$7F
+
+		sta zp_backup_a
+
+			lda zp_7C	; Player index
+			beq @DA2F	; Nothing to change for player 1
+
+		lda zp_backup_a
+
+			ora #$80	; Move tile index to the bottom of CHR ROM for player 2
+			bne @set_tile_id
+
+		@DA2F:
+		lda zp_backup_a
+
+		@set_tile_id:
+		sta ram_oam_copy_tileid,X
+		jmp @set_sprite_flags
+
+		; set_sprite_flags will jump back here
+		@set_xy_pos:
+		lda zp_0B	; Current row's Y pos
+		sta ram_oam_copy_ypos,X
+		lda zp_08	; Current tile's X pos
+		sta ram_oam_copy_xpos,X
+		; Move to next OAM entry
+		;inx
+		;inx
+		;inx
+		;inx
+		txa
+		axs #$FC
+
+	@skip_sprite:
+	iny	; Animation frame data offset
+
+	; Increase X position offset for next tile in this row
+	lda zp_ptr1_lo	; This is a signed value (negative to draw right-to-left)
+	clc
+	adc zp_08
+	sta zp_08
+
+	dec zp_09	; X counter
+	bne @next_frame_data_byte
+
+	; Increase Y position offset for next row
+	lda zp_0B
+	clc
+	adc #$08	; Fixed offset: we always draw top-to-bottom
+	sta zp_0B
+
+	lda zp_05	; Horizontal tiles count reload
+	sta zp_09
+
+	lda zp_07	; Starting X pos for next row of sprites
+	sta zp_08
+
+	dec zp_06	; Y counter
+	bne @next_frame_data_byte
+
+	rts
+; ----------------
+	@set_sprite_flags:
+	; Preserve animation data offset
+	sty zp_backup_y
+
+		ldy ram_0429 ;lda ram_0429
+		;tay
+		lda rom_01_B000+0,Y
+		sta zp_ptr4_lo
+		lda rom_01_B000+1,Y
+		sta zp_ptr4_hi
+
+		lda ram_oam_copy_tileid,X
+		and #$07
+		tay
+		lda @rom_DAB4,Y	; Index by tile ID % 8
+		sta zp_backup_a
+			lda ram_oam_copy_tileid,X
+			and #$7F
+			lsr A
+			lsr A
+			lsr A
+			tay
+		lda zp_backup_a
+		and (zp_ptr4_lo),Y
+		beq :+
+			lda #$01
+		:
+		ora ram_042A	; Add flags from fighter's anim frame data
+		eor zp_oam_flip_flag		; Horizontal flip flag depending on current facing direction
+		tay
+		lda zp_7C		; Player index
+		beq @DA9D		; Branch for player one
+
+			tya			; Player 2 changes palette index
+			ora #$02
+			bne @DA9E
+
+		@DA9D:
+		tya				; Player 1 uses value as it is (keep palette index)
+
+		@DA9E:
+		ldy ram_irq_routine_idx
+		cpy #$06
+		bne :+
+			; This is only used in the Continue screen...
+			; probably leftover from a different game
+			ora #$20	; Move sprite behind the background
+		:
+		sta ram_oam_copy_attr,X
+
+	ldy zp_backup_y
+
+	lda #$FB
+	;sta ram_067F	; Probably unused
+	jmp @set_xy_pos
+
+; -----------------------------------------------------------------------------
+
+; Probably an index/mask conversion table
+	@rom_DAB4:
+	.byte $01, $02, $04, $08, $10, $20, $40, $80
+	; Potentially unused bytes (index is masked with and #$07)
+	;.byte $2C, $AC
+
+; -----------------------------------------------------------------------------
+
+; SFX indices for frame 1 of each animation
+; 0 = no sound
+; Index = animation number
+tbl_frame_1_sfx_idx:
+	.byte $00, $00, $00, $00, $00, $00, $00, $00	; $00-$07
+	.byte $00, $00, $00, $07, $07, $08, $00, $00	; $08-$0F
+	.byte $08, $00, $00, $08, $07, $08, $00, $04	; $10-$17
+	.byte $08, $00, $00, $00, $00, $00, $04, $00	; $18-$1F
+	.byte $00, $00, $00, $00, $00, $00, $00, $00	; $20-$27
+	.byte $00, $00, $00, $00, $00, $00, $00, $00	; $28-$2F
+	.byte $00, $00, $00, $00, $00, $00, $00, $00	; $30-$37
+	; .byte $FF
 
 ; -----------------------------------------------------------------------------
 
@@ -3499,6 +3803,10 @@ sub_scorpion_spear_pull:
 ; Change palettes if Shang-Tsung has morphed into a different fighter
 sub_shangtsung_palettes:
 	ldx zp_7C
+	
+	lda zp_frozen_timer,X
+	bne @D92B_rts	; Don't change palette if frozen (keep special palette)
+
 	lda zp_plr1_fighter_idx,X
 	and #$7F	; Mask out CPU opponent flag
 
@@ -3574,25 +3882,33 @@ sub_load_fighters_palettes:
 	bcc :-
 
 	; Adjust global GB colour for the Pit stage
-	lda ram_irq_routine_idx
-	cmp #$01
-	bne :+
-		lda #$02
-		sta ram_ppu_data_buffer
-	:
+	; Needed because Shang-Tsung can change palettes during the match
+	ldx ram_irq_routine_idx
+	lda tbl_stage_bg_colours,X
+	sta ram_ppu_data_buffer
+
 	sty zp_nmi_ppu_cols
 	lda #$01
 	sta zp_nmi_ppu_rows
 	lda #$3F
 	sta zp_nmi_ppu_ptr_hi
-	ldy #$10
+	ldy #$10		; Player 1 offset
 	lda zp_7C
-	beq @D96A
-
-	ldy #$18
-	@D96A:
+	beq :+
+		ldy #$18	; Player 2 offset
+	:
 	sty zp_nmi_ppu_ptr_lo
 	rts
+
+; ----------------
+
+tbl_stage_bg_colours:
+	.byte $0E	; Goro's Lair
+	.byte $02	; The Pit
+	.byte $0C	; Courtyard
+	.byte $0E	; Palace Gates
+	.byte $0E	; Warrior Shrine
+	.byte $0E	; Throne room
 
 ; -----------------------------------------------------------------------------
 
@@ -3619,232 +3935,46 @@ rom_D977:
 
 ; -----------------------------------------------------------------------------
 
-sub_animate_player_sprites:
-	ldx tbl_player_oam_offsets,Y
+; Load the special "frozen" palette
+; Parameters:
+; X = player index
+sub_frozen_palette:
+	stx zp_7C
 	ldy #$00
-	lda #$F8
-	; This loop moves all sprites off-screen for the current player
+	;sty zp_48,X
+	;sty zp_plr1_anim_frame,X
+	ldx #$00
 	:
-		sta ram_oam_copy_ypos,X
+		lda @pal_frozen,Y
+		sta ram_ppu_data_buffer,X
 		inx
-		inx
-		inx
-		inx
-	iny
-	cpy #$20
+		iny
+	cpy #$08
 	bcc :-
 
-	ldy #$00
-	lda (zp_ptr3_lo),Y
-	sta zp_05
-	sta zp_ptr2_lo	; This may be unused
-	iny
-	lda (zp_ptr3_lo),Y
-	sta zp_06
-	sta zp_16
-	iny
-	lda (zp_ptr3_lo),Y
-	sta zp_0F
-	iny
-	lda (zp_ptr3_lo),Y
-	ldx zp_7C
-	sta zp_chr_bank_0,X
-	sta ram_0429
-	iny
-	lda (zp_ptr3_lo),Y
-	sta ram_042A
-	iny
-	lda zp_05
-	sta zp_09
+	; Adjust global GB colour for the Pit stage
+	; Needed because Shang-Tsung can change palettes during the match
+	ldx ram_irq_routine_idx
+	lda tbl_stage_bg_colours,X
+	sta ram_ppu_data_buffer
 
-	lda zp_oam_flip_flag	; This depends on current facing direction
-	bne :+
-		; ptr1_lo = $08
-		; zp_07 = zp_07 - zp_0F
-		lda #$08
-		sta zp_ptr1_lo	; X increment (+8)
-
-		lda zp_07
-		sec
-		sbc zp_0F
-		jmp @DA07
+	sty zp_nmi_ppu_cols	; Y = 8
+	lda #$01
+	sta zp_nmi_ppu_rows
+	lda #$3F
+	sta zp_nmi_ppu_ptr_hi
+	ldy #$10		; Player 1 offset
+	lda zp_7C
+	beq :+
+		ldy #$18	; Player 2 offset
 	:
-	; ptr1_lo = $F8
-	; zp_07 = zp_0F - $08 + zp_07
-	lda #$F8
-	sta zp_ptr1_lo	; X decrement (-8)
-
-	lda zp_0F
-	sec
-	sbc #$08
-	clc
-	adc zp_07
-
-	@DA07:
-	sta zp_07	; Starting X offset for first tile in a row
-	sta zp_08	; Current X offset (updated for each column)
-
-	ldx zp_06	; Vertical updates count?
-
-	:
-		lda zp_0A	; It seems this was player Y pos - 8 before this loop
-		sec
-		sbc #$08
-		sta zp_0A
-	dex
-	bne :-
-
-	sta zp_0B
-	dec zp_0B	; Base Y position (incremented by 8 for each row)
-
-	ldx zp_first_oam_ofs	; OAM offset of first sprite
-
-	@next_frame_data_byte:
-	lda (zp_ptr3_lo),Y
-	cmp #$FF
-	beq @skip_sprite
-
-		; Ignore the MSB because we use this as an offset: we don't know yet
-		; if we are in the top half of CHR ROM or the bottom
-		and #$7F
-
-		pha
-		lda zp_7C	; Player index
-		beq @DA2F	; Nothing to change for player 1
-
-		pla
-		ora #$80	; Move to the bottom of CHR ROM for player 2
-		bne @set_tile_id
-
-		@DA2F:
-		pla
-
-		@set_tile_id:
-		sta ram_oam_copy_tileid,X
-		jmp @set_sprite_flags
-
-		@set_xy_pos:
-		lda zp_0B	; Current row's Y pos
-		sta ram_oam_copy_ypos,X
-		lda zp_08	; Current tile's X pos
-		sta ram_oam_copy_xpos,X
-		; Move to next OAM entry
-		;inx
-		;inx
-		;inx
-		;inx
-		txa
-		axs #$FC
-
-	@skip_sprite:
-	iny	; Animation frame data offset
-
-	; Increase X position offset for next tile in this row
-	lda zp_ptr1_lo	; This is a signed value (negative to draw right-to-left)
-	clc
-	adc zp_08
-	sta zp_08
-
-	dec zp_09	; X counter
-	bne @next_frame_data_byte
-
-	; Increase Y position offset for next row
-	lda zp_0B
-	clc
-	adc #$08	; Fixed offset: we always draw top-to-bottom
-	sta zp_0B
-
-	lda zp_05	; Horizontal tiles count reload
-	sta zp_09
-
-	lda zp_07	; Starting X pos for next row of sprites
-	sta zp_08
-
-	dec zp_06	; Y counter
-	bne @next_frame_data_byte
-
+	sty zp_nmi_ppu_ptr_lo
 	rts
+
 ; ----------------
-	@set_sprite_flags:
-	;tya	; Preserve animation data offset
-	;pha
-	sty zp_backup_y
 
-		ldy ram_0429 ;lda ram_0429
-		;tay
-		lda rom_01_B000+0,Y
-		sta zp_ptr4_lo
-		lda rom_01_B000+1,Y
-		sta zp_ptr4_hi
-
-		lda ram_oam_copy_tileid,X
-		and #$07
-		tay
-		lda @rom_DAB4,Y	; Index by tile ID % 8
-		pha
-			lda ram_oam_copy_tileid,X
-			and #$7F
-			lsr A
-			lsr A
-			lsr A
-			tay
-		pla
-		and (zp_ptr4_lo),Y
-		beq :+
-			lda #$01
-		:
-		ora ram_042A	; Add flags from fighter's anim frame data
-		eor zp_oam_flip_flag		; Horizontal flip flag depending on current facing direction
-		tay
-		lda zp_7C		; Player index
-		beq @DA9D		; Branch for player one
-
-			tya			; Player 2 changes palette index
-			ora #$02
-			bne @DA9E
-
-		@DA9D:
-		tya				; Player 1 uses value as it is (keep palette index)
-
-		@DA9E:
-		ldy ram_irq_routine_idx
-		cpy #$06
-		bne :+
-			; This is only used in the Continue screen...
-			; probably leftover from a different game
-			ora #$20	; Move sprite behind the background
-		:
-		sta ram_oam_copy_attr,X
-
-	;pla
-	;tay
-	ldy zp_backup_y
-
-	lda #$FB
-	sta ram_067F	; Probably unused
-	jmp @set_xy_pos
-
-; -----------------------------------------------------------------------------
-
-; Probably an index/mask conversion table
-	@rom_DAB4:
-	.byte $01, $02, $04, $08, $10, $20, $40, $80
-; Potentially unused bytes
-	.byte $2C, $AC
-
-; -----------------------------------------------------------------------------
-
-; SFX indices for frame 1 of each animation
-; 0 = no sound
-tbl_frame_1_sfx_idx:
-	.byte $00, $00, $00, $00, $00, $00, $00, $00
-	.byte $00, $00, $00, $07, $07, $08, $00, $00
-	.byte $08, $00, $00, $08, $07, $08, $00, $04
-	.byte $08, $00, $00, $00, $00, $00, $04, $00
-	.byte $00, $00, $00, $00, $00, $00, $00, $00
-	.byte $00, $00, $00, $00, $00, $00, $00, $00
-	.byte $00, $00, $00, $00, $00, $00, $00, $00
-	.byte $FF
+	@pal_frozen:
+	.byte $0E, $0C, $11, $3C, $0E, $0C, $11, $31
 
 ; -----------------------------------------------------------------------------
 
@@ -3854,316 +3984,316 @@ tbl_frame_1_sfx_idx:
 
 ; Data pointers, indexed by CHR ROM bank number
 rom_01_B000:
-	.word rom_B0D8, rom_B0E8, rom_B0F8, rom_B108
-	.word rom_B118, rom_B128, rom_B138, rom_B148
-	.word rom_B158, rom_B168, rom_B178, rom_B188
-	.word rom_B198, rom_B1A8, rom_B0D8, rom_B0E8
-	.word rom_B0D8, rom_B0E8, rom_B0D8, rom_B0E8
-	.word rom_B0D8, rom_B0E8, rom_B0D8, rom_B0E8
-	.word rom_B0D8, rom_B0E8, rom_B0D8, rom_B0E8
-	.word rom_B1B8, rom_B1C8, rom_B1D8, rom_B1E8
-	.word rom_B1F8, rom_B208, rom_B218, rom_B228
-	.word rom_B238, rom_B248, rom_B258, rom_B268
-	.word rom_B278, rom_B288, rom_B298, rom_B2A8
-	.word rom_B2B8, rom_B2C8, rom_B2D8, rom_B2E8
-	.word rom_B2F8, rom_B308, rom_B318, rom_B328
-	.word rom_B338, rom_B348, rom_B358, rom_B368
-	.word rom_B378, rom_B388, rom_B398, rom_B3A8
-	.word rom_B3B8, rom_B3C8, rom_B3D8, rom_B3E8
-	.word rom_B3F8, rom_B408, rom_B418, rom_B428
-	.word rom_B438, rom_B448, rom_B458, rom_B468
-	.word rom_B478, rom_B488, rom_B498, rom_B4A8
-	.word rom_B4B8, rom_B4C8, rom_B4D8, rom_B4E8
-	.word rom_B4F8, rom_B508, rom_B518, rom_B528
-	.word rom_B538, rom_B548, rom_B558, rom_B568
-	.word rom_B578, rom_B588, rom_B598, rom_B5A8
-	.word rom_B5B8, rom_B5C8, rom_B5D8, rom_B5E8
-	.word rom_B5F8, rom_B608, rom_B618, rom_B628
-	.word rom_B638, rom_B648, rom_B658, rom_B668
-	.word rom_B678, rom_B688, rom_B698, rom_B6A8
+	.word @rom_B0D8, @rom_B0E8, @rom_B0F8, @rom_B108
+	.word @rom_B118, @rom_B128, @rom_B138, @rom_B148
+	.word @rom_B158, @rom_B168, @rom_B178, @rom_B188
+	.word @rom_B198, @rom_B1A8, @rom_B0D8, @rom_B0E8
+	.word @rom_B0D8, @rom_B0E8, @rom_B0D8, @rom_B0E8
+	.word @rom_B0D8, @rom_B0E8, @rom_B0D8, @rom_B0E8
+	.word @rom_B0D8, @rom_B0E8, @rom_B0D8, @rom_B0E8
+	.word @rom_B1B8, @rom_B1C8, @rom_B1D8, @rom_B1E8
+	.word @rom_B1F8, @rom_B208, @rom_B218, @rom_B228
+	.word @rom_B238, @rom_B248, @rom_B258, @rom_B268
+	.word @rom_B278, @rom_B288, @rom_B298, @rom_B2A8
+	.word @rom_B2B8, @rom_B2C8, @rom_B2D8, @rom_B2E8
+	.word @rom_B2F8, @rom_B308, @rom_B318, @rom_B328
+	.word @rom_B338, @rom_B348, @rom_B358, @rom_B368
+	.word @rom_B378, @rom_B388, @rom_B398, @rom_B3A8
+	.word @rom_B3B8, @rom_B3C8, @rom_B3D8, @rom_B3E8
+	.word @rom_B3F8, @rom_B408, @rom_B418, @rom_B428
+	.word @rom_B438, @rom_B448, @rom_B458, @rom_B468
+	.word @rom_B478, @rom_B488, @rom_B498, @rom_B4A8
+	.word @rom_B4B8, @rom_B4C8, @rom_B4D8, @rom_B4E8
+	.word @rom_B4F8, @rom_B508, @rom_B518, @rom_B528
+	.word @rom_B538, @rom_B548, @rom_B558, @rom_B568
+	.word @rom_B578, @rom_B588, @rom_B598, @rom_B5A8
+	.word @rom_B5B8, @rom_B5C8, @rom_B5D8, @rom_B5E8
+	.word @rom_B5F8, @rom_B608, @rom_B618, @rom_B628
+	.word @rom_B638, @rom_B648, @rom_B658, @rom_B668
+	.word @rom_B678, @rom_B688, @rom_B698, @rom_B6A8
 
 ; -----------------------------------------------------------------------------
 
-rom_B0D8:
+	@rom_B0D8:
 	.byte $FF, $B7, $9C, $88, $22, $01, $40, $20
 	.byte $00, $00, $00, $20, $00, $00, $F0, $FF
-rom_B0E8:
+	@rom_B0E8:
 	.byte $06, $92, $13, $48, $18, $30, $08, $78
 	.byte $01, $C0, $04, $00, $00, $40, $00, $00
-rom_B0F8:
+	@rom_B0F8:
 	.byte $81, $0F, $4F, $E0, $9F, $80, $06, $20
 	.byte $00, $12, $00, $00, $00, $00, $FF, $FF
-rom_B108:
+	@rom_B108:
 	.byte $DF, $9C, $8F, $00, $00, $00, $00, $00
 	.byte $00, $C0, $04, $00, $3E, $22, $00, $02
-rom_B118:
+	@rom_B118:
 	.byte $FC, $FD, $47, $44, $00, $01, $00, $00
 	.byte $00, $00, $00, $00, $00, $00, $00, $F0
-rom_B128:
+	@rom_B128:
 	.byte $EF, $C1, $08, $46, $40, $20, $02, $00
 	.byte $00, $00, $F0, $11, $00, $00, $00, $00
-rom_B138:
+	@rom_B138:
 	.byte $BF, $3E, $7C, $60, $04, $8A, $80, $40
 	.byte $00, $00, $02, $00, $00, $80, $C0, $FF
-rom_B148:
+	@rom_B148:
 	.byte $77, $0F, $57, $00, $08, $00, $00, $22
 	.byte $00, $00, $07, $1C, $60, $98, $41, $38
-rom_B158:
+	@rom_B158:
 	.byte $FF, $63, $1D, $67, $02, $08, $06, $70
 	.byte $00, $00, $60, $00, $44, $14, $40, $FF
-rom_B168:
+	@rom_B168:
 	.byte $4B, $30, $0C, $00, $08, $80, $00, $30
 	.byte $21, $00, $02, $B6, $C4, $00, $00, $00
-rom_B178:
+	@rom_B178:
 	.byte $BF, $26, $80, $11, $00, $04, $32, $08
 	.byte $00, $10, $00, $18, $00, $4C, $02, $F8
-rom_B188:
+	@rom_B188:
 	.byte $0C, $B0, $00, $00, $00, $00, $00, $00
 	.byte $00, $00, $2C, $11, $00, $00, $00, $00
-rom_B198:
+	@rom_B198:
 	.byte $FF, $F9, $3E, $64, $01, $92, $61, $00
 	.byte $00, $00, $00, $00, $00, $60, $00, $F0
-rom_B1A8:
+	@rom_B1A8:
 	.byte $07, $03, $00, $00, $00, $00, $00, $00
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
-rom_B1B8:
+	@rom_B1B8:
 	.byte $FF, $9F, $FF, $7F, $FC, $FF, $FF, $FF
 	.byte $F9, $FF, $F8, $3F, $07, $00, $00, $C0
-rom_B1C8:
+	@rom_B1C8:
 	.byte $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
 	.byte $FF, $FF, $FF, $0F, $00, $00, $40, $00
-rom_B1D8:
+	@rom_B1D8:
 	.byte $FF, $FF, $FF, $FF, $FF, $FF, $FF, $DF
 	.byte $FF, $03, $02, $80, $00, $20, $FE, $FF
-rom_B1E8:
+	@rom_B1E8:
 	.byte $FF, $CF, $FF, $3F, $FF, $DF, $FF, $7F
 	.byte $FF, $CF, $0F, $8F, $01, $00, $80, $00
-rom_B1F8:
+	@rom_B1F8:
 	.byte $FF, $FF, $FF, $3F, $FF, $3F, $FE, $9F
 	.byte $FF, $7F, $1E, $02, $C0, $20, $00, $FE
-rom_B208:
+	@rom_B208:
 	.byte $F9, $F9, $FF, $FF, $FF, $F9, $F7, $C3
 	.byte $DF, $04, $FE, $00, $FF, $FF, $3D, $04
-rom_B218:
+	@rom_B218:
 	.byte $87, $C7, $FC, $CF, $FF, $FE, $F9, $7F
 	.byte $EE, $7F, $FE, $3F, $7E, $7E, $EC, $30
-rom_B228:
+	@rom_B228:
 	.byte $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
 	.byte $7F, $88, $C7, $04, $10, $02, $C0, $00
-rom_B238:
+	@rom_B238:
 	.byte $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
 	.byte $FF, $FF, $FF, $00, $04, $00, $F8, $FF
-rom_B248:
+	@rom_B248:
 	.byte $FF, $FF, $FF, $FF, $DF, $FF, $F9, $FF
 	.byte $FE, $E1, $01, $C0, $01, $30, $60, $00
-rom_B258:
+	@rom_B258:
 	.byte $7F, $FC, $20, $01, $00, $00, $00, $00
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
-rom_B268:
+	@rom_B268:
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
-rom_B278:
+	@rom_B278:
 	.byte $01, $00, $F2, $FF, $FF, $FF, $FF, $FF
 	.byte $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
-rom_B288:
+	@rom_B288:
 	.byte $0F, $09, $F9, $FF, $FF, $FD, $BF, $FF
 	.byte $FF, $FF, $FF, $FF, $FF, $7F, $FE, $7F
-rom_B298:
+	@rom_B298:
 	.byte $99, $CC, $FF, $FF, $FF, $FF, $FF, $3F
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
-rom_B2A8:
+	@rom_B2A8:
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
-rom_B2B8:
+	@rom_B2B8:
 	.byte $7F, $FB, $FF, $DF, $FF, $97, $FA, $E6
 	.byte $8F, $FF, $7E, $F4, $9E, $FC, $F7, $FF
-rom_B2C8:
+	@rom_B2C8:
 	.byte $FF, $FF, $FF, $FB, $BF, $79, $7D, $FB
 	.byte $3F, $D4, $E2, $FF, $47, $2F, $06, $00
-rom_B2D8:
+	@rom_B2D8:
 	.byte $FF, $6F, $FB, $FF, $FF, $13, $84, $40
 	.byte $02, $F0, $01, $20, $40, $F1, $39, $80
-rom_B2E8:
+	@rom_B2E8:
 	.byte $9F, $F7, $F9, $DF, $99, $3D, $E0, $00
 	.byte $7F, $B7, $5B, $C0, $7F, $26, $17, $01
-rom_B2F8:
+	@rom_B2F8:
 	.byte $FF, $FF, $7F, $FF, $EF, $FA, $D7, $FB
 	.byte $7F, $FE, $FF, $00, $8D, $78, $77, $C4
-rom_B308:
+	@rom_B308:
 	.byte $0F, $C8, $FE, $BF, $FF, $FF, $7F, $72
 	.byte $FE, $3F, $CE, $CA, $FF, $73, $D6, $01
-rom_B318:
+	@rom_B318:
 	.byte $FF, $FF, $9F, $EB, $D3, $EB, $EC, $7E
 	.byte $E6, $33, $9F, $10, $20, $00, $20, $FF
-rom_B328:
+	@rom_B328:
 	.byte $FF, $0F, $7E, $F8, $C8, $07, $07, $E0
 	.byte $08, $BE, $21, $18, $B8, $32, $1F, $08
-rom_B338:
+	@rom_B338:
 	.byte $FF, $FF, $BC, $6A, $FB, $5D, $97, $E7
 	.byte $CB, $C8, $C1, $F6, $FD, $6F, $FF, $FF
-rom_B348:
+	@rom_B348:
 	.byte $FF, $FE, $4D, $BF, $C4, $49, $9E, $E7
 	.byte $24, $E9, $44, $92, $2F, $69, $1E, $68
-rom_B358:
+	@rom_B358:
 	.byte $FF, $EF, $FB, $99, $F8, $4C, $CC, $89
 	.byte $E7, $80, $A3, $12, $4E, $E5, $FF, $FF
-rom_B368:
+	@rom_B368:
 	.byte $FF, $3F, $FE, $F8, $CF, $67, $73, $C9
 	.byte $E4, $E6, $09, $4E, $27, $8F, $FF, $7F
-rom_B378:
+	@rom_B378:
 	.byte $FF, $E4, $EE, $1E, $00, $00, $00, $00
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
-rom_B388:
+	@rom_B388:
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
-rom_B398:
+	@rom_B398:
 	.byte $FF, $FF, $FF, $FF, $FF, $FF, $9F, $04
 	.byte $20, $00, $00, $00, $00, $00, $00, $FE
-rom_B3A8:
+	@rom_B3A8:
 	.byte $19, $1F, $1F, $1E, $18, $78, $FE, $E3
 	.byte $3F, $3C, $C3, $18, $00, $00, $00, $08
-rom_B3B8:
+	@rom_B3B8:
 	.byte $FF, $F8, $8F, $FF, $F1, $FF, $7C, $46
 	.byte $2E, $66, $10, $30, $10, $00, $00, $10
-rom_B3C8:
+	@rom_B3C8:
 	.byte $9F, $10, $F8, $FF, $FF, $FF, $F7, $07
 	.byte $57, $00, $01, $00, $00, $00, $00, $00
-rom_B3D8:
+	@rom_B3D8:
 	.byte $FF, $FF, $FF, $FF, $7F, $66, $E4, $03
 	.byte $00, $03, $00, $18, $00, $00, $00, $80
-rom_B3E8:
+	@rom_B3E8:
 	.byte $FF, $F3, $7F, $FE, $99, $1D, $60, $78
 	.byte $00, $80, $01, $00, $00, $F0, $0F, $01
-rom_B3F8:
+	@rom_B3F8:
 	.byte $FF, $FF, $FD, $C7, $FF, $FC, $3F, $0F
 	.byte $18, $60, $00, $00, $00, $01, $C0, $FC
-rom_B408:
+	@rom_B408:
 	.byte $FF, $E4, $30, $C4, $01, $26, $C0, $73
 	.byte $80, $39, $9C, $C7, $F1, $F0, $78, $00
-rom_B418:
+	@rom_B418:
 	.byte $FF, $FF, $FF, $FF, $FF, $3F, $C0, $0F
 	.byte $30, $00, $00, $00, $80, $07, $00, $00
-rom_B428:
+	@rom_B428:
 	.byte $FF, $FF, $FF, $FF, $FF, $1D, $01, $20
 	.byte $00, $00, $00, $00, $C8, $1F, $00, $00
-rom_B438:
+	@rom_B438:
 	.byte $FF, $FF, $FF, $CF, $FD, $67, $0C, $00
 	.byte $00, $00, $00, $00, $00, $FE, $18, $F8
-rom_B448:
+	@rom_B448:
 	.byte $FF, $FF, $3F, $00, $00, $00, $60, $4C
 	.byte $0C, $00, $00, $00, $00, $00, $00, $00
-rom_B458:
+	@rom_B458:
 	.byte $FF, $FF, $FF, $FF, $FF, $18, $99, $08
 	.byte $09, $1D, $01, $FF, $FD, $3F, $C0, $FC
-rom_B468:
+	@rom_B468:
 	.byte $FF, $F7, $FF, $BF, $FF, $CF, $F9, $1F
 	.byte $0C, $7F, $C0, $31, $01, $F3, $FF, $7F
-rom_B478:
+	@rom_B478:
 	.byte $FF, $FF, $FF, $B7, $FF, $C0, $7F, $20
 	.byte $FF, $63, $CE, $F9, $FF, $9F, $FF, $FF
-rom_B488:
+	@rom_B488:
 	.byte $FF, $FF, $FF, $FF, $3F, $F3, $FF, $E1
 	.byte $FF, $FC, $E1, $A7, $3F, $CE, $FF, $07
-rom_B498:
+	@rom_B498:
 	.byte $FF, $FF, $FF, $1F, $00, $00, $00, $F9
 	.byte $F3, $FF, $FF, $FF, $FF, $9B, $99, $FF
-rom_B4A8:
+	@rom_B4A8:
 	.byte $FF, $FF, $FF, $FF, $FF, $FF, $07, $00
 	.byte $02, $FE, $FF, $FF, $FF, $FF, $03, $00
-rom_B4B8:
+	@rom_B4B8:
 	.byte $FF, $FF, $FF, $FF, $FF, $3F, $8E, $20
 	.byte $7E, $FE, $FF, $FF, $FF, $CB, $FC, $FF
-rom_B4C8:
+	@rom_B4C8:
 	.byte $FF, $FF, $FF, $FF, $1B, $7E, $87, $3F
 	.byte $19, $87, $E3, $FC, $1D, $FF, $3F, $07
-rom_B4D8:
+	@rom_B4D8:
 	.byte $FF, $FF, $CF, $FD, $53, $81, $F0, $C0
 	.byte $60, $7E, $FE, $CF, $EF, $FB, $27, $FF
-rom_B4E8:
+	@rom_B4E8:
 	.byte $FF, $FF, $FE, $DF, $F8, $C2, $C7, $FC
 	.byte $EF, $FF, $11, $FF, $67, $FE, $9F, $79
-rom_B4F8:
+	@rom_B4F8:
 	.byte $FF, $FF, $FF, $FF, $FF, $FF, $04, $7D
 	.byte $00, $90, $FF, $7F, $FC, $FF, $FF, $FF
-rom_B508:
+	@rom_B508:
 	.byte $FF, $FF, $FF, $8B, $B3, $98, $FD, $03
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
-rom_B518:
+	@rom_B518:
 	.byte $51, $11, $B5, $16, $84, $E1, $67, $FB
 	.byte $BF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
-rom_B528:
+	@rom_B528:
 	.byte $06, $02, $9F, $8F, $3D, $F6, $F8, $1E
 	.byte $7E, $1E, $3F, $C4, $3F, $F2, $8F, $7F
-rom_B538:
+	@rom_B538:
 	.byte $EB, $08, $6C, $FD, $B8, $C6, $73, $12
 	.byte $67, $FF, $FF, $FF, $FF, $FF, $FF, $FF
-rom_B548:
+	@rom_B548:
 	.byte $14, $53, $95, $02, $64, $C0, $EC, $9F
 	.byte $FF, $FF, $FF, $FF, $0F, $F2, $FF, $7F
-rom_B558:
+	@rom_B558:
 	.byte $E1, $FD, $9D, $BF, $CF, $DF, $8F, $7F
 	.byte $FF, $5B, $04, $EA, $9F, $3F, $FF, $FF
-rom_B568:
+	@rom_B568:
 	.byte $90, $F3, $E6, $7D, $32, $FB, $CD, $79
 	.byte $BB, $1F, $FF, $FF, $FF, $FF, $FF, $7F
-rom_B578:
+	@rom_B578:
 	.byte $85, $65, $C9, $02, $D9, $70, $7F, $FE
 	.byte $FF, $FF, $FF, $FF, $FF, $77, $CE, $33
-rom_B588:
+	@rom_B588:
 	.byte $40, $2D, $11, $5E, $F0, $FF, $FE, $FF
 	.byte $FF, $FF, $FF, $FF, $FF, $FF, $7F, $00
-rom_B598:
+	@rom_B598:
 	.byte $15, $25, $00, $00, $C0, $FF, $FF, $FF
 	.byte $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
-rom_B5A8:
+	@rom_B5A8:
 	.byte $FF, $7F, $FE, $CB, $BC, $EB, $86, $F3
 	.byte $F7, $FF, $F1, $F3, $FF, $3F, $9F, $0F
-rom_B5B8:
+	@rom_B5B8:
 	.byte $65, $29, $1D, $E4, $07, $FC, $7F, $FE
 	.byte $87, $FF, $FF, $FF, $FF, $FF, $FF, $FF
-rom_B5C8:
+	@rom_B5C8:
 	.byte $7B, $6E, $D9, $20, $04, $3F, $F9, $FF
 	.byte $FF, $FF, $FF, $FF, $FF, $FF, $FF, $7F
-rom_B5D8:
+	@rom_B5D8:
 	.byte $FF, $DB, $FF, $FF, $16, $00, $00, $00
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
-rom_B5E8:
+	@rom_B5E8:
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
-rom_B5F8:
+	@rom_B5F8:
 	.byte $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
 	.byte $FF, $FF, $FF, $1F, $00, $00, $00, $80
-rom_B608:
+	@rom_B608:
 	.byte $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
 	.byte $FF, $FF, $FF, $FF, $3F, $00, $00, $00
-rom_B618:
+	@rom_B618:
 	.byte $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
 	.byte $FF, $FF, $C6, $FF, $DF, $9F, $03, $07
-rom_B628:
+	@rom_B628:
 	.byte $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
 	.byte $0F, $00, $00, $FE, $FF, $7F, $80, $00
-rom_B638:
+	@rom_B638:
 	.byte $FF, $1F, $FF, $FC, $CF, $FF, $FF, $FF
 	.byte $03, $FF, $07, $FC, $E3, $FF, $FF, $03
-rom_B648:
+	@rom_B648:
 	.byte $FF, $FF, $FF, $FF, $FF, $CF, $FF, $FF
 	.byte $F3, $FF, $EF, $FF, $01, $00, $00, $03
-rom_B658:
+	@rom_B658:
 	.byte $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
 	.byte $FF, $FF, $FF, $FF, $03, $00, $00, $00
-rom_B668:
+	@rom_B668:
 	.byte $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
 	.byte $FF, $FF, $7F, $00, $00, $00, $10, $00
-rom_B678:
+	@rom_B678:
 	.byte $FF, $FF, $FF, $7F, $66, $92, $C4, $86
 	.byte $F2, $AF, $57, $82, $98, $8B, $FF, $FF
-rom_B688:
+	@rom_B688:
 	.byte $FF, $FF, $9F, $EC, $24, $7F, $81, $C0
 	.byte $1C, $78, $48, $46, $F2, $20, $10, $00
-rom_B698:
+	@rom_B698:
 	.byte $FE, $DF, $FF, $84, $7F, $00, $00, $00
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
-rom_B6A8:
+	@rom_B6A8:
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $00, $00, $00, $00, $00, $00, $00, $80
 
@@ -4172,10 +4302,10 @@ rom_B6A8:
 ; Data pointers for sprite animation sequences
 ; Index for these pointers is first byte from 3-byte data on top of fighter's
 ; PRG ROM bank
-tbl_anim_data_ptrs:
+tbl_movement_data_ptrs:
 	.word @rom_DB7D	; $00
 	.word @rom_DB98	; $01
-	.word @rom_DBCC
+	.word @up_down_12_frames
 	.word @rom_DBB7
 	.word @rom_DBF6
 	.word @rom_DC17
@@ -4302,7 +4432,7 @@ tbl_anim_data_ptrs:
 
 ; ----------------
 
-	@rom_DBCC:
+	@up_down_12_frames:
 	.byte $00, $ED	; 0, -19
 	.byte $00, $F0	; 0, -16
 	.byte $00, $F2	; 0, -14

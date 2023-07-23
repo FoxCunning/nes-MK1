@@ -277,7 +277,7 @@ rom_82A1:
 ; -----------------------------------------------------------------------------
 
 rom_82C7:
-	.word scorpion_frame_00, rom_83C3, rom_83EC, rom_8405
+	.word scorpion_frame_00, frame_idle_01, rom_83EC, rom_8405
 	.word rom_8422, scorpion_frame_05, rom_8474, rom_849D
 	.word rom_84C6, rom_84F8, rom_8521, rom_854E
 	.word rom_857B, rom_858F, rom_85A3, rom_85D5
@@ -314,7 +314,7 @@ scorpion_frame_00:
 	.byte $A4, $A5, $FF, $A9, $AA, $AB, $AC, $FF
 	.byte $B1, $B2, $B3, $B4, $FF, $B9, $BA, $FF
 	.byte $BB, $FF
-rom_83C3:
+frame_idle_01:
 	.byte $04, $09, $10, $D2, $00, $FF, $83, $84
 	.byte $FF, $89, $8A, $8B, $8C, $91, $92, $93
 	.byte $94, $98, $99, $9A, $9B, $FF, $A0, $A1

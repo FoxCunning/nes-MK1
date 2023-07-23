@@ -17,6 +17,7 @@ zp_09 = $09     ;
 zp_0A = $0A     ;
 zp_0B = $0B     ;
 zp_0D = $0D     ;
+zp_backup_a = $0E   ; Register backup to avoid psh/pla
 zp_0F = $0F     ;
 
 zp_backup_x = $10   ; Register backup to avoid psh/pla
@@ -125,6 +126,9 @@ zp_plr2_selection = $64 ;
 zp_65 = $65     ;
 zp_66 = $66     ;
 
+zp_frozen_timer = $70   ; Size=2 Player can't move until timer reaches zero
+zp_thaw_flag = $72  ; Size=2 Player will be "thawed" when this flag is set
+
 zp_game_substate = $7A     ;
 zp_7B = $7B     ;
 zp_7C = $7C     ;
@@ -146,7 +150,7 @@ zp_plr1_y_pos = $88 ;
 zp_plr2_y_pos = $89 ;
 zp_plr1_facing_dir = $8A    ; 0 = forward, 1 = backwards
 zp_plr2_facing_dir = $8B    ; 0 = forward, 1 = backwards
-zp_8C = $8C     ;
+zp_last_anim_plr = $8C     ; Index of the last player (0 or 1) whose animation was changed
 zp_y_plane_skew = $8D   ; Set to 1 if one player is airborne while the other isn't
 
 zp_plr1_cur_anim = $8E  ;
@@ -199,8 +203,8 @@ zp_E9 = $E9     ;
 ; Determines how many points to add to a player's score
 zp_gained_score_idx = $EF   ; 0 to 4 (low to high)
 
-zp_F0 = $F0     ;
-zp_player_hit_counter = $F1     ;
+zp_last_player_hit = $F0    ; Index (0 or 1) of last player hit by non-ranged attack
+zp_counter_var_F1 = $F1     ;
 zp_plr1_fighter_idx = $F2     ;
 zp_plr2_fighter_idx = $F3     ;
 zp_F4 = $F4     ;
@@ -352,8 +356,8 @@ ram_0675 = $0675    ;
 
 ram_067C = $067C    ; Set twice, but potentially unused
 ram_067D = $067D    ; Set twice, but potentially unused
-ram_067E = $067E    ; Set once, but potentially unused
-ram_067F = $067F    ; Set once, but potentially unused
+;ram_067E = $067E    ; Set once, but potentially unused
+;ram_067F = $067F    ; Set once, but potentially unused
 
 ram_0680 = $0680    ;
 ram_0681 = $0681    ;
