@@ -1270,14 +1270,31 @@ sub_call_gfx_routines:
 	ldx #$01
 	@thaw_check:
 		lda zp_thaw_flag,X
-		beq :+
+		beq @thaw_check_next
 			lda #$00
 			sta zp_thaw_flag,X
 			sta zp_frozen_timer,X
 
+			; "Land" airborne players when thawing, if needed
+			lda zp_plr1_cur_anim,X
+			cmp #$2D
+			bcs :+
+				lda zp_sprites_base_y
+				cmp zp_plr1_y_pos,X
+				beq :+
+					lda #$34
+					sta zp_plr1_cur_anim,X
+					lda #$0A
+					sta zp_plr1_anim_frame,X
+					lda zp_sprites_base_y
+					sec
+					sbc #$4E
+					sta zp_plr1_y_pos,X
+			:
+
 			stx zp_7C
 			jmp sub_reload_fighters_palettes
-		:
+		@thaw_check_next:
 		dex
 	bpl @thaw_check
 
@@ -1296,8 +1313,8 @@ sub_reload_fighters_palettes:
 
 	ldy #$01
 	ldx zp_7C
-	sty zp_48,X
-	sty zp_plr1_anim_frame,X
+	;sty zp_48,X
+	;sty zp_plr1_anim_frame,X
 	ldx #$00
 	:
 		lda (zp_ptr1_lo),Y

@@ -1571,16 +1571,16 @@ sub_check_apply_knockdown:
 
 	; Return if < $30 and >= $33
 	cmp #$30	
-	bcc @CB7E_rts
+	bcc @fall_back_rts
 
 	cmp #$33
-	bcs @CB7E_rts
+	bcs @fall_back_rts
 
 	@CB1B:
 	; Only reached if animation is $2E, $31 or $32
 	lda #$06
 	cmp zp_plr1_anim_frame,Y
-	bcs @CB7E_rts
+	bcs @fall_back_rts
 
 	lda zp_sprites_base_y
 	sec
@@ -1594,7 +1594,7 @@ sub_check_apply_knockdown:
 	bcs @CB5A
 
 	cmp zp_ptr1_hi
-	bcc @CB7E_rts
+	bcc @fall_back_rts
 
 	lda zp_plr1_cur_anim,Y
 	cmp #$32
@@ -1614,10 +1614,13 @@ sub_check_apply_knockdown:
 	sta zp_plr1_cur_anim,Y
 	lda #$0A
 	sta zp_plr1_anim_frame,Y
+	
 	lda zp_ptr1_hi
 	clc
 	adc #$0C
 	sta zp_plr1_y_pos,Y
+
+	@fall_back_rts:
 	rts
 ; ----------------
 	@CB5A:
@@ -1629,6 +1632,7 @@ sub_check_apply_knockdown:
 	cmp zp_ptr1_lo
 	bcc @CB7E_rts
 
+		; Falling on their back after hit
 		lda #$02
 		sta zp_short_counter_target
 		lda #$26	; Fall on back
@@ -3256,20 +3260,14 @@ sub_inner_move_sprites:
 	sta mmc3_bank_select
 	lda zp_05
 	sta mmc3_bank_data
-	; Bank $01 in $A000-$BFFF
-	;lda #$87
-	;sta zp_prg_bank_select_backup
-	; Not needed after relocation
-	;sta mmc3_bank_select
-	;lda #$01
-	;sta mmc3_bank_data
 
 	; Read a pointer from the top of the new ROM in $8000
 	lda rom_8000+0
 	sta zp_ptr3_lo
 	lda rom_8000+1
 	sta zp_ptr3_hi
-	; Index = animation idx * 3
+
+	; Index for movement data = animation idx * 3
 	lda zp_plr1_cur_anim,Y
 	asl A
 	bcc :+
@@ -3280,8 +3278,8 @@ sub_inner_move_sprites:
 	bcc :+
 		inc zp_ptr3_hi
 	:
-	sta zp_ptr1_lo
-	; Index ready, read pointer
+	sta zp_ptr1_lo	 ; Will also be used to index animation frame data
+	
 	tay
 	lda (zp_ptr3_lo),Y
 	asl A
@@ -3301,6 +3299,15 @@ sub_inner_move_sprites:
 	lda (zp_ptr4_lo),Y
 	sta zp_06	; Player's Y movement (signed value)
 
+	; Ignore movement if player is frozen
+	ldx zp_7C
+	lda zp_frozen_timer,X
+	beq :+
+		lda #$00
+		sta zp_06
+		sta zp_05
+	:
+
 	iny
 	lda #$00
 	sta zp_18
@@ -3314,14 +3321,14 @@ sub_inner_move_sprites:
 	ldx zp_7B	; 2-byte data / pointer offset for current player
 	ldy zp_7C	; 1-byte data offset for current player
 	lda zp_05	; X movement for current animation
-	bpl @D81A
+	bpl @D81A_facing
 
 		; Negative movement (against current facing direction)
 		eor #$FF
 		sta zp_05
 		inc zp_05
 		lda zp_plr1_facing_dir,Y	; Will determine whether to move forward or backwards
-		bne @D81F
+		bne @D81F_set_x
 
 			; Recalculate the distance between player hit boxes
 			@D803:
@@ -3329,37 +3336,37 @@ sub_inner_move_sprites:
 			sec
 			sbc zp_05
 			cmp #$20
-			bcc @D834
+			bcc @D834_set_y
 
 			lda zp_plr1_x_lo,X
 			sec
 			sbc zp_05
 			sta zp_plr1_x_lo,X
-			bcs @D834
+			bcs @D834_set_y
 
 			dec zp_plr1_x_hi,X
-			beq @D834
+			beq @D834_set_y
 
-	@D81A:
+	@D81A_facing:
 	lda zp_plr1_facing_dir,Y
 	bne @D803
 
-	@D81F:
+	@D81F_set_x:
 	lda zp_plr1_x_pos,Y
 	clc
 	adc zp_05
 	cmp #$D0
-	bcs @D834
+	bcs @D834_set_y
 
 		lda zp_plr1_x_lo,X
 		clc
 		adc zp_05
 		sta zp_plr1_x_lo,X
-		bcc @D834
+		bcc @D834_set_y
 
 			inc zp_plr1_x_hi,X
 
-	@D834:
+	@D834_set_y:
 	lda zp_plr1_y_pos,Y
 	clc
 	adc zp_06
@@ -3449,13 +3456,11 @@ sub_inner_move_sprites:
 		; Instead, decrement the counter to "thaw" them gradually
 		lda #$00
 		dcp zp_frozen_timer,Y		
-		bne @check_frame_sfx
+		bne sub_animate_sprites
 
 		; If timer just reached zero, change the palette back to normal
-		;ldx zp_7C
-		;jsr sub_load_fighters_palettes
-		;ldy zp_7C
 		isc zp_thaw_flag,Y
+		bne @check_frame_sfx
 	:
 	;ldx zp_7C
 	isc zp_plr1_anim_frame,Y ;inc zp_plr1_anim_frame,X
@@ -4292,7 +4297,7 @@ rom_01_B000:
 tbl_movement_data_ptrs:
 	.word @rom_DB7D	; $00
 	.word @rom_DB98	; $01
-	.word @rom_DBCC
+	.word @up_down_12_frames
 	.word @rom_DBB7
 	.word @rom_DBF6
 	.word @rom_DC17
@@ -4419,7 +4424,7 @@ tbl_movement_data_ptrs:
 
 ; ----------------
 
-	@rom_DBCC:
+	@up_down_12_frames:
 	.byte $00, $ED	; 0, -19
 	.byte $00, $F0	; 0, -16
 	.byte $00, $F2	; 0, -14
