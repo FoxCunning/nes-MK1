@@ -100,7 +100,7 @@ rom_8004:
 	.byte $10
 	.word rom_8254
 	.byte $08
-	.word rom_8268
+	.word anim_victory
 	.byte $08
 	.word rom_826E
 	.byte $07
@@ -230,7 +230,7 @@ rom_8254:
 	.byte $2A, $2A, $2A, $2A, $2B, $2B, $2B, $2B
 	.byte $2A, $2A, $2A, $2A, $2B, $2B, $2B, $2B
 	.byte $2A, $2A, $2A, $2A
-rom_8268:
+anim_victory:
 	.byte $2C, $2C, $2C, $2C, $2C, $2C
 rom_826E:
 	.byte $2D, $2D, $2D, $2D, $2E, $2E, $03, $09

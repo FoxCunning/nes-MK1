@@ -17,12 +17,12 @@ sub_regular_hit_check:
 	jsr sub_inner_reg_hit_check
 
 	; Change index for player 2
-	lda zp_7C
+	lda zp_plr_idx_param
 	eor #$01
 ; ----------------
 sub_inner_reg_hit_check:
 	tax				; X = attacker
-	stx zp_7C
+	stx zp_plr_idx_param
 
 	eor #$01
 	tay				; Y = player potentially being hit
@@ -99,7 +99,7 @@ sub_inner_reg_hit_check:
 		bne @A02A_rts
 
 	@A068:
-	ldx zp_7C
+	ldx zp_plr_idx_param
 	lda zp_plr1_anim_frame,X
 	cmp zp_ptr1_lo	; Check min frame number
 	bcc @A02A_rts
@@ -205,7 +205,7 @@ sub_inner_reg_hit_check:
 	sta zp_plr1_anim_frame,X
 	iny
 	lda (zp_ptr3_lo),Y
-	ldx zp_7C
+	ldx zp_plr_idx_param
 	sta zp_gained_score_idx,X
 	inc zp_gained_score_idx,X
 
@@ -819,12 +819,12 @@ sub_rom_03_A5E4:
 	jsr sub_rom_A9FD
 	and #$01
 	jsr sub_rom_A5F0
-	lda zp_7C
+	lda zp_plr_idx_param
 	eor #$01
 ; ----------------
 sub_rom_A5F0:
     tay
-	sty zp_7C
+	sty zp_plr_idx_param
 	lda zp_plr1_fighter_idx,Y
 	bpl @A60B_rts
 
@@ -1043,7 +1043,7 @@ sub_special_move_2:
 
 ; Parameters: attacker's animation index
 sub_rom_A773:
-	ldy zp_7C
+	ldy zp_plr_idx_param
 	sta zp_ptr1_lo
 	cmp #$03	; Forward walk?
 	beq @A7AB

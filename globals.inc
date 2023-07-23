@@ -131,7 +131,7 @@ zp_thaw_flag = $72  ; Size=2 Player will be "thawed" when this flag is set
 
 zp_game_substate = $7A     ;
 zp_7B = $7B     ;
-zp_7C = $7C     ;
+zp_plr_idx_param = $7C  ; Active player index parameter: 0 for player one, 1 for player 2
 zp_attacker_anim = $7D  ;
 zp_7F = $7F     ;
 
@@ -186,7 +186,7 @@ zp_plr2_damage = $A6    ;
 zp_plr1_dmg_counter = $A7   ;
 zp_plr2_dmg_counter = $A8   ;
 
-zp_A9 = $A9     ;
+zp_key_combo_hits = $A9     ;
 zp_AD = $AD     ;
 
 zp_BD = $BD     ;
@@ -324,7 +324,7 @@ ram_irq_state_var = $0435 ; Used in IRQ routines as a substate indicator
 ram_ranged_atk_x_pos = $0436    ; Ranged attack hit box coordinate
 ram_0438 = $0438    ;
 ram_043D = $043D    ;
-ram_043E = $043E    ;
+ram_special_atk_idx = $043E    ;
 ram_irq_counter_0 = $043F ; Used in IRQ routines as a counter (e.g. for parallax scrolling)
 ram_irq_counter_1 = $0440    ;
 
