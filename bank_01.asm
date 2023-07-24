@@ -3883,18 +3883,21 @@ tbl_fighter_sprite_banks:
 ; -----------------------------------------------------------------------------
 
 ; Moves Raiden's sprite during his teleport animation
+; Parameters:
+; Y = player index
 sub_raiden_teleport:
 	lda #$27
-	sta zp_plr1_cur_anim
+	sta zp_plr1_cur_anim,Y
 
-	lax zp_plr_ofs_param
-	eor #$02
-	tay	; Y = offset for opposing player
-
-	lda zp_plr1_facing_dir,X
+	lda zp_plr1_facing_dir,Y
 	beq @teleport_right
 
 		; Teleport left
+
+		lax zp_plr_ofs_param
+		eor #$02
+		tay	; Y = offset for opposing player
+
 		lda zp_plr1_x_lo,Y
 		sec
 		sbc #$1B
@@ -3917,6 +3920,10 @@ sub_raiden_teleport:
 				bne @adjust_destination
 
 	@teleport_right:
+	lax zp_plr_ofs_param
+	eor #$02
+	tay	; Y = offset for opposing player
+
 	clc
 	lda zp_plr1_x_lo,Y
 	adc #$1B
