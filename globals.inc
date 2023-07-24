@@ -130,8 +130,8 @@ zp_frozen_timer = $70   ; Size=2 Player can't move until timer reaches zero
 zp_thaw_flag = $72  ; Size=2 Player will be "thawed" when this flag is set
 
 zp_game_substate = $7A     ;
-zp_7B = $7B     ;
-zp_plr_idx_param = $7C  ; Active player index parameter: 0 for player one, 1 for player 2
+zp_plr_ofs_param = $7B  ; Pointer offset for current player: 0 for player one, 2 for player two
+zp_plr_idx_param = $7C  ; Active player index parameter: 0 for player one, 1 for player two
 zp_attacker_anim = $7D  ;
 zp_7F = $7F     ;
 

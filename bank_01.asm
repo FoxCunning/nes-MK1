@@ -156,7 +156,7 @@ sub_match_end:
 			ldx #$03
 	@C1C3:
 	sty zp_plr_idx_param	; Index of winning player
-	stx zp_7B
+	stx zp_plr_ofs_param
 	
 	lda zp_counter_param
 	beq :+
@@ -165,7 +165,7 @@ sub_match_end:
 
 	jsr sub_clear_score_display
 
-	ldx zp_7B
+	ldx zp_plr_ofs_param
 	lda #$01
 	sta zp_05
 	lda #$00
@@ -175,10 +175,10 @@ sub_match_end:
 	lda zp_plr_idx_param
 	eor #$01
 	sta zp_plr_idx_param
-	lda zp_7B
+	lda zp_plr_ofs_param
 	eor #$03
 	tax
-	stx zp_7B
+	stx zp_plr_ofs_param
 	jsr sub_rom_C6E2
 	; jsr sub_rom_C6BA this is just a rts
 
@@ -631,26 +631,26 @@ sub_calc_ranged_atk_distance:
 sub_rom_C572:
 	lda zp_plr1_cur_anim,X
 	cmp #$1E	; Ranged attack (opponent)
-	bne @C581
+	bne @C581_special_1_check
 
 	lda zp_plr1_cur_anim,Y
 	cmp #$1E	; Ranged attack (attacker)
-	beq @C58C
+	beq @C58C_check_frame
 
-	bne @C5A2
+	bne @C5A2_no_hit
 
-	@C581:
-	cmp #$0D
-	bne @C5A2
+	@C581_special_1_check:
+	cmp #$0D	; Special 1 (opponent)
+	bne @C5A2_no_hit
 
 	lda zp_plr1_cur_anim,Y
-	cmp #$0D
-	bne @C5A2
+	cmp #$0D	; Special 1 (attacker)
+	bne @C5A2_no_hit
 
-	@C58C:
+	@C58C_check_frame:
 	lda zp_plr1_anim_frame,X
 	cmp #$05
-	bcc @C5A2
+	bcc @C5A2_no_hit
 
 	lda ram_ranged_atk_x_pos,X
 	cmp ram_ranged_atk_x_pos,Y
@@ -658,11 +658,12 @@ sub_rom_C572:
 
 	sec
 	sbc ram_ranged_atk_x_pos,Y
-	@C59E:
-	cmp #$08
-	bcc @C5AD
 
-	@C5A2:
+	@C59E_ranged_dist_check:
+	cmp #$08
+	bcc @C5AD_hit
+
+	@C5A2_no_hit:
 	clc
 	rts
 ; ----------------
@@ -670,9 +671,9 @@ sub_rom_C572:
 	lda ram_ranged_atk_x_pos,Y
 	sec
 	sbc ram_ranged_atk_x_pos,X
-	bne @C59E
+	bne @C59E_ranged_dist_check
 	
-	@C5AD:
+	@C5AD_hit:
 	lda #$00
 	sec
 	rts
@@ -837,7 +838,7 @@ sub_rom_C69C:
 	ldy #$00
 	sty zp_plr_idx_param
 	ldx #$00
-	stx zp_7B
+	stx zp_plr_ofs_param
 	jsr sub_rom_C6BB
 	lda ram_game_mode_initialised
 	beq sub_rom_C6BA
@@ -845,7 +846,7 @@ sub_rom_C69C:
 		inc zp_plr_idx_param
 		ldy zp_plr_idx_param
 		ldx #$03
-		stx zp_7B
+		stx zp_plr_ofs_param
 		jmp sub_rom_C6BB ;jsr sub_rom_C6BB
 	
 sub_rom_C6BA:
@@ -862,7 +863,7 @@ sub_rom_C6BB:
 	lda rom_C760+1,X
 	sta zp_06
 	
-	ldx zp_7B
+	ldx zp_plr_ofs_param
 ; ----------------
 sub_update_score_display:
 	clc
@@ -900,7 +901,7 @@ sub_rom_C6E2:
 	ldy zp_plr_idx_param
 	ldx rom_C76A,Y
 	jsr sub_rom_C789
-	ldx zp_7B
+	ldx zp_plr_ofs_param
 	txa
 	eor #$03
 	tay
@@ -1150,7 +1151,7 @@ sub_check_special_key_combo:
 	clc
 	adc zp_plr_idx_param
 	tax
-	stx zp_7B	; Offset to key combo pointer (0, 2 or 4 since we have three special moves)
+	stx zp_plr_ofs_param	; Offset to key combo pointer (0, 2 or 4 since we have three special moves)
 
 	lda zp_key_combo_hits,X
 	sta zp_ptr1_lo
@@ -1177,7 +1178,7 @@ sub_check_special_key_combo:
 
 		@C8B0:
 		ldy zp_ptr1_lo
-		ldx zp_7B
+		ldx zp_plr_ofs_param
 		cmp (zp_ptr3_lo),Y
 		beq @C8C2
 
@@ -1224,7 +1225,7 @@ sub_check_special_key_combo:
 ; -----------------------------------------------------------------------------
 
 sub_rom_C8F9:
-	ldx zp_7B
+	ldx zp_plr_ofs_param
 	lda zp_BD,X
 	cmp #$0F
 	bcc @C911
@@ -3342,12 +3343,12 @@ sub_rom_D72C:
 
 sub_move_fighter_sprites:
 	ldx #$00
-	stx zp_7B
+	stx zp_plr_ofs_param
 	stx zp_plr_idx_param
 	jsr sub_inner_move_sprites
 
 	ldx #$02
-	stx zp_7B
+	stx zp_plr_ofs_param
 	dex
 	stx zp_plr_idx_param
 ; ----------------
@@ -3423,7 +3424,7 @@ sub_inner_move_sprites:
 		inc zp_18
 	:
 	jsr sub_scorpion_spear_pull
-	ldx zp_7B	; 2-byte data / pointer offset for current player
+	ldx zp_plr_ofs_param	; 2-byte data / pointer offset for current player
 	ldy zp_plr_idx_param	; 1-byte data offset for current player
 	lda zp_05	; X movement for current animation
 	bpl @D81A_facing
@@ -3507,7 +3508,7 @@ sub_inner_move_sprites:
 	lda (zp_ptr4_lo),Y
 	sta zp_ptr3_hi	; This now points to the second data table in fighter's anim ROM bank
 
-	ldx zp_7B
+	ldx zp_plr_ofs_param
 	ldy zp_plr_idx_param
 	jsr sub_check_player_push
 	jsr sub_rom_D72C
@@ -3534,7 +3535,7 @@ sub_inner_move_sprites:
 
 	@D88E:
 	stx zp_first_oam_ofs
-	ldx zp_7B
+	ldx zp_plr_ofs_param
 	lda zp_plr1_facing_dir,Y
 	beq :+
 		lda #$40	; Sprite's horizontal flip flag
@@ -3597,12 +3598,22 @@ sub_inner_move_sprites:
 			tax
 			lda zp_plr1_fgtr_idx_clean,X
 			cmp #$03
-			bne sub_animate_sprites
+			bne @set_idle_anim
 				lda #$28
 				sta zp_plr1_cur_anim,Y
 				bne sub_animate_sprites
 		:
+		; If the current animation is $0D (special 1)
+		; and the player is Rayden ($00)
+		; then teleport
+		cmp #$0D
+		bne :+
+			lda zp_plr1_fgtr_idx_clean,Y
+			bne :+
+				jmp sub_rayden_teleport
+		:
 		; Otherwise, back to idle
+		@set_idle_anim:
 		lda #$00
 		sta zp_plr1_cur_anim,Y
 
@@ -3839,7 +3850,7 @@ tbl_frame_1_sfx_idx:
 ; -----------------------------------------------------------------------------
 
 ; Bank numbers, will be mapped to $8000-$9FFF
-; These contain animation data (sprite indices) and maybe "moves" data
+; These contain animation (frames sequence) and frame data (sprite indices)
 tbl_fighter_sprite_banks:
 	.byte $05	; Rayden
 	.byte $06	; Sonya
@@ -3850,11 +3861,78 @@ tbl_fighter_sprite_banks:
 	.byte $0B	; Liu Kang
 	.byte $0C	; Goro
 	.byte $0D	; Shang-Tsung
-	;.byte $05, $05, $05	; Potentially unused
-; This portion is also potentially unused
-;rom_D8E4:
-;	.byte $00, $01, $00, $02, $00, $01, $00, $01
-;	.byte $02, $00, $01, $00
+
+; -----------------------------------------------------------------------------
+
+; Moves Rayden's sprite during his teleport animation
+sub_rayden_teleport:
+	lda #$27
+	sta zp_plr1_cur_anim
+
+	lax zp_plr_ofs_param
+	eor #$02
+	tay	; Y = offset for opposing player
+
+	lda zp_plr1_facing_dir,X
+	beq @teleport_right
+
+		; Teleport left
+		lda zp_plr1_x_lo,Y
+		sec
+		sbc #$1B
+		sta zp_plr1_x_lo,X
+		lda zp_plr1_x_hi,Y
+		sbc #00
+		sta zp_plr1_x_hi,X
+		
+		; Off-screen check to the left
+		lda zp_plr1_x_hi,X
+		bne @teleport_done
+
+			lda zp_plr1_x_lo,X
+			cmp #$20
+			bcs @teleport_done
+
+				lda #$00
+				sta zp_plr1_x_hi,X
+				lda #$3F	; Safe distance on the other side
+				bne @adjust_destination
+
+	@teleport_right:
+	clc
+	lda zp_plr1_x_lo,Y
+	adc #$1B
+	sta zp_plr1_x_lo,X
+	lda zp_plr1_x_hi,Y
+	adc #$00
+	sta zp_plr1_x_hi,X
+	
+	; Off-screen check to the right
+	lda zp_plr1_x_hi,X
+	beq @teleport_done
+
+		lda zp_plr1_x_lo,X
+		cmp #$34
+		bcc @teleport_done
+
+			lda #$01
+			sta zp_plr1_x_hi,X
+			lda #$15
+	
+	@adjust_destination:
+	sta zp_plr1_x_lo,X
+
+	;ldy zp_plr_idx_param
+
+	;lda zp_plr1_x_lo,X
+	;sec
+	;sbc zp_irq_hor_scroll
+	;sta zp_plr1_x_pos,Y
+	;sta zp_07
+
+	@teleport_done:
+	ldy zp_plr_idx_param
+	jmp sub_animate_sprites
 
 ; -----------------------------------------------------------------------------
 

@@ -259,7 +259,7 @@ tbl_hit_data_ptrs:
 tbl_hit_ptrs_rayden:
 	.word hit_data_kick	; $00
 	.word rom_A37F
-	.word rom_AA1A
+	.word hit_data_ranged ; rom_AA1A	Using the ranged one should prevent damage
 	.word rom_A38F
 	.word rom_A398
 	.word rom_A3A1
@@ -795,8 +795,8 @@ rom_A5C8:
 	.byte $08, $0B, $3A, $30, $30, $0A
 
 ; Probably unused
-	.byte $00, $0D, $11, $3A, $30, $30, $0A
-	.byte $00
+;	.byte $00, $0D, $11, $3A, $30, $30, $0A
+;	.byte $00
 
 ; -----------------------------------------------------------------------------
 
@@ -852,7 +852,7 @@ sub_rom_A5F0:
 	tya
 	eor #$01
 	tax
-	stx zp_7B
+	stx zp_plr_ofs_param
 	lda zp_players_x_distance
 	cmp #$14
 	bcs @A61C
@@ -886,12 +886,12 @@ sub_rom_A5F0:
 ; -----------------------------------------------------------------------------
 
 sub_rom_A63B:
-	ldx zp_7B
+	ldx zp_plr_ofs_param
 	lda zp_5E
 	bne @A659
 
 	jsr sub_cpu_opponent_delay
-	ldx zp_7B
+	ldx zp_plr_ofs_param
 	lda zp_9E
 	cmp #$01
 	bcc @A659
@@ -1051,7 +1051,7 @@ sub_rom_A773:
 	cmp #$18	; Throw move?
 	bne @A7B0_reset_anim_frame
 
-		ldx zp_7B
+		ldx zp_plr_ofs_param
 		lda zp_plr1_y_pos,X
 		cmp zp_sprites_base_y
 		bne @A7A5
@@ -1111,7 +1111,7 @@ rom_A7BF:
 	.word rom_A807	; Goro
 	.word rom_A807	; Shang-Tsung
 	; Unused
-	.word rom_A807, rom_A807, rom_A8F9
+	;.word rom_A807, rom_A807, rom_A8F9
 
 ; -----------------------------------------------------------------------------
 
@@ -1126,7 +1126,7 @@ rom_A7D7:
 	.word rom_A81F
 	.word rom_A81F
 	.word rom_A81F
-	.word rom_A81F, rom_A81F, rom_A911
+	;.word rom_A81F, rom_A81F, rom_A911
 
 ; -----------------------------------------------------------------------------
 
@@ -1141,7 +1141,7 @@ rom_A7EF:
 	.word rom_A837
 	.word rom_A837
 	.word rom_A837
-	.word rom_A837, rom_A837, rom_A929
+	;.word rom_A837, rom_A837, rom_A929
 
 ; -----------------------------------------------------------------------------
 

@@ -15,13 +15,13 @@
 sub_load_stage_background:
 	lda ram_irq_routine_idx
 	asl A
-	sta zp_7B
+	sta zp_plr_ofs_param
 	jsr sub_prepare_stage_rle_pointer
 	lda #$00
 	sta zp_05
 	jsr sub_stage_rle_unpack
-	inc zp_7B
-	lda zp_7B
+	inc zp_plr_ofs_param
+	lda zp_plr_ofs_param
 	jsr sub_prepare_stage_rle_pointer
 	lda #$01
 	sta zp_05
