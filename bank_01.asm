@@ -155,8 +155,8 @@ sub_match_end:
 			iny		; Player 2 wins
 			ldx #$03
 	@C1C3:
-	sty zp_7C	; Index of winning player
-	stx zp_7B
+	sty zp_plr_idx_param	; Index of winning player
+	stx zp_plr_ofs_param
 	
 	lda zp_counter_param
 	beq :+
@@ -165,20 +165,20 @@ sub_match_end:
 
 	jsr sub_clear_score_display
 
-	ldx zp_7B
+	ldx zp_plr_ofs_param
 	lda #$01
 	sta zp_05
 	lda #$00
 	sta zp_06
 	jsr sub_update_score_display
 
-	lda zp_7C
+	lda zp_plr_idx_param
 	eor #$01
-	sta zp_7C
-	lda zp_7B
+	sta zp_plr_idx_param
+	lda zp_plr_ofs_param
 	eor #$03
 	tax
-	stx zp_7B
+	stx zp_plr_ofs_param
 	jsr sub_rom_C6E2
 	; jsr sub_rom_C6BA this is just a rts
 
@@ -210,7 +210,7 @@ sub_announce_winner_name:
 	bne @wait_for_name
 		
 		; Announce name after 20 frames
-		ldx zp_7C	; Winner index
+		ldx zp_plr_idx_param	; Winner index
 		lda zp_plr1_fgtr_idx_clean,X
 		cmp #$06	; Skip Goro and Shang-Tsung
 		bcs @abort_announcement
@@ -257,10 +257,10 @@ sub_rom_C284:
 
 sub_rom_C29E:
 	ldy #$00
-	sty zp_7C
+	sty zp_plr_idx_param
 	jsr sub_rom_C2A8
 	iny
-	sty zp_7C
+	sty zp_plr_idx_param
 
 ; -----------------------------------------------------------------------------
 
@@ -383,7 +383,7 @@ sub_rom_C2A8:
 
 	jsr sub_rom_C3F9
 	lda #$FD		; -3 if shooting left
-	ldy zp_7C		; Attacker's index
+	ldy zp_plr_idx_param		; Attacker's index
 	ldx zp_plr1_facing_dir,Y
 	bne :+
 		lda #$03	; +3 if shooting right
@@ -398,7 +398,7 @@ sub_rom_C2A8:
 	; These are added to ranged attack sprite's X position to make it move
 	; (or subtracted, depending on direction)
 	@rom_C35F:
-	.byte $20	; Rayden
+	.byte $20	; Raiden
 	.byte $18	; Sonya
 	.byte $18	; Sub-Zero
 	.byte $20	; Scorpion
@@ -426,10 +426,10 @@ sub_rom_C36B:
 		sta ram_0373,X	; X position
 		lda zp_06
 		sta ram_0370,X	; Y position
-		ldy zp_7C
+		ldy zp_plr_idx_param
 		lda zp_plr1_facing_dir,Y
 		tay
-		lda zp_7C
+		lda zp_plr_idx_param
 		asl A
 		cpy #$00
 		beq :+
@@ -444,7 +444,7 @@ sub_rom_C36B:
 		axs #$04
 
 	@C397:
-	ldy zp_7C
+	ldy zp_plr_idx_param
 	lda zp_ptr2_lo
 	and #$01
 	bne @C3B0
@@ -476,7 +476,7 @@ sub_rom_C36B:
 
 ; Relative Y coordinate for ranged attack sprite
 rom_C3BD:
-	.byte $DA-$9C	; Rayden
+	.byte $DA-$9C	; Raiden
 	.byte $DA-$98	; Sonya
 	.byte $DA-$9C	; Sub-Zero
 	.byte $DA-$9C	; Scorpion
@@ -490,7 +490,7 @@ rom_C3BD:
 
 ; Tile indices for ranged attacks - up to 4 sprites per attack
 rom_C3C9:
-	.byte $7A, $7B, $72, $73	; Rayden
+	.byte $7A, $7B, $72, $73	; Raiden
 	.byte $77, $78, $79, $7A	; Sonya
 	.byte $6F, $70, $71, $72	; Sub-Zero
 	.byte $1F, $20, $FF, $FF	; Scorpion
@@ -506,11 +506,11 @@ rom_C3C9:
 ; The only one that does somehing is Kano's, who seems to use more than
 ; four sprites
 sub_rom_C3F9:
-	ldy zp_7C
+	ldy zp_plr_idx_param
 	lda zp_plr1_fgtr_idx_clean,Y
 	jsr sub_game_trampoline
 ; ----------------
-	.word sub_rom_C419	; Rayden
+	.word sub_rom_C419	; Raiden
 	.word sub_rom_C419	; Sonya
 	.word sub_rom_C419	; Sub-Zero
 	.word sub_rom_C419	; Scorpion
@@ -528,7 +528,7 @@ sub_rom_C419:
 ; -----------------------------------------------------------------------------
 
 sub_rom_C4B2:
-	ldy zp_7C
+	ldy zp_plr_idx_param
 	lda zp_frame_counter
 	and #$04
 	bne :+
@@ -631,26 +631,26 @@ sub_calc_ranged_atk_distance:
 sub_rom_C572:
 	lda zp_plr1_cur_anim,X
 	cmp #$1E	; Ranged attack (opponent)
-	bne @C581
+	bne @C581_special_1_check
 
 	lda zp_plr1_cur_anim,Y
 	cmp #$1E	; Ranged attack (attacker)
-	beq @C58C
+	beq @C58C_check_frame
 
-	bne @C5A2
+	bne @C5A2_no_hit
 
-	@C581:
-	cmp #$0D
-	bne @C5A2
+	@C581_special_1_check:
+	cmp #$0D	; Special 1 (opponent)
+	bne @C5A2_no_hit
 
 	lda zp_plr1_cur_anim,Y
-	cmp #$0D
-	bne @C5A2
+	cmp #$0D	; Special 1 (attacker)
+	bne @C5A2_no_hit
 
-	@C58C:
+	@C58C_check_frame:
 	lda zp_plr1_anim_frame,X
 	cmp #$05
-	bcc @C5A2
+	bcc @C5A2_no_hit
 
 	lda ram_ranged_atk_x_pos,X
 	cmp ram_ranged_atk_x_pos,Y
@@ -658,11 +658,12 @@ sub_rom_C572:
 
 	sec
 	sbc ram_ranged_atk_x_pos,Y
-	@C59E:
-	cmp #$08
-	bcc @C5AD
 
-	@C5A2:
+	@C59E_ranged_dist_check:
+	cmp #$08
+	bcc @C5AD_hit
+
+	@C5A2_no_hit:
 	clc
 	rts
 ; ----------------
@@ -670,9 +671,9 @@ sub_rom_C572:
 	lda ram_ranged_atk_x_pos,Y
 	sec
 	sbc ram_ranged_atk_x_pos,X
-	bne @C59E
+	bne @C59E_ranged_dist_check
 	
-	@C5AD:
+	@C5AD_hit:
 	lda #$00
 	sec
 	rts
@@ -789,7 +790,7 @@ sub_ranged_attack:
 	rts
 
 	@tbl_ranged_hit_damage:
-	.byte $08	; Rayden
+	.byte $08	; Raiden
 	.byte $08	; Sonya
 	.byte $01	; Sub-Zero
 	.byte $02	; Scorpion
@@ -835,17 +836,17 @@ sub_rom_C695:
 sub_rom_C69C:
 	jsr sub_clear_score_display
 	ldy #$00
-	sty zp_7C
+	sty zp_plr_idx_param
 	ldx #$00
-	stx zp_7B
+	stx zp_plr_ofs_param
 	jsr sub_rom_C6BB
 	lda ram_game_mode_initialised
 	beq sub_rom_C6BA
 
-		inc zp_7C
-		ldy zp_7C
+		inc zp_plr_idx_param
+		ldy zp_plr_idx_param
 		ldx #$03
-		stx zp_7B
+		stx zp_plr_ofs_param
 		jmp sub_rom_C6BB ;jsr sub_rom_C6BB
 	
 sub_rom_C6BA:
@@ -862,7 +863,7 @@ sub_rom_C6BB:
 	lda rom_C760+1,X
 	sta zp_06
 	
-	ldx zp_7B
+	ldx zp_plr_ofs_param
 ; ----------------
 sub_update_score_display:
 	clc
@@ -886,7 +887,7 @@ sub_rom_C6E2:
 	lda #$B0
 	sta zp_0D
 	jsr sub_rom_CD56
-	ldy zp_7C
+	ldy zp_plr_idx_param
 	ldx rom_C76A,Y
 	ldy #$04
 
@@ -897,10 +898,10 @@ sub_rom_C6E2:
 	dey
 	bpl @C6FF
 
-	ldy zp_7C
+	ldy zp_plr_idx_param
 	ldx rom_C76A,Y
 	jsr sub_rom_C789
-	ldx zp_7B
+	ldx zp_plr_ofs_param
 	txa
 	eor #$03
 	tay
@@ -1016,10 +1017,10 @@ sub_check_fighter_ko:
 ; ----------------
 	@C7BB:
 	ldx #$00
-	stx zp_7C
+	stx zp_plr_idx_param
 	jsr sub_rom_C7C6
-	inc zp_7C
-	ldx zp_7C
+	inc zp_plr_idx_param
+	ldx zp_plr_idx_param
 ; ----------------
 sub_rom_C7C6:
 	lda zp_plr1_cur_anim,X
@@ -1036,34 +1037,35 @@ sub_rom_C7C6:
 		adc zp_plr1_fgtr_idx_clean,X
 		tay
 		sty ram_0422
-		lda @rom_C801,Y
+		lda @special_move_ctrl_ofs,Y
 		bmi :+
 			sta ram_043D
-			jsr sub_rom_C825
+			jsr sub_check_input_special_1
 		:
 		ldy ram_0422
 		iny
-		lda @rom_C801,Y
+		lda @special_move_ctrl_ofs,Y
 		bmi :+
 			sta ram_043D
-			jsr sub_rom_C82C
+			jsr sub_check_input_ranged_atk
 		:
 		ldy ram_0422
 		iny
 		iny
-		lda @rom_C801,Y
+		lda @special_move_ctrl_ofs,Y
 		bmi @C800_rts
 
 			sta ram_043D
-			jmp sub_rom_C833 ;jsr sub_rom_C833
+			jmp sub_check_input_special_2 ;jsr sub_rom_C833
 
 	@C800_rts:
 	rts
 
 ; ----------------
 
-	@rom_C801:
-	.byte $00, $01, $02	; Rayden
+	; Indices used for tbl_ctrl_move_ptrs
+	@special_move_ctrl_ofs:
+	.byte $00, $01, $02	; Raiden
 	.byte $03, $04, $05	; Sonya
 	.byte $06, $07, $08	; Sub-Zero
 	.byte $09, $0A, $0B	; Scorpion
@@ -1072,71 +1074,70 @@ sub_rom_C7C6:
 	.byte $12, $13, $14	; Liu Kang
 	.byte $FF, $16, $FF	; Goro
 	.byte $FF, $19, $FF	; Shang-Tsung
-	; Probably unused
-	;.byte $1B, $1C, $1D
-	;.byte $1E, $1F, $FF
-	;.byte $06, $07, $08
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_C825:
+sub_check_input_special_1:
 	lda #$0D	; Special move 1
-	sta ram_043E
-	bne sub_rom_C838
+	sta ram_special_atk_idx
+	bne sub_inner_check_input_special
 ; ----------------
-sub_rom_C82C:
+sub_check_input_ranged_atk:
 	lda #$1E	; Ranged attack
-	sta ram_043E
-	bne sub_rom_C838
+	sta ram_special_atk_idx
+	bne sub_inner_check_input_special
 ; ----------------
-sub_rom_C833:
+sub_check_input_special_2:
 	lda #$17	; Special move 2
-	sta ram_043E
+	sta ram_special_atk_idx
 ; ----------------
-sub_rom_C838:
-	ldx zp_7C
+sub_inner_check_input_special:
+	ldx zp_plr_idx_param
 	lda zp_plr1_y_pos,X
 	cmp zp_sprites_base_y
 	bne @C875_rts
 
-		lda ram_043D
-		bne @C84B
+		; This would prevent a combo that starts with button down for Raiden's first special
+		;lda ram_043D
+		;bne :+
+		;	lda zp_controller1,X
+		;	and #$04	; Button down?
+		;	bne @C875_rts
+		;:
 
-			lda zp_controller1,X
-			and #$04	; Button down?
-			bne @C875_rts
+		jsr sub_check_special_key_combo
+		; The previous call will only return here if a special key combo was completed
+		; Otherwise, it will pull from the stack and return to the previous caller
+		ldy zp_plr_idx_param
+		lda ram_special_atk_idx
+		cmp #$1E	; Ranged attack
+		bne @C86A_assign_anim
 
-				@C84B:
-				jsr sub_rom_C876
-				ldy zp_7C
-				lda ram_043E
-				cmp #$1E	; Ranged attack
-				bne @C86A
+		lda zp_4C,Y
+		bmi @C875_rts
 
-				lda zp_4C,Y
-				bmi @C875_rts
+		ldx zp_4C,Y
+		inx
+		stx zp_4C,Y
+		cpx #$02
+		bcc @C86A_assign_anim
 
-				ldx zp_4C,Y
-				inx
-				stx zp_4C,Y
-				cpx #$02
-				bcc @C86A
+			lda #$80
+			sta zp_4C,Y
+		@C86A_assign_anim:
+		lda ram_special_atk_idx
+		cmp zp_plr1_cur_anim,Y
+		beq @C875_rts	; Avoid resetting the animation if it had already started
 
-				lda #$80
-				sta zp_4C,Y
-				@C86A:
-				lda ram_043E
-				cmp zp_plr1_cur_anim,Y
-				beq @C875_rts
-
-					jmp sub_change_fighter_anim ;jsr sub_change_fighter_anim
+			jmp sub_change_fighter_anim ;jsr sub_change_fighter_anim
 
 	@C875_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_C876:
+sub_check_special_key_combo:
+	; Prepare pointer to the key combo of the move we want to check
 	lda ram_043D
 	asl A
 	tay
@@ -1148,83 +1149,94 @@ sub_rom_C876:
 	ldx ram_043D
 	lda @rom_C8D5,X
 	clc
-	adc zp_7C
+	adc zp_plr_idx_param
 	tax
-	stx zp_7B
+	stx zp_plr_ofs_param	; Offset to key combo pointer (0, 2 or 4 since we have three special moves)
 
-	lda zp_A9,X
+	lda zp_key_combo_hits,X
 	sta zp_ptr1_lo
-	inc zp_ptr1_lo
+	inc zp_ptr1_lo	; Index of the next byte to read in key combo
 
-	ldx zp_7C
+	ldx zp_plr_idx_param
 	lda zp_plr1_facing_dir,X
 	tay
 	lda zp_controller1_new,X
-	beq @C8BC
+	beq @C8BC_rts_x2
 
-	cpy #$00
-	beq @C8B0
+		cpy #$00	; Facing right, no need to flip controls
+		beq @C8B0
 
-	and #$03	; Left/right
-	bne @C8AC
+		and #$03	; Left/right bit mask
+		bne @C8AC
 
-	lda zp_controller1_new,X
-	bne @C8B0
+		lda zp_controller1_new,X
+		bne @C8B0	; Always branches
 
-	@C8AC:
-	lda zp_controller1_new,X
-	eor #$03	; Flip left/right bits
-	@C8B0:
-	ldy zp_ptr1_lo
-	ldx zp_7B
-	cmp (zp_ptr3_lo),Y
-	beq @C8C2
+		@C8AC:
+		lda zp_controller1_new,X
+		eor #$03	; Flip left/right bits
 
-	lda #$00
-	sta zp_A9,X
-	@C8BC:
+		@C8B0:
+		ldy zp_ptr1_lo
+		ldx zp_plr_ofs_param
+		cmp (zp_ptr3_lo),Y
+		beq @C8C2
+
+		lda #$00
+		sta zp_key_combo_hits,X
+	@C8BC_rts_x2:
 	jsr sub_rom_C8F9
 	pla
 	pla
 	rts
 ; ----------------
 	@C8C2:
-	inc zp_A9,X
-	lda #$00
-	sta zp_BD,X
-	lda zp_A9,X
-	ldy #$00
-	cmp (zp_ptr3_lo),Y
-	bcc @C8BC
+	; Increment the number of matches found for this key combo
+	inc zp_key_combo_hits,X
 
 	lda #$00
-	sta zp_A9,X
+	sta zp_BD,X
+
+	; Check if we have read the last value in the combo
+	lda zp_key_combo_hits,X
+	ldy #$00	; Byte 0 = number of key presses in this combo
+	cmp (zp_ptr3_lo),Y
+	bcc @C8BC_rts_x2
+
+	lda #$00
+	sta zp_key_combo_hits,X
 	rts
 
 ; ----------------
 
+	; Everyone has the same offsets relative to the start of that player's pointers
+	; That is beacause every player has exactly three special moves
 	@rom_C8D5:
-	.byte $00, $02, $04, $00, $02, $04, $00, $02
-	.byte $04, $00, $02, $04, $00, $02, $04, $00
-	.byte $02, $04, $00, $02, $04, $00, $02, $04
-	.byte $00, $02, $04, $00, $02, $04, $00, $02
-	.byte $04, $00, $02, $04
+	.byte $00, $02, $04
+	.byte $00, $02, $04
+	.byte $00, $02, $04
+	.byte $00, $02, $04
+	.byte $00, $02, $04
+	.byte $00, $02, $04
+	.byte $00, $02, $04
+	.byte $00, $02, $04
+	.byte $00, $02, $04
 
 ; -----------------------------------------------------------------------------
 
 sub_rom_C8F9:
-	ldx zp_7B
+	ldx zp_plr_ofs_param
 	lda zp_BD,X
 	cmp #$0F
 	bcc @C911
 
 		lda #$00
 		sta zp_BD,X
-		lda zp_A9,X
+		lda zp_key_combo_hits,X
 		cmp zp_D1,X
 		bne :+
 			lda #$00
-			sta zp_A9,X
+			sta zp_key_combo_hits,X
 		:
 		sta zp_D1,X
 
@@ -1235,96 +1247,182 @@ sub_rom_C8F9:
 ; -----------------------------------------------------------------------------
 
 tbl_ctrl_move_ptrs:
-	.word rom_C95C, tbl_move_fireball, rom_C967
-	.word rom_C96B, rom_C96F, tbl_move_fireball
-	.word rom_C977, rom_C97B, rom_C97F
-	.word tbl_move_fireball, rom_C987, rom_C98B
-	.word tbl_move_fireball, rom_C993, rom_C997
-	.word rom_C99B, rom_C9A2, tbl_move_fireball
-	.word rom_C9AA, rom_C9AE, rom_C9B2
-	.word rom_C9B6, tbl_move_fireball, rom_C9BE
-	.word rom_C9C2, tbl_move_fireball, rom_C9CA
-	; Potentially unused
-	.word rom_C95C, tbl_move_fireball, rom_C967 ;.word rom_C9CE, rom_C9D5, rom_C9D9
-	.word rom_C96B, rom_C96F, tbl_move_fireball ;.word rom_C9DD, rom_C9E4, rom_C9E8
-	.word rom_C977, rom_C97B, rom_C97F
+	; $00 Raiden
+	.word tbl_move_raiden_teleport
+	.word tbl_move_lightning
+	.word tbl_move_raiden_torpedo
+	
+	; $01 Sonya
+	.word tbl_move_square_flight
+	.word tbl_std_ranged_atk
+	.word tbl_move_lightning
 
-; -----------------------------------------------------------------------------
-; Data format: length, controller masks
+	; $02 Sub-Zero
+	.word rom_C977
+	.word tbl_std_ranged_atk
+	.word rom_C97F
 
-; Rayden's "turbo roundhouse" (B x 6)
-rom_C95C:
-	.byte $06, $40, $40, $40, $40, $40, $40
-; Rayden's "fireball" (Bck, Fwd, A)
-tbl_move_fireball:
-	.byte $03, $02, $01, $80
-; Rayden's "superman" (Dn, Up, B)
-rom_C967:
-	.byte $03, $04, $08, $40
+	; Scorpion
+	.word tbl_move_lightning
+	.word tbl_std_ranged_atk
+	.word rom_C98B
+
+	; Kano
+	.word tbl_move_lightning
+	.word tbl_std_ranged_atk
+	.word rom_C997
+
+	; Johnny Cage
+	.word rom_C99B
+	.word rom_C9A2
+	.word tbl_move_lightning
+
+	; Liu Kang
+	.word rom_C9AA
+	.word tbl_std_ranged_atk
+	.word rom_C9B2
+
+	; Goro
+	.word rom_C9B6
+	.word tbl_move_lightning
+	.word rom_C9BE
+
+	; Shang-Tsung
+	.word rom_C9C2
+	.word tbl_move_lightning
+	.word rom_C9CA
+
+; Data format: number of inputs, controller masks for each input
+
+; ----------------
+
+; Raiden
+
+; Teleport (Dn, Up)
+tbl_move_raiden_teleport:
+	.byte $02
+	.byte $04, $08
+
+; Lightning (Bck, Fwd, A)
+tbl_move_lightning:
+	.byte $03
+	.byte $02, $01, $80
+
+; Torpedo (Bck, Bck, Fwd)
+tbl_move_raiden_torpedo:
+	.byte $03
+	.byte $02, $02, $01
+
+; ----------------
 
 ; Sonya
-rom_C96B:
-	.byte $03, $02, $01, $40
-rom_C96F:
+
+; Square Flight (Bck, Fwd, B)
+tbl_move_square_flight:
+	.byte $03
+	.byte $02, $01, $40
+; Ring Toss (Dn, Fwd, A)
+tbl_std_ranged_atk:
 	.byte $03, $04, $01, $80
-;rom_C973:
+;rom_C973:	Standard left-right-kick
 ;	.byte $03, $02, $01, $80
+
+; ----------------
 
 ; Sub-Zero
+
+
 rom_C977:
-	.byte $03, $04, $02, $40
-rom_C97B:
-	.byte $03, $04, $01, $80
+	.byte $03
+	.byte $04, $02, $40
+
+;rom_C97B:	Standard ranged move
+;	.byte $03, $04, $01, $80
+
 rom_C97F:
-	.byte $03, $01, $04, $80
+	.byte $03
+	.byte $01, $04, $80
+
+; ----------------
 
 ; Scorpion
-;rom_C983:
+
+; "Turbo uppercut"
+;rom_C983:	Standard left-right-kick
 ;	.byte $03, $02, $01, $80
-rom_C987:
-	.byte $03, $04, $01, $80
+
+;rom_C987:	Standard ranged move
+;	.byte $03, $04, $01, $80
+
+; Slide (Dn, Up, A)
 rom_C98B:
-	.byte $03, $04, $08, $80
+	.byte $03
+	.byte $04, $08, $80
+
+; ----------------
 
 ; Kano
-;rom_C98F:
+
+;rom_C98F:	Standard left-right-kick
 ;	.byte $03, $02, $01, $80
-rom_C993:
-	.byte $03, $04, $01, $80
+;rom_C993:	Standard ranged move
+;	.byte $03, $04, $01, $80
 rom_C997:
-	.byte $03, $04, $08, $40
+	.byte $03
+	.byte $04, $08, $40
+
+; ----------------
 
 ; Johnny Cage
+
+; "Turbo roundhouse kick" (A x 6)
 rom_C99B:
-	.byte $06, $80, $80, $80, $80, $80, $80
+	.byte $06
+	.byte $80, $80, $80, $80, $80, $80
 rom_C9A2:
-	.byte $03, $01, $04, $80
+	.byte $03
+	.byte $01, $04, $80
 ;rom_C9A6:
 ;	.byte $03, $02, $01, $80
 
+; ----------------
+
 ; Liu Kang
+
 rom_C9AA:
-	.byte $03, $04, $01, $40
-rom_C9AE:
-	.byte $03, $04, $01, $80
+	.byte $03
+	.byte $04, $01, $40
+;rom_C9AE:	Standard ranged move
+;	.byte $03, $04, $01, $80
 rom_C9B2:
-	.byte $03, $01, $04, $80
+	.byte $03
+	.byte $01, $04, $80
+
+; ----------------
 
 ; Goro
+
 rom_C9B6:
-	.byte $03, $02, $10, $80
+	.byte $03
+	.byte $02, $10, $80
 ;rom_C9BA:
 ;	.byte $03, $02, $01, $80
 rom_C9BE:
-	.byte $03, $02, $10, $80
+	.byte $03
+	.byte $02, $10, $80
+
+; ----------------
 
 ; Shang-Tsung
+
 rom_C9C2:
-	.byte $03, $02, $10, $80
+	.byte $03
+	.byte $02, $10, $80
 ;rom_C9C6:
 ;	.byte $03, $02, $01, $80
 rom_C9CA:
-	.byte $03, $02, $10, $80
+	.byte $03
+	.byte $02, $10, $80
 
 ; -----------------------------------------------------------------------------
 
@@ -1418,7 +1516,7 @@ sub_rom_CA19:
 ; zp_7C = player index (0 for player one, 1 for player 2)
 ; A = new animation index
 sub_change_fighter_anim:
-	ldy zp_7C
+	ldy zp_plr_idx_param
 	sta zp_plr1_cur_anim,Y
 	lda #$00
 	sta zp_plr1_anim_frame,Y
@@ -1429,11 +1527,11 @@ sub_change_fighter_anim:
 
 sub_match_controller_input:
 	ldy #$00
-	sty zp_7C
+	sty zp_plr_idx_param
 	jsr sub_inner_match_input
 
 	iny
-	sty zp_7C
+	sty zp_plr_idx_param
 ; ----------------
 sub_inner_match_input:
 	lda #$58
@@ -1468,7 +1566,7 @@ sub_inner_match_input:
 		jsr sub_check_apply_stunned
 
 	@CA94:
-	ldy zp_7C
+	ldy zp_plr_idx_param
 	jsr sub_check_apply_knockdown
 	jmp sub_post_knockdown ;jsr sub_rom_CB7F
 	;rts
@@ -1508,7 +1606,7 @@ sub_rom_CAA3:
 
 ; Starts the "stunned" animation if needed (e.g. 3 consecutive hits)
 sub_check_apply_stunned:
-	ldy zp_7C
+	ldy zp_plr_idx_param
 	lda zp_consecutive_hits_taken,Y
 	cmp #$03
 	bcc @CAE4
@@ -1961,7 +2059,7 @@ sub_request_hit_sound:
 
 ; ----------------
 	@tbl_special_hit_sfx:
-	.byte $02	; Rayden
+	.byte $02	; Raiden
 	.byte $02	; Sonya
 	.byte $02	; Sub-Zero
 	.byte $1B	; Scorpion
@@ -2214,7 +2312,7 @@ sub_finish_match_init:
 	lda #$00
 	tax
 	:
-		sta zp_A9,X
+		sta zp_key_combo_hits,X
 	inx
 	cpx #$3C
 	bcc :-
@@ -2364,12 +2462,13 @@ sub_adjust_facing:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_D07C:
+; Aborts setting X scroll if in the middle of a throw move
+sub_should_avoid_scroll:
 	ldy #$00
-	jsr sub_rom_D082
+	jsr sub_check_throw_move
 	iny
 ; ----------------
-sub_rom_D082:
+sub_check_throw_move:
 	lda zp_plr1_fgtr_idx_clean,Y
 	beq @D08B
 
@@ -2397,12 +2496,12 @@ sub_rom_D082:
 ; -----------------------------------------------------------------------------
 
 sub_set_irq_x_scroll:
-	jsr sub_rom_D07C
+	jsr sub_should_avoid_scroll
 	; TODO is the check needed?
 	; The sub pulls from the stack to return to caller when setting carry
-	bcs @D0C4_rts
+	;bcs @D0C4_rts
 
-		clc
+	;	clc
 		lda zp_plr1_x_lo
 		adc zp_plr2_x_lo
 		sta zp_ptr1_lo
@@ -2418,11 +2517,28 @@ sub_set_irq_x_scroll:
 		sec
 		sbc #$80
 		
-		ldx ram_irq_routine_idx
-		cmp @tbl_max_x_scroll,X
-		bcs @D0C4_rts
+		bcs :+
+			dec zp_ptr1_hi
+		:
 
-			sta zp_irq_hor_scroll
+		; A = ((Player 1 X + Player 2 X) / 2) - 128
+
+		;ldx ram_irq_routine_idx
+		;cmp @tbl_max_x_scroll,X
+		;bcs @D0C4_rts
+		;	sta zp_irq_hor_scroll
+
+		cmp #$68
+		bcc @set_scroll_value
+			lda #$68
+
+			ldx zp_ptr1_hi
+			bpl :+	; Don't scroll all the way to the right if going left
+				lda #$00
+				;beq @set_scroll_value
+			:
+		@set_scroll_value:
+		sta zp_irq_hor_scroll
 
 	@D0C4_rts:
 	rts
@@ -2477,7 +2593,7 @@ sub_jump_button_input:
 	bne @D124_rts
 	
 	lda zp_plr1_fgtr_idx_clean,Y
-	beq @D0EE_downup_combo	; Branch if Rayden
+	beq @D0EE_downup_combo	; Branch if Raiden
 
 	cmp #$03
 	beq @D0EE_downup_combo	; Branch if Scorpion
@@ -2485,7 +2601,7 @@ sub_jump_button_input:
 	cmp #$04	; Kano
 	bne @D0F3_check_movement
 
-	; This extra check is only for Rayden, Scorpion and Kano
+	; This extra check is only for Raiden, Scorpion and Kano
 	; These three have moves performed with a D-pad Down-Up combo
 	@D0EE_downup_combo:
 	lda zp_AD,Y
@@ -2737,11 +2853,11 @@ sub_crouching_input:
 
 sub_rom_D20A:
 	ldy #$00
-	sty zp_7C
+	sty zp_plr_idx_param
 	jsr sub_rom_D215
 
 	ldy #$01
-	sty zp_7C
+	sty zp_plr_idx_param
 ; ----------------
 sub_rom_D215:
 	lda zp_plr1_y_pos,Y
@@ -2792,7 +2908,7 @@ sub_rom_D3DE:
 
 	lda #$FF
 	sta zp_4B
-	stx zp_7C
+	stx zp_plr_idx_param
 	jmp sub_load_fighters_palettes ;jsr sub_load_fighters_palettes
 	;rts
 
@@ -2913,7 +3029,7 @@ tbl_pal_cycle_ppumasks:
 .export tbl_fighter_palette_ptrs
 
 tbl_fighter_palette_ptrs:
-	.word @pal_rayden			; $00 Rayden
+	.word @pal_raiden			; $00 Raiden
 	.word @pal_sonya			; $01 Sonya
 	.word @pal_subzero			; $02 Sub-Zero
 	.word @pal_scorpion			; $03 Scorpion
@@ -2923,11 +3039,11 @@ tbl_fighter_palette_ptrs:
 	.word @pal_goro				; $07 Goro
 	.word @pal_shangtsung		; $08 Shang-Tsung
 
-	.word @pal_rayden ;.word @rom_D51E	; $09 Unused?
-	.word @pal_rayden ;.word @rom_D526	; $0A Unused?
-	.word @pal_rayden ;.word @rom_D52E	; $0B Unused?
+	.word @pal_raiden ;.word @rom_D51E	; $09 Unused?
+	.word @pal_raiden ;.word @rom_D526	; $0A Unused?
+	.word @pal_raiden ;.word @rom_D52E	; $0B Unused?
 
-	.word @pal_rayden_alt		; $0C Alt Rayden
+	.word @pal_raiden_alt		; $0C Alt Raiden
 	.word @pal_sonya_alt		; $0D Alt Sonya
 	.word @pal_subzero_alt		; $0E Alt Sub-Zero
 	.word @pal_scorpion_alt		; $0F Alt Scorpion
@@ -2937,11 +3053,11 @@ tbl_fighter_palette_ptrs:
 	.word @pal_goro_alt			; $13 Alt Goro
 	.word @pal_shangtsung_alt	; $14 Alt Shang-Tsung
 
-	.word @pal_rayden_alt ;.word @rom_D57E	; $15 Unused?
-	.word @pal_rayden_alt ;.word @rom_D586	; $16 Unused?
-	.word @pal_rayden_alt ;.word @rom_D58E	; $17 Unused?
+	.word @pal_raiden_alt ;.word @rom_D57E	; $15 Unused?
+	.word @pal_raiden_alt ;.word @rom_D586	; $16 Unused?
+	.word @pal_raiden_alt ;.word @rom_D58E	; $17 Unused?
 	
-	@pal_rayden:
+	@pal_raiden:
 	.byte $0E, $0F, $21, $20, $0E, $0F, $18, $28
 	@pal_sonya:
 	.byte $0E, $08, $18, $20, $0E, $08, $18, $36
@@ -2965,7 +3081,7 @@ tbl_fighter_palette_ptrs:
 	;.byte $0E, $37, $26, $16, $0E, $37, $18, $16
 	;@rom_D52E:
 	;.byte $0E, $07, $27, $37, $0E, $0E, $15, $25
-	@pal_rayden_alt:
+	@pal_raiden_alt:
 	.byte $0E, $08, $1C, $20, $0E, $08, $25, $20
 	@pal_sonya_alt:
 	.byte $0E, $08, $15, $20, $0E, $08, $15, $36
@@ -3245,18 +3361,18 @@ sub_rom_D72C:
 
 sub_move_fighter_sprites:
 	ldx #$00
-	stx zp_7B
-	stx zp_7C
+	stx zp_plr_ofs_param
+	stx zp_plr_idx_param
 	jsr sub_inner_move_sprites
 
 	ldx #$02
-	stx zp_7B
+	stx zp_plr_ofs_param
 	dex
-	stx zp_7C
+	stx zp_plr_idx_param
 ; ----------------
 sub_inner_move_sprites:
 	jsr sub_shangtsung_palettes
-	ldy zp_7C
+	ldy zp_plr_idx_param
 	ldx zp_plr1_fgtr_idx_clean,Y
 	lda tbl_fighter_sprite_banks,X
 	sta zp_05
@@ -3297,7 +3413,7 @@ sub_inner_move_sprites:
 	lda tbl_movement_data_ptrs+1,X
 	sta zp_ptr4_hi
 
-	ldy zp_7C	; Player index (0 for player one, 1 for player two)
+	ldy zp_plr_idx_param	; Player index (0 for player one, 1 for player two)
 	lda zp_plr1_anim_frame,Y
 	asl A
 	tay
@@ -3308,7 +3424,7 @@ sub_inner_move_sprites:
 	sta zp_06	; Player's Y movement (signed value)
 
 	; Ignore movement if player is frozen
-	ldx zp_7C
+	ldx zp_plr_idx_param
 	lda zp_frozen_timer,X
 	beq :+
 		lda #$00
@@ -3326,8 +3442,8 @@ sub_inner_move_sprites:
 		inc zp_18
 	:
 	jsr sub_scorpion_spear_pull
-	ldx zp_7B	; 2-byte data / pointer offset for current player
-	ldy zp_7C	; 1-byte data offset for current player
+	ldx zp_plr_ofs_param	; 2-byte data / pointer offset for current player
+	ldy zp_plr_idx_param	; 1-byte data offset for current player
 	lda zp_05	; X movement for current animation
 	bpl @D81A_facing
 
@@ -3388,7 +3504,7 @@ sub_inner_move_sprites:
 	lda (zp_ptr3_lo),Y
 	sta zp_ptr4_hi
 
-	ldy zp_7C
+	ldy zp_plr_idx_param
 	lda zp_plr1_anim_frame,Y
 	tay
 	lda (zp_ptr4_lo),Y
@@ -3410,12 +3526,12 @@ sub_inner_move_sprites:
 	lda (zp_ptr4_lo),Y
 	sta zp_ptr3_hi	; This now points to the second data table in fighter's anim ROM bank
 
-	ldx zp_7B
-	ldy zp_7C
+	ldx zp_plr_ofs_param
+	ldy zp_plr_idx_param
 	jsr sub_check_player_push
 	jsr sub_rom_D72C
 
-	ldy zp_7C
+	ldy zp_plr_idx_param
 	ldx tbl_player_oam_offsets,Y
 	lda zp_plr1_cur_anim,Y
 
@@ -3437,7 +3553,7 @@ sub_inner_move_sprites:
 
 	@D88E:
 	stx zp_first_oam_ofs
-	ldx zp_7B
+	ldx zp_plr_ofs_param
 	lda zp_plr1_facing_dir,Y
 	beq :+
 		lda #$40	; Sprite's horizontal flip flag
@@ -3457,7 +3573,7 @@ sub_inner_move_sprites:
 	sbc zp_ptr1_lo
 	sta zp_0A
 
-	ldy zp_7C
+	ldy zp_plr_idx_param
 	lda zp_frozen_timer,Y
 	beq :+
 		; Don't animate frozen players
@@ -3500,12 +3616,22 @@ sub_inner_move_sprites:
 			tax
 			lda zp_plr1_fgtr_idx_clean,X
 			cmp #$03
-			bne sub_animate_sprites
+			bne @set_idle_anim
 				lda #$28
 				sta zp_plr1_cur_anim,Y
 				bne sub_animate_sprites
 		:
+		; If the current animation is $0D (special 1)
+		; and the player is Raiden ($00)
+		; then teleport
+		cmp #$0D
+		bne :+
+			lda zp_plr1_fgtr_idx_clean,Y
+			bne :+
+				jmp sub_raiden_teleport
+		:
 		; Otherwise, back to idle
+		@set_idle_anim:
 		lda #$00
 		sta zp_plr1_cur_anim,Y
 
@@ -3539,7 +3665,7 @@ sub_animate_sprites:
 	sta zp_0F			; X offset
 	iny
 	lda (zp_ptr3_lo),Y
-	ldx zp_7C
+	ldx zp_plr_idx_param
 	sta zp_chr_bank_0,X	; CHR ROM bank
 	sta ram_0429
 	iny
@@ -3602,7 +3728,7 @@ sub_animate_sprites:
 
 		sta zp_backup_a
 
-			lda zp_7C	; Player index
+			lda zp_plr_idx_param	; Player index
 			beq @DA2F	; Nothing to change for player 1
 
 		lda zp_backup_a
@@ -3690,7 +3816,7 @@ sub_animate_sprites:
 		ora ram_042A	; Add flags from fighter's anim frame data
 		eor zp_oam_flip_flag		; Horizontal flip flag depending on current facing direction
 		tay
-		lda zp_7C		; Player index
+		lda zp_plr_idx_param		; Player index
 		beq @DA9D		; Branch for player one
 
 			tya			; Player 2 changes palette index
@@ -3742,9 +3868,9 @@ tbl_frame_1_sfx_idx:
 ; -----------------------------------------------------------------------------
 
 ; Bank numbers, will be mapped to $8000-$9FFF
-; These contain animation data (sprite indices) and maybe "moves" data
+; These contain animation (frames sequence) and frame data (sprite indices)
 tbl_fighter_sprite_banks:
-	.byte $05	; Rayden
+	.byte $05	; Raiden
 	.byte $06	; Sonya
 	.byte $07	; Sub-Zero
 	.byte $08	; Scorpion
@@ -3753,18 +3879,92 @@ tbl_fighter_sprite_banks:
 	.byte $0B	; Liu Kang
 	.byte $0C	; Goro
 	.byte $0D	; Shang-Tsung
-	;.byte $05, $05, $05	; Potentially unused
-; This portion is also potentially unused
-;rom_D8E4:
-;	.byte $00, $01, $00, $02, $00, $01, $00, $01
-;	.byte $02, $00, $01, $00
+
+; -----------------------------------------------------------------------------
+
+; Moves Raiden's sprite during his teleport animation
+; Parameters:
+; Y = player index
+sub_raiden_teleport:
+	lda #$27
+	sta zp_plr1_cur_anim,Y
+
+	lda zp_plr1_facing_dir,Y
+	beq @teleport_right
+
+		; Teleport left
+
+		lax zp_plr_ofs_param
+		eor #$02
+		tay	; Y = offset for opposing player
+
+		lda zp_plr1_x_lo,Y
+		sec
+		sbc #$1B
+		sta zp_plr1_x_lo,X
+		lda zp_plr1_x_hi,Y
+		sbc #00
+		sta zp_plr1_x_hi,X
+		
+		; Off-screen check to the left
+		lda zp_plr1_x_hi,X
+		bne @teleport_done
+
+			lda zp_plr1_x_lo,X
+			cmp #$20
+			bcs @teleport_done
+
+				lda #$00
+				sta zp_plr1_x_hi,X
+				lda #$3F	; Safe distance on the other side
+				bne @adjust_destination
+
+	@teleport_right:
+	lax zp_plr_ofs_param
+	eor #$02
+	tay	; Y = offset for opposing player
+
+	clc
+	lda zp_plr1_x_lo,Y
+	adc #$1B
+	sta zp_plr1_x_lo,X
+	lda zp_plr1_x_hi,Y
+	adc #$00
+	sta zp_plr1_x_hi,X
+	
+	; Off-screen check to the right
+	lda zp_plr1_x_hi,X
+	beq @teleport_done
+
+		lda zp_plr1_x_lo,X
+		cmp #$34
+		bcc @teleport_done
+
+			lda #$01
+			sta zp_plr1_x_hi,X
+			lda #$15
+	
+	@adjust_destination:
+	sta zp_plr1_x_lo,X
+
+	;ldy zp_plr_idx_param
+
+	;lda zp_plr1_x_lo,X
+	;sec
+	;sbc zp_irq_hor_scroll
+	;sta zp_plr1_x_pos,Y
+	;sta zp_07
+
+	@teleport_done:
+	ldy zp_plr_idx_param
+	jmp sub_animate_sprites
 
 ; -----------------------------------------------------------------------------
 
 ; If the player has been hit by Scorpion's spear, move it towards the attacker
 ; Stop the animation when they are close enough
 sub_scorpion_spear_pull:
-	lax zp_7C	; Target's index (0/1)
+	lax zp_plr_idx_param	; Target's index (0/1)
 	eor #$01
 	tay			; Attacker's index
 
@@ -3802,7 +4002,7 @@ sub_scorpion_spear_pull:
 
 ; Change palettes if Shang-Tsung has morphed into a different fighter
 sub_shangtsung_palettes:
-	ldx zp_7C
+	ldx zp_plr_idx_param
 	
 	lda zp_frozen_timer,X
 	bne @D92B_rts	; Don't change palette if frozen (keep special palette)
@@ -3869,7 +4069,7 @@ sub_load_fighters_palettes:
 	sta zp_ptr1_hi
 
 	ldy #$00
-	ldx zp_7C
+	ldx zp_plr_idx_param
 	sty zp_48,X
 	sty zp_plr1_anim_frame,X
 	ldx #$00
@@ -3893,7 +4093,7 @@ sub_load_fighters_palettes:
 	lda #$3F
 	sta zp_nmi_ppu_ptr_hi
 	ldy #$10		; Player 1 offset
-	lda zp_7C
+	lda zp_plr_idx_param
 	beq :+
 		ldy #$18	; Player 2 offset
 	:
@@ -3939,7 +4139,7 @@ rom_D977:
 ; Parameters:
 ; X = player index
 sub_frozen_palette:
-	stx zp_7C
+	stx zp_plr_idx_param
 	ldy #$00
 	;sty zp_48,X
 	;sty zp_plr1_anim_frame,X
@@ -3964,7 +4164,7 @@ sub_frozen_palette:
 	lda #$3F
 	sta zp_nmi_ppu_ptr_hi
 	ldy #$10		; Player 1 offset
-	lda zp_7C
+	lda zp_plr_idx_param
 	beq :+
 		ldy #$18	; Player 2 offset
 	:
@@ -4311,7 +4511,7 @@ tbl_movement_data_ptrs:
 	.word @rom_DC17
 	.word @rom_DB8B
 	.word @rom_DBE5
-	.word @rom_DB81	; $08
+	.word @still_6_frames	; $08
 	.word @still_16_frames	; $09
 	.word @rom_DB85
 	.word @rom_DC38
@@ -4381,7 +4581,7 @@ tbl_movement_data_ptrs:
 
 ; ----------------
 
-	@rom_DB81:
+	@still_6_frames:
 	.byte $00, $00, $00, $00
 
 ; ----------------

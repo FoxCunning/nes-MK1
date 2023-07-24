@@ -17,12 +17,12 @@ sub_regular_hit_check:
 	jsr sub_inner_reg_hit_check
 
 	; Change index for player 2
-	lda zp_7C
+	lda zp_plr_idx_param
 	eor #$01
 ; ----------------
 sub_inner_reg_hit_check:
 	tax				; X = attacker
-	stx zp_7C
+	stx zp_plr_idx_param
 
 	eor #$01
 	tay				; Y = player potentially being hit
@@ -99,7 +99,7 @@ sub_inner_reg_hit_check:
 		bne @A02A_rts
 
 	@A068:
-	ldx zp_7C
+	ldx zp_plr_idx_param
 	lda zp_plr1_anim_frame,X
 	cmp zp_ptr1_lo	; Check min frame number
 	bcc @A02A_rts
@@ -205,7 +205,7 @@ sub_inner_reg_hit_check:
 	sta zp_plr1_anim_frame,X
 	iny
 	lda (zp_ptr3_lo),Y
-	ldx zp_7C
+	ldx zp_plr_idx_param
 	sta zp_gained_score_idx,X
 	inc zp_gained_score_idx,X
 
@@ -239,7 +239,7 @@ sub_inner_reg_hit_check:
 
 ; Pointers table to hit data per character
 tbl_hit_data_ptrs:
-	.word tbl_hit_ptrs_rayden
+	.word tbl_hit_ptrs_raiden
 	.word tbl_hit_ptrs_sonya
 	.word tbl_hit_ptrs_subzero
 	.word tbl_hit_ptrs_scorpion
@@ -256,10 +256,10 @@ tbl_hit_data_ptrs:
 ; -----------------------------------------------------------------------------
 
 ; Pointers table
-tbl_hit_ptrs_rayden:
+tbl_hit_ptrs_raiden:
 	.word hit_data_kick	; $00
 	.word rom_A37F
-	.word rom_AA1A
+	.word hit_data_ranged ; rom_AA1A	Using the ranged one should prevent damage
 	.word rom_A38F
 	.word rom_A398
 	.word rom_A3A1
@@ -795,8 +795,8 @@ rom_A5C8:
 	.byte $08, $0B, $3A, $30, $30, $0A
 
 ; Probably unused
-	.byte $00, $0D, $11, $3A, $30, $30, $0A
-	.byte $00
+;	.byte $00, $0D, $11, $3A, $30, $30, $0A
+;	.byte $00
 
 ; -----------------------------------------------------------------------------
 
@@ -819,12 +819,12 @@ sub_rom_03_A5E4:
 	jsr sub_rom_A9FD
 	and #$01
 	jsr sub_rom_A5F0
-	lda zp_7C
+	lda zp_plr_idx_param
 	eor #$01
 ; ----------------
 sub_rom_A5F0:
     tay
-	sty zp_7C
+	sty zp_plr_idx_param
 	lda zp_plr1_fighter_idx,Y
 	bpl @A60B_rts
 
@@ -852,7 +852,7 @@ sub_rom_A5F0:
 	tya
 	eor #$01
 	tax
-	stx zp_7B
+	stx zp_plr_ofs_param
 	lda zp_players_x_distance
 	cmp #$14
 	bcs @A61C
@@ -886,12 +886,12 @@ sub_rom_A5F0:
 ; -----------------------------------------------------------------------------
 
 sub_rom_A63B:
-	ldx zp_7B
+	ldx zp_plr_ofs_param
 	lda zp_5E
 	bne @A659
 
 	jsr sub_cpu_opponent_delay
-	ldx zp_7B
+	ldx zp_plr_ofs_param
 	lda zp_9E
 	cmp #$01
 	bcc @A659
@@ -1015,7 +1015,7 @@ sub_special_move_2:
 ; ----------------
 
 	@rom_A727:
-	.byte $0D	; Rayden
+	.byte $0D	; Raiden
 	.byte $17	; Sonya's Square Flight
 	.byte $1E	; Sub-Zero's Ice Freeze
 	.byte $1B	; Scorpion
@@ -1043,7 +1043,7 @@ sub_special_move_2:
 
 ; Parameters: attacker's animation index
 sub_rom_A773:
-	ldy zp_7C
+	ldy zp_plr_idx_param
 	sta zp_ptr1_lo
 	cmp #$03	; Forward walk?
 	beq @A7AB
@@ -1051,7 +1051,7 @@ sub_rom_A773:
 	cmp #$18	; Throw move?
 	bne @A7B0_reset_anim_frame
 
-		ldx zp_7B
+		ldx zp_plr_ofs_param
 		lda zp_plr1_y_pos,X
 		cmp zp_sprites_base_y
 		bne @A7A5
@@ -1101,7 +1101,7 @@ sub_rom_A773:
 
 ; TODO It's always the same pointer, no need to read it from a table
 rom_A7BF:
-	.word rom_A807	; Rayden
+	.word rom_A807	; Raiden
 	.word rom_A807	; Sonya
 	.word rom_A807	; Sub-Zero
 	.word rom_A807	; Scorpion
@@ -1111,7 +1111,7 @@ rom_A7BF:
 	.word rom_A807	; Goro
 	.word rom_A807	; Shang-Tsung
 	; Unused
-	.word rom_A807, rom_A807, rom_A8F9
+	;.word rom_A807, rom_A807, rom_A8F9
 
 ; -----------------------------------------------------------------------------
 
@@ -1126,7 +1126,7 @@ rom_A7D7:
 	.word rom_A81F
 	.word rom_A81F
 	.word rom_A81F
-	.word rom_A81F, rom_A81F, rom_A911
+	;.word rom_A81F, rom_A81F, rom_A911
 
 ; -----------------------------------------------------------------------------
 
@@ -1141,7 +1141,7 @@ rom_A7EF:
 	.word rom_A837
 	.word rom_A837
 	.word rom_A837
-	.word rom_A837, rom_A837, rom_A929
+	;.word rom_A837, rom_A837, rom_A929
 
 ; -----------------------------------------------------------------------------
 
@@ -3565,7 +3565,7 @@ tbl_dpcm_ptr:
 	.byte $FF					; $00 (rest)
 	.byte $FF					; $01 (hold)
 	.byte >(dmc_fight<<2)		; $02 "Fight!"
-	.byte >(dmc_rayden<<2)		; $03 "Rayden"
+	.byte >(dmc_raiden<<2)		; $03 "Raiden"
 	.byte >(dmc_sonya<<2)		; $04 "Sonya"
 	.byte >(dmc_subzero<<2)		; $05 "Sub-Zero"
 	.byte >(dmc_scorpion<<2)	; $06 "Scorpion"
@@ -3585,7 +3585,7 @@ tbl_dpcm_len:
 	.byte $00	; $00 (rest)
 	.byte $00	; $01 (hold)
 	.byte $48	; $02 "Fight!"
-	.byte $47	; $03 "Rayden"
+	.byte $47	; $03 "Raiden"
 	.byte $58	; $04 "Sonya"
 	.byte $85	; $05 "Sub-Zero"
 	.byte $77	; $06 "Scorpion"
@@ -3605,7 +3605,7 @@ tbl_dpcm_freq:
 	.byte $00	; $00 (rest)
 	.byte $00	; $01 (hold)
 	.byte $0C	; $02 "Fight!"
-	.byte $0C	; $03 "Rayden"
+	.byte $0C	; $03 "Raiden"
 	.byte $0C	; $04 "Sonya"
 	.byte $0C	; $05 "Sub-Zero"
 	.byte $0C	; $06 "Scorpion"

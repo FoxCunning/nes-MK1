@@ -10,30 +10,30 @@
 
 ; -----------------------------------------------------------------------------
 
-; Data pointers for Rayden
+; Data pointers for Raiden
 rom_8000:
 	.word rom_8004, rom_82C7
 
 ; -----------------------------------------------------------------------------
 
 rom_8004:
-	.byte $09
-    .word anim_rayden_idle
+	.byte $09				; $00 Idle
+    .word anim_idle
     .byte $06
-    .word rom_80A9
+    .word anim_crouch
     .byte $08
-    .word rom_80AD
+    .word anim_crouch_parry
     .byte $01
-    .word rom_80B5
+    .word anim_walk_fw
     .byte $03
-    .word rom_80BF
+    .word anim_walk_bk
     .byte $08
-    .word rom_80C9
+    .word anim_jump_up
     .byte $02
-    .word rom_80D1
+    .word anim_jump_fw
     .byte $05
-    .word rom_80DD
-	.byte $04
+    .word anim_jump_bk
+	.byte $04				; $08
     .word rom_80ED
     .byte $07
     .word rom_80FD
@@ -43,28 +43,28 @@ rom_8004:
     .word rom_810D
     .byte $0A
     .word rom_8113
-    .byte $1D
-    .word rom_8117
+    .byte $08				; $0D Teleport
+    .word anim_special_move_1
     .byte $02
     .word rom_8137
     .byte $02
     .word rom_8143
-	.byte $00
+	.byte $00				; $10
     .word rom_814F
     .byte $02
     .word rom_8157
     .byte $02
     .word rom_8163
     .byte $00
-    .word rom_816F
+    .word anim_uppercut
     .byte $0A
     .word rom_8177
     .byte $05
     .word rom_817B
     .byte $02
     .word rom_817C
-    .byte $0B
-    .word rom_817D
+    .byte $0B				; $17 Torpedo
+    .word anim_special_move_2
 	.byte $2A
     .word rom_818D
     .byte $05
@@ -77,11 +77,11 @@ rom_8004:
     .word rom_81C9
     .byte $05
     .word rom_81D9
-    .byte $18
+    .byte $18				; $1E Lightning
     .word anim_ranged_attack
     .byte $04
     .word rom_81F8
-	.byte $04
+	.byte $04				; $20
     .word rom_8208
     .byte $04
     .word rom_8218
@@ -95,25 +95,25 @@ rom_8004:
     .word rom_823A
     .byte $0E
     .word rom_823B
+    .byte $08				; $27
+    .word anim_get_up
+	.byte $18				; $28 Staggered
+    .word anim_staggered
     .byte $08
-    .word rom_8248
-	.byte $18
-    .word anim_rayden_staggered
+    .word anim_shame
     .byte $08
-    .word rom_8262
-    .byte $08
-    .word rom_8268
+    .word anim_victory
     .byte $07
-    .word rom_80AD
+    .word anim_crouch_parry
     .byte $07
-    .word rom_80C9
+    .word anim_jump_up
     .byte $0F
     .word rom_8270
     .byte $0D
     .word rom_8271
     .byte $14
     .word rom_8286
-	.byte $0D
+	.byte $0D				; $30
     .word rom_8271
     .byte $29
     .word rom_8286
@@ -126,25 +126,25 @@ rom_8004:
 
 ; -----------------------------------------------------------------------------
 
-anim_rayden_idle:
+anim_idle:
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $01, $01, $01, $01, $01, $01, $01, $01
-rom_80A9:
+anim_crouch:
 	.byte $02, $02, $02, $02
-rom_80AD:
+anim_crouch_parry:
 	.byte $03, $03, $03, $03, $03, $03, $03, $03
-rom_80B5:
+anim_walk_fw:
 	.byte $04, $05, $06, $07, $08, $04, $05, $06
 	.byte $07, $08
-rom_80BF:
+anim_walk_bk:
 	.byte $04, $05, $06, $07, $08, $04, $05, $06
 	.byte $07, $08
-rom_80C9:
+anim_jump_up:
 	.byte $09, $09, $09, $09, $09, $09, $09, $09
-rom_80D1:
+anim_jump_fw:
 	.byte $0A, $0A, $0A, $0A, $0A, $0A, $0A, $0A
 	.byte $0A, $0A, $0A, $0A
-rom_80DD:
+anim_jump_bk:
 	.byte $0B, $0B, $0B, $0B, $0C, $0C, $0D, $0D
 	.byte $0C, $0C, $0D, $0D, $0C, $0B, $0B, $0B
 rom_80ED:
@@ -163,11 +163,9 @@ rom_810D:
 	.byte $0F, $0F, $10, $10, $0F, $0F
 rom_8113:
 	.byte $31, $31, $31, $31
-rom_8117:
-	.byte $34, $34, $35, $35, $36, $36, $34, $34
-	.byte $35, $35, $36, $36, $32, $32, $32, $32
-	.byte $32, $33, $33, $33, $33, $33, $33, $33
-	.byte $33, $33, $33, $33, $33, $33, $33, $33
+anim_special_move_1:
+	; Basically a reversed "get up"
+	.byte $29, $29, $28, $28, $27, $27
 rom_8137:
 	.byte $11, $11, $11, $12, $12, $13, $13, $13
 	.byte $12, $12, $11, $11
@@ -182,7 +180,7 @@ rom_8157:
 rom_8163:
 	.byte $0A, $0A, $0A, $0A, $0A, $0A, $0A, $0A
 	.byte $0A, $17, $17, $17
-rom_816F:
+anim_uppercut:
 	.byte $18, $18, $1A, $1A, $19, $19, $1A, $1A
 rom_8177:
 	.byte $1B, $1B, $02, $02
@@ -190,7 +188,7 @@ rom_817B:
 	.byte $00
 rom_817C:
 	.byte $00
-rom_817D:
+anim_special_move_2:
 	.byte $2F, $2F, $30, $30, $30, $30, $30, $30
 	.byte $30, $30, $0C, $0C, $0D, $0D, $0C, $0C
 rom_818D:
@@ -236,16 +234,16 @@ rom_823A:
 rom_823B:
 	.byte $25, $25, $25, $25, $25, $25, $25, $26
 	.byte $26, $26, $26, $26, $26
-rom_8248:
+anim_get_up:
 	.byte $27, $27, $28, $28, $29, $29
-anim_rayden_staggered:
+anim_staggered:
 	.byte $2A, $2A, $2A, $2A, $2A, $2A, $2A, $2A
 	.byte $2B, $2B, $2B, $2B, $2B, $2B, $2B, $2B
 	.byte $2A, $2A, $2A, $2A, $2A, $2A, $2A, $2A
 	.byte $2B, $2B, $2B, $2B, $2B, $2B
-rom_8262:
+anim_shame:
 	.byte $2C, $2C, $2C, $2C, $2C, $2C
-rom_8268:
+anim_victory:
 	.byte $2D, $2D, $2D, $2D, $2E, $2E, $03, $09
 rom_8270:
 	.byte $37
@@ -270,9 +268,9 @@ rom_82A1:
 
 ; More pointers
 rom_82C7:
-	.word rayden_frame_00, rayden_frame_01, rayden_frame_02, rom_8400
+	.word raiden_frame_00, raiden_frame_01, raiden_frame_02, rom_8400
 	.word rom_8421, rom_8453, rom_847C, rom_84A5
-	.word rom_84D7, rom_8500, rayden_frame_0B, rom_854E
+	.word rom_84D7, rom_8500, raiden_frame_0B, rom_854E
 	.word rom_8577, rom_858C, rom_85A1, rom_85D3
 	.word rom_8600, rom_864B, rom_8678, rom_86B5
 	.word rom_86F9, rom_872B, rom_876F, rom_87B3
@@ -286,21 +284,21 @@ rom_82C7:
 	.word rom_8C97, rom_8CB8, rom_8CF9, rom_8D19
 	.word rom_8D19, rom_8D4B, rom_8D70
 ; The rest are potentially unused
-	.word rayden_frame_00, rayden_frame_00, rayden_frame_00, rayden_frame_00
-	.word rayden_frame_00, rayden_frame_00, rayden_frame_00, rayden_frame_00
-	.word rayden_frame_00, rayden_frame_00, rayden_frame_00, rayden_frame_00
-	.word rayden_frame_00, rayden_frame_00, rayden_frame_00, rayden_frame_00
-	.word rayden_frame_00, rayden_frame_00, rayden_frame_00, rayden_frame_00
-	.word rayden_frame_00, rayden_frame_00, rayden_frame_00, rayden_frame_00
-	.word rayden_frame_00, rayden_frame_00, rayden_frame_00, rayden_frame_00
-	.word rayden_frame_00, rayden_frame_00, rayden_frame_00, rayden_frame_00
-	.word rayden_frame_00, rayden_frame_00, rayden_frame_00, rayden_frame_00
-	.word rayden_frame_00, rayden_frame_00, rayden_frame_00, rayden_frame_00
-	.word rayden_frame_00, rayden_frame_00
+	.word raiden_frame_00, raiden_frame_00, raiden_frame_00, raiden_frame_00
+	.word raiden_frame_00, raiden_frame_00, raiden_frame_00, raiden_frame_00
+	.word raiden_frame_00, raiden_frame_00, raiden_frame_00, raiden_frame_00
+	.word raiden_frame_00, raiden_frame_00, raiden_frame_00, raiden_frame_00
+	.word raiden_frame_00, raiden_frame_00, raiden_frame_00, raiden_frame_00
+	.word raiden_frame_00, raiden_frame_00, raiden_frame_00, raiden_frame_00
+	.word raiden_frame_00, raiden_frame_00, raiden_frame_00, raiden_frame_00
+	.word raiden_frame_00, raiden_frame_00, raiden_frame_00, raiden_frame_00
+	.word raiden_frame_00, raiden_frame_00, raiden_frame_00, raiden_frame_00
+	.word raiden_frame_00, raiden_frame_00, raiden_frame_00, raiden_frame_00
+	.word raiden_frame_00, raiden_frame_00
 
 ; -----------------------------------------------------------------------------
 
-rayden_frame_00:
+raiden_frame_00:
 	.byte $04, $09, $10, $00, $00, $FF, $01, $02
 	.byte $FF, $09, $0A, $0B, $0C, $18, $19, $1A
 	.byte $1B, $29, $2A, $2B, $2C, $37, $38, $39
@@ -310,7 +308,7 @@ rayden_frame_00:
 
 ; -----------------------------------------------------------------------------
 
-rayden_frame_01:
+raiden_frame_01:
 	.byte $04, $09, $10, $00, $00, $FF, $03, $04
 	.byte $FF, $09, $0D, $0E, $0F, $1C, $1D, $1E
 	.byte $1F, $2D, $2E, $2F, $30, $3A, $3B, $3C
@@ -320,7 +318,7 @@ rayden_frame_01:
 
 ; -----------------------------------------------------------------------------
 
-rayden_frame_02:
+raiden_frame_02:
 	.byte $04, $06, $10, $02, $00, $FF, $AC, $AD
 	.byte $FF, $BB, $BC, $BD, $BE, $CB, $CC, $CD
 	.byte $CE, $D8, $D9, $DA, $DB, $E1, $E2, $E3
@@ -399,7 +397,7 @@ rom_8500:
 
 ; -----------------------------------------------------------------------------
 
-rayden_frame_0B:
+raiden_frame_0B:
 	.byte $04, $08, $10, $0C, $00, $FF, $0B, $0C
 	.byte $FF, $FF, $14, $15, $FF, $1F, $20, $21
 	.byte $22, $2C, $2D, $2E, $2F, $3F, $40, $41

@@ -18,21 +18,21 @@ rom_07_8000:
 
 rom_8004:
 	.byte $09			; $00 = idle
-    .word anim_subzero_idle
+    .word anim_idle
     .byte $06			; $01 = crouching
-    .word rom_80A9
+    .word anim_crouch
     .byte $08			; $02 = crouching parry
-	.word rom_80AD
+	.word anim_crouch_parry
 	.byte $01			; $03 = walking forward
-	.word rom_80B5
+	.word anim_walk_fw
 	.byte $03			; $04 = walking backwards
-	.word rom_80BF
+	.word anim_walk_bk
 	.byte $08			; $05 = parrying
-	.word rom_80C9
+	.word anim_jump_up
 	.byte $02			; $06 = jumping up
-	.word rom_80D1
+	.word anim_jump_fw
 	.byte $05			; $07 = jumping forward
-	.word rom_80DD
+	.word anim_jump_bk
 	.byte $04			; $08 = jumping backwards
 	.word rom_80ED
 	.byte $07			; $09 = strong hit? hit by flying kick? (still shoved backwards)
@@ -44,8 +44,8 @@ rom_8004:
 	.word rom_810D
 	.byte $0A			; $0C = close/combo kick
 	.word rom_8113
-	.byte $1D			; $0D = Special move 1
-	.word rom_8117
+	.byte $1D			; $0D = Special move 1 (turbo attack)
+	.word anim_special_move_1
 	.byte $02			; $0E = jumping kick (straight up)
 	.word rom_8137
 	.byte $02			; $0F = another straight up jumping kick
@@ -57,15 +57,15 @@ rom_8004:
 	.byte $02			; $12 = another straight up jumping punch
 	.word rom_8163
 	.byte $00			; $13 = uppercut
-	.word rom_816F
+	.word anim_uppercut
 	.byte $0A			; $14 = crouching kick
 	.word rom_8177
 	.byte $05			; $15 = forward jump kick
 	.word rom_817B
 	.byte $02			; $16 = jumping up punch
 	.word rom_817C
-	.byte $2C			; $17 = Special move 2
-	.word rom_817D
+	.byte $2C			; $17 = Special move 2 (gap closer)
+	.word anim_special_move_2
 	.byte $2A			; $18 = throw move
 	.word rom_818D
 	.byte $05			; $19 = jumping forward punch
@@ -98,20 +98,20 @@ rom_8004:
 	.byte $0E			; $26 = falling on his back (bounce)
 	.word rom_823B
 	.byte $08			; $27 = getting up
-	.word rom_8248
+	.word anim_get_up
 	.byte $18			; $28 = staggered
-	.word anim_subzero_staggered
+	.word anim_staggered
 	
 	.byte $08			; $29 = "shame" pose
-	.word rom_8262
+	.word anim_shame
 	.byte $08			; $2A = victory pose
-	.word rom_8268
+	.word anim_victory
 
 	; More hit animations
 	.byte $07			; $2B = crouching parried hit
-	.word rom_80AD
+	.word anim_crouch_parry
 	.byte $07			; $2C = standing parried hit
-	.word rom_80C9
+	.word anim_jump_up
 	.byte $0F			; $2D = quick knockback
 	.word rom_8270
 	.byte $0D			; $2E = strong hit (knocked down or hit in the air)
@@ -124,7 +124,7 @@ rom_8004:
 	.word rom_8286
 	.byte $19			; $32 = hit by uppercut
 	.word rom_8271 ;rom_8292
-	.byte $18 ;$1F		; $33 = special hit (spear/freeze)
+	.byte $18 ;$1F		; $33 = special hit (spear)
 	.word anim_special_hit ;rom_82A1
 	.byte $04			; $34 = Jumping back (start at frame $0A for the downward movement part)
 	.word rom_80ED
@@ -132,25 +132,25 @@ rom_8004:
 ; -----------------------------------------------------------------------------
 
 ; Indices for a pointer in the second table below
-anim_subzero_idle:
+anim_idle:
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $01, $01, $01, $01, $01, $01, $01, $01
-rom_80A9:
+anim_crouch:
 	.byte $02, $02, $02, $02
-rom_80AD:
+anim_crouch_parry:
 	.byte $03, $03, $03, $03, $03, $03, $03, $03
-rom_80B5:
+anim_walk_fw:
 	.byte $04, $05, $06, $07, $08, $04, $05, $06
 	.byte $07, $08
-rom_80BF:
+anim_walk_bk:
 	.byte $04, $05, $06, $07, $08, $04, $05, $06
 	.byte $07, $08
-rom_80C9:
+anim_jump_up:
 	.byte $09, $09, $09, $09, $09, $09, $09, $09
-rom_80D1:
+anim_jump_fw:
 	.byte $0A, $0A, $0A, $0A, $0A, $0A, $0A, $0A
 	.byte $0A, $0A, $0A, $0A
-rom_80DD:
+anim_jump_bk:
 	.byte $0B, $0B, $0B, $0B, $0C, $0C, $0D, $0D
 	.byte $0C, $0C, $0D, $0D, $0C, $0B, $0B, $0B
 rom_80ED:
@@ -170,7 +170,7 @@ rom_810D:
 	.byte $0F, $0F, $10, $10, $0F, $0F
 rom_8113:
 	.byte $31, $31, $31, $31
-rom_8117:
+anim_special_move_1:
 	.byte $34, $34, $35, $35, $36, $36, $34, $34
 	.byte $35, $35, $36, $36
     ; Potentially unused portion
@@ -191,7 +191,7 @@ rom_8157:
 rom_8163:
 	.byte $0A, $0A, $0A, $0A, $0A, $0A, $0A, $0A
 	.byte $0A, $17, $17, $17
-rom_816F:
+anim_uppercut:
 	.byte $18, $18, $1A, $1A, $19, $19, $1A, $1A
 rom_8177:
 	.byte $1B, $1B
@@ -201,7 +201,7 @@ rom_817B:
 	.byte $00
 rom_817C:
 	.byte $00
-rom_817D:
+anim_special_move_2:
 	.byte $2F, $2F, $30, $30, $30, $30, $30, $30
 	.byte $30, $30, $0C, $0C, $0D, $0D, $0C, $0C
 rom_818D:
@@ -251,16 +251,16 @@ rom_823B:
 	.byte $26, $26, $26, $26
     ; Potentially unused portion
 	.byte $26
-rom_8248:
+anim_get_up:
 	.byte $27, $27, $28, $28, $29, $29
-anim_subzero_staggered:
+anim_staggered:
 	.byte $2A, $2A, $2A, $2A, $2A, $2A, $2A, $2A
 	.byte $2B, $2B, $2B, $2B, $2B, $2B, $2B, $2B
 	.byte $2A, $2A, $2A, $2A, $2A, $2A, $2A, $2A
 	.byte $2B, $2B, $2B, $2B, $2B, $2B
-rom_8262:
+anim_shame:
 	.byte $2C, $2C, $2C, $2C, $2C, $2C
-rom_8268:
+anim_victory:
 	.byte $2D, $2D, $2D, $2D, $2E, $2E, $03, $09
 rom_8270:
 	.byte $37
