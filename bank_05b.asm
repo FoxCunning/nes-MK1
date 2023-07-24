@@ -830,7 +830,7 @@ sub_announce_fighter_name:
 	.byte $15	; $03 Kano
 	.byte $13	; $04 Sub-zero
 	.byte $12	; $05 Sonya
-	.byte $11	; $06 Rayden
+	.byte $11	; $06 Raiden
 	.byte $17	; $07 Liu Kang
 	.byte $14	; $08 Scorpion
 

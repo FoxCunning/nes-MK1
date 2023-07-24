@@ -1292,7 +1292,7 @@ sub_call_gfx_routines:
 					sta zp_plr1_y_pos,X
 			:
 
-			stx zp_7C
+			stx zp_plr_idx_param
 			jmp sub_reload_fighters_palettes
 		@thaw_check_next:
 		dex
@@ -1312,7 +1312,7 @@ sub_reload_fighters_palettes:
 	sta zp_ptr1_hi
 
 	ldy #$01
-	ldx zp_7C
+	ldx zp_plr_idx_param
 	;sty zp_48,X
 	;sty zp_plr1_anim_frame,X
 	ldx #$00
@@ -1331,7 +1331,7 @@ sub_reload_fighters_palettes:
 	lda #$3F
 	sta zp_nmi_ppu_ptr_hi
 	ldy #$11		; Player 1 offset
-	lda zp_7C
+	lda zp_plr_idx_param
 	beq :+
 		ldy #$19	; Player 2 offset
 	:

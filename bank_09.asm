@@ -20,19 +20,19 @@ rom_8004:
 	.byte $09
 	.word anim_kano_idle
 	.byte $06
-	.word rom_80A9
+	.word anim_crouch
 	.byte $08
-	.word rom_80AD
+	.word anim_crouch_parry
 	.byte $01
-	.word rom_80B5
+	.word anim_walk_fw
 	.byte $03
-	.word rom_80BF
+	.word anim_walk_bk
 	.byte $08
-	.word rom_80C9
+	.word anim_jump_up
 	.byte $02
-	.word rom_80D1
+	.word anim_jump_fw
 	.byte $05
-	.word rom_80DD
+	.word anim_jump_bk
 	.byte $04
 	.word rom_80ED
 	.byte $07
@@ -44,7 +44,7 @@ rom_8004:
 	.byte $0A
 	.word rom_8113
 	.byte $1D
-	.word rom_8117
+	.word anim_special_move_1
 	.byte $02
 	.word rom_8137
 	.byte $02
@@ -56,7 +56,7 @@ rom_8004:
 	.byte $02
 	.word rom_8163
 	.byte $00
-	.word rom_816F
+	.word anim_uppercut
 	.byte $0A
 	.word rom_8177
 	.byte $05
@@ -64,7 +64,7 @@ rom_8004:
 	.byte $02
 	.word rom_817C
 	.byte $0B
-	.word rom_817D
+	.word anim_special_move_2
 	.byte $2A
 	.word rom_818D
 	.byte $05
@@ -96,17 +96,17 @@ rom_8004:
 	.byte $0E
 	.word rom_823B
 	.byte $08
-	.word rom_8248
+	.word anim_get_up
 	.byte $18
 	.word anim_kano_staggered
 	.byte $08
-	.word rom_8262
+	.word anim_shame
 	.byte $08
-	.word rom_8268
+	.word anim_victory
 	.byte $07
-	.word rom_80AD
+	.word anim_crouch_parry
 	.byte $07
-	.word rom_80C9
+	.word anim_jump_up
 	.byte $0F
 	.word rom_8270
 	.byte $0D
@@ -129,22 +129,22 @@ rom_8004:
 anim_kano_idle:
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $01, $01, $01, $01, $01, $01, $01, $01
-rom_80A9:
+anim_crouch:
 	.byte $02, $02, $02, $02
-rom_80AD:
+anim_crouch_parry:
 	.byte $03, $03, $03, $03, $03, $03, $03, $03
-rom_80B5:
+anim_walk_fw:
 	.byte $04, $05, $06, $07, $08, $04, $05, $06
 	.byte $07, $08
-rom_80BF:
+anim_walk_bk:
 	.byte $04, $05, $06, $07, $08, $04, $05, $06
 	.byte $07, $08
-rom_80C9:
+anim_jump_up:
 	.byte $09, $09, $09, $09, $09, $09, $09, $09
-rom_80D1:
+anim_jump_fw:
 	.byte $0A, $0A, $0A, $0A, $0A, $0A, $0A, $0A
 	.byte $0A, $0A, $0A, $0A
-rom_80DD:
+anim_jump_bk:
 	.byte $0B, $0B, $0B, $0B, $0C, $0C, $0D, $0D
 	.byte $0C, $0C, $0D, $0D, $0C, $0B, $0B, $0B
 rom_80ED:
@@ -163,7 +163,7 @@ rom_810D:
 	.byte $0F, $0F, $10, $10, $0F, $0F
 rom_8113:
 	.byte $31, $31, $31, $31
-rom_8117:
+anim_special_move_1:
 	.byte $34, $34, $35, $35, $36, $36, $34, $34
 	.byte $35, $35, $36, $36
     ; Potentially unused
@@ -184,7 +184,7 @@ rom_8157:
 rom_8163:
 	.byte $0A, $0A, $0A, $0A, $0A, $0A, $0A, $0A
 	.byte $0A, $17, $17, $17
-rom_816F:
+anim_uppercut:
 	.byte $18, $18, $1A, $1A, $19, $19, $1A, $1A
 rom_8177:
 	.byte $1B, $1B, $02, $02
@@ -192,7 +192,7 @@ rom_817B:
 	.byte $00
 rom_817C:
 	.byte $00
-rom_817D:
+anim_special_move_2:
 	.byte $0C, $0C, $0D, $0D, $0C, $0C, $0D, $0D
 	.byte $0C, $0C, $0D, $0D, $0C, $0C, $0D, $0D
 rom_818D:
@@ -239,16 +239,16 @@ rom_823A:
 rom_823B:
 	.byte $25, $25, $25, $25, $25, $25, $25, $26
 	.byte $26, $26, $26, $26, $26
-rom_8248:
+anim_get_up:
 	.byte $27, $27, $28, $28, $29, $29
 anim_kano_staggered:
 	.byte $2A, $2A, $2A, $2A, $2A, $2A, $2A, $2A
 	.byte $2B, $2B, $2B, $2B, $2B, $2B, $2B, $2B
 	.byte $2A, $2A, $2A, $2A, $2A, $2A, $2A, $2A
 	.byte $2B, $2B, $2B, $2B, $2B, $2B
-rom_8262:
+anim_shame:
 	.byte $2C, $2C, $2C, $2C, $2C, $2C
-rom_8268:
+anim_victory:
 	.byte $2D, $2D, $2D, $2D, $2E, $2E, $03, $09
 rom_8270:
 	.byte $37
