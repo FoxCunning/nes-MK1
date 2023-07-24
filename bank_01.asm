@@ -398,7 +398,7 @@ sub_rom_C2A8:
 	; These are added to ranged attack sprite's X position to make it move
 	; (or subtracted, depending on direction)
 	@rom_C35F:
-	.byte $20	; Rayden
+	.byte $20	; Raiden
 	.byte $18	; Sonya
 	.byte $18	; Sub-Zero
 	.byte $20	; Scorpion
@@ -476,7 +476,7 @@ sub_rom_C36B:
 
 ; Relative Y coordinate for ranged attack sprite
 rom_C3BD:
-	.byte $DA-$9C	; Rayden
+	.byte $DA-$9C	; Raiden
 	.byte $DA-$98	; Sonya
 	.byte $DA-$9C	; Sub-Zero
 	.byte $DA-$9C	; Scorpion
@@ -490,7 +490,7 @@ rom_C3BD:
 
 ; Tile indices for ranged attacks - up to 4 sprites per attack
 rom_C3C9:
-	.byte $7A, $7B, $72, $73	; Rayden
+	.byte $7A, $7B, $72, $73	; Raiden
 	.byte $77, $78, $79, $7A	; Sonya
 	.byte $6F, $70, $71, $72	; Sub-Zero
 	.byte $1F, $20, $FF, $FF	; Scorpion
@@ -510,7 +510,7 @@ sub_rom_C3F9:
 	lda zp_plr1_fgtr_idx_clean,Y
 	jsr sub_game_trampoline
 ; ----------------
-	.word sub_rom_C419	; Rayden
+	.word sub_rom_C419	; Raiden
 	.word sub_rom_C419	; Sonya
 	.word sub_rom_C419	; Sub-Zero
 	.word sub_rom_C419	; Scorpion
@@ -790,7 +790,7 @@ sub_ranged_attack:
 	rts
 
 	@tbl_ranged_hit_damage:
-	.byte $08	; Rayden
+	.byte $08	; Raiden
 	.byte $08	; Sonya
 	.byte $01	; Sub-Zero
 	.byte $02	; Scorpion
@@ -1065,7 +1065,7 @@ sub_rom_C7C6:
 
 	; Indices used for tbl_ctrl_move_ptrs
 	@special_move_ctrl_ofs:
-	.byte $00, $01, $02	; Rayden
+	.byte $00, $01, $02	; Raiden
 	.byte $03, $04, $05	; Sonya
 	.byte $06, $07, $08	; Sub-Zero
 	.byte $09, $0A, $0B	; Scorpion
@@ -1097,7 +1097,7 @@ sub_inner_check_input_special:
 	cmp zp_sprites_base_y
 	bne @C875_rts
 
-		; This would prevent a combo that starts with button down for Rayden's first special
+		; This would prevent a combo that starts with button down for Raiden's first special
 		;lda ram_043D
 		;bne :+
 		;	lda zp_controller1,X
@@ -1247,10 +1247,10 @@ sub_rom_C8F9:
 ; -----------------------------------------------------------------------------
 
 tbl_ctrl_move_ptrs:
-	; $00 Rayden
-	.word tbl_move_rayden_teleport
+	; $00 Raiden
+	.word tbl_move_raiden_teleport
 	.word tbl_move_lightning
-	.word tbl_move_rayden_torpedo
+	.word tbl_move_raiden_torpedo
 	
 	; $01 Sonya
 	.word tbl_move_square_flight
@@ -1296,10 +1296,10 @@ tbl_ctrl_move_ptrs:
 
 ; ----------------
 
-; Rayden
+; Raiden
 
 ; Teleport (Dn, Up)
-tbl_move_rayden_teleport:
+tbl_move_raiden_teleport:
 	.byte $02
 	.byte $04, $08
 
@@ -1309,7 +1309,7 @@ tbl_move_lightning:
 	.byte $02, $01, $80
 
 ; Torpedo (Bck, Bck, Fwd)
-tbl_move_rayden_torpedo:
+tbl_move_raiden_torpedo:
 	.byte $03
 	.byte $02, $02, $01
 
@@ -2059,7 +2059,7 @@ sub_request_hit_sound:
 
 ; ----------------
 	@tbl_special_hit_sfx:
-	.byte $02	; Rayden
+	.byte $02	; Raiden
 	.byte $02	; Sonya
 	.byte $02	; Sub-Zero
 	.byte $1B	; Scorpion
@@ -2593,7 +2593,7 @@ sub_jump_button_input:
 	bne @D124_rts
 	
 	lda zp_plr1_fgtr_idx_clean,Y
-	beq @D0EE_downup_combo	; Branch if Rayden
+	beq @D0EE_downup_combo	; Branch if Raiden
 
 	cmp #$03
 	beq @D0EE_downup_combo	; Branch if Scorpion
@@ -2601,7 +2601,7 @@ sub_jump_button_input:
 	cmp #$04	; Kano
 	bne @D0F3_check_movement
 
-	; This extra check is only for Rayden, Scorpion and Kano
+	; This extra check is only for Raiden, Scorpion and Kano
 	; These three have moves performed with a D-pad Down-Up combo
 	@D0EE_downup_combo:
 	lda zp_AD,Y
@@ -3029,7 +3029,7 @@ tbl_pal_cycle_ppumasks:
 .export tbl_fighter_palette_ptrs
 
 tbl_fighter_palette_ptrs:
-	.word @pal_rayden			; $00 Rayden
+	.word @pal_raiden			; $00 Raiden
 	.word @pal_sonya			; $01 Sonya
 	.word @pal_subzero			; $02 Sub-Zero
 	.word @pal_scorpion			; $03 Scorpion
@@ -3039,11 +3039,11 @@ tbl_fighter_palette_ptrs:
 	.word @pal_goro				; $07 Goro
 	.word @pal_shangtsung		; $08 Shang-Tsung
 
-	.word @pal_rayden ;.word @rom_D51E	; $09 Unused?
-	.word @pal_rayden ;.word @rom_D526	; $0A Unused?
-	.word @pal_rayden ;.word @rom_D52E	; $0B Unused?
+	.word @pal_raiden ;.word @rom_D51E	; $09 Unused?
+	.word @pal_raiden ;.word @rom_D526	; $0A Unused?
+	.word @pal_raiden ;.word @rom_D52E	; $0B Unused?
 
-	.word @pal_rayden_alt		; $0C Alt Rayden
+	.word @pal_raiden_alt		; $0C Alt Raiden
 	.word @pal_sonya_alt		; $0D Alt Sonya
 	.word @pal_subzero_alt		; $0E Alt Sub-Zero
 	.word @pal_scorpion_alt		; $0F Alt Scorpion
@@ -3053,11 +3053,11 @@ tbl_fighter_palette_ptrs:
 	.word @pal_goro_alt			; $13 Alt Goro
 	.word @pal_shangtsung_alt	; $14 Alt Shang-Tsung
 
-	.word @pal_rayden_alt ;.word @rom_D57E	; $15 Unused?
-	.word @pal_rayden_alt ;.word @rom_D586	; $16 Unused?
-	.word @pal_rayden_alt ;.word @rom_D58E	; $17 Unused?
+	.word @pal_raiden_alt ;.word @rom_D57E	; $15 Unused?
+	.word @pal_raiden_alt ;.word @rom_D586	; $16 Unused?
+	.word @pal_raiden_alt ;.word @rom_D58E	; $17 Unused?
 	
-	@pal_rayden:
+	@pal_raiden:
 	.byte $0E, $0F, $21, $20, $0E, $0F, $18, $28
 	@pal_sonya:
 	.byte $0E, $08, $18, $20, $0E, $08, $18, $36
@@ -3081,7 +3081,7 @@ tbl_fighter_palette_ptrs:
 	;.byte $0E, $37, $26, $16, $0E, $37, $18, $16
 	;@rom_D52E:
 	;.byte $0E, $07, $27, $37, $0E, $0E, $15, $25
-	@pal_rayden_alt:
+	@pal_raiden_alt:
 	.byte $0E, $08, $1C, $20, $0E, $08, $25, $20
 	@pal_sonya_alt:
 	.byte $0E, $08, $15, $20, $0E, $08, $15, $36
@@ -3622,13 +3622,13 @@ sub_inner_move_sprites:
 				bne sub_animate_sprites
 		:
 		; If the current animation is $0D (special 1)
-		; and the player is Rayden ($00)
+		; and the player is Raiden ($00)
 		; then teleport
 		cmp #$0D
 		bne :+
 			lda zp_plr1_fgtr_idx_clean,Y
 			bne :+
-				jmp sub_rayden_teleport
+				jmp sub_raiden_teleport
 		:
 		; Otherwise, back to idle
 		@set_idle_anim:
@@ -3870,7 +3870,7 @@ tbl_frame_1_sfx_idx:
 ; Bank numbers, will be mapped to $8000-$9FFF
 ; These contain animation (frames sequence) and frame data (sprite indices)
 tbl_fighter_sprite_banks:
-	.byte $05	; Rayden
+	.byte $05	; Raiden
 	.byte $06	; Sonya
 	.byte $07	; Sub-Zero
 	.byte $08	; Scorpion
@@ -3882,8 +3882,8 @@ tbl_fighter_sprite_banks:
 
 ; -----------------------------------------------------------------------------
 
-; Moves Rayden's sprite during his teleport animation
-sub_rayden_teleport:
+; Moves Raiden's sprite during his teleport animation
+sub_raiden_teleport:
 	lda #$27
 	sta zp_plr1_cur_anim
 

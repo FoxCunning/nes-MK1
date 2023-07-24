@@ -663,7 +663,7 @@ sub_show_fighter_names:
 ; Pointers to name strings
 tbl_fighter_name_ptrs:
 	; Player 1
-	.word str_name_rayden
+	.word str_name_raiden
 	.word str_name_sonya
 	.word str_name_subzero
 	.word str_name_scorpion
@@ -676,7 +676,7 @@ tbl_fighter_name_ptrs:
 	.word str_name_empty_7scp1
 	.word str_name_empty_3spc
 	; Player 2
-	.word str_name_rayden
+	.word str_name_raiden
 	.word str_name_sonya
 	.word str_name_subzero
 	.word str_name_scorpion
@@ -693,7 +693,7 @@ tbl_fighter_name_ptrs:
 
 ; Byte 0 = lengh, Bytes 1 to (length) = name
 ; TODO custom string encoding
-str_name_rayden:
+str_name_raiden:
 	.byte $06, $52, $41, $59, $44, $45, $4E
 str_name_sonya:
 	.byte $05, $53, $4F, $4E, $59, $41

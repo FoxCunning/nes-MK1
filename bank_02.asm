@@ -29,7 +29,7 @@ tbl_track_ptrs:
 	.word sfx_pause				; $0E	Pause
 	.word sfx_happy_jingle		; $0F	Same as $0D, but here it's used after choosing to continue
 	.word sfx_countdown			; $10	Countdown for continue screen
-	.word sfx_rayden			; $11	Announcer "Rayden"
+	.word sfx_raiden			; $11	Announcer "Raiden"
 	.word sfx_sonya				; $12	Announcer "Sonya"
 	.word sfx_subzero			; $13	Announcer "Sub-Zero"
 	.word sfx_scorpion			; $14	Announcer "Scorpion"
@@ -414,12 +414,12 @@ sfx_9796_unused:
 
 ; -----------------------------------------------------------------------------
 
-sfx_rayden:
+sfx_raiden:
 	.byte $84
-	.word @sfx_rayden_ch4
+	.word @sfx_raiden_ch4
 	.byte $FF
 
-	@sfx_rayden_ch4:
+	@sfx_raiden_ch4:
 	.byte $F5, $01, $03, $FF
 
 ; -----------------------------------------------------------------------------

@@ -9,10 +9,10 @@
 
 
 ; -----------------------------------------------------------------------------
-.export dmc_rayden
+.export dmc_raiden
 
-dmc_rayden:
-.incbin "audio/rayden.dmc"
+dmc_raiden:
+.incbin "audio/raiden.dmc"
 
 ; ----------------
 .export dmc_sonya
