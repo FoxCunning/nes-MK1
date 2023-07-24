@@ -2462,12 +2462,13 @@ sub_adjust_facing:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_D07C:
+; Aborts setting X scroll if in the middle of a throw move
+sub_should_avoid_scroll:
 	ldy #$00
-	jsr sub_rom_D082
+	jsr sub_check_throw_move
 	iny
 ; ----------------
-sub_rom_D082:
+sub_check_throw_move:
 	lda zp_plr1_fgtr_idx_clean,Y
 	beq @D08B
 
@@ -2495,12 +2496,12 @@ sub_rom_D082:
 ; -----------------------------------------------------------------------------
 
 sub_set_irq_x_scroll:
-	jsr sub_rom_D07C
+	jsr sub_should_avoid_scroll
 	; TODO is the check needed?
 	; The sub pulls from the stack to return to caller when setting carry
-	bcs @D0C4_rts
+	;bcs @D0C4_rts
 
-		clc
+	;	clc
 		lda zp_plr1_x_lo
 		adc zp_plr2_x_lo
 		sta zp_ptr1_lo
@@ -2516,11 +2517,28 @@ sub_set_irq_x_scroll:
 		sec
 		sbc #$80
 		
-		ldx ram_irq_routine_idx
-		cmp @tbl_max_x_scroll,X
-		bcs @D0C4_rts
+		bcs :+
+			dec zp_ptr1_hi
+		:
 
-			sta zp_irq_hor_scroll
+		; A = ((Player 1 X + Player 2 X) / 2) - 128
+
+		;ldx ram_irq_routine_idx
+		;cmp @tbl_max_x_scroll,X
+		;bcs @D0C4_rts
+		;	sta zp_irq_hor_scroll
+
+		cmp #$68
+		bcc @set_scroll_value
+			lda #$68
+
+			ldx zp_ptr1_hi
+			bpl :+	; Don't scroll all the way to the right if going left
+				lda #$00
+				;beq @set_scroll_value
+			:
+		@set_scroll_value:
+		sta zp_irq_hor_scroll
 
 	@D0C4_rts:
 	rts
