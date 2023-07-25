@@ -3619,7 +3619,7 @@ sub_inner_move_sprites:
 			bne @set_idle_anim
 				lda #$28
 				sta zp_plr1_cur_anim,Y
-				bne sub_animate_sprites
+				bne @ground_sprite
 		:
 		; If the current animation is $0D (special 1)
 		; and the player is Raiden ($00)
@@ -3634,6 +3634,9 @@ sub_inner_move_sprites:
 		@set_idle_anim:
 		lda #$00
 		sta zp_plr1_cur_anim,Y
+		@ground_sprite:
+		lda zp_sprites_base_y
+		sta zp_plr1_y_pos,Y
 
 ; ----------------
 
