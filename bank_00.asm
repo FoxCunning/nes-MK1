@@ -450,8 +450,8 @@ sub_match_start:
 	@str_numbers:
 	.byte $1F, $20, $21	; Yellow numbers 1, 2 and 3
 	@str_fight:
-	.byte $FF, $6A, $3D, $37, $6B, $3A, $FF, $FF
-	.byte $FF, $7A, $48, $42, $7B, $45, $FF, $FF
+	.byte $FF, $6A, $6B, $6C, $6D, $6E, $6F, $FF
+	.byte $FF, $7A, $7B, $7C, $7D, $7E, $7F, $FF
 
 ; -----------------------------------------------------------------------------
 
