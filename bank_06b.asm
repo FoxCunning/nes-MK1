@@ -409,13 +409,13 @@ sub_irq_handler_03:
 
 		sta mmc3_irq_disable
 		sta mmc3_irq_enable
-		lda #$5F
+		lda #$64
 		sta mmc3_irq_latch
 		lda PpuStatus_2002
 		lda zp_irq_hor_scroll
 		sta PpuScroll_2005
-		ldy #$1C
-		jmp sub_change_state_and_chr
+		ldy #$1F
+		jmp sub_change_state_and_chr_reverse
 	:
 	sta mmc3_irq_disable
 	lda PpuStatus_2002
@@ -423,8 +423,8 @@ sub_irq_handler_03:
 	sta PpuScroll_2005
 	lda #$00
 	sta ram_irq_state_var
-	ldy #$20
-	jmp sub_rom_E41E
+	ldy #$23
+	jmp sub_change_chr_banks_reverse
 
 ; -----------------------------------------------------------------------------
 
@@ -451,7 +451,7 @@ sub_irq_handler_04:
 	lda #$00
 	sta ram_irq_state_var
 	ldy #$28
-	jmp sub_rom_E41E
+	jmp sub_change_chr_banks
 
 ; -----------------------------------------------------------------------------
 
@@ -475,7 +475,7 @@ sub_irq_handler_05:
 	lda #$00
 	sta ram_irq_state_var
 	ldy #$30
-	jmp sub_rom_E41E
+	jmp sub_change_chr_banks
 
 ; -----------------------------------------------------------------------------
 
@@ -561,7 +561,7 @@ sub_rom_E408:
 sub_change_state_and_chr:
 	inc ram_irq_state_var
 ; ----------------
-sub_rom_E41E:
+sub_change_chr_banks:
 	lda #$82
 	ora zp_bank_select_mask
 	tax
@@ -577,6 +577,31 @@ sub_rom_E41E:
 	sty mmc3_bank_data
 	inx
 	iny
+	stx mmc3_bank_select
+	sty mmc3_bank_data
+	rts
+
+; -----------------------------------------------------------------------------
+
+sub_change_state_and_chr_reverse:
+	inc ram_irq_state_var
+; ----------------
+sub_change_chr_banks_reverse:
+	lax #$85
+	ora zp_bank_select_mask
+	;tax
+	stx mmc3_bank_select
+	sty mmc3_bank_data
+	dex
+	dey
+	stx mmc3_bank_select
+	sty mmc3_bank_data
+	dex
+	dey
+	stx mmc3_bank_select
+	sty mmc3_bank_data
+	dex
+	dey
 	stx mmc3_bank_select
 	sty mmc3_bank_data
 	rts
