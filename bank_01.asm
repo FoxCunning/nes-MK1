@@ -381,7 +381,7 @@ sub_rom_C2A8:
 		cmp #$03
 	bne @C33D
 
-	jsr sub_rom_C3F9
+	jsr sub_ranged_special_oam
 	lda #$FD		; -3 if shooting left
 	ldy zp_plr_idx_param		; Attacker's index
 	ldx zp_plr1_facing_dir,Y
@@ -505,29 +505,29 @@ rom_C3C9:
 ; This is called when setting OAM data for the ranged attack sprite
 ; The only one that does somehing is Kano's, who seems to use more than
 ; four sprites
-sub_rom_C3F9:
+sub_ranged_special_oam:
 	ldy zp_plr_idx_param
 	lda zp_plr1_fgtr_idx_clean,Y
 	jsr sub_game_trampoline
 ; ----------------
-	.word sub_rom_C419	; Raiden
-	.word sub_rom_C419	; Sonya
-	.word sub_rom_C419	; Sub-Zero
-	.word sub_rom_C419	; Scorpion
-	.word sub_rom_C4B2	; Kano
-	.word sub_rom_C419	; Johnny Cage
-	.word sub_rom_C419	; Liu Kang
-	.word sub_rom_C419	; Goro
-	.word sub_rom_C419	; Shang-Tsung
+	.word sub_standard_ranged_oam	; Raiden
+	.word sub_standard_ranged_oam	; Sonya
+	.word sub_standard_ranged_oam	; Sub-Zero
+	.word sub_standard_ranged_oam	; Scorpion
+	.word sub_kano_ranged_oam		; Kano
+	.word sub_standard_ranged_oam	; Johnny Cage
+	.word sub_standard_ranged_oam	; Liu Kang
+	.word sub_standard_ranged_oam	; Goro
+	.word sub_standard_ranged_oam	; Shang-Tsung
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_C419:
+sub_standard_ranged_oam:
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_C4B2:
+sub_kano_ranged_oam:
 	ldy zp_plr_idx_param
 	lda zp_frame_counter
 	and #$04
@@ -536,73 +536,94 @@ sub_rom_C4B2:
 ; ----------------
 	:
 	ldx tbl_player_oam_offsets,Y
-	lda ram_037C,X
+	
+	; Move this half down
+
+	lda ram_037C,X	; Sprite 3 Y
 	clc
 	adc #$08
 	sta ram_037C,X
-	lda ram_0378,X
+
+	lda ram_0378,X	; Sprite 2 Y
 	clc
 	adc #$08
 	sta ram_0378,X
-	lda ram_0374,X
+
+	; Move this half up
+
+	lda ram_0374,X	; Sprite 1 Y
 	sec
 	sbc #$08
 	sta ram_0374,X
-	lda ram_0370,X
+
+	lda ram_0370,X	; Sprite 0 Y
 	sec
 	sbc #$08
 	sta ram_0370,X
+
 	lda zp_plr1_facing_dir,Y
 	bne @C4EF
 
-	lda #$10
-	sta zp_16
-	lda #$08
-	bne @C4F5
+		; Right-facing
+		lda #$10	; +16
+		sta zp_16
+		lda #$08	; +8
+		bne @C4F5
 
+	; Left-facing
 	@C4EF:
-	lda #$F0
+	lda #$F0	; -16
 	sta zp_16
-	lda #$F8
+	lda #$F8	; -8
 
 	@C4F5:
 	sta zp_ptr2_lo
-	lda ram_037F,X
+	lda ram_037F,X	; Sprite 3 X
 	clc
 	adc zp_ptr2_lo
 	clc
-	adc zp_16
+	adc zp_16		; +/- 24
 	sta ram_037F,X
-	lda ram_037B,X
+
+	lda ram_037B,X	; Sprite 2 X
 	sec
 	sbc zp_ptr2_lo
 	clc
-	adc zp_16
+	adc zp_16		; +/- 8
 	sta ram_037B,X
-	lda ram_0377,X
+
+	lda ram_0377,X	; Sprite 1 X
 	clc
 	adc zp_ptr2_lo
 	clc
-	adc zp_16
+	adc zp_16		; +/- 24
 	sta ram_0377,X
-	lda ram_0373,X
+
+	lda ram_0373,X	; Sprite 0 X
 	sec
 	sbc zp_ptr2_lo
 	clc
-	adc zp_16
+	adc zp_16		; +/- 8
 	sta ram_0373,X
-	lda ram_0372,X
+
+	; Flip both horizontally and vertically
+
+	lda ram_0372,X	; Sprite 0 attributes
 	eor #$C0
 	sta ram_0372,X
-	lda ram_0376,X
+
+	lda ram_0376,X	; Sprite 1 attributes
 	eor #$C0
 	sta ram_0376,X
-	lda ram_037A,X
+
+	lda ram_037A,X	; Sprite 2 attributes
 	eor #$C0
 	sta ram_037A,X
-	lda ram_037E,X
+
+	lda ram_037E,X	; Sprite 3 attributes
 	eor #$C0
 	sta ram_037E,X
+
 	rts
 
 ; -----------------------------------------------------------------------------
