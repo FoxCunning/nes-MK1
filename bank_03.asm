@@ -1787,8 +1787,6 @@ sub_init_new_track:
 		and #$0F
 		tay		; Y = APU channel (0-4)
 		
-		ldx ram_cur_channel_offset
-
 		lda #$00
 		sta ram_track_speed_counter,X
 		sta ram_note_ticks_left,X
