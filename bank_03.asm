@@ -1734,7 +1734,6 @@ sub_init_new_track:
 	sta zp_sndptr_hi
 	
 	ldy #$00
-	sty TrgLinear_4008	; Mute triangle channel while we're at it
 	@next_track_header_byte:
 	lda (zp_sndptr_lo),Y
 	sta ram_cur_apu_channel
@@ -1749,6 +1748,11 @@ sub_init_new_track:
 	sta ram_cur_channel_offset
 	asl A
 	sta ram_cur_chan_ptr_offset
+	
+	; Mute triangle channel when starting a new music track
+	lda #$80
+	sta TrgLinear_4008
+
 	jmp @header_track_data_ptr
 
 	; SFX offsets
