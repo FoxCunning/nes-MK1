@@ -790,8 +790,10 @@ sub_ranged_attack:
 	; Cheeck opponent's animation
 	lda zp_plr1_cur_anim,X
 	cmp #$01	; Crouching = no hit
-	beq @ranged_atk_return
-
+	bne :+
+		@ranged_atk_return:
+		rts
+	:
 	cmp #$2B	; Already parried (crouching)
 	beq @C60D_rts_x2
 
@@ -823,7 +825,7 @@ sub_ranged_attack:
 		; Put the opponents on the ground in case they were jumping
 		lda zp_sprites_base_y
 		sta zp_plr1_y_pos,X
-		; Special hit animation
+		; Special hit animation for the opponent
 		lda #$33
 		bne @player_hit_anim
 	:
@@ -862,17 +864,21 @@ sub_ranged_attack:
 	lda #$2B	; Crouched parry knockback
 
 	@player_hit_anim:
-	sta zp_plr1_cur_anim,X	; Opponent
+	sta zp_plr1_cur_anim,X		; Opponent
 	lda #$00
 	sta zp_plr1_anim_frame,X
 	
+	sta zp_plr1_anim_frame,Y	; Attacker
+	ldx zp_plr1_fgtr_idx_clean,Y
+	cpx #$03
+	bne :+
+		lda #$2F	; Special pull animation for Scorpion
+	:
 	sta zp_plr1_cur_anim,Y	; Attacker
-	sta zp_plr1_anim_frame,Y
 
 	@C60D_rts_x2:
 	pla
 	pla
-	@ranged_atk_return:
 	rts
 
 	@tbl_ranged_hit_damage:
@@ -1919,14 +1925,13 @@ sub_jumping_atk_buttons_input:
 		sta ram_req_sfx
 		inx
 		inx
-		inx	; Animation $0B = base kick
+		inx	; Animation $11 = jumping punch
 		@CBED:
 		lda zp_plr1_anim_frame,Y
 		cmp #$07
-		bcc @CBF5
-
-			inx	; Animation $0C = Close up kick
-		@CBF5:
+		bcc :+
+			inx	; Animation $12 = another jumping punch
+		:
 		txa
 		sta zp_plr1_cur_anim,Y
 		sty zp_last_anim_plr

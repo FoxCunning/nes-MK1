@@ -111,8 +111,8 @@ rom_8004:
 	.word rom_8270
 	.byte $0D
 	.word rom_8271
-	.byte $14
-	.word rom_8286
+	.byte $18				; $2F Scorpion kunai pull
+	.word anim_scorpion_pull ;rom_8286
 	.byte $0D
 	.word rom_8271
 	.byte $29
@@ -212,13 +212,18 @@ rom_81C9:
 	.byte $1F, $1F, $20, $20, $20, $20, $1F, $0B
 rom_81D9:
 	.byte $00
+
 anim_ranged_attack:
 	.byte $32, $32, $32, $32, $33, $33, $33, $33
-	.byte $33, $33, $33, $33
-    ; Potentially unused
 	.byte $33, $33, $33, $33, $33, $33, $33, $33
 	.byte $33, $33, $33, $33, $33, $33, $33, $33
-	.byte $33, $33
+	.byte $33, $33, $33, $33, $33, $33
+anim_scorpion_pull:
+	.byte $33, $33, $33, $33, $32, $32, $32, $32
+	.byte $32, $32, $32, $32, $32, $32, $32, $32
+	.byte $32, $32, $32, $32, $32, $32, $32, $32
+	.byte $32, $32, $32, $32, $32, $32
+
 rom_81F8:
 	.byte $0B, $0B, $0B, $0B, $17, $17, $17, $17
 	.byte $0C, $0C, $0D, $0D, $0B, $0B, $0B, $0B

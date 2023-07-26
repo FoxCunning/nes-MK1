@@ -35,14 +35,14 @@ rom_8004:
 	.word anim_jump_bk
 	.byte $04			; $08 = jumping backwards
 	.word rom_80ED
-	.byte $07			; $09 = strong hit? hit by flying kick? (still shoved backwards)
+	.byte $07			; $09 = strong hit? (still shoved backwards)
 	.word rom_80FD
 	.byte $07			; $0A = regular hit (shoved backwards)
 	.word rom_8105
 	; Attack animations
 	.byte $08			; $0B = base kick
 	.word rom_810D
-	.byte $0A			; $0C = close/combo kick
+	.byte $0A			; $0C = up close kick
 	.word rom_8113
 	.byte $1D			; $0D = Special move 1 (turbo attack)
 	.word anim_special_move_1
@@ -92,9 +92,9 @@ rom_8004:
 	.word rom_8238
 	.byte $04			; $24 = another (larger?) mid-air fall on back
 	.word rom_8239
-	.byte $06			; $25 = quick standing punch? (only up close)
-
+	.byte $06			; $25 = up close punch
 	.word rom_823A
+
 	.byte $0E			; $26 = falling on his back (bounce)
 	.word rom_823B
 	.byte $08			; $27 = getting up
@@ -116,7 +116,7 @@ rom_8004:
 	.word rom_8270
 	.byte $0D			; $2E = strong hit (knocked down or hit in the air)
 	.word rom_8271
-	.byte $14			; $2F = bigger knockback
+	.byte $14			; $2F = bigger knockback (unused?)
 	.word rom_8286
 	.byte $0D			; $30 = another knockback
 	.word rom_8271
