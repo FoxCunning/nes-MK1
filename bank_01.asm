@@ -528,7 +528,13 @@ sub_standard_ranged_oam:
 ; -----------------------------------------------------------------------------
 
 sub_scorpion_ranged_oam:
+	lda #$00
 	ldy zp_plr_idx_param
+	beq :+
+		lda #$80
+	:
+	sta zp_ptr1_lo	; OR mask for kunai sprite tile index
+
 	lda zp_frame_counter
 	and #$04
 	beq @scorpion_ranged_rts
@@ -536,12 +542,10 @@ sub_scorpion_ranged_oam:
 		ldx tbl_player_oam_offsets,Y
 
 
-		;and #$03
-		;asl
 		; Counter = ((Counter + 1) & 3) << 2
-		inc zp_ranged_counter
-		lda zp_ranged_counter
-		and #$03
+		lda #$04
+		isc zp_ranged_counter
+		;and #$03
 		sta zp_ranged_counter
 		asl
 		asl
@@ -549,9 +553,11 @@ sub_scorpion_ranged_oam:
 
 		; Load tile ID from table
 		lda @tbl_kunai_oam_data+0,Y
+		ora zp_ptr1_lo
 		sta ram_0378+1,X
 
 		lda @tbl_kunai_oam_data+1,Y
+		ora zp_ptr1_lo
 		sta ram_037C+1,X
 	
 		iny
@@ -562,7 +568,6 @@ sub_scorpion_ranged_oam:
 		; Read a different X offset value depending on direction
 		ldx zp_plr_idx_param
 		lda zp_plr1_facing_dir,X
-
 		bne :+
 			iny	; Negative values (move left) if going right
 		:
