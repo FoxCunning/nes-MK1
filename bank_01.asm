@@ -556,10 +556,10 @@ sub_kano_ranged_oam:
 	sbc #$08
 	sta ram_0374,X
 
-	lda ram_0370,X	; Sprite 0 Y
-	sec
-	sbc #$08
-	sta ram_0370,X
+	;lda ram_0370,X	; Sprite 0 Y
+	;sec
+	;sbc #$08
+	;sta ram_0370,X
 
 	lda zp_plr1_facing_dir,Y
 	bne @C4EF
@@ -599,18 +599,18 @@ sub_kano_ranged_oam:
 	adc zp_16		; +/- 24
 	sta ram_0377,X
 
-	lda ram_0373,X	; Sprite 0 X
-	sec
-	sbc zp_ptr2_lo
-	clc
-	adc zp_16		; +/- 8
-	sta ram_0373,X
+	;lda ram_0373,X	; Sprite 0 X
+	;sec
+	;sbc zp_ptr2_lo
+	;clc
+	;adc zp_16		; +/- 8
+	;sta ram_0373,X
 
 	; Flip both horizontally and vertically
 
-	lda ram_0372,X	; Sprite 0 attributes
-	eor #$C0
-	sta ram_0372,X
+	;lda ram_0372,X	; Sprite 0 attributes
+	;eor #$C0
+	;sta ram_0372,X
 
 	lda ram_0376,X	; Sprite 1 attributes
 	eor #$C0
