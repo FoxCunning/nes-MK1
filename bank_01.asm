@@ -543,9 +543,9 @@ sub_scorpion_ranged_oam:
 
 
 		; Counter = ((Counter + 1) & 3) << 2
-		lda #$04
-		isc zp_ranged_counter
-		;and #$03
+		inc zp_ranged_counter
+		lda zp_ranged_counter
+		and #$03
 		sta zp_ranged_counter
 		asl
 		asl
