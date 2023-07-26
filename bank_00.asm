@@ -735,3 +735,115 @@ _empty:
 	;.byte $04, $20, $20, $20, $47
 
 ; -----------------------------------------------------------------------------
+.export sub_fade_palettes_in
+
+; Parameters:
+; ram_0401 = fade cycle index (0-6 for fade in, anything higher is ignored)
+; ram_640 to ram_65F = target palettes for fade effect
+; Returns:
+; C = clear if colours have been faded (one step), set otherwise
+sub_fade_palettes_in:
+	ldx ram_0401
+	cpx #$07
+	bcs @D43F
+
+		ldy ram_0402
+		bne :+
+			ldy #$03
+			sty ram_0402
+		:
+		dec ram_0402
+		bne :+
+			jsr sub_fade_colours
+			inc ram_0401	; Increment the index for the next fade cycle
+		:
+		clc
+	@D43F:
+	rts
+
+; -----------------------------------------------------------------------------
+.export sub_fade_palettes_out
+
+; Parameters:
+; ram_0401 = fade cycle index (7-1 for fade out)
+; ram_640 to ram_65F = target palettes for fade effect
+; Returns:
+; C = clear if colours have been faded (one step), set otherwise
+sub_fade_palettes_out:
+	ldx ram_0401
+	beq @D463
+
+		ldy ram_0402
+		bne :+
+			ldy #$03
+			sty ram_0402
+		:
+		dec ram_0402
+		bne @D461
+
+			dec ram_0401
+			dex
+			jsr sub_fade_colours
+			cpx #$00
+			bne @D461
+
+				stx zp_ppu_mask_backup
+		@D461:
+		clc
+		rts
+; ----------------
+	@D463:
+	sec
+	rts
+
+; -----------------------------------------------------------------------------
+; Parameters:
+; ram_640 to ram_65F = target palettes for fade effect
+sub_fade_colours:
+	ldy #$1F ;ram_0400 seems to be constant anyway
+	:
+		lda ram_0640,Y
+		cmp tbl_pal_cycle_min,X
+		bcs @darken_colour
+
+			; Value too low, use black
+			lda #$0E
+			bcc @write_value
+
+		@darken_colour:
+		; This will reduce the colour value depending on the current minimum
+		; e.g.: $36 -> $06 if min is $30, $36 -> $16 if min is $20, etc.
+		lda tbl_pal_cycle_min,X
+		eor #$3F
+		and ram_0640,Y
+
+		@write_value:
+		sta ram_ppu_data_buffer,Y
+	dey
+	bpl :-
+
+	lda tbl_pal_cycle_ppumasks,X
+	sta zp_ppu_mask_backup
+	lda #$3F
+	sta zp_nmi_ppu_ptr_hi
+	lda #$00
+	sta zp_nmi_ppu_ptr_lo
+	lda #$01
+	sta zp_nmi_ppu_rows
+	lda #$20
+	sta zp_nmi_ppu_cols
+	rts
+
+; ----------------
+
+; If the indexed colour is not at least this value, then use black instead
+tbl_pal_cycle_min:
+	.byte $FF, $30, $30, $20, $20, $10, $00
+
+; ----------------
+
+; Alternates between colour emphasis enabled and disabled
+tbl_pal_cycle_ppumasks:
+	.byte $1E, $FE, $1E, $FE, $1E, $1E, $1E
+
+; -----------------------------------------------------------------------------
