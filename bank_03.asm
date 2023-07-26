@@ -1734,6 +1734,7 @@ sub_init_new_track:
 	sta zp_sndptr_hi
 	
 	ldy #$00
+	sty TrgLinear_4008	; Mute triangle channel while we're at it
 	@next_track_header_byte:
 	lda (zp_sndptr_lo),Y
 	sta ram_cur_apu_channel
