@@ -372,8 +372,8 @@ sub_rom_C2A8:
 	asl A
 	tay
 	@C33D:
-		; Update all four sprites for the ranged attack
-		jsr sub_rom_C36B
+		; Update sprites for the ranged attack
+		jsr sub_ranged_sprites_update
 		ldy zp_ptr2_lo
 		tya
 		iny
@@ -415,9 +415,9 @@ sub_rom_C2A8:
 ; Parameters:
 ; X = offset of ranged attack sprites in OAM data
 ; Y = fighter index * 4 (for indexing)
-sub_rom_C36B:
+sub_ranged_sprites_update:
 	sty zp_ptr2_lo
-	lda rom_C3C9,Y
+	lda tbl_ranged_sprite_ids,Y
 	bmi @C397
 
 		ora zp_ptr1_lo
@@ -479,7 +479,7 @@ rom_C3BD:
 	.byte $DA-$9C	; Raiden
 	.byte $DA-$98	; Sonya
 	.byte $DA-$9C	; Sub-Zero
-	.byte $DA-$9C	; Scorpion
+	.byte $DA-$90	; Scorpion
 	.byte $DA-$9C	; Kano
 	.byte $DA-$9C	; Johnny Cage
 	.byte $DA-$9C	; Liu Kang
@@ -489,11 +489,11 @@ rom_C3BD:
 ; -----------------------------------------------------------------------------
 
 ; Tile indices for ranged attacks - up to 4 sprites per attack
-rom_C3C9:
+tbl_ranged_sprite_ids:
 	.byte $7A, $7B, $72, $73	; Raiden
 	.byte $77, $78, $79, $7A	; Sonya
 	.byte $6F, $70, $71, $72	; Sub-Zero
-	.byte $1F, $20, $FF, $FF	; Scorpion
+	.byte $23, $24, $FF, $FF	; Scorpion
 	.byte $74, $75, $7A, $FF	; Kano
 	.byte $77, $78, $FF, $FF	; Johnny Cage
 	.byte $67, $68, $FF, $FF	; Liu Kang
@@ -513,7 +513,7 @@ sub_ranged_special_oam:
 	.word sub_standard_ranged_oam	; Raiden
 	.word sub_standard_ranged_oam	; Sonya
 	.word sub_standard_ranged_oam	; Sub-Zero
-	.word sub_standard_ranged_oam	; Scorpion
+	.word sub_scorpion_ranged_oam	; Scorpion
 	.word sub_kano_ranged_oam		; Kano
 	.word sub_standard_ranged_oam	; Johnny Cage
 	.word sub_standard_ranged_oam	; Liu Kang
@@ -524,6 +524,71 @@ sub_ranged_special_oam:
 
 sub_standard_ranged_oam:
 	rts
+
+; -----------------------------------------------------------------------------
+
+sub_scorpion_ranged_oam:
+	ldy zp_plr_idx_param
+	lda zp_frame_counter
+	and #$04
+	beq @scorpion_ranged_rts
+
+		ldx tbl_player_oam_offsets,Y
+
+
+		;and #$03
+		;asl
+		; Counter = ((Counter + 1) & 3) << 2
+		inc zp_ranged_counter
+		lda zp_ranged_counter
+		and #$03
+		sta zp_ranged_counter
+		asl
+		asl
+		tay	; Y = 0-3 value from frame counter
+
+		; Load tile ID from table
+		lda @tbl_kunai_oam_data+0,Y
+		sta ram_0378+1,X
+
+		lda @tbl_kunai_oam_data+1,Y
+		sta ram_037C+1,X
+	
+		iny
+		iny
+
+		stx zp_backup_x
+
+		; Read a different X offset value depending on direction
+		ldx zp_plr_idx_param
+		lda zp_plr1_facing_dir,X
+
+		bne :+
+			iny	; Negative values (move left) if going right
+		:
+
+		ldx zp_backup_x
+
+		lda ram_0378+3,X
+		clc
+		adc @tbl_kunai_oam_data,Y
+		sta ram_0378+3,X
+
+		lda ram_037C+3,X
+		clc
+		adc @tbl_kunai_oam_data,Y
+		sta ram_037C+3,X
+
+	@scorpion_ranged_rts:
+	rts
+
+; ----------------
+
+	@tbl_kunai_oam_data:
+	.byte $24, $23, $00, $00	; Frame 0
+	.byte $22, $21, $10, $F0	; Frame 1
+	.byte $20, $1F, $20, $E0	; Frame 2
+	.byte $20, $1F, $20, $E0	; Frame 2
 
 ; -----------------------------------------------------------------------------
 
@@ -2566,20 +2631,20 @@ sub_set_irq_x_scroll:
 
 ; -----------------------------------------------------------------------------
 
-	@tbl_max_x_scroll:
-	.byte $68	; Goro's Lair stage
-	.byte $68	; The Pit stage
-	.byte $68	; Warrior Shrine stage
-	.byte $68	; Palace Gates stage
-	.byte $68	; Courtyard stage
-	.byte $68	; Throne Room stage
+	;@tbl_max_x_scroll:
+	;.byte $68	; Goro's Lair stage
+	;.byte $68	; The Pit stage
+	;.byte $68	; Warrior Shrine stage
+	;.byte $68	; Palace Gates stage
+	;.byte $68	; Courtyard stage
+	;.byte $68	; Throne Room stage
 	; Potentially unused
-	.byte $68	; $06
-	.byte $68	; $07
-	.byte $68	; $08
-	.byte $50	; $09
-	.byte $50	; $0A
-	.byte $88	; $0B
+	;.byte $68	; $06
+	;.byte $68	; $07
+	;.byte $68	; $08
+	;.byte $50	; $09
+	;.byte $50	; $0A
+	;.byte $88	; $0B
 
 ; -----------------------------------------------------------------------------
 
@@ -3137,13 +3202,13 @@ tbl_bg_palette_ptrs:
 	.word @pal_palace_gates
 	.word @pal_warrior_shrine
 	.word @pal_throne_room
-	.word @rom_D610
-	.word @rom_D620
-	.word @rom_D630
-	.word @rom_D640
-	.word @rom_D650
-	.word @rom_D660
-	.word @rom_D670
+	;.word @rom_D610
+	;.word @rom_D620
+	;.word @rom_D630
+	;.word @rom_D640
+	;.word @rom_D650
+	;.word @rom_D660
+	;.word @rom_D670
 
 	@pal_goros_lair:
 	.byte $0E, $16, $2A, $28, $0E, $06, $16, $26

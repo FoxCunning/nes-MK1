@@ -135,8 +135,6 @@ reset:
 	;jsr sub_play_new_song_or_sfx
 	inc ram_snd_initialised	; SFX and music can be played only after this
 
-	lda #$00
-	sta zp_28
 	lda #$01
 	sta zp_mmc3_irq_ready
 	lda #$88

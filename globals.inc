@@ -45,8 +45,8 @@ zp_22 = $22     ;
 zp_23 = $23     ;
 zp_24 = $24     ;
 ; Incremented at each vblank
-zp_frame_counter = $25     ;
-zp_28 = $28     ;
+zp_frame_counter = $25  ;
+zp_ranged_counter = $28 ; Internal counter for alternating ranged attack sprites
 
 ; Most recent data read from controller port 1
 zp_controller1 = $2A     ;
