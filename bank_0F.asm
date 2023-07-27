@@ -207,6 +207,9 @@ irq:
 	tya
 	pha
 	jsr ram_irq_trampoline
+	; TODO Keep track of the last write instead
+	lda #$86
+	sta mmc3_bank_select
 	pla
 	tay
 	pla

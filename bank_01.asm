@@ -3361,8 +3361,8 @@ sub_inner_move_sprites:
 	sta zp_05
 
 	; Load a new bank in $8000-$9FFF from table below
-	lda #$80
-	sta zp_bank_select_mask
+	;lda #$80
+	;sta zp_bank_select_mask
 	lda #$86
 	sta mmc3_bank_select
 	lda zp_05

@@ -952,7 +952,6 @@ sub_sound_playlist:
 	lda #$02
 	sta mmc3_bank_data
 	lda #$87
-	sta zp_bank_select_mask
 	sta mmc3_bank_select
 	lda #$03
 	sta mmc3_bank_data
