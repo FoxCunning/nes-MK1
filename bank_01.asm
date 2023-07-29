@@ -834,12 +834,15 @@ sub_ranged_attack:
 		lda #$33
 		bne @player_hit_anim
 	:
-	; TODO Other special ranged attacks (Sub-Zero)
+	; Other special ranged attacks (Sub-Zero)
 	cmp #$02
 	bne :+
 		lda #$00
 		sta zp_plr1_cur_anim,Y
 		sta zp_plr1_anim_frame,Y
+
+		lda zp_frozen_timer,X
+		bne @C60D_rts_x2	; Don't re-freeze
 
 		lda #$20
 		sta zp_frozen_timer,X

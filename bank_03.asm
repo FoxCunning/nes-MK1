@@ -1004,11 +1004,10 @@ sub_special_move_2:
 	and #$1F
 	tax
 	lda @rom_A733,X
-	bpl @A723
-
-	ldx zp_plr1_fgtr_idx_clean,Y
-	lda @rom_A727,X
-	@A723:
+	bpl :+
+		ldx zp_plr1_fgtr_idx_clean,Y
+		lda @rom_A727,X
+	:
 	jmp sub_rom_A773 ;jsr sub_rom_A773
 	;rts
 
@@ -1025,7 +1024,7 @@ sub_special_move_2:
 	.byte $0D	; Goro
 	.byte $1E	; Shang-Tsung's unused fireball
 	; Unused
-	.byte $1B, $1E, $1E
+	;.byte $1B, $1E, $1E
 
 ; ----------------
 
@@ -1041,12 +1040,13 @@ sub_special_move_2:
 
 ; -----------------------------------------------------------------------------
 
-; Parameters: attacker's animation index
+; Parameters:
+; A = animation index
 sub_rom_A773:
-	ldy zp_plr_idx_param
+	ldy zp_plr_idx_param	; Player index of CPU opponent (0/1)
 	sta zp_ptr1_lo
 	cmp #$03	; Forward walk?
-	beq @A7AB
+	beq @A7AB_compare_anim_idx
 
 	cmp #$18	; Throw move?
 	bne @A7B0_reset_anim_frame
@@ -1054,20 +1054,20 @@ sub_rom_A773:
 		ldx zp_plr_ofs_param
 		lda zp_plr1_y_pos,X
 		cmp zp_sprites_base_y
-		bne @A7A5
+		bne @A7A5_walk_back
 
 		lda zp_plr1_cur_anim,X
 		cmp #$09	; Hit received
-		beq @A7A5
+		beq @A7A5_walk_back
 
 		cmp #$0A	; Hit received
-		beq @A7A5
+		beq @A7A5_walk_back
 
 		cmp #$26	; Knockdown
-		beq @A7A5
+		beq @A7A5_walk_back
 
 		cmp #$2D	; Knockback
-		bcs @A7A5
+		bcs @A7A5_walk_back
 
 			lda zp_frame_counter
 			and #$01
@@ -1077,18 +1077,18 @@ sub_rom_A773:
 			sta zp_ptr1_lo
 			bne @A7B0_reset_anim_frame
 
-		@A7A5:
+		@A7A5_walk_back:
 		lda #$04
 		sta zp_ptr1_lo
 		bne @A7B0_reset_anim_frame
 
-	@A7AB:
+	@A7AB_compare_anim_idx:
 	cmp zp_plr1_cur_anim,Y
-	beq @A7B5_assign_anim_idx
+	beq @A7B5_assign_anim_idx	; Don't reset frame if already doing this animation
     
-		@A7B0_reset_anim_frame:
-		lda #$00
-		sta zp_plr1_anim_frame,Y
+	@A7B0_reset_anim_frame:
+	lda #$00
+	sta zp_plr1_anim_frame,Y
 
 	@A7B5_assign_anim_idx:
 	lda zp_ptr1_lo
