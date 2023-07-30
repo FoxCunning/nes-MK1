@@ -2421,9 +2421,6 @@ sub_finish_match_init:
 	jsr sub_rom_D20A
 	
 	; Put bank 0 back in after loading sprite data
-	lda #$80
-	sta zp_bank_select_mask
-
 	lda #$86
 	sta mmc3_bank_select
 	lda #$00

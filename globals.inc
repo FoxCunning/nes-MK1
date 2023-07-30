@@ -213,7 +213,7 @@ zp_F5 = $F5     ;
 zp_mmc3_irq_ready = $F6     ;
 zp_F7 = $F7     ;
 ; Copy of the value last written in the MMC3 Bank Select register for PRG ROM
-zp_bank_select_mask = $FC ;
+zp_bank_select_value = $FC ;
 zp_FD = $FD     ;
 ; Used for indirect addressing by sound routines (low byte)
 zp_sndptr_lo = $FE     ;

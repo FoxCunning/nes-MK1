@@ -113,8 +113,6 @@ reset:
 
 	jsr sub_hide_all_sprites
 
-	lda #$80
-	sta zp_bank_select_mask
 	; PRG ROM $8000-$9FFF <-- Bank $02
 	ldx #$86
 	stx mmc3_bank_select
@@ -177,8 +175,6 @@ reset:
 
 		jsr sub_sound_playlist
 
-		lda #$80
-		sta zp_bank_select_mask
 		; PRG ROM $8000-$9FFF <-- Bank $02 (sound data)
 		ldx #$86
 		stx mmc3_bank_select
@@ -272,9 +268,7 @@ nmi:
 		sta mmc3_irq_enable
 		
 	@E186:
-	lda #$80
-	ora zp_bank_select_mask
-	tax
+	ldx #$80
 	stx mmc3_bank_select
 	lda zp_chr_bank_0
 	sta mmc3_bank_data
