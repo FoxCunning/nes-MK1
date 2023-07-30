@@ -94,7 +94,8 @@ rom_8004:
 	.word rom_8239
 	.byte $06			; $25 = up close punch
 	.word rom_823A
-
+	; End of attack animations
+	
 	.byte $0E			; $26 = falling on his back (bounce)
 	.word rom_823B
 	.byte $08			; $27 = getting up

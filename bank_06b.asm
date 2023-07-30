@@ -1282,7 +1282,7 @@ sub_call_gfx_routines:
 	lda #$03
 	sta mmc3_bank_data
 
-	jsr sub_rom_03_A5E4
+	jsr sub_cpu_opponent_ai
 	jsr sub_regular_hit_check
 
 	lda #$87

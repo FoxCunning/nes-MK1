@@ -12,7 +12,7 @@
 
 ; Non-ranged attacks hit check
 sub_regular_hit_check:
-	jsr sub_rom_A9FD
+	jsr sub_RNG
 	and #$01
 	jsr sub_inner_reg_hit_check
 
@@ -813,42 +813,47 @@ hit_data_ranged:
 	.byte $00
 
 ; -----------------------------------------------------------------------------
-.export sub_rom_03_A5E4
+.export sub_cpu_opponent_ai
 
-sub_rom_03_A5E4:
-	jsr sub_rom_A9FD
+sub_cpu_opponent_ai:
+	; Choose one of the two players at random (will skip non-CPU fighters)
+	jsr sub_RNG
 	and #$01
-	jsr sub_rom_A5F0
+
+	jsr sub_inner_cpu_ai
+
+	; Do the same with the other player
 	lda zp_plr_idx_param
 	eor #$01
 ; ----------------
-sub_rom_A5F0:
+sub_inner_cpu_ai:
     tay
 	sty zp_plr_idx_param
 	lda zp_plr1_fighter_idx,Y
-	bpl @A60B_rts
+	bpl @A60B_rts	; Skip non-CPU fighter
 
 	lda zp_plr1_cur_anim,Y
-	beq @A601
+	beq @A601_check_damage
 
 	cmp #$03
 	bne @A60B_rts
 
-	@A601:
+	@A601_check_damage:
 	lda #$58
 	cmp zp_plr1_damage
-	beq @A60B_rts
+	beq @A60B_rts	; Return if max damage reached (i.e. dead)
 
 	cmp zp_plr2_damage
-	bne @A60C_ai_move
+	bne @A60C_ai_move	; Also check if the other player is dead
 
 	@A60B_rts:
 	rts
 ; ----------------
 	@A60C_ai_move:
 	lda zp_frozen_timer,Y
-	bne @A60B_rts
+	bne @A60B_rts	; Don't move if frozen by Sub-Zero
 	
+	; Check distance to decide the next move
 	tya
 	eor #$01
 	tax
@@ -857,31 +862,35 @@ sub_rom_A5F0:
 	cmp #$14
 	bcs @A61C
 
-	jsr sub_special_move_0
-	rts
+		jsr sub_cpu_move_0
+		rts
 ; ----------------
 	@A61C:
 	cmp #$28
 	bcs @A624
 
-	jsr sub_special_move_1
-	rts
+		jsr sub_cpu_move_1
+		rts
 ; ----------------
 	@A624:
 	cmp #$80
 	bcs @A62C
 
-	jsr sub_special_move_2
-	rts
+		jsr sub_cpu_move_2
+		rts
 ; ----------------
 	@A62C:
 	jsr sub_cpu_opponent_delay
-	jsr sub_rom_A9FD
-	and #$1F
-	tax
+	
+	; This achieves nothing
+	;jsr sub_RNG
+	;and #$1F
+	;tax
+	
+	; Walk towards the player if distance > 127 pixels
 	lda #$03
-	jsr sub_rom_A773
-	rts
+	jmp sub_set_cpu_anim ;jsr sub_set_cpu_anim
+	;rts
 
 ; -----------------------------------------------------------------------------
 
@@ -890,23 +899,23 @@ sub_rom_A63B:
 	lda zp_5E
 	bne @A659
 
-	jsr sub_cpu_opponent_delay
-	ldx zp_plr_ofs_param
-	lda zp_9E
-	cmp #$01
-	bcc @A659
+		jsr sub_cpu_opponent_delay
+		ldx zp_plr_ofs_param
+		lda zp_9E
+		cmp #$01
+		bcc @A659
 
-	lda ram_plr1_rounds_won,X
-	beq @A659
+		lda ram_plr1_rounds_won,X
+		beq @A659
 
-	jsr sub_rom_A9FD
-	and #$07
-	bne @A660
+		jsr sub_RNG
+		and #$07
+		bne @A660
 
 	rts
 ; ----------------
 	@A659:
-	jsr sub_rom_A9FD
+	jsr sub_RNG
 	and #$07
 	bne @A679_rts
 
@@ -924,7 +933,7 @@ sub_rom_A63B:
 		lda (zp_ptr4_lo),Y
 		bmi @A679_rts
 
-			jsr sub_rom_A773
+			jsr sub_set_cpu_anim
 			pla
 			pla
 	@A679_rts:
@@ -932,7 +941,8 @@ sub_rom_A63B:
 
 ; -----------------------------------------------------------------------------
 
-sub_special_move_0:
+; Short distance (0 to 19 pixels) move
+sub_cpu_move_0:
 	lda zp_plr1_fgtr_idx_clean,Y
 	asl A
 	tax
@@ -943,12 +953,12 @@ sub_special_move_0:
 
 	jsr sub_rom_A63B
 	jsr sub_cpu_opponent_delay
-	jsr sub_rom_A9FD
+	jsr sub_RNG
 
 	and #$1F
 	tax
 	lda @rom_A69C,X
-	jmp sub_rom_A773 ;jsr sub_rom_A773
+	jmp sub_set_cpu_anim ;jsr sub_rom_A773
 	;rts
 
 ; ----------------
@@ -961,7 +971,8 @@ sub_special_move_0:
 
 ; -----------------------------------------------------------------------------
 
-sub_special_move_1:
+; Medium range (20 to 39 pixels) move
+sub_cpu_move_1:
 	lda zp_plr1_fgtr_idx_clean,Y
 	asl A
 	tax
@@ -972,12 +983,12 @@ sub_special_move_1:
 
 	jsr sub_rom_A63B
 	jsr sub_cpu_opponent_delay
-	jsr sub_rom_A9FD
+	jsr sub_RNG
 
 	and #$1F
 	tax
 	lda @rom_A6DE,X
-	jmp sub_rom_A773 ;jsr sub_rom_A773
+	jmp sub_set_cpu_anim ;jsr sub_rom_A773
 	;rts
 
 ; ----------------
@@ -990,7 +1001,8 @@ sub_special_move_1:
 
 ; -----------------------------------------------------------------------------
 
-sub_special_move_2:
+; Long range (40 to 127 pixels) move
+sub_cpu_move_2:
 	lda zp_plr1_fgtr_idx_clean,Y
 	asl A
 	tax
@@ -1000,7 +1012,7 @@ sub_special_move_2:
 	sta zp_ptr3_hi
 	jsr sub_rom_A63B
 	jsr sub_cpu_opponent_delay
-	jsr sub_rom_A9FD
+	jsr sub_RNG
 	and #$1F
 	tax
 	lda @rom_A733,X
@@ -1008,7 +1020,7 @@ sub_special_move_2:
 		ldx zp_plr1_fgtr_idx_clean,Y
 		lda @rom_A727,X
 	:
-	jmp sub_rom_A773 ;jsr sub_rom_A773
+	jmp sub_set_cpu_anim ;jsr sub_rom_A773
 	;rts
 
 ; ----------------
@@ -1040,9 +1052,10 @@ sub_special_move_2:
 
 ; -----------------------------------------------------------------------------
 
+; Assigns a new animation to the CPU-controlled opponent
 ; Parameters:
 ; A = animation index
-sub_rom_A773:
+sub_set_cpu_anim:
 	ldy zp_plr_idx_param	; Player index of CPU opponent (0/1)
 	sta zp_ptr1_lo
 	cmp #$03	; Forward walk?
@@ -1280,7 +1293,8 @@ sub_cpu_opponent_delay:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_A9FD:
+; Is this supposed to be a RNG?
+sub_RNG:
 	txa
 	adc zp_22
 	sta zp_22
