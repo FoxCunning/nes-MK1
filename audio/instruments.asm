@@ -1,3 +1,7 @@
+.IFDEF DENDY
+	.OUT "Duty cycles swapped for Dendy/clone CPUs."
+.ENDIF
+
 ; ------------------------------------------------------------------------------
 
 tbl_vol_env_ptrs:
@@ -405,12 +409,20 @@ tbl_duty_env_ptrs:
 ; -----------------
 
 	@duty_env_00:
+.IFDEF DENDY
+	.byte $00, $80, $FF, $FF
+.ELSE
 	.byte $00, $40, $FF, $FF
+.ENDIF
 
 ; -----------------
 
 	@duty_env_01:
+.IFDEF DENDY
+	.byte $00, $80, $FF, $FF
+.ELSE
 	.byte $00, $40, $FF, $FF
+.ENDIF
 
 ; -----------------
 
@@ -420,33 +432,57 @@ tbl_duty_env_ptrs:
 ; -----------------
 
 	@duty_env_03:
+.IFDEF DENDY
+	.byte $80, $40, $FF, $FF
+.ELSE
 	.byte $40, $80, $FF, $FF
+.ENDIF
 
 ; -----------------
 
 	@duty_env_04:
+.IFDEF DENDY
+	.byte $40, $40, $FF, $FF
+.ELSE
 	.byte $80, $80, $C0, $FF, $FF
+.ENDIF
 
 ; -----------------
 
 	@duty_env_05:
+.IFDEF DENDY
+	.byte $80, $80, $40, $40, $40, $80, $80, $80
+.ELSE
 	.byte $40, $40, $80, $80, $80, $40, $40, $80
+.ENDIF
 	.byte $FF, $FF
 
 ; -----------------
 
 	@duty_env_06:
+.IFDEF DENDY
+	.byte $80, $80, $40, $FF, $FF
+.ELSE
 	.byte $40, $40, $80, $FF, $FF
+.ENDIF
 
 ; -----------------
 
 	@duty_env_07:
+.IFDEF DENDY
+	.byte $80, $40, $FF, $FF
+.ELSE
 	.byte $40, $80, $FF, $FF
+.ENDIF
 
 ; -----------------
 
 	@duty_env_08:
+.IFDEF DENDY
+	.byte $00, $80, $FF, $FF
+.ELSE
 	.byte $00, $40, $FF, $FF
+.ENDIF
 
 ; -----------------
 
@@ -456,9 +492,17 @@ tbl_duty_env_ptrs:
 ; -----------------
 
 	@duty_env_0A:
+.IFDEF DENDY
+	.byte $40, $FF, $FF
+.ELSE
 	.byte $80, $FF, $FF
+.ENDIF
 
 ; -----------------
 
 	@duty_env_0B:
+.IFDEF DENDY
+	.byte $40, $FF, $FF
+.ELSE
 	.byte $80, $FF, $FF
+.ENDIF

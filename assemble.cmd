@@ -25,6 +25,8 @@ echo.
 echo [1;33mAssembling Mortal Kombat...[0m
 echo.
 
+if "%1" == "-dendy" set extra="-DDENDY"
+
 :: Compress nametables
 for %%f in (nam\*.nam) do (
 	set compress="1"
@@ -49,7 +51,7 @@ echo [1;93m
 for %%f in (bank_*.asm) do (
 	<nul set /p=[%%~nf] 
 	
-	ca65 -U -l %%~nf.lst -g %%f -o out\%%~nf.o
+	ca65 -U -l %%~nf.lst -g %%f -o out\%%~nf.o !extra!
 	if !errorlevel! neq 0 goto Error
 )
 
