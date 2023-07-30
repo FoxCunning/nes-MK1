@@ -177,11 +177,13 @@ reset:
 
 		; PRG ROM $8000-$9FFF <-- Bank $02 (sound data)
 		ldx #$86
+		stx zp_bank_select_value
 		stx mmc3_bank_select
 		lda #$02
 		sta mmc3_bank_data
 		; PRG ROM $8000-$9FFF <-- Bank $03 (sound and graphics code)
 		inx
+		stx zp_bank_select_value
 		stx mmc3_bank_select
 		lda #$03
 		sta mmc3_bank_data
@@ -203,8 +205,7 @@ irq:
 	tya
 	pha
 	jsr ram_irq_trampoline
-	; TODO Keep track of the last write instead
-	lda #$86
+	lda zp_bank_select_value
 	sta mmc3_bank_select
 	pla
 	tay
@@ -325,8 +326,8 @@ nmi:
 		lda #$01
 		sta zp_F7
 	:
-	;lda zp_bank_select_mask
-	;sta mmc3_bank_select
+	lda zp_bank_select_value
+	sta mmc3_bank_select
 
 	pla
 	tay

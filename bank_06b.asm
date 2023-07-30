@@ -784,10 +784,12 @@ sub_state_machine_start:
 sub_state_menus:
 	lda #$04
 	ldx #$86
+	stx zp_bank_select_value
 	stx mmc3_bank_select
 	sta mmc3_bank_data
 	lda #$05
 	inx
+	stx zp_bank_select_value
 	stx mmc3_bank_select
 	sta mmc3_bank_data
 
@@ -927,10 +929,12 @@ sub_rom_E89B:
 ; Check if we need to play a new music or sfx
 sub_sound_playlist:
 	lda #$86
+	sta zp_bank_select_value
 	sta mmc3_bank_select
 	lda #$02
 	sta mmc3_bank_data
 	lda #$87
+	sta zp_bank_select_value
 	sta mmc3_bank_select
 	lda #$03
 	sta mmc3_bank_data
@@ -1149,11 +1153,13 @@ sub_state_match:
 	@EA53:
 	; Banks 0, 1 on top of PRG ROM space
 	ldx #$86
+	stx zp_bank_select_value
 	stx mmc3_bank_select
 	lda #$00
 	sta mmc3_bank_data
 
 	inx
+	stx zp_bank_select_value
 	stx mmc3_bank_select
 	lda #$01
 	sta mmc3_bank_data
@@ -1218,11 +1224,13 @@ sub_pause_game:
 sub_call_sound_routines:
 	; PRG ROM $8000-$9FFF <-- Bank $02 (sound data)
 	lda #$86
+	sta zp_bank_select_value
 	sta mmc3_bank_select
 	lda #$02
 	sta mmc3_bank_data
 	; PRG ROM $8000-$9FFF <-- Bank $03 (sound and moves code)
 	lda #$87
+	sta zp_bank_select_value
 	sta mmc3_bank_select
 	lda #$03
 	sta mmc3_bank_data
@@ -1231,11 +1239,13 @@ sub_call_sound_routines:
 
 	; Switch back to PRG ROM Banks $04 and $05
 	lda #$86
+	sta zp_bank_select_value
 	sta mmc3_bank_select
 	lda #$04
 	sta mmc3_bank_data
 	; PRG ROM $8000-$9FFF <-- Bank $03 (sound and moves code)
 	lda #$87
+	sta zp_bank_select_value
 	sta mmc3_bank_select
 	lda #$05
 	sta mmc3_bank_data
@@ -1243,10 +1253,11 @@ sub_call_sound_routines:
 	rts
 
 ; -----------------------------------------------------------------------------
-.export sub_call_gfx_routines
+.export sub_call_match_routines
 
-sub_call_gfx_routines:
+sub_call_match_routines:
 	lda #$87
+	sta zp_bank_select_value
 	sta mmc3_bank_select
 	lda #$03
 	sta mmc3_bank_data
@@ -1255,6 +1266,7 @@ sub_call_gfx_routines:
 	jsr sub_regular_hit_check
 
 	lda #$87
+	sta zp_bank_select_value
 	sta mmc3_bank_select
 	lda #$01
 	sta mmc3_bank_data

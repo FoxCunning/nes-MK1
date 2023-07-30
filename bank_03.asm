@@ -2145,8 +2145,6 @@ sub_apply_arpeggio_noise:
 ; Parameters:
 ; A = note index ($09-$5F)
 ; X = APU channel index (0-4)
-; Returns:
-; X = ram_cur_chan_ptr_offset
 sub_apply_note_pitch:
 	cpx #$03
 	beq @noise_channel
