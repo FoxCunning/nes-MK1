@@ -62,7 +62,7 @@ sub_match_loop:
 	jsr sub_check_fighter_ko
 	jsr sub_match_controller_input
 
-	jsr sub_call_gfx_routines
+	jsr sub_call_match_routines
 
 	lda zp_short_counter
 	cmp zp_short_counter_target	; Typically every 2 frames
@@ -2421,11 +2421,9 @@ sub_finish_match_init:
 	jsr sub_rom_D20A
 	
 	; Put bank 0 back in after loading sprite data
-	lda #$80
-	sta zp_bank_select_mask
-
 	lda #$86
 	sta mmc3_bank_select
+	sta zp_bank_select_value
 	lda #$00
 	sta mmc3_bank_data
 	
@@ -3368,6 +3366,7 @@ sub_inner_move_sprites:
 	;sta zp_bank_select_mask
 	lda #$86
 	sta mmc3_bank_select
+	sta zp_bank_select_value
 	lda zp_05
 	sta mmc3_bank_data
 

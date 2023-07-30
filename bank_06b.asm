@@ -342,9 +342,7 @@ sub_irq_handler_02:
 	lda #$00
 	sta ram_irq_state_var
 
-	lda #$82
-	ora zp_bank_select_mask
-	tax
+	ldx #$82
 	stx mmc3_bank_select
 	sty mmc3_bank_data
 	inx
@@ -512,10 +510,7 @@ sub_irq_handler_06:
 	lda ram_0414
 	sta PpuScroll_2005
 
-	lda #$82
-	ora zp_bank_select_mask
-	tax
-
+	ldx #$82
 	stx mmc3_bank_select
 	lda #$B0
 	sta mmc3_bank_data
@@ -562,9 +557,7 @@ sub_change_state_and_chr:
 	inc ram_irq_state_var
 ; ----------------
 sub_change_chr_banks:
-	lda #$82
-	ora zp_bank_select_mask
-	tax
+	ldx #$82
 	stx mmc3_bank_select
 	sty mmc3_bank_data
 	inx
@@ -587,9 +580,7 @@ sub_change_state_and_chr_reverse:
 	inc ram_irq_state_var
 ; ----------------
 sub_change_chr_banks_reverse:
-	lax #$85
-	ora zp_bank_select_mask
-	;tax
+	ldx #$85
 	stx mmc3_bank_select
 	sty mmc3_bank_data
 	dex
@@ -625,10 +616,7 @@ sub_irq_handler_0D:
 	dey
 	bne :-
 
-	lda #$80
-	ora zp_bank_select_mask
-	tax
-
+	ldx #$80
 	stx mmc3_bank_select
 	lda #$F4
 	sta mmc3_bank_data
@@ -695,10 +683,7 @@ sub_irq_handler_0E:
 sub_irq_handler_0F:
 	sta mmc3_irq_disable
 
-	lda #$82
-	ora zp_bank_select_mask
-
-	tax
+	ldx #$82
 	lda #$54
 	stx mmc3_bank_select
 	sta mmc3_bank_data
@@ -797,15 +782,14 @@ sub_state_machine_start:
 ; Bank $05 in $A000-$BFFF
 ; Then jumps to $B000 (first routine in bottom half of bank 5)
 sub_state_menus:
-	lda #$80
-	sta zp_bank_select_mask
-
 	lda #$04
 	ldx #$86
+	stx zp_bank_select_value
 	stx mmc3_bank_select
 	sta mmc3_bank_data
 	lda #$05
 	inx
+	stx zp_bank_select_value
 	stx mmc3_bank_select
 	sta mmc3_bank_data
 
@@ -944,14 +928,13 @@ sub_rom_E89B:
 
 ; Check if we need to play a new music or sfx
 sub_sound_playlist:
-	lda #$80
-	sta zp_bank_select_mask
-
 	lda #$86
+	sta zp_bank_select_value
 	sta mmc3_bank_select
 	lda #$02
 	sta mmc3_bank_data
 	lda #$87
+	sta zp_bank_select_value
 	sta mmc3_bank_select
 	lda #$03
 	sta mmc3_bank_data
@@ -1168,16 +1151,15 @@ sub_state_match:
 	rts
 ; ----------------
 	@EA53:
-	lda #$80
-	sta zp_bank_select_mask
-
 	; Banks 0, 1 on top of PRG ROM space
 	ldx #$86
+	stx zp_bank_select_value
 	stx mmc3_bank_select
 	lda #$00
 	sta mmc3_bank_data
 
 	inx
+	stx zp_bank_select_value
 	stx mmc3_bank_select
 	lda #$01
 	sta mmc3_bank_data
@@ -1240,32 +1222,30 @@ sub_pause_game:
 ; RLE-packed nametables, to reduce the music slowdown.
 ; No DMC should be playing when this is called.
 sub_call_sound_routines:
-	lda #$80
-	sta zp_bank_select_mask
-
 	; PRG ROM $8000-$9FFF <-- Bank $02 (sound data)
 	lda #$86
+	sta zp_bank_select_value
 	sta mmc3_bank_select
 	lda #$02
 	sta mmc3_bank_data
 	; PRG ROM $8000-$9FFF <-- Bank $03 (sound and moves code)
 	lda #$87
+	sta zp_bank_select_value
 	sta mmc3_bank_select
 	lda #$03
 	sta mmc3_bank_data
 
 	jsr sub_process_all_sound
 
-	lda #$80
-	sta zp_bank_select_mask
 	; Switch back to PRG ROM Banks $04 and $05
 	lda #$86
+	sta zp_bank_select_value
 	sta mmc3_bank_select
 	lda #$04
 	sta mmc3_bank_data
 	; PRG ROM $8000-$9FFF <-- Bank $03 (sound and moves code)
 	lda #$87
-	ora zp_bank_select_mask
+	sta zp_bank_select_value
 	sta mmc3_bank_select
 	lda #$05
 	sta mmc3_bank_data
@@ -1273,11 +1253,11 @@ sub_call_sound_routines:
 	rts
 
 ; -----------------------------------------------------------------------------
-.export sub_call_gfx_routines
+.export sub_call_match_routines
 
-sub_call_gfx_routines:
+sub_call_match_routines:
 	lda #$87
-	ora zp_bank_select_mask
+	sta zp_bank_select_value
 	sta mmc3_bank_select
 	lda #$03
 	sta mmc3_bank_data
@@ -1286,7 +1266,7 @@ sub_call_gfx_routines:
 	jsr sub_regular_hit_check
 
 	lda #$87
-	ora zp_bank_select_mask
+	sta zp_bank_select_value
 	sta mmc3_bank_select
 	lda #$01
 	sta mmc3_bank_data
