@@ -12,6 +12,7 @@
 .export sub_wait_vblank
 
 sub_wait_vblank:
+.IFNDEF DENDY
 	lda PpuStatus_2002
 	bpl sub_wait_vblank
 
@@ -20,9 +21,15 @@ sub_wait_vblank:
 	:
 	lda PpuStatus_2002
 	bpl :-
-
-	; TODO Use the global frame counter instead?
-
+.ELSE
+	; Use the global frame counter instead
+	lda zp_frame_counter
+	clc
+	adc #$01
+	@wait_2frames:
+	cmp zp_frame_counter
+	bcc @wait_2frames
+.ENDIF
 	rts
 
 ; -----------------------------------------------------------------------------
