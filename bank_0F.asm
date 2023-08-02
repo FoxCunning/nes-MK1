@@ -162,7 +162,7 @@ reset:
 	sta PpuMask_2001
 
 	@main_loop:
-		inc zp_22
+		inc zp_random
 		lda zp_F7	; This basically waits for the next NMI
 	beq @main_loop
 

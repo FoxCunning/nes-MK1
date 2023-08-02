@@ -41,7 +41,7 @@ zp_scroll_x = $1E   ;
 ; Value for Y scroll, will be written to $2005 on the next vblank
 zp_scroll_y = $20   ;
 
-zp_22 = $22     ;
+zp_random = $22 ;
 zp_23 = $23     ;
 zp_24 = $24     ;
 ; Incremented at each vblank
@@ -132,7 +132,7 @@ zp_thaw_flag = $72  ; Size=2 Player will be "thawed" when this flag is set
 zp_game_substate = $7A     ;
 zp_plr_ofs_param = $7B  ; Pointer offset for current player: 0 for player one, 2 for player two
 zp_plr_idx_param = $7C  ; Active player index parameter: 0 for player one, 1 for player two
-zp_attacker_anim = $7D  ;
+; zp_attacker_anim = $7D  ;
 zp_7F = $7F     ;
 
 ;zp_80 = $80     ;

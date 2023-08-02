@@ -894,32 +894,32 @@ sub_inner_cpu_ai:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_A63B:
+sub_cpu_move_norng:
 	ldx zp_plr_ofs_param
 	lda zp_5E
-	bne @A659
+	bne @A659_rng_check
 
 		jsr sub_cpu_opponent_delay
 		ldx zp_plr_ofs_param
 		lda zp_9E
 		cmp #$01
-		bcc @A659
+		bcc @A659_rng_check
 
 		lda ram_plr1_rounds_won,X
-		beq @A659
+		beq @A659_rng_check
 
 		jsr sub_RNG
-		and #$07
-		bne @A660
+		and #$03
+		bne @A660_get_anim_id
 
 	rts
 ; ----------------
-	@A659:
+	@A659_rng_check:
 	jsr sub_RNG
 	and #$07
 	bne @A679_rts
 
-		@A660:
+		@A660_get_anim_id:
 		lda zp_plr1_fgtr_idx_clean,X
 		asl A
 		tay
@@ -951,7 +951,7 @@ sub_cpu_move_0:
 	lda rom_A7BF+1,X
 	sta zp_ptr3_hi
 
-	jsr sub_rom_A63B
+	jsr sub_cpu_move_norng
 	jsr sub_cpu_opponent_delay
 	jsr sub_RNG
 
@@ -981,7 +981,7 @@ sub_cpu_move_1:
 	lda rom_A7D7+1,X
 	sta zp_ptr3_hi
 
-	jsr sub_rom_A63B
+	jsr sub_cpu_move_norng
 	jsr sub_cpu_opponent_delay
 	jsr sub_RNG
 
@@ -1010,7 +1010,7 @@ sub_cpu_move_2:
 	sta zp_ptr3_lo
 	lda rom_A7EF+1,X
 	sta zp_ptr3_hi
-	jsr sub_rom_A63B
+	jsr sub_cpu_move_norng
 	jsr sub_cpu_opponent_delay
 	jsr sub_RNG
 	and #$1F
@@ -1296,25 +1296,25 @@ sub_cpu_opponent_delay:
 ; Is this supposed to be a RNG?
 sub_RNG:
 	txa
-	adc zp_22
-	sta zp_22
+	adc zp_random
+	sta zp_random
 	and #$01
 	bne :+
 
 		txa
-		adc zp_22
+		adc zp_random
 		tya
-		adc zp_22
-		sta zp_22
+		adc zp_random
+		sta zp_random
 		rts
 ; ----------------
 	:
-	adc zp_22
-	sta zp_22
+	adc zp_random
+	sta zp_random
 	ror A
 	ror A
-	adc zp_22
-	sta zp_22
+	adc zp_random
+	sta zp_random
 	rts
 
 ; -----------------------------------------------------------------------------
