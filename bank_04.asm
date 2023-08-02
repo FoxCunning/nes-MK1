@@ -455,8 +455,8 @@ rom_8239:
 ; ----------------
 rom_823D:
 	.word palette_8247
-	.word palette_8267
-	.word palette_8287
+	.word palette_options_menu
+	.word palette_fighter_select
 	.word palette_82A7
 	.word palette_82C7
 
@@ -471,7 +471,7 @@ palette_8247:
 ; -----------------------------------------------------------------------------
 
 ; Used in option menu
-palette_8267:
+palette_options_menu:
 	.byte $0E, $01, $11, $28, $0E, $00, $10, $26
 	.byte $0E, $10, $00, $38, $0E, $00, $10, $20
 	.byte $0E, $01, $11, $28, $0E, $00, $10, $26
@@ -479,9 +479,9 @@ palette_8267:
 
 ; -----------------------------------------------------------------------------
 
-palette_8287:
-	.byte $FF, $08, $17, $30, $FF, $11, $21, $30
-	.byte $FF, $08, $18, $30, $FF, $00, $10, $27
+palette_fighter_select:
+	.byte $FF, $16, $26, $36, $FF, $11, $21, $30
+	.byte $FF, $17, $27, $37, $FF, $0C, $1C, $37
 	.byte $0F, $17, $27, $38, $0E, $13, $21, $30
 	.byte $0E, $09, $19, $3B, $0E, $06, $16, $36
 
