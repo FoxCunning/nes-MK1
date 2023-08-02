@@ -650,31 +650,42 @@ sub_fighter_sel_init:
 	sty zp_tmp_idx
 	jsr sub_setup_new_screen
 	jsr sub_rom_B4B2
+
 	lda #$00
 	sta zp_scroll_x
 	sta zp_scroll_y
+
 	lda #$88
 	sta PpuControl_2000
 	sta zp_ppu_control_backup
+
 	cli
 	jsr sub_wait_vblank
+
 	lda #$1E
 	sta zp_ppu_mask_backup
+
 	lda #$0C
 	sta ram_irq_routine_idx
+
 	lda #$80
 	sta ram_irq_latch_value
+
 	inc zp_machine_state_2
+
 	lda #$00
 	sta zp_5C
 	sta zp_5D
+
 	lda zp_66
 	asl A
 	tay
+
 	lda zp_plr1_selection
 	and #$80
 	ora @rom_B2A9+0,Y
 	sta zp_plr1_selection
+
 	lda zp_plr2_selection
 	and #$80
 	ora @rom_B2A9+1,Y
@@ -705,7 +716,7 @@ sub_fighter_sel_fade_in:
 sub_fighter_sel_loop:
 	lda zp_frame_counter
 	cmp zp_last_execution_frame
-	beq @B2DF
+	beq @B2DF_rts
 
 		sta zp_last_execution_frame
 		jsr sub_fighter_selection_input
@@ -713,15 +724,15 @@ sub_fighter_sel_loop:
 		jsr sub_rom_B556
 		lda zp_5C
 		cmp zp_5D
-		bne @B2DF
+		bne @B2DF_rts
 
 			cmp #$09
-			bne @B2DF
+			bne @B2DF_rts
 
 				inc zp_machine_state_2
 				lda #$05
 				sta zp_palette_fade_idx
-	@B2DF:
+	@B2DF_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -730,11 +741,11 @@ sub_fighter_sel_fade_out:
 	jsr sub_rom_cycle_palettes
 	lda zp_palette_fade_idx
 	cmp #$09
-	bcc @B2E0_end
+	bcc @B2E0_rts
 		lda #$00
 		sta zp_machine_state_2
 		inc zp_machine_state_1
-	@B2E0_end:
+	@B2E0_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1008,40 +1019,43 @@ sub_rom_B4B2:
 	lda zp_tmp_idx
 	asl A
 	tax
-	lda @rom_B4CE+0,X
+	lda @tbl_attr_tables_ptrs+0,X
 	sta zp_ptr1_lo
-	lda @rom_B4CE+1,X
+	lda @tbl_attr_tables_ptrs+1,X
 	sta zp_ptr1_hi
+
 	ldx #$40
 	ldy #$00
-	@B4C4:
+	:
 		lda (zp_ptr1_lo),Y
 		sta ram_0680,Y
 		iny
 		dex
-	bne @B4C4
+	bne :-
 
 	rts
 
-; -----------------------------------------------------------------------------
+; ----------------
+	
+	@tbl_attr_tables_ptrs:
+	.word attr_fighter_sel, rom_B516
+	.word attr_fighter_sel, rom_B516
 
-	@rom_B4CE:
-	.word rom_B4D6, rom_B516, rom_B4D6, rom_B516
+; ----------------
 
-; -----------------------------------------------------------------------------
-
-rom_B4D6:
+attr_fighter_sel:
+	.byte $FF, $FF, $5F, $7F, $CF, $FF, $FF, $FF
+	.byte $FF, $FF, $51, $77, $CC, $B3, $FF, $FF
+	.byte $7F, $5F, $15, $57, $06, $9E, $AF, $FF
+	.byte $37, $58, $03, $45, $AA, $D9, $C8, $FF
+	.byte $FF, $FF, $FF, $75, $05, $FF, $FF, $FF
+	.byte $FF, $FF, $7F, $57, $00, $FF, $FF, $FF
 	.byte $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
-	.byte $FF, $FF, $5F, $FF, $FF, $0F, $FF, $FF
-	.byte $FF, $FF, $55, $FF, $FF, $00, $FF, $FF
-	.byte $FF, $0F, $7F, $DF, $7F, $DF, $AF, $FF
-	.byte $FF, $00, $77, $DD, $77, $DD, $AA, $FF
-	.byte $FF, $FF, $55, $33, $CC, $AA, $FF, $FF
-	.byte $FF, $FF, $F5, $F3, $FC, $FA, $FF, $FF
-	.byte $FF, $FF, $FF, $FF, $FF, $FF, $FF, $0F
+	.byte $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F
 
-; -----------------------------------------------------------------------------
+; ----------------
 
+; Unused?
 rom_B516:
 	.byte $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
 	.byte $FF, $7F, $1F, $CF, $BF, $2F, $CF, $FF
@@ -1062,6 +1076,7 @@ sub_rom_B556:
 	sta zp_ptr2_lo
 	lda rom_B5BF+1,Y
 	sta zp_ptr2_hi
+
 	ldx #$00
 	lda zp_5C,X
 	cmp #$05
@@ -1101,6 +1116,7 @@ sub_rom_B578:
 	sta zp_nmi_ppu_ptr_hi
 	lda #$C8
 	sta zp_nmi_ppu_ptr_lo
+
 	lda #$00
 	sta zp_47
 	lda #$30
@@ -1127,13 +1143,22 @@ rom_B5BF:
 
 ; -----------------------------------------------------------------------------
 
+; Pointers for fighter selection attribute tables used to change the colours
+; of the selected fighter
 rom_B5C7:
-	.word rom_B5FD, rom_B602, rom_B607, rom_B60C
-	.word rom_B615, rom_B61E, rom_B623, rom_B628
-	.word rom_B631
+	.word rom_B5FD	; $00
+	.word rom_B602	; $01
+	.word rom_B607	; $02
+	.word rom_B60C	; $03
+	.word rom_B615	; $04
+	.word rom_B61E	; $05
+	.word rom_B623	; $06
+	.word rom_B628	; $07
+	.word rom_B631	; $08
 
 ; -----------------------------------------------------------------------------
 
+; Potentially unused
 rom_B5D9:
 	.word rom_B636, rom_B63F, rom_B648, rom_B651
 	.word rom_B65A, rom_B663, rom_B66C, rom_B675
@@ -1164,6 +1189,9 @@ rom_B628:
 	.byte $FF
 rom_B631:
 	.byte $2D, $FF, $35, $0F, $FF
+
+; -----------------------------------------------------------------------------
+
 rom_B636:
 	.byte $09, $C0, $0A, $30, $11, $CC, $12, $33
 	.byte $FF
