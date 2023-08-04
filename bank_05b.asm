@@ -262,9 +262,9 @@ sub_eval_menu_choice:
 	lda zp_plr1_selection
 	bne :+
 		; Option 0 = Tournament
-		lda #$03 	; Player 1 default selection (Kano)
+		lda #$03 	; Player 1 default selection
 		sta zp_plr1_selection
-		lda #$84	; Player 2 default selection (Sub-Zero)
+		lda #$84	; Player 2 default selection
 		sta zp_plr2_selection
 
 		inc zp_machine_state_1	; 0,2,0 (because it's increased again below)
@@ -834,15 +834,15 @@ sub_announce_fighter_name:
 	rts
 
 	@tbl_fighter_names_sfx:
-	.byte $00	; $00 Shang-Tsung
-	.byte $00	; $01 Goro
-	.byte $16	; $02 Johnny Cage
-	.byte $15	; $03 Kano
-	.byte $13	; $04 Sub-zero
-	.byte $12	; $05 Sonya
-	.byte $11	; $06 Raiden
-	.byte $17	; $07 Liu Kang
-	.byte $14	; $08 Scorpion
+	.byte $13	; $00 Sub-zero
+	.byte $15	; $01 Kano
+	.byte $14	; $02 Scorpion
+	.byte $11	; $03 Rayden
+	.byte $16	; $04 Johnny Cage
+	.byte $17	; $05 Liu Kang
+	.byte $12	; $06 Sonya
+	.byte $00	; $07 Shang-Tsung
+	.byte $00	; $08 Goro
 
 ; -----------------------------------------------------------------------------
 
@@ -1584,6 +1584,7 @@ sub_rom_B845:
 
 ; -----------------------------------------------------------------------------
 
+; Chooses two fighters for the attract mode?
 sub_rom_B864:
 	jsr sub_rom_cycle_palettes
 	lda zp_palette_fade_idx
@@ -2379,38 +2380,42 @@ sub_rom_BE9F:
 	lda zp_plr1_selection
 	and #$80
 	sta zp_plr1_fighter_idx
+
 	lda zp_plr2_selection
 	and #$80
 	sta zp_plr2_fighter_idx
+
 	lda zp_65
 	and #$80
 	sta zp_60
+	
 	lda zp_66
 	bne @BEDC
 
-	lda zp_plr1_selection
-	and #$7F
-	tay
-	lda rom_BF03,Y
-	ora zp_plr1_fighter_idx
-	sta zp_plr1_fighter_idx
-	lda zp_plr2_selection
-	and #$7F
-	tay
-	lda rom_BF03,Y
-	ora zp_plr2_fighter_idx
-	sta zp_plr2_fighter_idx
-	lda zp_65
-	beq @BED9
+		lda zp_plr1_selection
+		and #$7F
+		tay
+		lda rom_BF03,Y
+		ora zp_plr1_fighter_idx
+		sta zp_plr1_fighter_idx
 
-	and #$7F
-	tay
-	lda rom_BF03,Y
-	ora zp_60
-	@BED9:
-	sta zp_60
-	rts
+		lda zp_plr2_selection
+		and #$7F
+		tay
+		lda rom_BF03,Y
+		ora zp_plr2_fighter_idx
+		sta zp_plr2_fighter_idx
+		lda zp_65
+		beq :+
+			and #$7F
+			tay
+			lda rom_BF03,Y
+			ora zp_60
+		:
+		sta zp_60
+		rts
 ; ----------------
+	; Probably unused
 	@BEDC:
 	lda zp_plr1_selection
 	and #$7F
@@ -2425,21 +2430,22 @@ sub_rom_BE9F:
 	ora zp_plr2_fighter_idx
 	sta zp_plr2_fighter_idx
 	lda zp_65
-	beq @BF00
-
-	and #$7F
-	tay
-	lda rom_BF0C,Y
-	ora zp_60
-	@BF00:
+	beq :+
+		and #$7F
+		tay
+		lda rom_BF0C,Y
+		ora zp_60
+	:
 	sta zp_60
 	rts
 
 ; -----------------------------------------------------------------------------
 
 rom_BF03:
-	.byte $08, $07, $05, $04, $02, $01, $00, $06
-	.byte $03
+	.byte $02, $04, $03, $00, $05, $06, $01, $08
+	.byte $07
+
+; Probably unused
 rom_BF0C:
 	.byte $08, $00, $04, $07, $0C, $05, $10
 	.byte $02, $01, $03, $06, $0D, $12, $0F, $14
