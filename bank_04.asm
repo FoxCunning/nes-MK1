@@ -693,7 +693,7 @@ nam_sound_test_rle:
 tbl_menu_indices_ptrs:
 	.word tbl_main_menu_indices
 	.word tbl_options_menu_indices
-	.word rom_9CD5
+	.word tbl_fighter_sel_indices
 	.word rom_9CF9
 	.word tbl_sound_test_indices
 
@@ -719,16 +719,18 @@ tbl_options_menu_indices:
 	.byte $FF, $FF, $04, $06	; $05 = Sound Test
 	.byte $FF, $FF, $05, $00	; $06 = Exit
 
-rom_9CD5:
-	.byte $00, $01, $06, $03
-	.byte $00, $01, $08, $04
-	.byte $05, $03, $00, $06
-	.byte $02, $04, $00, $06
-	.byte $03, $05, $01, $08
-	.byte $04, $02, $01, $08
-	.byte $08, $07, $03, $00
-	.byte $06, $08, $03, $00
-	.byte $07, $06, $04, $01
+tbl_fighter_sel_indices:
+	.byte $FF, $01, $FF, $04
+	.byte $00, $02, $FF, $05
+	.byte $01, $FF, $FF, $06
+
+	.byte $FF, $04, $00, $07
+	.byte $03, $05, $00, $07
+	.byte $04, $06, $01, $08
+	.byte $05, $FF, $02, $08
+
+	.byte $FF, $08, $04, $FF
+	.byte $07, $FF, $05, $FF
 
 rom_9CF9:
 	.byte $03, $01, $0C, $05

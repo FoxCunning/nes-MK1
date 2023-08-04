@@ -981,7 +981,7 @@ sub_rom_C6E2:
 	lda ram_0403,X
 	sta zp_07
 	lda ram_0404,X
-	sta zp_08
+	sta zp_var_x
 	lda ram_0405,X
 	sta zp_09
 	lda #$B0
@@ -2195,7 +2195,7 @@ sub_update_match_time:
 	sta zp_07
 
 	lda #$00
-	sta zp_08
+	sta zp_var_x
 	sta zp_09
 	sta zp_0D
 
@@ -2219,7 +2219,7 @@ sub_rom_CD56:
 	cmp #$01
 	bcc @CD7D
 
-	lda zp_08
+	lda zp_var_x
 	cmp #$86
 	bcc @CD7D
 
@@ -2231,7 +2231,7 @@ sub_rom_CD56:
 	sta zp_07
 	sta ram_0403,X
 	lda #$86
-	sta zp_08
+	sta zp_var_x
 	sta ram_0404,X
 	lda #$9F
 	sta zp_09
@@ -3191,7 +3191,7 @@ sub_divide:
 
 	@D6B2_loop:
 		asl zp_07
-		rol zp_08
+		rol zp_var_x
 		rol zp_09
 		rol A
 		cmp zp_16
@@ -3688,7 +3688,7 @@ sub_animate_sprites:
 
 	@DA07:
 	sta zp_07	; Starting X offset for first tile in a row
-	sta zp_08	; Current X offset (updated for each column)
+	sta zp_var_x	; Current X offset (updated for each column)
 
 	ldx zp_06	; Vertical updates count?
 
@@ -3700,8 +3700,8 @@ sub_animate_sprites:
 	dex
 	bne :-
 
-	sta zp_0B
-	dec zp_0B	; Base Y position (incremented by 8 for each row)
+	sta zp_var_y
+	dec zp_var_y	; Base Y position (incremented by 8 for each row)
 
 	ldx zp_first_oam_ofs	; OAM offset of first sprite
 
@@ -3733,9 +3733,9 @@ sub_animate_sprites:
 
 		; set_sprite_flags will jump back here
 		@set_xy_pos:
-		lda zp_0B	; Current row's Y pos
+		lda zp_var_y	; Current row's Y pos
 		sta ram_oam_copy_ypos,X
-		lda zp_08	; Current tile's X pos
+		lda zp_var_x	; Current tile's X pos
 		sta ram_oam_copy_xpos,X
 		; Move to next OAM entry
 		;inx
@@ -3751,23 +3751,23 @@ sub_animate_sprites:
 	; Increase X position offset for next tile in this row
 	lda zp_ptr1_lo	; This is a signed value (negative to draw right-to-left)
 	clc
-	adc zp_08
-	sta zp_08
+	adc zp_var_x
+	sta zp_var_x
 
 	dec zp_09	; X counter
 	bne @next_frame_data_byte
 
 	; Increase Y position offset for next row
-	lda zp_0B
+	lda zp_var_y
 	clc
 	adc #$08	; Fixed offset: we always draw top-to-bottom
-	sta zp_0B
+	sta zp_var_y
 
 	lda zp_05	; Horizontal tiles count reload
 	sta zp_09
 
 	lda zp_07	; Starting X pos for next row of sprites
-	sta zp_08
+	sta zp_var_x
 
 	dec zp_06	; Y counter
 	bne @next_frame_data_byte
@@ -4196,7 +4196,7 @@ rom_01_B000:
 	.word @rom_B538, @rom_B548, @rom_B558, @rom_B568
 	.word @rom_B578, @rom_B588, @rom_B598, @rom_B5A8
 	.word @rom_B5B8, @rom_B5C8, @rom_B5D8, @rom_B5E8
-	.word @rom_B5F8, @rom_B608, @rom_B618, @rom_B628
+	.word @rom_B5F8, @rom_B608, @rom_B618, @attr_fgtr_7
 	.word @rom_B638, @rom_B648, @rom_B658, @rom_B668
 	.word @rom_B678, @rom_B688, @rom_B698, @rom_B6A8
 
@@ -4457,7 +4457,7 @@ rom_01_B000:
 	@rom_B618:
 	.byte $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
 	.byte $FF, $FF, $C6, $FF, $DF, $9F, $03, $07
-	@rom_B628:
+	@attr_fgtr_7:
 	.byte $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
 	.byte $0F, $00, $00, $FE, $FF, $7F, $80, $00
 	@rom_B638:

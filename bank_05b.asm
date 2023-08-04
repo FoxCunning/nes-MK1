@@ -762,7 +762,7 @@ sub_fighter_selection_input:
 ; ----------------
 	@player_selection_input:
 	lda zp_plr1_selection,X
-	bpl @B316
+	bpl :+
 		; CPU opponent
 		lda #$09
 		sta zp_5C,X
@@ -776,7 +776,7 @@ sub_fighter_selection_input:
 		lda #$00
 		sta zp_5C,X
 		sta zp_controller1_new,X
-	@B316:
+	:
 	lda zp_5C,X
 	bne @B352
 
@@ -800,12 +800,11 @@ sub_fighter_selection_input:
 		sta zp_05
 		ldx zp_07
 		lda zp_05
-		bmi @B34A
-
+		bmi :+
 			sta zp_plr1_selection,X
 			lda #$03	; Bleep sound
 			sta ram_req_sfx
-		@B34A:
+		:
 		lda zp_controller1_new,X
 		and #$C0
 		beq @B352
@@ -813,17 +812,17 @@ sub_fighter_selection_input:
 			inc zp_5C,X
 	@B352:
 	lda zp_5C,X
-	beq @B362
+	beq @B362_rts
 
 	cmp #$09
-	bcs @B362
+	bcs @B362_rts
 
 	lda zp_frame_counter
 	and #$0F
-	bne @B362
+	bne @B362_rts
 
 		inc zp_5C,X
-	@B362:
+	@B362_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -861,38 +860,44 @@ sub_rom_B36E:
 	cmp #$06
 	bcs @B377
 
-		jmp sub_rom_B393
+		jmp sub_ftr_sel_update_cursors
 
-	; Flash the cursor?
+	; Flash the cursor if fighter selected
 	@B377:
-	lda #$20
+	lda #$08	; Number of sprites in the meta-sprite
 	sta zp_0A
-	lda rom_B38D,X
+	lda tbl_sel_cur_oam_ofs,X
 	tay
 	lda #$F8
-	@B381:
+	:
 		sta ram_oam_copy_ypos,Y
 		iny
 		iny
 		iny
 		iny
 		dec zp_0A
-	bne @B381
+	bne :-
 
 	rts
 
 ; -----------------------------------------------------------------------------
 
-rom_B38D:
-	.byte $00, $80
-rom_B38F:                
-	.byte $00, $30
-rom_B391:
-	.byte $02, $03
+tbl_sel_cur_oam_ofs:
+	.byte $00	; Player 1
+	.byte $20	; Player 2
+
+tbl_sel_cur_data_ofs:                
+	.byte $00	; Player 1             
+	.byte $10	; Player 2
+
+; Sprite attribute byte for fighter selection cursor
+tbl_sel_cur_attr:
+	.byte $02	; Player 1
+	.byte $03	; Player 2
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B393:
+sub_ftr_sel_update_cursors:
 	lda zp_tmp_idx
 	asl A
 	tay
@@ -900,8 +905,9 @@ sub_rom_B393:
 	sta zp_ptr1_lo
 	lda rom_B414+1,Y
 	sta zp_ptr1_hi
+	
 	lda zp_plr1_selection,X
-	bpl :+
+	bpl :+	; Skip CPU opponent
 		rts
 ; ----------------
 	:
@@ -914,104 +920,114 @@ sub_rom_B393:
 	sta zp_ptr2_hi
 	ldy #$08
 	lda zp_5C,X
-	beq @B3B9
-
+	beq :+
 		ldy #$02
-	@B3B9:
+	:
 	sty zp_05
 	ldy #$00
 	lda zp_frame_counter
 	and zp_05
-	beq @B3C5
-
-		ldy #$18
-	@B3C5:
+	beq :+
+		ldy #$08
+	:
 	sty zp_05
-	lda rom_B38F,X
+	lda tbl_sel_cur_data_ofs,X
 	clc
 	adc zp_05
 	tay
-	lda rom_B391,X
+
+	lda tbl_sel_cur_attr,X
 	sta zp_0F
-	lda rom_B38D,X
+
+	lda tbl_sel_cur_oam_ofs,X
 	tax
-	lda #$06
-	sta zp_0B
-	@B3DB:
+
+	lda #$02
+	sta zp_var_y
+	@B3DB_loop_y:
 	lda #$04
-	sta zp_08
+	sta zp_var_x
+
 	lda zp_ptr2_lo
 	sta zp_09
-	@B3E3:
-	sta ram_oam_copy_xpos,X
-	lda rom_B452,Y
-	beq @B3FC
 
+	@B3E3_loop_x:
+	sta ram_oam_copy_xpos,X
+	lda tbl_ftr_sel_tiles,Y
+	beq :+
 		sta ram_oam_copy_tileid,X
 		lda zp_0F
 		sta ram_oam_copy_attr,X
 		lda zp_ptr2_hi
 		sta ram_oam_copy_ypos,X
-		;inx
-		;inx
-		;inx
-		;inx
+		; X = X + 4
 		txa
 		axs #$FC
-	@B3FC:
+	:
 	iny
 	lda zp_09
 	clc
 	adc #$08
 	sta zp_09
-	dec zp_08
-	bne @B3E3
+	dec zp_var_x
+	bne @B3E3_loop_x
 
 	lda zp_ptr2_hi
 	clc
 	adc #$08
 	sta zp_ptr2_hi
-	dec zp_0B
-	bne @B3DB
+	dec zp_var_y
+	bne @B3DB_loop_y
 
 	rts
 
-; -----------------------------------------------------------------------------
+; ----------------
 
 rom_B414:
-	.word rom_B41C, rom_B42E, rom_B41C, rom_B42E
+	.word tbl_ftr_sel_xy_0, tbl_ftr_sel_xy_1
+	.word tbl_ftr_sel_xy_0, tbl_ftr_sel_xy_1
 
-; -----------------------------------------------------------------------------
+; ----------------
 
-rom_B41C:
-	.byte $40, $2F, $A0, $2F, $20, $6F, $50, $6F
-	.byte $90, $6F, $C0, $6F, $40, $9F, $70, $9F
-	.byte $A0, $9F
+tbl_ftr_sel_xy_0:
+	.byte $40, $17	; $00
+	.byte $70, $17	; $01
+	.byte $A0, $17	; $02
 
-; -----------------------------------------------------------------------------
+	.byte $18, $4F	; $03
+	.byte $48, $4F	; $04
+	.byte $80, $4F	; $05
+	.byte $B8, $4F	; $06
+	
+	.byte $50, $8F	; $07
+	.byte $80, $8F	; $08
 
-rom_B42E:
+; ----------------
+
+; Unused?
+tbl_ftr_sel_xy_1:
 	.byte $30, $30, $50, $30, $90, $30, $B0, $30
 	.byte $10, $60, $30, $60, $50, $60, $70, $60
 	.byte $90, $60, $B0, $60, $D0, $60, $10, $90
 	.byte $30, $90, $50, $90, $70, $90, $90, $90
 	.byte $B0, $90, $D0, $90
 
-; -----------------------------------------------------------------------------
+; ----------------
 
-rom_B452:
-	.byte $E0, $E1, $E1, $E2, $E3, $F0, $F1, $E4
-	.byte $E3, $00, $00, $E4, $E3, $00, $00, $E4
-	.byte $E3, $00, $00, $E4, $E5, $E6, $E6, $E7
-	.byte $E8, $E9, $E9, $EA, $EB, $F2, $F3, $EF
-	.byte $EB, $00, $00, $EF, $EB, $00, $00, $EF
-	.byte $EB, $00, $00, $EF, $EC, $ED, $ED, $EE
-	.byte $E0, $E1, $E1, $E2, $E3, $00, $00, $E4
-	.byte $E3, $00, $00, $E4, $E3, $00, $00, $E4
-	.byte $E3, $F4, $F5, $E4, $E5, $E6, $E6, $E7
-	.byte $E8, $E9, $E9, $EA, $EB, $00, $00, $EF
-	.byte $EB, $00, $00, $EF, $EB, $00, $00, $EF
-	.byte $EB, $F6, $F7, $EF, $EC, $ED, $ED, $EE
+tbl_ftr_sel_tiles:
+	; Player 1 cursor
+	.byte $E0, $E1, $E1, $E2
+	.byte $E3, $F2, $F0, $E4
+
+	.byte $E8, $E9, $E9, $EA
+	.byte $EB, $F0, $F0, $EF
+
+	; Player 2 cursor
+	.byte $E8, $E9, $E9, $EA
+	.byte $EB, $F0, $F0, $EF
+
+	.byte $E0, $E1, $E1, $E2
+	.byte $E3, $F0, $F6, $E4
 
 ; -----------------------------------------------------------------------------
 
@@ -1114,7 +1130,7 @@ sub_rom_B578:
 
 	lda #$23
 	sta zp_nmi_ppu_ptr_hi
-	lda #$C8
+	lda #$C0
 	sta zp_nmi_ppu_ptr_lo
 
 	lda #$00
@@ -1124,20 +1140,22 @@ sub_rom_B578:
 	lda #$01
 	sta zp_nmi_ppu_rows
 
-	ldx #$08
-	ldy #$00
+	ldx #$00
+	;ldy #$00
 	@B5B2:
 		lda ram_0680,X
-		sta ram_ppu_data_buffer,Y
+		sta ram_ppu_data_buffer,X
 		inx
-		iny
-		cpy #$30
+		;iny
+		;cpy #$30
+		cpx #$30
 	bcc @B5B2
 
 	rts
 
 ; -----------------------------------------------------------------------------
 
+; TODO The second table is unused, we don't need a pointer to another pointer
 rom_B5BF:
 	.word rom_B5C7, rom_B5D9, rom_B5C7, rom_B5D9
 
@@ -1146,106 +1164,142 @@ rom_B5BF:
 ; Pointers for fighter selection attribute tables used to change the colours
 ; of the selected fighter
 rom_B5C7:
-	.word rom_B5FD	; $00
-	.word rom_B602	; $01
-	.word rom_B607	; $02
-	.word rom_B60C	; $03
-	.word rom_B615	; $04
-	.word rom_B61E	; $05
-	.word rom_B623	; $06
-	.word rom_B628	; $07
-	.word rom_B631	; $08
+	.word attr_fgtr_0	; $00
+	.word attr_fgtr_1	; $01
+	.word attr_fgtr_2	; $02
+	.word attr_fgtr_3	; $03
+	.word attr_fgtr_4	; $04
+	.word attr_fgtr_5	; $05
+	.word attr_fgtr_6	; $06
+	.word attr_fgtr_7	; $07
+	.word attr_fgtr_8	; $08
 
 ; -----------------------------------------------------------------------------
 
 ; Potentially unused
 rom_B5D9:
-	.word rom_B636, rom_B63F, rom_B648, rom_B651
-	.word rom_B65A, rom_B663, rom_B66C, rom_B675
-	.word rom_B67E, rom_B687, rom_B690, rom_B699
-	.word rom_B6A2, rom_B6AB, rom_B6B4, rom_B6BD
-	.word rom_B6C6, rom_B6CF
+	.word rom_B636
+;	.word rom_B63F, rom_B648, rom_B651
+;	.word rom_B65A, rom_B663, rom_B66C, rom_B675
+;	.word rom_B67E, rom_B687, rom_B690, rom_B699
+;	.word rom_B6A2, rom_B6AB, rom_B6B4, rom_B6BD
+;	.word rom_B6C6, rom_B6CF
 
 ; -----------------------------------------------------------------------------
 
-rom_B5FD:
-	.byte $0A, $F0, $12, $FF, $FF
-rom_B602:
-	.byte $0D, $F0, $15, $FF, $FF
-rom_B607:
-	.byte $19, $F0, $21, $FF, $FF
-rom_B60C:
-	.byte $1A, $C0, $1B, $30, $22, $CC, $23, $33
+; Data format (two bytes per entry):
+; Attribute table offset, Attribute value OR mask
+; Offset bit 7 set = stop
+
+attr_fgtr_0:
+	.byte $02, $FF
+	.byte $0A, $FF
+	.byte $12, $0F
 	.byte $FF
-rom_B615:
-	.byte $1C, $C0, $1D, $30, $24, $CC, $25, $33
+attr_fgtr_1:
+	.byte $03, $FF
+	.byte $04, $FF
+	.byte $0B, $FF
+	.byte $0C, $FF
+	.byte $13, $0F
+	.byte $14, $0F
 	.byte $FF
-rom_B61E:
-	.byte $1E, $F0, $26, $FF, $FF
-rom_B623:
-	.byte $2A, $FF, $32, $0F, $FF
-rom_B628:
-	.byte $2B, $CC, $2C, $33, $33, $0C, $34, $03
+attr_fgtr_2:
+	.byte $05, $FF
+	.byte $0D, $FF
+	.byte $15, $9F
 	.byte $FF
-rom_B631:
-	.byte $2D, $FF, $35, $0F, $FF
+
+attr_fgtr_3:
+	.byte $10, $FF
+	.byte $11, $FF
+	.byte $18, $FF
+	.byte $19, $FF
+	.byte $FF
+attr_fgtr_4:
+	.byte $12, $F0
+	.byte $13, $73
+	.byte $1A, $FF
+	.byte $1B, $77
+	.byte $FF
+attr_fgtr_5:
+	.byte $14, $F4
+	.byte $1C, $FF
+	.byte $FF
+attr_fgtr_6:
+	.byte $15, $D0
+	.byte $16, $FF
+	.byte $1D, $DD
+	.byte $1E, $FF
+	.byte $FF
+
+attr_fgtr_7:
+	.byte $22, $FF
+	.byte $23, $75
+	.byte $2A, $FF
+	.byte $2B, $77
+	.byte $FF
+attr_fgtr_8:
+	.byte $24, $F5
+	.byte $2C, $FF
+	.byte $FF
 
 ; -----------------------------------------------------------------------------
 
 rom_B636:
 	.byte $09, $C0, $0A, $30, $11, $CC, $12, $33
 	.byte $FF
-rom_B63F:
-	.byte $0A, $C0, $0B, $30, $12, $CC, $13, $33
-	.byte $FF
-rom_B648:
-	.byte $0C, $C0, $0D, $30, $14, $CC, $15, $33
-	.byte $FF
-rom_B651:
-	.byte $0D, $C0, $0E, $30, $15, $CC, $16, $33
-	.byte $FF
-rom_B65A:
-	.byte $18, $CC, $19, $33, $20, $0C, $21, $03
-	.byte $FF
-rom_B663:
-	.byte $19, $CC, $1A, $33, $21, $0C, $22, $03
-	.byte $FF
-rom_B66C:
-	.byte $1A, $CC, $1B, $33, $22, $0C, $23, $03
-	.byte $FF
-rom_B675:
-	.byte $1B, $CC, $1C, $33, $23, $0C, $24, $03
-	.byte $FF
-rom_B67E:
-	.byte $1C, $CC, $1D, $33, $24, $0C, $25, $03
-	.byte $FF
-rom_B687:
-	.byte $1D, $CC, $1E, $33, $25, $0C, $26, $03
-	.byte $FF
-rom_B690:
-	.byte $1E, $CC, $1F, $33, $26, $0C, $27, $03
-	.byte $FF
-rom_B699:
-	.byte $20, $C0, $21, $30, $28, $CC, $29, $33
-	.byte $FF
-rom_B6A2:
-	.byte $21, $C0, $22, $30, $29, $CC, $2A, $33
-	.byte $FF
-rom_B6AB:
-	.byte $22, $C0, $23, $30, $2A, $CC, $2B, $33
-	.byte $FF
-rom_B6B4:
-	.byte $23, $C0, $24, $30, $2B, $CC, $2C, $33
-	.byte $FF
-rom_B6BD:
-	.byte $24, $C0, $25, $30, $2C, $CC, $2D, $33
-	.byte $FF
-rom_B6C6:
-	.byte $25, $C0, $26, $30, $2D, $CC, $2E, $33
-	.byte $FF
-rom_B6CF:
-	.byte $26, $C0, $27, $30, $2E, $CC, $2F, $33
-	.byte $FF
+;rom_B63F:
+;	.byte $0A, $C0, $0B, $30, $12, $CC, $13, $33
+;	.byte $FF
+;rom_B648:
+;	.byte $0C, $C0, $0D, $30, $14, $CC, $15, $33
+;	.byte $FF
+;rom_B651:
+;	.byte $0D, $C0, $0E, $30, $15, $CC, $16, $33
+;	.byte $FF
+;rom_B65A:
+;	.byte $18, $CC, $19, $33, $20, $0C, $21, $03
+;	.byte $FF
+;rom_B663:
+;	.byte $19, $CC, $1A, $33, $21, $0C, $22, $03
+;	.byte $FF
+;rom_B66C:
+;	.byte $1A, $CC, $1B, $33, $22, $0C, $23, $03
+;	.byte $FF
+;rom_B675:
+;	.byte $1B, $CC, $1C, $33, $23, $0C, $24, $03
+;	.byte $FF
+;rom_B67E:
+;	.byte $1C, $CC, $1D, $33, $24, $0C, $25, $03
+;	.byte $FF
+;rom_B687:
+;	.byte $1D, $CC, $1E, $33, $25, $0C, $26, $03
+;	.byte $FF
+;rom_B690:
+;	.byte $1E, $CC, $1F, $33, $26, $0C, $27, $03
+;	.byte $FF
+;rom_B699:
+;	.byte $20, $C0, $21, $30, $28, $CC, $29, $33
+;	.byte $FF
+;rom_B6A2:
+;	.byte $21, $C0, $22, $30, $29, $CC, $2A, $33
+;	.byte $FF
+;rom_B6AB:
+;	.byte $22, $C0, $23, $30, $2A, $CC, $2B, $33
+;	.byte $FF
+;rom_B6B4:
+;	.byte $23, $C0, $24, $30, $2B, $CC, $2C, $33
+;	.byte $FF
+;rom_B6BD:
+;	.byte $24, $C0, $25, $30, $2C, $CC, $2D, $33
+;	.byte $FF
+;rom_B6C6:
+;	.byte $25, $C0, $26, $30, $2D, $CC, $2E, $33
+;	.byte $FF
+;rom_B6CF:
+;	.byte $26, $C0, $27, $30, $2E, $CC, $2F, $33
+;	.byte $FF
 
 ; -----------------------------------------------------------------------------
 
