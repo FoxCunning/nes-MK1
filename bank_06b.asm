@@ -245,8 +245,8 @@ tbl_irq_handler_ptrs:
 	.word sub_irq_handler_0E		; $0E
 	.word sub_irq_handler_0F		; $0F
 	.word sub_irq_handler_10		; $10	Sound test
-	.word sub_irq_handler_11		; $11
-	.word sub_irq_handler_11		; $12
+	.word sub_irq_handler_11		; $11	Fighter select
+	.word sub_irq_handler_12		; $12
 	.word sub_irq_handler_11		; $13
 
 ; -----------------------------------------------------------------------------
@@ -757,6 +757,26 @@ sub_irq_handler_11:
 	sta mmc3_irq_disable
 	lda #$00
 	sta ram_irq_state_var
+	rts
+
+; -----------------------------------------------------------------------------
+
+; Fighter selection screen: sprite multiplexing with mid-frame CHR bank switch
+sub_irq_handler_12:
+	sta mmc3_irq_disable
+
+	; TODO Bank switching for player 1
+	ldx #$80
+	ldy #$00
+	stx mmc3_bank_select
+	sty mmc3_bank_data
+
+	; TODO Bank switching for player 2
+	inx
+	ldy #$38
+	stx mmc3_bank_select
+	sty mmc3_bank_data
+
 	rts
 
 ; -----------------------------------------------------------------------------

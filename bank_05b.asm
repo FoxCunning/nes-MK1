@@ -20,7 +20,7 @@ sub_state_machine_0:
 ; ----------------
 	.word sub_main_menu_states			; 0,0
 	.word sub_option_menu_states		; 0,1
-	.word sub_fighter_selection_states	; 0,2
+	.word sub_fighter_sel_states	; 0,2
 	.word sub_vs_state_machine				; 0,3
 	.word sub_continue_screen_state_machine	; 0,4
 	.word sub_high_scores_states		; 0,5
@@ -628,7 +628,7 @@ sub_sound_test_cursor:
 
 ; -----------------------------------------------------------------------------
 
-sub_fighter_selection_states:
+sub_fighter_sel_states:
 	lda zp_machine_state_2
 	jsr sub_trampoline
 ; ----------------
@@ -642,10 +642,10 @@ sub_fighter_selection_states:
 
 sub_fighter_sel_init:
 	ldy #$02
-
 	sty zp_tmp_idx
+
 	jsr sub_setup_new_screen
-	jsr sub_rom_B4B2
+	jsr sub_ftr_sel_init_attributes
 
 	lda #$00
 	sta zp_scroll_x
@@ -661,10 +661,10 @@ sub_fighter_sel_init:
 	lda #$1E
 	sta zp_ppu_mask_backup
 
-	lda #$0C
+	lda #$12 ;#$0C
 	sta ram_irq_routine_idx
 
-	lda #$80
+	lda #$A0 ;#$80
 	sta ram_irq_latch_value
 
 	inc zp_machine_state_2
@@ -704,7 +704,7 @@ sub_fighter_sel_fade_in:
 ; ----------------
 	:
 	inc zp_machine_state_2
-	jmp sub_rom_B363
+	jmp sub_ftr_sel_cursors
 
 ; -----------------------------------------------------------------------------
 
@@ -715,9 +715,11 @@ sub_fighter_sel_loop:
 	beq @B2DF_rts
 
 		sta zp_last_execution_frame
-		jsr sub_fighter_selection_input
-		jsr sub_rom_B363
-		jsr sub_rom_B556
+
+		jsr sub_fighter_sel_input
+		jsr sub_ftr_sel_cursors
+		jsr sub_ftr_sel_attributes
+
 		lda zp_5C
 		cmp zp_5D
 		bne @B2DF_rts
@@ -725,6 +727,7 @@ sub_fighter_sel_loop:
 			cmp #$09
 			bne @B2DF_rts
 
+				; Both players have selected a fighter: go to fade out state
 				inc zp_machine_state_2
 				lda #$05
 				sta zp_palette_fade_idx
@@ -746,7 +749,7 @@ sub_fighter_sel_fade_out:
 
 ; -----------------------------------------------------------------------------
 
-sub_fighter_selection_input:
+sub_fighter_sel_input:
 	; First run: controller 1
 	ldx #$00
 	stx zp_07
@@ -780,6 +783,7 @@ sub_fighter_selection_input:
 		sta zp_06
 		lda zp_plr1_selection,X
 		sta zp_05
+
 		lda zp_tmp_idx
 		asl A
 		tax
@@ -787,10 +791,12 @@ sub_fighter_selection_input:
 		sta zp_ptr1_lo
 		lda tbl_menu_indices_ptrs+1,X
 		sta zp_ptr1_hi
-		lda zp_06
-		sta zp_06
-		lda zp_05
-		sta zp_05
+
+		; Why?
+		;lda zp_06
+		;sta zp_06
+		;lda zp_05
+		;sta zp_05
 
 		jsr sub_ctrl_to_idx
 		sta zp_05
@@ -808,16 +814,17 @@ sub_fighter_selection_input:
 			inc zp_5C,X
 	@B352:
 	lda zp_5C,X
-	beq @B362_rts
+	beq @B362_rts	; Check if cursor is flashing after selection
 
 	cmp #$09
-	bcs @B362_rts
+	bcs @B362_rts	; Check if it has already finished flashing
 
 	lda zp_frame_counter
 	and #$0F
 	bne @B362_rts
 
 		inc zp_5C,X
+
 	@B362_rts:
 	rts
 
@@ -842,49 +849,41 @@ sub_announce_fighter_name:
 
 ; -----------------------------------------------------------------------------
 
-; Checks if the player (or both players) has selected a fighter
-sub_rom_B363:
+; Flashes the selection cursors if needed, otherwise jumps to the cursor
+; update routine
+sub_ftr_sel_cursors:
 	ldx #$00
 	stx zp_07
-	jsr sub_rom_B36E	; First run for player 1
+	jsr sub_inner_ftr_sel_cursors	; First run for player 1
 
 	ldx #$01			; Second run for player 2
 	stx zp_07
 ; ----------------
-sub_rom_B36E:
+sub_inner_ftr_sel_cursors:
 	lda zp_5C,X	; This will be set when that player has made a selection
 	cmp #$06
-	bcs @B377
+	bcs :+
 
 		jmp sub_ftr_sel_update_cursors
 
 	; Flash the cursor if fighter selected
-	@B377:
-	lda #$08	; Number of sprites in the meta-sprite
-	sta zp_0A
+	:
 	lda tbl_sel_cur_oam_ofs,X
 	tay
 	lda #$F8
-	:
-		sta ram_oam_copy_ypos,Y
-		iny
-		iny
-		iny
-		iny
-		dec zp_0A
-	bne :-
+	sta ram_oam_copy_ypos,Y
 
 	rts
 
 ; -----------------------------------------------------------------------------
 
 tbl_sel_cur_oam_ofs:
-	.byte $00	; Player 1
-	.byte $20	; Player 2
+	.byte $7C	; Player 1: sprite $1F
+	.byte $FC	; Player 2: sprite $3F
 
 tbl_sel_cur_data_ofs:                
 	.byte $00	; Player 1             
-	.byte $10	; Player 2
+	.byte $02	; Player 2
 
 ; Sprite attribute byte for fighter selection cursor
 tbl_sel_cur_attr:
@@ -894,39 +893,46 @@ tbl_sel_cur_attr:
 ; -----------------------------------------------------------------------------
 
 sub_ftr_sel_update_cursors:
-	lda zp_tmp_idx
-	asl A
-	tay
-	lda rom_B414+0,Y
+	lda #<tbl_ftr_sel_xy_0
 	sta zp_ptr1_lo
-	lda rom_B414+1,Y
+
+	lda #>tbl_ftr_sel_xy_0
 	sta zp_ptr1_hi
 	
 	lda zp_plr1_selection,X
 	bpl :+	; Skip CPU opponent
+
 		rts
 ; ----------------
 	:
 	asl A
 	tay
 	lda (zp_ptr1_lo),Y
-	sta zp_ptr2_lo
+	cpx #$01
+	bne :+
+		adc #$18	; Offset for player 2
+	:
+	sta zp_ptr2_lo	; Sprite X
+
 	iny
 	lda (zp_ptr1_lo),Y
-	sta zp_ptr2_hi
+	sta zp_ptr2_hi	; Sprite Y
+
 	ldy #$08
 	lda zp_5C,X
 	beq :+
 		ldy #$02
 	:
 	sty zp_05
+
 	ldy #$00
 	lda zp_frame_counter
 	and zp_05
 	beq :+
-		ldy #$08
+		ldy #$01
 	:
 	sty zp_05
+
 	lda tbl_sel_cur_data_ofs,X
 	clc
 	adc zp_05
@@ -938,53 +944,24 @@ sub_ftr_sel_update_cursors:
 	lda tbl_sel_cur_oam_ofs,X
 	tax
 
-	lda #$02
-	sta zp_var_y
-	@B3DB_loop_y:
-	lda #$04
-	sta zp_var_x
-
 	lda zp_ptr2_lo
-	sta zp_09
-
-	@B3E3_loop_x:
 	sta ram_oam_copy_xpos,X
+
 	lda tbl_ftr_sel_tiles,Y
-	beq :+
-		sta ram_oam_copy_tileid,X
-		lda zp_0F
-		sta ram_oam_copy_attr,X
-		lda zp_ptr2_hi
-		sta ram_oam_copy_ypos,X
-		; X = X + 4
-		txa
-		axs #$FC
-	:
-	iny
-	lda zp_09
-	clc
-	adc #$08
-	sta zp_09
-	dec zp_var_x
-	bne @B3E3_loop_x
+	sta ram_oam_copy_tileid,X
+
+	lda zp_0F
+	sta ram_oam_copy_attr,X
 
 	lda zp_ptr2_hi
-	clc
-	adc #$08
-	sta zp_ptr2_hi
-	dec zp_var_y
-	bne @B3DB_loop_y
+	sta ram_oam_copy_ypos,X
+
 
 	rts
 
 ; ----------------
 
-rom_B414:
-	.word tbl_ftr_sel_xy_0, tbl_ftr_sel_xy_1
-	.word tbl_ftr_sel_xy_0, tbl_ftr_sel_xy_1
-
-; ----------------
-
+; Cursor coordinates for each selectable character
 tbl_ftr_sel_xy_0:
 	.byte $40, $17	; $00
 	.byte $70, $17	; $01
@@ -1000,34 +977,20 @@ tbl_ftr_sel_xy_0:
 
 ; ----------------
 
-; Unused?
-tbl_ftr_sel_xy_1:
-	.byte $30, $30, $50, $30, $90, $30, $B0, $30
-	.byte $10, $60, $30, $60, $50, $60, $70, $60
-	.byte $90, $60, $B0, $60, $D0, $60, $10, $90
-	.byte $30, $90, $50, $90, $70, $90, $90, $90
-	.byte $B0, $90, $D0, $90
-
-; ----------------
-
 tbl_ftr_sel_tiles:
 	; Player 1 cursor
-	.byte $E0, $E1, $E1, $E2
-	.byte $E3, $F2, $F0, $E4
-
-	.byte $E8, $E9, $E9, $EA
-	.byte $EB, $F0, $F0, $EF
+	.byte $F2, $F0
 
 	; Player 2 cursor
-	.byte $E8, $E9, $E9, $EA
-	.byte $EB, $F0, $F0, $EF
-
-	.byte $E0, $E1, $E1, $E2
-	.byte $E3, $F0, $F6, $E4
+	.byte $F0, $F6
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B4B2:
+; Loads the starting attribute table for the fighter selection screen in RAM
+; This allows modifying it on the fly before uploading to the PPU
+; (we need to read from it to OR current values with a different mask for
+; each selectable fighter)
+sub_ftr_sel_init_attributes:
 	lda zp_tmp_idx
 	asl A
 	tax
@@ -1080,7 +1043,7 @@ rom_B516:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B556:
+sub_ftr_sel_attributes:
 	lda zp_tmp_idx
 	asl A
 	tay
@@ -1089,19 +1052,20 @@ sub_rom_B556:
 	lda rom_B5BF+1,Y
 	sta zp_ptr2_hi
 
-	ldx #$00
+	ldx #$00	; First run, player one
 	lda zp_5C,X
 	cmp #$05
 	bne :+
-		jsr sub_rom_B578
+		jsr sub_inner_ftr_sel_attr
 	:
-	ldx #$01
+	ldx #$01	; Second run, player two
 	lda zp_5C,X
 	cmp #$05
-	beq sub_rom_B578
+	beq sub_inner_ftr_sel_attr
+
 		rts
 ; ----------------
-sub_rom_B578:
+sub_inner_ftr_sel_attr:
 	inc zp_5C,X
 	lda zp_plr1_selection,X
 	asl A
