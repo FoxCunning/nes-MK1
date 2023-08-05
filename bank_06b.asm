@@ -829,13 +829,13 @@ sub_rom_E7F5:
 		clc
 		adc zp_endurance_flag
 		tax
-		inc zp_61
-		lda zp_61
+		inc zp_match_number
+		lda zp_match_number
 		cmp @rom_E849,X
 		bcc :+
 
 			lda #$00
-			sta zp_61
+			sta zp_match_number
 			inc zp_endurance_flag
 			lda zp_endurance_flag
 			cmp #$04

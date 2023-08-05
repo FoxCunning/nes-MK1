@@ -117,13 +117,13 @@ zp_5E = $5E     ;
 zp_endurance_flag = $5F ; Set to one for endurance matches (1 vs 2)
 
 zp_60 = $60     ;
-zp_61 = $61     ;
+zp_match_number = $61     ;
 zp_62 = $62     ;
 ; Index of menu option selected by controller 1
 zp_plr1_selection = $63 ;
 ; Index of menu option selected by controller 2
 zp_plr2_selection = $64 ;
-zp_65 = $65     ;
+zp_endurance_opp_idx = $65     ;
 zp_66 = $66     ;
 
 zp_frozen_timer = $70   ; Size=2 Player can't move until timer reaches zero
@@ -363,9 +363,9 @@ ram_0680 = $0680    ;
 ram_0681 = $0681    ;
 ram_0682 = $0682    ;
 
-ram_06C0 = $06C0    ;
+ram_opponent_idx = $06C0    ;
 ram_06C3 = $06C3    ;
-ram_06C6 = $06C6    ;
+ram_mirror_opp_idx = $06C6    ;
 ram_06CD = $06CD    ;
 
 ; ----------------

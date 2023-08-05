@@ -68,7 +68,7 @@ sub_init_menu_screen:
 	
 	lda #$00
 	sta zp_endurance_flag
-	sta zp_61
+	sta zp_match_number
 	;lda #$00
 	sta zp_plr1_selection
 	lda #$02
@@ -1648,7 +1648,7 @@ sub_vs_state_machine:
 ; ----------------
 ; Jump pointers
 	.word sub_vs_state_init	; 0,2,0
-	.word sub_rom_B926	; 0,2,1
+	.word sub_prepare_vs_screen	; 0,2,1
 	.word sub_vs_fade_in	; 0,2,2
 	.word sub_rom_B993	; 0,2,3
 	.word sub_vs_fade_out	; 0,2,4
@@ -1656,58 +1656,61 @@ sub_vs_state_machine:
 ; -----------------------------------------------------------------------------
 
 sub_vs_state_init:
-	jsr sub_rom_BE15
+	; Get next fighter selection for the CPU
+	jsr sub_choose_opponent
 	; If both fighters have already been selected, move to VS screen,
 	; otherwise this will show the fighter selection screen
 	ldx #$00
 	lda zp_plr1_selection,X			; Player 1
-	bmi @B8E2
+	bmi @B8E2	; Branch if player 1 is CPU-controller
 
 		inx
 		lda zp_plr1_selection,X		; Player 2
 
-	bmi @B8E2
+	bmi @B8E2	; Branch if player 2 is CPU-controlled
 
+		; This is only for 2 players mode
 		inc zp_machine_state_2
 		lda #$00
-		sta zp_61
+		sta zp_match_number
 		sta zp_endurance_flag
 
 	rts
 ; ----------------
+	; Parameters:
+	; X = index of CPU opponent (0/1)
 	@B8E2:
 	lda zp_endurance_flag
-	bne @B8F2
+	bne :+
+		lda #$00
+		sta zp_endurance_opp_idx
 
-	lda #$00
-	sta zp_65
-	ldy zp_61
-	lda ram_06C0,Y
-	jmp @B917
-
-	@B8F2:
+		ldy zp_match_number
+		lda ram_opponent_idx,Y
+		jmp @B917_set_opponent
+	:
 	cmp #$01
-	bne @B905
+	bne :+
+		ldy zp_match_number
+		lda ram_06C3,Y
+		ora #$80
+		sta zp_endurance_opp_idx
 
-	ldy zp_61
-	lda ram_06C3,Y
-	ora #$80
-	sta zp_65
-	lda ram_06C0,Y
-	jmp @B917
-
-	@B905:
+		lda ram_opponent_idx,Y
+		jmp @B917_set_opponent
+	:
 	tay
 	lda #$00
-	sta zp_65
-	lda zp_66
-	bne @B914
-	lda rom_B91E,Y
-	jmp @B917
+	sta zp_endurance_opp_idx
 
-	@B914:
-	lda rom_B922,Y
-	@B917:
+	lda zp_66	; Unused, always zero
+	bne :+
+		lda tbl_boss_sel_idx,Y
+		jmp @B917_set_opponent
+	:
+	lda rom_B922,Y	; Unused, this never happens
+
+	@B917_set_opponent:
 	ora #$80
 	sta zp_plr1_selection,X
 	inc zp_machine_state_2
@@ -1715,59 +1718,72 @@ sub_vs_state_init:
 
 ; -----------------------------------------------------------------------------
 
-rom_B91E:
-	.byte $01, $00, $01, $00
+tbl_boss_sel_idx:
+	.byte $08, $07, $08, $07
+
+; Unused
 rom_B922:
 	.byte $03, $00, $03, $00
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B926:
+sub_prepare_vs_screen:
 	lda zp_endurance_flag
 	cmp #$01
-	beq @B941
+	beq @B941_endurance_nam
 
 		lda #$02	; Index used for VS screen (it's the same as player select)
 		sta zp_tmp_idx
+
 		jsr sub_setup_new_screen
-		jsr sub_rom_BA74
-		jsr sub_rom_B9DB
+		jsr sub_vs_scr_portraits
+		jsr sub_vs_scr_attributes
+
 		lda #$8A
 		sta ram_0680
-		jmp @B956
+		jmp @B956_prepare_scr
 
-	@B941:
+	@B941_endurance_nam:
 	lda #$07	; Index for endurance match VS screen
 	sta zp_tmp_idx
 	jsr sub_setup_new_screen
 	jsr sub_rom_BC2B
+
 	ldy #$88
 	lda zp_plr1_selection
-	bpl @B953
-
-	ldy #$8A
-	@B953:
+	bpl :+
+		ldy #$8A
+	:
 	sty ram_0680
-	@B956:
+	
+	@B956_prepare_scr:
 	jsr sub_hide_all_sprites
+
 	lda #$00
 	sta zp_57
 	sta zp_palette_fade_idx
 	sta zp_scroll_x
 	sta zp_scroll_y
+
 	lda #$88
 	sta PpuControl_2000
 	sta zp_ppu_control_backup
+
 	cli
 	jsr sub_wait_vblank
+
 	lda #$1E
 	sta zp_ppu_mask_backup
-	lda ram_0680
+
+	lda ram_0680	; Select nametable
 	sta zp_ppu_control_backup
+
 	lda #$0C
 	sta ram_irq_routine_idx
 	sta ram_irq_latch_value
+
 	inc zp_machine_state_2
+
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1840,39 +1856,45 @@ sub_vs_fade_out:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B9DB:
+sub_vs_scr_attributes:
 	lda ram_0680
 	asl A
 	asl A
 	tax
+
 	ldy #$2B
 	sty PpuAddr_2006
 	lda #$D1
 	sta PpuAddr_2006
 	lda rom_BA68+0,X
 	sta PpuData_2007
+
 	;lda #$2B
 	sty PpuAddr_2006
 	lda #$D2
 	sta PpuAddr_2006
 	lda rom_BA68+1,X
 	sta PpuData_2007
+
 	;lda #$2B
 	sty PpuAddr_2006
 	lda #$D9
 	sta PpuAddr_2006
 	lda rom_BA6A+0,X
 	sta PpuData_2007
+
 	;lda #$2B
 	sty PpuAddr_2006
 	lda #$DA
 	sta PpuAddr_2006
 	lda rom_BA6A+1,X
 	sta PpuData_2007
+
 	lda ram_0681
 	asl A
 	asl A
 	tax
+
 	;lda #$2B
 	sty PpuAddr_2006
 	lda #$D5
@@ -1902,19 +1924,23 @@ sub_rom_B9DB:
 rom_BA68:
 	.byte $3F, $CF
 rom_BA6A:
-	.byte $33, $CC, $7F, $DF, $77, $DD, $BF, $EF
-	.byte $BB, $EE
+	.byte $33, $CC
+
+	.byte $7F, $DF, $77, $DD
+
+	.byte $BF, $EF, $BB, $EE
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_BA74:
-	lda zp_66
+sub_vs_scr_portraits:
+	lda zp_66	; Unused, always zero
 	asl A
 	tay
 	lda rom_BB07+0,Y
 	sta zp_ptr2_lo
 	lda rom_BB07+1,Y
 	sta zp_ptr2_hi
+
 	ldx #$00
 	lda zp_plr1_selection
 	and #$7F
@@ -1925,12 +1951,16 @@ sub_rom_BA74:
 	iny
 	lda (zp_ptr2_lo),Y
 	sta ram_0680,X
-	jsr sub_rom_BC9A
+
+	jsr sub_vs_scr_load_portrait
+
 	lda #$29
 	sta zp_nmi_ppu_ptr_hi
 	lda #$46
 	sta zp_nmi_ppu_ptr_lo
+
 	jsr sub_rom_BABF
+
 	ldx #$01
 	lda zp_plr2_selection
 	and #$7F
@@ -1941,7 +1971,9 @@ sub_rom_BA74:
 	iny
 	lda (zp_ptr2_lo),Y
 	sta ram_0680,X
-	jsr sub_rom_BC9A
+
+	jsr sub_vs_scr_load_portrait
+
 	lda #$29
 	sta zp_nmi_ppu_ptr_hi
 	lda #$56
@@ -1994,17 +2026,25 @@ sub_rom_BABF:
 ; -----------------------------------------------------------------------------
 
 rom_BB07:
-	.word rom_BB0B, rom_BB1D
+	.word rom_BB0B
+	.word rom_BB1D	; Unused pointer
 
 ; -----------------------------------------------------------------------------
 
 rom_BB0B:
-	.byte $00, $01, $01, $00, $02, $00, $03, $01
-	.byte $04, $01, $05, $02, $06, $01, $07, $00
+	.byte $00, $01
+	.byte $01, $00
+	.byte $02, $00
+	.byte $03, $01
+	.byte $04, $01
+	.byte $05, $02
+	.byte $06, $01
+	.byte $07, $00
 	.byte $08, $02
 
 ; -----------------------------------------------------------------------------
 
+; Unused data
 rom_BB1D:
 	.byte $00, $01, $06, $00, $03, $02, $01, $00
 	.byte $06, $01, $02, $00, $03, $01, $04, $01
@@ -2014,7 +2054,7 @@ rom_BB1D:
 
 ; -----------------------------------------------------------------------------
 
-rom_BB41:
+tbl_fighter_nam_ptrs:
 	.word rom_BB53
 	.word rom_BB6B
 	.word rom_BB83
@@ -2026,6 +2066,8 @@ rom_BB41:
 	.word rom_BC13
 
 ; -----------------------------------------------------------------------------
+
+; Fighter portrait nametables
 
 rom_BB53:
 	.byte $C0, $C1, $C2, $C3, $D0, $D1, $D2, $D3
@@ -2100,7 +2142,7 @@ sub_rom_BC57:
 	ldx zp_1C
 	lda (zp_ptr2_lo),Y
 	sta ram_0680,X
-	jsr sub_rom_BC9A
+	jsr sub_vs_scr_load_portrait
 	lda zp_1C
 	asl A
 	asl A
@@ -2128,18 +2170,20 @@ sub_rom_BC57:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_BC9A:
+sub_vs_scr_load_portrait:
 	lda zp_05
 	asl A
 	tay
-	lda rom_BB41+0,Y
+	lda tbl_fighter_nam_ptrs+0,Y
 	sta zp_ptr1_lo
-	lda rom_BB41+1,Y
+	lda tbl_fighter_nam_ptrs+1,Y
 	sta zp_ptr1_hi
+
 	lda #$04
 	sta zp_nmi_ppu_cols
 	lda #$06
 	sta zp_nmi_ppu_rows
+
 	ldy #$00
 	sty zp_47
 	:
@@ -2154,10 +2198,13 @@ sub_rom_BC9A:
 ; -----------------------------------------------------------------------------
 
 rom_BCBF:
-	.byte $21, $44
+	.word $2144
 rom_BCC1:
-	.byte $29, $44, $21, $52, $29, $58, $21, $58
-	.byte $29, $4A
+	.word $2944
+	.word $2152
+	.word $2958
+	.word $2158
+	.word $294A
 
 ; -----------------------------------------------------------------------------
 
@@ -2296,39 +2343,44 @@ rom_BE01:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_BE15:
-	lda zp_66
-	bne @BE44
+sub_choose_opponent:
+	lda zp_66	; Unused, always zero
+	bne @BE44_unused
+
 	lda zp_plr1_selection
-	bpl @BE1F
-	lda zp_plr2_selection
-	@BE1F:
-	sta zp_05
-	sta ram_06C6
-	and #$7F
+	bpl :+
+		; Use player 2 if player 1 is CPU opponent
+		lda zp_plr2_selection
+	:
+	sta zp_05	; Store player selection index in temp variable
+	sta ram_mirror_opp_idx	; Save it as mirror match opponent
+
+	and #$7F	; Remove AI flag if present
 	tay
-	lda rom_BE6F,Y
-	sta zp_07
+
+	lda tbl_num_opponents,Y
+	sta zp_07	; Number of matches to fight excluding endurance, mirror and bosses
+
 	ldx #$00
 	ldy #$00
-	@BE30:
-	lda rom_BE8A,X
+	@BE30_loop:
+	lda tbl_opponent_indices,X
 	cmp zp_05
-	bne @BE3A
-
-	inx
-	bne @BE30
-
-	@BE3A:
-	sta ram_06C0,Y
+	bne :+
+		; Skip opponent if same as player (mirror match is handled separately)
+		inx
+		bne @BE30_loop	; Always branches
+	:
+	sta ram_opponent_idx,Y	; Will fill in the table from 0 to 5 (or 6)
 	iny
 	inx
 	dec zp_07
-	bne @BE30
+	bne @BE30_loop
 
 	rts
 ; ----------------
-	@BE44:
+	; Unused code
+	@BE44_unused:
 	lda zp_plr1_selection
 	bpl @BE4A
 
@@ -2351,7 +2403,7 @@ sub_rom_BE15:
 	bne @BE5B
 
 	@BE65:
-	sta ram_06C0,Y
+	sta ram_opponent_idx,Y
 	iny
 	inx
 	dec zp_07
@@ -2359,17 +2411,21 @@ sub_rom_BE15:
 
 	rts
 
-; -----------------------------------------------------------------------------
+; ----------------
 
-rom_BE6F:
-	.byte $07, $07, $06, $06, $06, $06, $06, $06
-	.byte $06
+; Goro and Shang-Tsung play one more match, apparently
+tbl_num_opponents:
+	.byte $06, $06, $06, $06, $06, $06, $06
+	.byte $07, $07
+; Unused
 rom_BE78:
 	.byte $0E, $0D, $0D, $0E, $0D, $0D, $0D, $0D
 	.byte $0D, $0D, $0D, $0D, $0D, $0D, $0E, $0D
 	.byte $0E, $0D
-rom_BE8A:
-	.byte $02, $03, $04, $05, $06, $07, $08
+; This the list of opponent selections, excluding Goro and Shang-Tsung
+tbl_opponent_indices:
+	.byte $00, $01, $02, $03, $04, $05, $06
+; Unused
 rom_BE91:
 	.byte $01, $02, $05, $07, $08, $09, $0A, $04
 	.byte $06, $0B, $0C, $0D, $0F, $11
@@ -2385,7 +2441,7 @@ sub_rom_BE9F:
 	and #$80
 	sta zp_plr2_fighter_idx
 
-	lda zp_65
+	lda zp_endurance_opp_idx
 	and #$80
 	sta zp_60
 	
@@ -2405,7 +2461,7 @@ sub_rom_BE9F:
 		lda rom_BF03,Y
 		ora zp_plr2_fighter_idx
 		sta zp_plr2_fighter_idx
-		lda zp_65
+		lda zp_endurance_opp_idx
 		beq :+
 			and #$7F
 			tay
@@ -2429,7 +2485,7 @@ sub_rom_BE9F:
 	lda rom_BF0C,Y
 	ora zp_plr2_fighter_idx
 	sta zp_plr2_fighter_idx
-	lda zp_65
+	lda zp_endurance_opp_idx
 	beq :+
 		and #$7F
 		tay
