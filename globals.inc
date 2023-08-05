@@ -124,7 +124,6 @@ zp_plr1_selection = $63 ;
 ; Index of menu option selected by controller 2
 zp_plr2_selection = $64 ;
 zp_endurance_opp_idx = $65     ;
-zp_66 = $66     ;
 
 zp_frozen_timer = $70   ; Size=2 Player can't move until timer reaches zero
 zp_thaw_flag = $72  ; Size=2 Player will be "thawed" when this flag is set

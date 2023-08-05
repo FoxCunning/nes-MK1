@@ -54,7 +54,6 @@ sub_init_menu_screen:
 	lda #$00
 	;sta zp_tmp_idx
 	;lda #$00
-	sta zp_66
 	jsr sub_init_screen_common
 
 	; Switch to vertical mirroring
@@ -643,10 +642,7 @@ sub_fighter_selection_states:
 
 sub_fighter_sel_init:
 	ldy #$02
-	lda zp_66
-	beq :+
-		iny
-	:
+
 	sty zp_tmp_idx
 	jsr sub_setup_new_screen
 	jsr sub_rom_B4B2
@@ -677,9 +673,7 @@ sub_fighter_sel_init:
 	sta zp_5C
 	sta zp_5D
 
-	lda zp_66
-	asl A
-	tay
+	ldy #$00
 
 	lda zp_plr1_selection
 	and #$80
@@ -695,7 +689,9 @@ sub_fighter_sel_init:
 ; -----------------------------------------------------------------------------
 
 	@rom_B2A9:
-	.byte $03, $04, $06, $08
+	.byte $03, $04
+	; Unused
+	;.byte $06, $08
 
 ; -----------------------------------------------------------------------------
 
@@ -1703,12 +1699,7 @@ sub_vs_state_init:
 	lda #$00
 	sta zp_endurance_opp_idx
 
-	lda zp_66	; Unused, always zero
-	bne :+
-		lda tbl_boss_sel_idx,Y
-		jmp @B917_set_opponent
-	:
-	lda rom_B922,Y	; Unused, this never happens
+	lda tbl_boss_sel_idx,Y
 
 	@B917_set_opponent:
 	ora #$80
@@ -1720,10 +1711,6 @@ sub_vs_state_init:
 
 tbl_boss_sel_idx:
 	.byte $08, $07, $08, $07
-
-; Unused
-rom_B922:
-	.byte $03, $00, $03, $00
 
 ; -----------------------------------------------------------------------------
 
@@ -1933,12 +1920,9 @@ rom_BA6A:
 ; -----------------------------------------------------------------------------
 
 sub_vs_scr_portraits:
-	lda zp_66	; Unused, always zero
-	asl A
-	tay
-	lda rom_BB07+0,Y
+	lda #<rom_BB0B
 	sta zp_ptr2_lo
-	lda rom_BB07+1,Y
+	lda #>rom_BB0B
 	sta zp_ptr2_hi
 
 	ldx #$00
@@ -2018,19 +2002,6 @@ sub_rom_BABF:
 
 ; -----------------------------------------------------------------------------
 
-; Potentially unused
-;rom_BAFB:
-;	.byte $3F, $CF, $33, $CC, $7F, $DF, $77, $DD
-;	.byte $BF, $EF, $BB, $EE
-
-; -----------------------------------------------------------------------------
-
-rom_BB07:
-	.word rom_BB0B
-	.word rom_BB1D	; Unused pointer
-
-; -----------------------------------------------------------------------------
-
 rom_BB0B:
 	.byte $00, $01
 	.byte $01, $00
@@ -2041,16 +2012,6 @@ rom_BB0B:
 	.byte $06, $01
 	.byte $07, $00
 	.byte $08, $02
-
-; -----------------------------------------------------------------------------
-
-; Unused data
-rom_BB1D:
-	.byte $00, $01, $06, $00, $03, $02, $01, $00
-	.byte $06, $01, $02, $00, $03, $01, $04, $01
-	.byte $05, $00, $08, $02, $07, $00, $05, $02
-	.byte $07, $02, $08, $00, $00, $00, $02, $01
-	.byte $01, $01, $04, $02
 
 ; -----------------------------------------------------------------------------
 
@@ -2109,13 +2070,11 @@ rom_BC13:
 ; -----------------------------------------------------------------------------
 
 sub_rom_BC2B:
-	lda zp_66
-	asl A
-	tay
-	lda rom_BB07+0,Y
+	lda #<rom_BB0B
 	sta zp_ptr2_lo
-	lda rom_BB07+1,Y
+	lda #>rom_BB0B
 	sta zp_ptr2_hi
+
 	ldx #$00
 	stx zp_1C
 	lda zp_plr1_selection
@@ -2344,9 +2303,6 @@ rom_BE01:
 ; -----------------------------------------------------------------------------
 
 sub_choose_opponent:
-	lda zp_66	; Unused, always zero
-	bne @BE44_unused
-
 	lda zp_plr1_selection
 	bpl :+
 		; Use player 2 if player 1 is CPU opponent
@@ -2378,38 +2334,6 @@ sub_choose_opponent:
 	bne @BE30_loop
 
 	rts
-; ----------------
-	; Unused code
-	@BE44_unused:
-	lda zp_plr1_selection
-	bpl @BE4A
-
-	lda zp_plr2_selection
-	@BE4A:
-	sta zp_05
-	sta ram_06CD
-	and #$7F
-	tay
-	lda rom_BE78,Y
-	sta zp_07
-	ldx #$00
-	ldy #$00
-	@BE5B:
-	lda rom_BE91,X
-	cmp zp_05
-	bne @BE65
-
-	inx
-	bne @BE5B
-
-	@BE65:
-	sta ram_opponent_idx,Y
-	iny
-	inx
-	dec zp_07
-	bne @BE5B
-
-	rts
 
 ; ----------------
 
@@ -2417,18 +2341,10 @@ sub_choose_opponent:
 tbl_num_opponents:
 	.byte $06, $06, $06, $06, $06, $06, $06
 	.byte $07, $07
-; Unused
-rom_BE78:
-	.byte $0E, $0D, $0D, $0E, $0D, $0D, $0D, $0D
-	.byte $0D, $0D, $0D, $0D, $0D, $0D, $0E, $0D
-	.byte $0E, $0D
+
 ; This the list of opponent selections, excluding Goro and Shang-Tsung
 tbl_opponent_indices:
 	.byte $00, $01, $02, $03, $04, $05, $06
-; Unused
-rom_BE91:
-	.byte $01, $02, $05, $07, $08, $09, $0A, $04
-	.byte $06, $0B, $0C, $0D, $0F, $11
 
 ; -----------------------------------------------------------------------------
 
@@ -2444,52 +2360,25 @@ sub_rom_BE9F:
 	lda zp_endurance_opp_idx
 	and #$80
 	sta zp_60
-	
-	lda zp_66
-	bne @BEDC
 
-		lda zp_plr1_selection
-		and #$7F
-		tay
-		lda rom_BF03,Y
-		ora zp_plr1_fighter_idx
-		sta zp_plr1_fighter_idx
-
-		lda zp_plr2_selection
-		and #$7F
-		tay
-		lda rom_BF03,Y
-		ora zp_plr2_fighter_idx
-		sta zp_plr2_fighter_idx
-		lda zp_endurance_opp_idx
-		beq :+
-			and #$7F
-			tay
-			lda rom_BF03,Y
-			ora zp_60
-		:
-		sta zp_60
-		rts
-; ----------------
-	; Probably unused
-	@BEDC:
 	lda zp_plr1_selection
 	and #$7F
 	tay
-	lda rom_BF0C,Y
+	lda rom_BF03,Y
 	ora zp_plr1_fighter_idx
 	sta zp_plr1_fighter_idx
+
 	lda zp_plr2_selection
 	and #$7F
 	tay
-	lda rom_BF0C,Y
+	lda rom_BF03,Y
 	ora zp_plr2_fighter_idx
 	sta zp_plr2_fighter_idx
 	lda zp_endurance_opp_idx
 	beq :+
 		and #$7F
 		tay
-		lda rom_BF0C,Y
+		lda rom_BF03,Y
 		ora zp_60
 	:
 	sta zp_60
@@ -2500,12 +2389,6 @@ sub_rom_BE9F:
 rom_BF03:
 	.byte $02, $04, $03, $00, $05, $06, $01, $08
 	.byte $07
-
-; Probably unused
-rom_BF0C:
-	.byte $08, $00, $04, $07, $0C, $05, $10
-	.byte $02, $01, $03, $06, $0D, $12, $0F, $14
-	.byte $11, $13, $0E
 
 ; -----------------------------------------------------------------------------
 
