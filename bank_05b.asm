@@ -650,6 +650,15 @@ sub_fighter_sel_init:
 	lda #$00
 	sta zp_scroll_x
 	sta zp_scroll_y
+	sta ram_irq_state_var
+
+	sta zp_plr1_sel_prev
+	sta zp_plr2_sel_prev
+
+	; Will only (re)load sprite palettes when this is set
+	inc ram_irq_counter_0
+	; Same for player 2
+	inc ram_irq_counter_1
 
 	lda #$88
 	sta PpuControl_2000
@@ -706,7 +715,7 @@ sub_fighter_sel_fade_in:
 	:
 	inc zp_machine_state_2
 
-	jmp sub_ftr_sel_cursors
+	rts ;jmp sub_ftr_sel_cursors
 
 ; -----------------------------------------------------------------------------
 
@@ -722,18 +731,13 @@ sub_fighter_sel_loop:
 		jsr sub_ftr_sel_cursors
 		jsr sub_ftr_sel_attributes
 
-		; TODO Player 2 sprite
 		ldx #$00
 		stx zp_plr_idx_param
-		lda zp_plr1_selection,X
-		bit @bit_80	; Skip CPU opponent selection
-		bne :+
-			tay
-			lda tbl_sel_to_ftr_idx,Y
-			sta zp_plr1_fgtr_idx_clean,X
-			jsr sub_ftr_sel_palettes
-			jsr sub_ftr_sel_sprites
-		:
+		jsr sub_ftr_sel_sprites
+
+		ldx #$01
+		inc zp_plr_idx_param
+		jsr sub_ftr_sel_sprites
 
 		lda zp_5C
 		cmp zp_5D
@@ -748,9 +752,6 @@ sub_fighter_sel_loop:
 				sta zp_palette_fade_idx
 	@B2DF_rts:
 	rts
-
-	@bit_80:
-	.byte $80
 
 ; -----------------------------------------------------------------------------
 
@@ -824,6 +825,9 @@ sub_fighter_sel_input:
 			sta zp_plr1_selection,X
 			lda #$03	; Bleep sound
 			sta ram_req_sfx
+
+			lda #$01	; (Re)load palettes
+			sta ram_irq_counter_0,X
 		:
 		lda zp_controller1_new,X
 		and #$C0
@@ -870,136 +874,144 @@ sub_announce_fighter_name:
 ; Flashes the selection cursors if needed, otherwise jumps to the cursor
 ; update routine
 sub_ftr_sel_cursors:
-	ldx #$00
-	stx zp_07
-	jsr sub_inner_ftr_sel_cursors	; First run for player 1
+	;ldx #$00
+	;stx zp_07
+	;jsr sub_inner_ftr_sel_cursors	; First run for player 1
 
-	ldx #$01			; Second run for player 2
-	stx zp_07
+	;ldx #$01			; Second run for player 2
+	;stx zp_07
+	lda zp_frame_counter
+	and #$01
+	sta zp_07
+	tax
 ; ----------------
-sub_inner_ftr_sel_cursors:
+;sub_inner_ftr_sel_cursors:
 	lda zp_5C,X	; This will be set when that player has made a selection
 	cmp #$06
 	bcs :+
 
 		jmp sub_ftr_sel_update_cursors
 
-	; Flash the cursor if fighter selected
+	; Hide the cursor if fighter selected
 	:
-	lda tbl_sel_cur_oam_ofs,X
-	tay
-	lda #$F8
-	sta ram_oam_copy_ypos,Y
+	;lda tbl_sel_cur_oam_ofs,X
+	;tay
+	;lda #$F8
+	;sta ram_oam_copy_ypos,Y
 
 	rts
 
 ; -----------------------------------------------------------------------------
 
-tbl_sel_cur_oam_ofs:
-	.byte $7C	; Player 1: sprite $1F
-	.byte $FC	; Player 2: sprite $3F
-
-tbl_sel_cur_data_ofs:                
-	.byte $00	; Player 1             
-	.byte $02	; Player 2
-
-; Sprite attribute byte for fighter selection cursor
-tbl_sel_cur_attr:
-	.byte $02	; Player 1
-	.byte $03	; Player 2
-
-; -----------------------------------------------------------------------------
-
+; Parameters:
+; X = zp_07 = player index (0 or 1)
 sub_ftr_sel_update_cursors:
-	lda #<tbl_ftr_sel_xy_0
-	sta zp_ptr1_lo
-
-	lda #>tbl_ftr_sel_xy_0
-	sta zp_ptr1_hi
-	
 	lda zp_plr1_selection,X
-	bpl :+	; Skip CPU opponent
+	bmi @update_cursors_rts ; Skip CPU opponent
 
-		rts
-; ----------------
-	:
-	asl A
-	tay
-	lda (zp_ptr1_lo),Y
-	cpx #$01
-	bne :+
-		adc #$18	; Offset for player 2
-	:
-	sta zp_ptr2_lo	; Sprite X
+	cmp zp_plr1_sel_prev,X
+	beq @update_cursors_rts	; Return if selection hasn't changed
 
-	iny
-	lda (zp_ptr1_lo),Y
-	sta zp_ptr2_hi	; Sprite Y
+		lda #$00	; PPU offset for player 1
+		cpx #$00
+		beq :+
+			; PPU offset for player 2
+			lda #$05
+		:
+		sta zp_var_x
 
-	ldy #$08
-	lda zp_5C,X
-	beq :+
-		ldy #$02
-	:
-	sty zp_05
+		; Show cursor at new location
+		txa
+		asl
+		asl
+		asl
+		tax
 
-	ldy #$00
-	lda zp_frame_counter
-	and zp_05
-	beq :+
-		ldy #$01
-	:
-	sty zp_05
+		ldy #$00
+		@copy_crsr_tiles:
+			lda tbl_ftr_sel_tiles,X
+			sta ram_ppu_minibuf_1+5,Y
+			; Also clear previous location
+			lda #$3C
+			sta ram_ppu_minibuf_0+5,Y
+			inx
+		iny
+		cpy #$06
+		bcc @copy_crsr_tiles
 
-	lda tbl_sel_cur_data_ofs,X
-	clc
-	adc zp_05
-	tay
+		; Instruct the IRQ handler to draw the new BG tiles
+		ldx zp_07
+		lda zp_plr1_selection,X
+		asl
+		tay
+		
+		lda tbl_ftr_sel_addr+0,Y
+		clc
+		adc zp_var_x
+		sta ram_ppu_minibuf_1+4
 
-	lda tbl_sel_cur_attr,X
-	sta zp_0F
+		lda tbl_ftr_sel_addr+1,Y
+		sta ram_ppu_minibuf_1+3
 
-	lda tbl_sel_cur_oam_ofs,X
-	tax
+		lda #$01	; Columns
+		sta ram_ppu_minibuf_1+1
+		sta ram_ppu_minibuf_0+1
+		lda #$06	; Rows
+		sta ram_ppu_minibuf_1+2
+		sta ram_ppu_minibuf_0+2
 
-	lda zp_ptr2_lo
-	sta ram_oam_copy_xpos,X
+		; Bytes of tile data to copy (columns * rows)
+		sta ram_ppu_minibuf_1+0
+		sta ram_ppu_minibuf_0+0
 
-	lda tbl_ftr_sel_tiles,Y
-	sta ram_oam_copy_tileid,X
+		; Set address of previous location to clear
+		;ldx zp_07
+		lda zp_plr1_sel_prev,X
+		asl
+		tay
 
-	lda zp_0F
-	sta ram_oam_copy_attr,X
+		lda tbl_ftr_sel_addr+0,Y
+		clc
+		adc zp_var_x
+		sta ram_ppu_minibuf_0+4
 
-	lda zp_ptr2_hi
-	sta ram_oam_copy_ypos,X
+		lda tbl_ftr_sel_addr+1,Y
+		sta ram_ppu_minibuf_0+3
 
+		; Update selection
+		lda zp_plr1_selection,X
+		sta zp_plr1_sel_prev,X
+	
+	@update_cursors_rts:
 	rts
 
 ; ----------------
 
 ; Cursor coordinates for each selectable character
-tbl_ftr_sel_xy_0:
-	.byte $40, $17	; $00
-	.byte $70, $17	; $01
-	.byte $A0, $17	; $02
+tbl_ftr_sel_addr:
+	.word $2067		; $00
+	.word $206D		; $01
+	.word $2073		; $02
 
-	.byte $18, $4F	; $03
-	.byte $48, $4F	; $04
-	.byte $80, $4F	; $05
-	.byte $B8, $4F	; $06
+	.word $2142		; $03
+	.word $2148		; $04
+	.word $214F		; $05
+	.word $2156		; $06
 	
-	.byte $50, $8F	; $07
-	.byte $80, $8F	; $08
+	.word $2249		; $07
+	.word $224F		; $08
 
 ; ----------------
 
 tbl_ftr_sel_tiles:
-	; Player 1 cursor
-	.byte $F2, $F0
+	; Player 1 cursor tile IDs
+	.byte $CC, $FD, $CD, $DD, $FD, $DC
+
+	; Padding for 8-byte alignment
+	.byte $00, $00
 
 	; Player 2 cursor
-	.byte $F0, $F6
+	.byte $CE, $FD, $CF, $DF, $FD, $DE
 
 ; -----------------------------------------------------------------------------
 

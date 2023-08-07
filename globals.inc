@@ -163,8 +163,8 @@ zp_short_counter = $94     ;
 zp_chr_bank_0 = $96     ;
 zp_chr_bank_1 = $97     ;
 
-zp_plr1_chr_bank = $99  ; For fighter selection
-zp_plr2_chr_bank = $9A  ; For fighter selection
+zp_plr1_sel_prev = $99  ; For fighter selection
+zp_plr2_sel_prev = $9A  ; For fighter selection
 
 ;zp_9B = $9B     ;
 zp_players_x_distance = $9C ;
@@ -326,8 +326,13 @@ ram_ranged_atk_x_pos = $0436    ; Ranged attack hit box coordinate
 ram_0438 = $0438    ;
 ram_043D = $043D    ;
 ram_special_atk_idx = $043E    ;
-ram_irq_counter_0 = $043F ; Used in IRQ routines as a counter (e.g. for parallax scrolling)
-ram_irq_counter_1 = $0440    ;
+ram_irq_counter_0 = $043F   ; Used in IRQ routines as a counter (e.g. for parallax scrolling)
+ram_irq_counter_1 = $0440   ;
+
+; To be copied to actual PPU buffer by IRQ routines
+ram_ppu_minibuf_0 = $0460   ; Size=16
+ram_ppu_minibuf_1 = $0480   ; Size=16
+ram_ppu_minibuf_2 = $04A0   ; Size=16
 
 ; This buffer will be copied to the PPU during vblank
 ram_ppu_data_buffer = $0600 ; Size=63
