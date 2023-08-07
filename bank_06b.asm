@@ -8,6 +8,8 @@
 
 .include "globals.inc"
 
+rom_8000 = $8000
+
 ; -----------------------------------------------------------------------------
 .export sub_clear_ram
 
@@ -765,15 +767,15 @@ sub_irq_handler_11:
 sub_irq_handler_12:
 	sta mmc3_irq_disable
 
-	; TODO Bank switching for player 1
+	; Bank switching for player 1
 	ldx #$80
-	ldy #$00
+	ldy zp_plr1_chr_bank
 	stx mmc3_bank_select
 	sty mmc3_bank_data
 
-	; TODO Bank switching for player 2
+	; Bank switching for player 2
 	inx
-	ldy #$38
+	ldy zp_plr2_chr_bank
 	stx mmc3_bank_select
 	sty mmc3_bank_data
 
@@ -1336,7 +1338,7 @@ sub_reload_fighters_palettes:
 	sta zp_ptr1_hi
 
 	ldy #$01
-	ldx zp_plr_idx_param
+	;ldx zp_plr_idx_param
 	;sty zp_48,X
 	;sty zp_plr1_anim_frame,X
 	ldx #$00
@@ -1362,3 +1364,240 @@ sub_reload_fighters_palettes:
 	sty zp_nmi_ppu_ptr_lo
 
 	rts
+
+; -----------------------------------------------------------------------------
+.export sub_ftr_sel_palettes
+
+; Used for the fighter selection screen
+; Parameters:
+; zp_plr_idx_param = Player index (0/1)
+sub_ftr_sel_palettes:
+	; We need some data from bank 1
+	lda #$87
+	sta zp_bank_select_value
+	sta mmc3_bank_select
+	lda #$01
+	sta mmc3_bank_data
+	
+	; Load palettes
+	jsr sub_reload_fighters_palettes
+
+	; Switch back to bank 5
+	ldx #$87
+	stx zp_bank_select_value
+	stx mmc3_bank_select
+	ldy #$05
+	sty mmc3_bank_data
+
+	rts
+
+; -----------------------------------------------------------------------------
+.export sub_ftr_sel_sprites
+
+; Shows a fighter's sprites (idle animation) on the selection screen
+sub_ftr_sel_sprites:
+	ldy zp_plr_idx_param
+	ldx @tbl_oam_clean_ofs,Y
+	ldy #$00
+	lda #$F8
+	; This loop moves all sprites off-screen for the current player
+	:
+		sta ram_oam_copy_ypos,X
+		inx
+		inx
+		inx
+		inx
+	iny
+	cpy #$07
+	bcc :-
+
+	lda #$A0
+	sta zp_var_y		; Base sprite Y
+
+	ldx zp_plr_idx_param
+	lda @tbl_base_x,X
+	sta zp_var_x		; Base sprite X
+
+	; Offset in OAM data
+	lda @tbl_oam_ofs,X
+	tax
+
+	; Switch in bank $01 to read some data tables
+	lda #$87
+	sta zp_bank_select_value
+	sta mmc3_bank_select
+	lda #$01
+	sta mmc3_bank_data
+
+	; Switch in top PRG Bank with frame data
+	lda #$86
+	sta zp_bank_select_value
+	sta mmc3_bank_select
+
+	ldy zp_plr1_fgtr_idx_clean,X
+	lda tbl_fighter_sprite_banks,Y
+	sta mmc3_bank_data
+
+	; Prepare pointer to idle animation frames
+	lda rom_8000+2
+	sta zp_ptr1_lo
+	lda rom_8000+3
+	sta zp_ptr1_hi
+
+	; Frame 0
+	ldy #$00
+	lda (zp_ptr1_lo),Y
+	sta zp_ptr3_lo
+	iny
+	lda (zp_ptr1_lo),Y
+	sta zp_ptr3_hi
+
+	; TODO Alternate between frames 0 and 1
+
+	ldy #$00
+	lda (zp_ptr3_lo),Y
+	sta zp_05			; Horizontal tiles count
+	sta zp_x_counter
+
+	iny
+	lda (zp_ptr3_lo),Y
+	sta zp_06			; Vertical tiles count
+
+	iny
+	lda (zp_ptr3_lo),Y
+	sta zp_0F			; X offset
+	; TODO Flip horizontally for player 2
+	clc
+	adc zp_var_x
+	sta zp_var_x
+	sta zp_0F
+
+	iny
+	lda (zp_ptr3_lo),Y
+	sta ram_0429
+	;sta zp_chr_bank_0,X	; CHR ROM bank
+	sta zp_plr1_chr_bank,X
+
+	iny	; Skip attribute mask, assume it's always zero
+
+	; TODO Flip horizontally for player 2
+	lda #$08
+	sta zp_ptr1_lo			; X increment
+
+	@loop_y:
+
+		@loop_x:
+		iny
+		lda (zp_ptr3_lo),Y
+		cmp #$FF
+		beq :+
+			; TODO Player 2: set bit 7 instead of clearing it
+			and #$7F
+			sta ram_oam_copy_tileid,X
+			
+			jmp @set_spr_attr
+			@set_spr_xy:
+			lda zp_0F
+			sta ram_oam_copy_xpos,X
+
+			lda zp_var_y
+			sta ram_oam_copy_ypos,X
+
+			txa
+			axs #$FC
+		:
+		lda zp_0F
+		clc
+		adc zp_ptr1_lo
+		sta zp_0F
+
+		dec zp_x_counter
+		bne @loop_x
+	
+	; Move back to the left
+	lda zp_var_x
+	sta zp_0F
+
+	lda zp_05
+	sta zp_x_counter
+
+	lda zp_var_y
+	clc
+	adc #$08
+	sta zp_var_y
+
+	dec zp_06
+	bne @loop_y
+
+	; Switch back to banks 4 and 5
+	ldx #$86
+	stx zp_bank_select_value
+	stx mmc3_bank_select
+	ldy #$04
+	sty mmc3_bank_data
+
+	inx
+	stx zp_bank_select_value
+	stx mmc3_bank_select
+	iny
+	sty mmc3_bank_data
+
+	rts
+
+; ----------------
+	@set_spr_attr:
+	sty zp_backup_y
+
+		ldy ram_0429
+		lda tbl_spr_attr_ptrs+0,Y
+		sta zp_ptr4_lo
+		lda tbl_spr_attr_ptrs+1,Y
+		sta zp_ptr4_hi
+
+		lda ram_oam_copy_tileid,X
+		and #$07
+		tay
+		lda rom_DAB4,Y	; Index by tile ID % 8
+		sta zp_backup_a
+			lda ram_oam_copy_tileid,X
+			and #$7F
+			lsr A
+			lsr A
+			lsr A
+			tay
+		lda zp_backup_a
+		and (zp_ptr4_lo),Y
+		beq :+
+			lda #$01
+		:
+		;ora ram_042A	; Add flags from fighter's anim frame data
+		;eor zp_oam_flip_flag		; Horizontal flip flag depending on current facing direction
+		tay
+		lda zp_plr_idx_param		; Player index
+		beq :+		; Branch for player one
+
+			tya			; Player 2 changes palette index
+			ora #$02
+			bne @write_attr
+
+		:
+		tya				; Player 1 uses value as it is (keep palette index)
+
+		@write_attr:
+		sta ram_oam_copy_attr,X
+
+	ldy zp_backup_y
+
+	jmp @set_spr_xy
+
+; ----------------
+
+	@tbl_base_x:
+	.byte $00, $A0
+
+	@tbl_oam_ofs:
+	.byte $00, $80
+
+	@tbl_oam_clean_ofs:
+	.byte $60, $E0
+; -----------------------------------------------------------------------------

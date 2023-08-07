@@ -12,8 +12,8 @@ zp_ppu_mask_backup = $04     ;
 zp_05 = $05     ;
 zp_06 = $06     ;
 zp_07 = $07     ;
-zp_var_x = $08     ;
-zp_09 = $09     ;
+zp_var_x = $08  ;
+zp_x_counter = $09  ;
 zp_0A = $0A     ;
 zp_var_y = $0B     ;
 zp_0D = $0D     ;
@@ -162,9 +162,11 @@ zp_short_counter_target = $92     ;
 zp_short_counter = $94     ;
 zp_chr_bank_0 = $96     ;
 zp_chr_bank_1 = $97     ;
-zp_99 = $99     ;
-zp_9A = $9A     ;
-zp_9B = $9B     ;
+
+zp_plr1_chr_bank = $99  ; For fighter selection
+zp_plr2_chr_bank = $9A  ; For fighter selection
+
+;zp_9B = $9B     ;
 zp_players_x_distance = $9C ;
 zp_players_y_distance = $9D ;
 zp_9E = $9E     ;
@@ -301,7 +303,7 @@ ram_0414 = $0414    ;
 ram_0416 = $0416    ;
 ram_0418 = $0418    ;
 ram_0419 = $0419    ;
-ram_041F = $041F    ;
+;ram_041F = $041F    ;
 ram_0421 = $0421    ;
 ram_041A = $041A    ;
 ; The NMI routine will write this to the MMC3 latch register

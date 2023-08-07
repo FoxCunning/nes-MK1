@@ -669,6 +669,8 @@ sub_fighter_sel_init:
 
 	inc zp_machine_state_2
 
+	; Selection counters, used for flashing the cursor and checking if
+	; a player has already selected their fighter
 	lda #$00
 	sta zp_5C
 	sta zp_5D
@@ -677,21 +679,20 @@ sub_fighter_sel_init:
 
 	lda zp_plr1_selection
 	and #$80
-	ora @rom_B2A9+0,Y
+	ora @tbl_default_ftr_sel+0,Y
 	sta zp_plr1_selection
 
 	lda zp_plr2_selection
 	and #$80
-	ora @rom_B2A9+1,Y
+	ora @tbl_default_ftr_sel+1,Y
 	sta zp_plr2_selection
+
 	rts
 
 ; -----------------------------------------------------------------------------
 
-	@rom_B2A9:
+	@tbl_default_ftr_sel:
 	.byte $03, $04
-	; Unused
-	;.byte $06, $08
 
 ; -----------------------------------------------------------------------------
 
@@ -704,6 +705,7 @@ sub_fighter_sel_fade_in:
 ; ----------------
 	:
 	inc zp_machine_state_2
+
 	jmp sub_ftr_sel_cursors
 
 ; -----------------------------------------------------------------------------
@@ -720,6 +722,19 @@ sub_fighter_sel_loop:
 		jsr sub_ftr_sel_cursors
 		jsr sub_ftr_sel_attributes
 
+		; TODO Player 2 sprite
+		ldx #$00
+		stx zp_plr_idx_param
+		lda zp_plr1_selection,X
+		bit @bit_80	; Skip CPU opponent selection
+		bne :+
+			tay
+			lda tbl_sel_to_ftr_idx,Y
+			sta zp_plr1_fgtr_idx_clean,X
+			jsr sub_ftr_sel_palettes
+			jsr sub_ftr_sel_sprites
+		:
+
 		lda zp_5C
 		cmp zp_5D
 		bne @B2DF_rts
@@ -733,6 +748,9 @@ sub_fighter_sel_loop:
 				sta zp_palette_fade_idx
 	@B2DF_rts:
 	rts
+
+	@bit_80:
+	.byte $80
 
 ; -----------------------------------------------------------------------------
 
@@ -840,7 +858,7 @@ sub_announce_fighter_name:
 	.byte $13	; $00 Sub-zero
 	.byte $15	; $01 Kano
 	.byte $14	; $02 Scorpion
-	.byte $11	; $03 Rayden
+	.byte $11	; $03 Raiden
 	.byte $16	; $04 Johnny Cage
 	.byte $17	; $05 Liu Kang
 	.byte $12	; $06 Sonya
@@ -955,7 +973,6 @@ sub_ftr_sel_update_cursors:
 
 	lda zp_ptr2_hi
 	sta ram_oam_copy_ypos,X
-
 
 	rts
 
@@ -2328,29 +2345,30 @@ sub_rom_BE9F:
 	lda zp_plr1_selection
 	and #$7F
 	tay
-	lda rom_BF03,Y
+	lda tbl_sel_to_ftr_idx,Y
 	ora zp_plr1_fighter_idx
 	sta zp_plr1_fighter_idx
 
 	lda zp_plr2_selection
 	and #$7F
 	tay
-	lda rom_BF03,Y
+	lda tbl_sel_to_ftr_idx,Y
 	ora zp_plr2_fighter_idx
 	sta zp_plr2_fighter_idx
 	lda zp_endurance_opp_idx
 	beq :+
 		and #$7F
 		tay
-		lda rom_BF03,Y
+		lda tbl_sel_to_ftr_idx,Y
 		ora zp_60
 	:
 	sta zp_60
 	rts
 
 ; -----------------------------------------------------------------------------
+.export tbl_sel_to_ftr_idx
 
-rom_BF03:
+tbl_sel_to_ftr_idx:
 	.byte $02, $04, $03, $00, $05, $06, $01, $08
 	.byte $07
 
