@@ -1526,7 +1526,7 @@ sub_ftr_sel_sprites:
 			iny
 			cmp #$C0
 			bcs :+
-				; Restart cunter
+				; Restart counter
 				lda #$00
 				sta zp_plr1_anim_frame,X
 	:
