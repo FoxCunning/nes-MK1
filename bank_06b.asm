@@ -1512,18 +1512,29 @@ sub_ftr_sel_sprites:
 	lda rom_8000+3
 	sta zp_ptr1_hi
 
-	ldy #$00		; Idle (Frame 0)
+	
+	ldy #$5C	; Victory (Frame 9)
 	lda zp_5C,X
-	beq :+
-		ldy #$5C	; Victory (Frame 9)
+	bne :+
+		ldy #$00		; Idle (Frame 0)
+
+		; Alternate between frames 0 and 1
+		lda #$40
+		isc zp_plr1_anim_frame,X
+		bcs :+
+			iny		; Idle frame 1
+			iny
+			cmp #$C0
+			bcs :+
+				; Restart cunter
+				lda #$00
+				sta zp_plr1_anim_frame,X
 	:
 	lda (zp_ptr1_lo),Y
 	sta zp_ptr3_lo
 	iny
 	lda (zp_ptr1_lo),Y
 	sta zp_ptr3_hi
-
-	; TODO Alternate between frames 0 and 1
 
 	ldy #$00
 	lda (zp_ptr3_lo),Y
