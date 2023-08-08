@@ -1482,8 +1482,8 @@ sub_ftr_sel_sprites:
 	cpy #$08
 	bcc :-
 
-	lda #$9F
-	sta zp_var_y		; Base sprite Y
+	;lda #$9F
+	;sta zp_var_y		; Base sprite Y
 
 	ldx zp_plr_idx_param
 	lda @tbl_base_x,X
@@ -1512,8 +1512,11 @@ sub_ftr_sel_sprites:
 	lda rom_8000+3
 	sta zp_ptr1_hi
 
-	; Frame 0
-	ldy #$00
+	ldy #$00		; Idle (Frame 0)
+	lda zp_5C,X
+	beq :+
+		ldy #$5C	; Victory (Frame 9)
+	:
 	lda (zp_ptr1_lo),Y
 	sta zp_ptr3_lo
 	iny
@@ -1530,6 +1533,15 @@ sub_ftr_sel_sprites:
 	iny
 	lda (zp_ptr3_lo),Y
 	sta zp_06			; Vertical tiles count
+	asl
+	asl
+	asl
+	sec
+	sbc #$48
+	sta zp_var_y		; Base Y
+	lda #$9F
+	sbc zp_var_y
+	sta zp_var_y
 
 	iny
 	lda (zp_ptr3_lo),Y

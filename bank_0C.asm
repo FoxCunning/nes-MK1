@@ -388,16 +388,17 @@ rom_85CF:
 	.byte $DC, $FF, $FF, $FF, $FF, $E5, $FF, $FF
 	.byte $FF, $EC, $ED, $FF, $FF
 rom_85FC:
-	.byte $07, $0A, $10, $02, $00, $FF, $FF, $FF
-	.byte $FF, $FF, $FF, $80, $FF, $FF, $FF, $FF
-	.byte $FF, $83, $84, $90, $91, $92, $93, $94
-	.byte $95, $FF, $A3, $A4, $A5, $A6, $A7, $A8
-	.byte $FF, $B3, $B4, $B5, $B6, $B7, $FF, $FF
-	.byte $FF, $C4, $C5, $C6, $C7, $FF, $FF, $FF
-	.byte $FF, $D2, $D3, $D1, $FF, $FF, $FF, $FF
-	.byte $FF, $DD, $FF, $FF, $FF, $FF, $FF, $FF
-	.byte $E6, $FF, $FF, $FF, $FF, $FF, $EE, $EF
-	.byte $FF, $FF, $FF
+	.byte $07, $0A, $10, $02, $00
+	.byte $FF, $FF, $FF, $FF, $FF, $FF, $80
+	.byte $FF, $FF, $FF, $FF, $FF, $83, $84
+	.byte $90, $91, $92, $93, $94, $95, $FF
+	.byte $A3, $A4, $A5, $A6, $A7, $A8, $FF
+	.byte $B3, $B4, $B5, $B6, $B7, $FF, $FF
+	.byte $FF, $C4, $C5, $C6, $C7, $FF, $FF
+	.byte $FF, $FF, $D2, $D3, $D1, $FF, $FF
+	.byte $FF, $FF, $FF, $DD, $FF, $FF, $FF
+	.byte $FF, $FF, $FF, $E6, $FF, $FF, $FF
+	.byte $FF, $FF, $EE, $EF, $FF, $FF, $FF
 rom_8647:
 	.byte $04, $0A, $10, $10, $00, $01, $02, $FF
 	.byte $FF, $03, $04, $05, $FF, $0A, $0B, $0C
