@@ -8,6 +8,8 @@
 
 .include "globals.inc"
 
+rom_8000 = $8000
+
 ; -----------------------------------------------------------------------------
 .export sub_clear_ram
 
@@ -245,8 +247,8 @@ tbl_irq_handler_ptrs:
 	.word sub_irq_handler_0E		; $0E
 	.word sub_irq_handler_0F		; $0F
 	.word sub_irq_handler_10		; $10	Sound test
-	.word sub_irq_handler_11		; $11
-	.word sub_irq_handler_11		; $12
+	.word sub_irq_handler_11		; $11	Fighter select
+	.word sub_irq_handler_12		; $12
 	.word sub_irq_handler_11		; $13
 
 ; -----------------------------------------------------------------------------
@@ -760,6 +762,96 @@ sub_irq_handler_11:
 	rts
 
 ; -----------------------------------------------------------------------------
+
+; Fighter selection screen: sprite multiplexing with mid-frame CHR bank switch
+sub_irq_handler_12:
+	sta mmc3_irq_disable
+
+	lda zp_nmi_ppu_ptr_hi
+	bne @irq_12_chr_switch
+
+	ldx #$00
+
+	; Check PPU minibuffers
+	lda ram_ppu_minibuf_0
+	beq :+
+		lda ram_ppu_minibuf_0+1
+		sta zp_nmi_ppu_cols
+		lda ram_ppu_minibuf_0+2
+		sta zp_nmi_ppu_rows
+		
+		lda ram_ppu_minibuf_0+3
+		sta zp_nmi_ppu_ptr_hi
+		lda ram_ppu_minibuf_0+4
+		sta zp_nmi_ppu_ptr_lo
+
+		; Minibuffer 0 data transfer
+		@loop_0:
+			lda ram_ppu_minibuf_0+5,X
+			sta ram_ppu_data_buffer,X
+			inx
+			dec ram_ppu_minibuf_0
+			bne @loop_0
+
+		jmp @irq_12_chr_switch
+	:
+	lda ram_ppu_minibuf_1
+	beq :+
+		
+		lda ram_ppu_minibuf_1+1
+		sta zp_nmi_ppu_cols
+		lda ram_ppu_minibuf_1+2
+		sta zp_nmi_ppu_rows
+		
+		lda ram_ppu_minibuf_1+3
+		sta zp_nmi_ppu_ptr_hi
+		lda ram_ppu_minibuf_1+4
+		sta zp_nmi_ppu_ptr_lo
+
+		; Minibuffer 1 data transfer
+		@loop_1:
+			lda ram_ppu_minibuf_1+5,X
+			sta ram_ppu_data_buffer,X
+			inx
+			dec ram_ppu_minibuf_1
+			bne @loop_1
+		
+		jmp @irq_12_chr_switch
+	:
+
+
+	@irq_12_chr_switch:
+	lda ram_irq_state_var
+	bne @irq_12_check_30
+
+		; Frame 0: show cursors
+		lda #$FB
+		sta zp_chr_bank_5
+		bne @irq_12_rts
+
+	@irq_12_check_30:
+	cmp #$1E
+	bne @irq_12_check_60
+
+		; Frame 30: hide cursors
+		lda #$FF
+		sta zp_chr_bank_5
+		bne @irq_12_rts
+
+	@irq_12_check_60:
+	cmp #$3C
+	bcc @irq_12_rts
+
+		; Frame 60: reset counter
+		lda #$00
+		sta ram_irq_state_var
+		rts
+
+	@irq_12_rts:
+	inc ram_irq_state_var
+	rts
+
+; -----------------------------------------------------------------------------
 .export sub_state_machine_start
 
 sub_state_machine_start:
@@ -829,13 +921,13 @@ sub_rom_E7F5:
 		clc
 		adc zp_endurance_flag
 		tax
-		inc zp_61
-		lda zp_61
+		inc zp_match_number
+		lda zp_match_number
 		cmp @rom_E849,X
 		bcc :+
 
 			lda #$00
-			sta zp_61
+			sta zp_match_number
 			inc zp_endurance_flag
 			lda zp_endurance_flag
 			cmp #$04
@@ -1316,7 +1408,7 @@ sub_reload_fighters_palettes:
 	sta zp_ptr1_hi
 
 	ldy #$01
-	ldx zp_plr_idx_param
+	;ldx zp_plr_idx_param
 	;sty zp_48,X
 	;sty zp_plr1_anim_frame,X
 	ldx #$00
@@ -1342,3 +1434,260 @@ sub_reload_fighters_palettes:
 	sty zp_nmi_ppu_ptr_lo
 
 	rts
+
+; -----------------------------------------------------------------------------
+.export sub_ftr_sel_sprites
+
+; Shows a fighter's sprites (idle animation) on the selection screen
+; Parameters:
+; X = zp_plr_idx_param = Player index (0/1)
+sub_ftr_sel_sprites:
+	lda zp_plr1_selection,X
+	bpl :+	; Skip CPU opponent
+		rts
+	:
+	tay
+	lda tbl_sel_to_ftr_idx,Y
+	sta zp_plr1_fgtr_idx_clean,X
+
+	; We need some data from bank 1
+	lda #$87
+	sta zp_bank_select_value
+	sta mmc3_bank_select
+	lda #$01
+	sta mmc3_bank_data
+	
+	; Load palettes
+	lda ram_irq_counter_0,X
+	beq :+
+		dec ram_irq_counter_0,X
+		jsr sub_reload_fighters_palettes
+	:
+
+	ldy zp_plr_idx_param
+	ldx @tbl_oam_clean_ofs,Y
+	
+	ldy #$00
+	sty ram_042A		; Default tile index OR Mask
+	
+	lda #$F8
+	; This loop moves the bottom sprites off-screen for the selected player
+	:
+		sta ram_oam_copy_ypos,X
+		inx
+		inx
+		inx
+		inx
+	iny
+	cpy #$08
+	bcc :-
+
+	;lda #$9F
+	;sta zp_var_y		; Base sprite Y
+
+	ldx zp_plr_idx_param
+	lda @tbl_base_x,X
+	sta zp_var_x		; Base sprite X
+
+	; Switch in bank $01 to read some data tables
+	lda #$87
+	sta zp_bank_select_value
+	sta mmc3_bank_select
+	lda #$01
+	sta mmc3_bank_data
+
+	; Switch in top PRG Bank with frame data
+	lda #$86
+	sta zp_bank_select_value
+	sta mmc3_bank_select
+
+	ldx zp_plr_idx_param
+	ldy zp_plr1_fgtr_idx_clean,X
+	lda tbl_fighter_sprite_banks,Y
+	sta mmc3_bank_data
+
+	; Prepare pointer to idle animation frames
+	lda rom_8000+2
+	sta zp_ptr1_lo
+	lda rom_8000+3
+	sta zp_ptr1_hi
+
+	ldy #$00		; Idle (Frame 0)
+	lda zp_5C,X
+	beq :+
+		ldy #$5C	; Victory (Frame 9)
+	:
+	lda (zp_ptr1_lo),Y
+	sta zp_ptr3_lo
+	iny
+	lda (zp_ptr1_lo),Y
+	sta zp_ptr3_hi
+
+	; TODO Alternate between frames 0 and 1
+
+	ldy #$00
+	lda (zp_ptr3_lo),Y
+	sta zp_05			; Horizontal tiles count
+	sta zp_x_counter
+
+	iny
+	lda (zp_ptr3_lo),Y
+	sta zp_06			; Vertical tiles count
+	asl
+	asl
+	asl
+	sec
+	sbc #$48
+	sta zp_var_y		; Base Y
+	lda #$9F
+	sbc zp_var_y
+	sta zp_var_y
+
+	iny
+	lda (zp_ptr3_lo),Y
+	sta zp_0F			; X offset
+	; TODO Flip horizontally for player 2?
+	clc
+	adc zp_var_x
+	sta zp_var_x
+	sta zp_0F
+
+	iny
+	lda (zp_ptr3_lo),Y
+	sta ram_0429
+	sta zp_chr_bank_0,X	; CHR ROM bank 0/1
+	;sta zp_plr1_chr_bank,X
+
+	iny	; Skip attribute mask, assume it's always zero
+
+	lda #$08
+	; Flip horizontally for player 2
+	cpx #$00
+	beq :+
+		lda #$80
+		sta ram_042A		; Tile index OR mask (bottom of ROM for player two)
+		lda #$F8
+	:
+	sta zp_ptr1_lo			; X increment
+
+	; Offset in OAM data
+	lda @tbl_oam_ofs,X
+	tax
+
+	@loop_y:
+
+		@loop_x:
+		iny
+		lda (zp_ptr3_lo),Y
+		cmp #$FF
+		beq @next_sprite
+			and #$7F
+			; Player 2: set bit 7 instead of clearing it
+			ora ram_042A	; This moves to the bottom half of CHR ROM bank for player 2
+			
+			sta ram_oam_copy_tileid,X
+			
+			jmp @set_spr_attr
+			@set_spr_xy:
+			lda zp_0F
+			sta ram_oam_copy_xpos,X
+
+			lda zp_var_y
+			sta ram_oam_copy_ypos,X
+
+			txa
+			axs #$FC
+		@next_sprite:
+		lda zp_0F
+		clc
+		adc zp_ptr1_lo
+		sta zp_0F
+
+		dec zp_x_counter
+		bne @loop_x
+	
+	; Move back to the left
+	lda zp_var_x
+	sta zp_0F
+
+	lda zp_05
+	sta zp_x_counter
+
+	lda zp_var_y
+	clc
+	adc #$08
+	sta zp_var_y
+
+	dec zp_06
+	bne @loop_y
+
+	; Switch back to banks 4 and 5
+	ldx #$86
+	stx zp_bank_select_value
+	stx mmc3_bank_select
+	ldy #$04
+	sty mmc3_bank_data
+
+	inx
+	stx zp_bank_select_value
+	stx mmc3_bank_select
+	iny
+	sty mmc3_bank_data
+
+	rts
+
+; ----------------
+	@set_spr_attr:
+	sty zp_backup_y
+
+		ldy ram_0429
+		lda tbl_spr_attr_ptrs+0,Y
+		sta zp_ptr4_lo
+		lda tbl_spr_attr_ptrs+1,Y
+		sta zp_ptr4_hi
+
+		lda ram_oam_copy_tileid,X
+		and #$07
+		tay
+		lda rom_DAB4,Y	; Index by tile ID % 8
+		sta zp_backup_a
+			lda ram_oam_copy_tileid,X
+			and #$7F
+			lsr A
+			lsr A
+			lsr A
+			tay
+		lda zp_backup_a
+		and (zp_ptr4_lo),Y
+		beq :+
+			lda #$01
+		:
+		tay
+		lda zp_plr_idx_param		; Player index
+		beq :+		; Branch for player one
+
+			tya			; Player 2 changes palette index and flips the sprites
+			ora #$42
+			bne @write_attr
+
+		:
+		tya				; Player 1 uses value as it is (keep palette index)
+
+		@write_attr:
+		sta ram_oam_copy_attr,X
+
+	ldy zp_backup_y
+
+	jmp @set_spr_xy
+
+; ----------------
+
+	@tbl_base_x:
+	.byte $FC, $D4
+
+	@tbl_oam_ofs:
+	.byte $00, $80
+
+	@tbl_oam_clean_ofs:
+	.byte $60, $E0
+; -----------------------------------------------------------------------------

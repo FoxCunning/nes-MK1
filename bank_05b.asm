@@ -20,7 +20,7 @@ sub_state_machine_0:
 ; ----------------
 	.word sub_main_menu_states			; 0,0
 	.word sub_option_menu_states		; 0,1
-	.word sub_fighter_selection_states	; 0,2
+	.word sub_fighter_sel_states	; 0,2
 	.word sub_vs_state_machine				; 0,3
 	.word sub_continue_screen_state_machine	; 0,4
 	.word sub_high_scores_states		; 0,5
@@ -54,7 +54,6 @@ sub_init_menu_screen:
 	lda #$00
 	;sta zp_tmp_idx
 	;lda #$00
-	sta zp_66
 	jsr sub_init_screen_common
 
 	; Switch to vertical mirroring
@@ -68,7 +67,7 @@ sub_init_menu_screen:
 	
 	lda #$00
 	sta zp_endurance_flag
-	sta zp_61
+	sta zp_match_number
 	;lda #$00
 	sta zp_plr1_selection
 	lda #$02
@@ -262,9 +261,9 @@ sub_eval_menu_choice:
 	lda zp_plr1_selection
 	bne :+
 		; Option 0 = Tournament
-		lda #$03 	; Player 1 default selection (Kano)
+		lda #$03 	; Player 1 default selection
 		sta zp_plr1_selection
-		lda #$84	; Player 2 default selection (Sub-Zero)
+		lda #$84	; Player 2 default selection
 		sta zp_plr2_selection
 
 		inc zp_machine_state_1	; 0,2,0 (because it's increased again below)
@@ -629,7 +628,7 @@ sub_sound_test_cursor:
 
 ; -----------------------------------------------------------------------------
 
-sub_fighter_selection_states:
+sub_fighter_sel_states:
 	lda zp_machine_state_2
 	jsr sub_trampoline
 ; ----------------
@@ -643,48 +642,66 @@ sub_fighter_selection_states:
 
 sub_fighter_sel_init:
 	ldy #$02
-	lda zp_66
-	beq :+
-		iny
-	:
 	sty zp_tmp_idx
+
 	jsr sub_setup_new_screen
-	jsr sub_rom_B4B2
+	jsr sub_ftr_sel_init_attributes
+
 	lda #$00
 	sta zp_scroll_x
 	sta zp_scroll_y
+	sta ram_irq_state_var
+
+	sta zp_plr1_sel_prev
+	sta zp_plr2_sel_prev
+
+	; Will only (re)load sprite palettes when this is set
+	inc ram_irq_counter_0
+	; Same for player 2
+	inc ram_irq_counter_1
+
 	lda #$88
 	sta PpuControl_2000
 	sta zp_ppu_control_backup
+
 	cli
 	jsr sub_wait_vblank
+
 	lda #$1E
 	sta zp_ppu_mask_backup
-	lda #$0C
+
+	lda #$12 ;#$0C
 	sta ram_irq_routine_idx
-	lda #$80
+
+	lda #$A0 ;#$80
 	sta ram_irq_latch_value
+
 	inc zp_machine_state_2
+
+	; Selection counters, used for flashing the cursor and checking if
+	; a player has already selected their fighter
 	lda #$00
 	sta zp_5C
 	sta zp_5D
-	lda zp_66
-	asl A
-	tay
+
+	ldy #$00
+
 	lda zp_plr1_selection
 	and #$80
-	ora @rom_B2A9+0,Y
+	ora @tbl_default_ftr_sel+0,Y
 	sta zp_plr1_selection
+
 	lda zp_plr2_selection
 	and #$80
-	ora @rom_B2A9+1,Y
+	ora @tbl_default_ftr_sel+1,Y
 	sta zp_plr2_selection
+
 	rts
 
 ; -----------------------------------------------------------------------------
 
-	@rom_B2A9:
-	.byte $03, $04, $06, $08
+	@tbl_default_ftr_sel:
+	.byte $03, $04
 
 ; -----------------------------------------------------------------------------
 
@@ -697,7 +714,8 @@ sub_fighter_sel_fade_in:
 ; ----------------
 	:
 	inc zp_machine_state_2
-	jmp sub_rom_B363
+
+	rts ;jmp sub_ftr_sel_cursors
 
 ; -----------------------------------------------------------------------------
 
@@ -705,23 +723,34 @@ sub_fighter_sel_fade_in:
 sub_fighter_sel_loop:
 	lda zp_frame_counter
 	cmp zp_last_execution_frame
-	beq @B2DF
+	beq @B2DF_rts
 
 		sta zp_last_execution_frame
-		jsr sub_fighter_selection_input
-		jsr sub_rom_B363
-		jsr sub_rom_B556
+
+		jsr sub_fighter_sel_input
+		jsr sub_ftr_sel_cursors
+		jsr sub_ftr_sel_attributes
+
+		ldx #$00
+		stx zp_plr_idx_param
+		jsr sub_ftr_sel_sprites
+
+		ldx #$01
+		inc zp_plr_idx_param
+		jsr sub_ftr_sel_sprites
+
 		lda zp_5C
 		cmp zp_5D
-		bne @B2DF
+		bne @B2DF_rts
 
 			cmp #$09
-			bne @B2DF
+			bne @B2DF_rts
 
+				; Both players have selected a fighter: go to fade out state
 				inc zp_machine_state_2
 				lda #$05
 				sta zp_palette_fade_idx
-	@B2DF:
+	@B2DF_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -730,16 +759,16 @@ sub_fighter_sel_fade_out:
 	jsr sub_rom_cycle_palettes
 	lda zp_palette_fade_idx
 	cmp #$09
-	bcc @B2E0_end
+	bcc @B2E0_rts
 		lda #$00
 		sta zp_machine_state_2
 		inc zp_machine_state_1
-	@B2E0_end:
+	@B2E0_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_fighter_selection_input:
+sub_fighter_sel_input:
 	; First run: controller 1
 	ldx #$00
 	stx zp_07
@@ -751,7 +780,7 @@ sub_fighter_selection_input:
 ; ----------------
 	@player_selection_input:
 	lda zp_plr1_selection,X
-	bpl @B316
+	bpl :+
 		; CPU opponent
 		lda #$09
 		sta zp_5C,X
@@ -765,7 +794,7 @@ sub_fighter_selection_input:
 		lda #$00
 		sta zp_5C,X
 		sta zp_controller1_new,X
-	@B316:
+	:
 	lda zp_5C,X
 	bne @B352
 
@@ -773,6 +802,7 @@ sub_fighter_selection_input:
 		sta zp_06
 		lda zp_plr1_selection,X
 		sta zp_05
+
 		lda zp_tmp_idx
 		asl A
 		tax
@@ -780,21 +810,25 @@ sub_fighter_selection_input:
 		sta zp_ptr1_lo
 		lda tbl_menu_indices_ptrs+1,X
 		sta zp_ptr1_hi
-		lda zp_06
-		sta zp_06
-		lda zp_05
-		sta zp_05
+
+		; Why?
+		;lda zp_06
+		;sta zp_06
+		;lda zp_05
+		;sta zp_05
 
 		jsr sub_ctrl_to_idx
 		sta zp_05
 		ldx zp_07
 		lda zp_05
-		bmi @B34A
-
+		bmi :+
 			sta zp_plr1_selection,X
 			lda #$03	; Bleep sound
 			sta ram_req_sfx
-		@B34A:
+
+			lda #$01	; (Re)load palettes
+			sta ram_irq_counter_0,X
+		:
 		lda zp_controller1_new,X
 		and #$C0
 		beq @B352
@@ -802,17 +836,18 @@ sub_fighter_selection_input:
 			inc zp_5C,X
 	@B352:
 	lda zp_5C,X
-	beq @B362
+	beq @B362_rts	; Check if cursor is flashing after selection
 
 	cmp #$09
-	bcs @B362
+	bcs @B362_rts	; Check if it has already finished flashing
 
 	lda zp_frame_counter
 	and #$0F
-	bne @B362
+	bne @B362_rts
 
 		inc zp_5C,X
-	@B362:
+
+	@B362_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -824,224 +859,243 @@ sub_announce_fighter_name:
 	rts
 
 	@tbl_fighter_names_sfx:
-	.byte $00	; $00 Shang-Tsung
-	.byte $00	; $01 Goro
-	.byte $16	; $02 Johnny Cage
-	.byte $15	; $03 Kano
-	.byte $13	; $04 Sub-zero
-	.byte $12	; $05 Sonya
-	.byte $11	; $06 Raiden
-	.byte $17	; $07 Liu Kang
-	.byte $14	; $08 Scorpion
+	.byte $13	; $00 Sub-zero
+	.byte $15	; $01 Kano
+	.byte $14	; $02 Scorpion
+	.byte $11	; $03 Raiden
+	.byte $16	; $04 Johnny Cage
+	.byte $17	; $05 Liu Kang
+	.byte $12	; $06 Sonya
+	.byte $00	; $07 Shang-Tsung
+	.byte $00	; $08 Goro
 
 ; -----------------------------------------------------------------------------
 
-; Checks if the player (or both players) has selected a fighter
-sub_rom_B363:
-	ldx #$00
-	stx zp_07
-	jsr sub_rom_B36E	; First run for player 1
+; Flashes the selection cursors if needed, otherwise jumps to the cursor
+; update routine
+sub_ftr_sel_cursors:
+	;ldx #$00
+	;stx zp_07
+	;jsr sub_inner_ftr_sel_cursors	; First run for player 1
 
-	ldx #$01			; Second run for player 2
-	stx zp_07
+	;ldx #$01			; Second run for player 2
+	;stx zp_07
+	lda zp_frame_counter
+	and #$01
+	sta zp_07
+	tax
 ; ----------------
-sub_rom_B36E:
+;sub_inner_ftr_sel_cursors:
 	lda zp_5C,X	; This will be set when that player has made a selection
 	cmp #$06
-	bcs @B377
+	bcs :+
 
-		jmp sub_rom_B393
+		jmp sub_ftr_sel_update_cursors
 
-	; Flash the cursor?
-	@B377:
-	lda #$20
-	sta zp_0A
-	lda rom_B38D,X
-	tay
-	lda #$F8
-	@B381:
-		sta ram_oam_copy_ypos,Y
-		iny
-		iny
-		iny
-		iny
-		dec zp_0A
-	bne @B381
-
-	rts
-
-; -----------------------------------------------------------------------------
-
-rom_B38D:
-	.byte $00, $80
-rom_B38F:                
-	.byte $00, $30
-rom_B391:
-	.byte $02, $03
-
-; -----------------------------------------------------------------------------
-
-sub_rom_B393:
-	lda zp_tmp_idx
-	asl A
-	tay
-	lda rom_B414+0,Y
-	sta zp_ptr1_lo
-	lda rom_B414+1,Y
-	sta zp_ptr1_hi
-	lda zp_plr1_selection,X
-	bpl :+
-		rts
-; ----------------
 	:
-	asl A
-	tay
-	lda (zp_ptr1_lo),Y
-	sta zp_ptr2_lo
-	iny
-	lda (zp_ptr1_lo),Y
-	sta zp_ptr2_hi
-	ldy #$08
-	lda zp_5C,X
-	beq @B3B9
+	cmp #$08
+	bne @ftr_sel_crsr_rts
+		; Hide the cursor if fighter selected
+		lda #$00	; PPU offset for player 1
+		cpx #$00
+		beq :+
+			; PPU offset for player 2
+			lda #$05
+		:
+		sta zp_var_x
 
-		ldy #$02
-	@B3B9:
-	sty zp_05
-	ldy #$00
-	lda zp_frame_counter
-	and zp_05
-	beq @B3C5
+		ldy #$00
+		@erase_crsr_tiles:
+			lda #$3C
+			sta ram_ppu_minibuf_0+5,Y
+			inx
+		iny
+		cpy #$06
+		bcc @erase_crsr_tiles
 
-		ldy #$18
-	@B3C5:
-	sty zp_05
-	lda rom_B38F,X
-	clc
-	adc zp_05
-	tay
-	lda rom_B391,X
-	sta zp_0F
-	lda rom_B38D,X
-	tax
-	lda #$06
-	sta zp_0B
-	@B3DB:
-	lda #$04
-	sta zp_08
-	lda zp_ptr2_lo
-	sta zp_09
-	@B3E3:
-	sta ram_oam_copy_xpos,X
-	lda rom_B452,Y
-	beq @B3FC
+		lda #$01	; Columns
+		sta ram_ppu_minibuf_0+1
+		lda #$06	; Rows
+		sta ram_ppu_minibuf_0+2
+		; Bytes of tile data to copy (columns * rows)
+		sta ram_ppu_minibuf_0+0
 
-		sta ram_oam_copy_tileid,X
-		lda zp_0F
-		sta ram_oam_copy_attr,X
-		lda zp_ptr2_hi
-		sta ram_oam_copy_ypos,X
-		;inx
-		;inx
-		;inx
-		;inx
-		txa
-		axs #$FC
-	@B3FC:
-	iny
-	lda zp_09
-	clc
-	adc #$08
-	sta zp_09
-	dec zp_08
-	bne @B3E3
+		; Set address of location to clear
+		ldx zp_07
+		lda zp_plr1_sel_prev,X
+		asl
+		tay
 
-	lda zp_ptr2_hi
-	clc
-	adc #$08
-	sta zp_ptr2_hi
-	dec zp_0B
-	bne @B3DB
+		lda tbl_ftr_sel_addr+0,Y
+		clc
+		adc zp_var_x
+		sta ram_ppu_minibuf_0+4
 
+		lda tbl_ftr_sel_addr+1,Y
+		sta ram_ppu_minibuf_0+3
+
+	@ftr_sel_crsr_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
 
-rom_B414:
-	.word rom_B41C, rom_B42E, rom_B41C, rom_B42E
+; Parameters:
+; X = zp_07 = player index (0 or 1)
+sub_ftr_sel_update_cursors:
+	lda zp_plr1_selection,X
+	bmi @update_cursors_rts ; Skip CPU opponent
+
+	cmp zp_plr1_sel_prev,X
+	beq @update_cursors_rts	; Return if selection hasn't changed
+
+		lda #$00	; PPU offset for player 1
+		cpx #$00
+		beq :+
+			; PPU offset for player 2
+			lda #$05
+		:
+		sta zp_var_x
+
+		; Show cursor at new location
+		txa
+		asl
+		asl
+		asl
+		tax
+
+		ldy #$00
+		@copy_crsr_tiles:
+			lda tbl_ftr_sel_tiles,X
+			sta ram_ppu_minibuf_1+5,Y
+			; Also clear previous location
+			lda #$3C
+			sta ram_ppu_minibuf_0+5,Y
+			inx
+		iny
+		cpy #$06
+		bcc @copy_crsr_tiles
+
+		; Instruct the IRQ handler to draw the new BG tiles
+		ldx zp_07
+		lda zp_plr1_selection,X
+		asl
+		tay
+		
+		lda tbl_ftr_sel_addr+0,Y
+		clc
+		adc zp_var_x
+		sta ram_ppu_minibuf_1+4
+
+		lda tbl_ftr_sel_addr+1,Y
+		sta ram_ppu_minibuf_1+3
+
+		lda #$01	; Columns
+		sta ram_ppu_minibuf_1+1
+		sta ram_ppu_minibuf_0+1
+		lda #$06	; Rows
+		sta ram_ppu_minibuf_1+2
+		sta ram_ppu_minibuf_0+2
+
+		; Bytes of tile data to copy (columns * rows)
+		sta ram_ppu_minibuf_1+0
+		sta ram_ppu_minibuf_0+0
+
+		; Set address of previous location to clear
+		;ldx zp_07
+		lda zp_plr1_sel_prev,X
+		asl
+		tay
+
+		lda tbl_ftr_sel_addr+0,Y
+		clc
+		adc zp_var_x
+		sta ram_ppu_minibuf_0+4
+
+		lda tbl_ftr_sel_addr+1,Y
+		sta ram_ppu_minibuf_0+3
+
+		; Update selection
+		lda zp_plr1_selection,X
+		sta zp_plr1_sel_prev,X
+	
+	@update_cursors_rts:
+	rts
+
+; ----------------
+
+; Cursor coordinates for each selectable character
+tbl_ftr_sel_addr:
+	.word $2067		; $00
+	.word $206D		; $01
+	.word $2073		; $02
+
+	.word $2142		; $03
+	.word $2148		; $04
+	.word $214F		; $05
+	.word $2156		; $06
+	
+	.word $2249		; $07
+	.word $224F		; $08
+
+; ----------------
+
+tbl_ftr_sel_tiles:
+	; Player 1 cursor tile IDs
+	.byte $CC, $FD, $CD, $DD, $FD, $DC
+
+	; Padding for 8-byte alignment
+	.byte $00, $00
+
+	; Player 2 cursor
+	.byte $CE, $FD, $CF, $DF, $FD, $DE
 
 ; -----------------------------------------------------------------------------
 
-rom_B41C:
-	.byte $40, $2F, $A0, $2F, $20, $6F, $50, $6F
-	.byte $90, $6F, $C0, $6F, $40, $9F, $70, $9F
-	.byte $A0, $9F
-
-; -----------------------------------------------------------------------------
-
-rom_B42E:
-	.byte $30, $30, $50, $30, $90, $30, $B0, $30
-	.byte $10, $60, $30, $60, $50, $60, $70, $60
-	.byte $90, $60, $B0, $60, $D0, $60, $10, $90
-	.byte $30, $90, $50, $90, $70, $90, $90, $90
-	.byte $B0, $90, $D0, $90
-
-; -----------------------------------------------------------------------------
-
-rom_B452:
-	.byte $E0, $E1, $E1, $E2, $E3, $F0, $F1, $E4
-	.byte $E3, $00, $00, $E4, $E3, $00, $00, $E4
-	.byte $E3, $00, $00, $E4, $E5, $E6, $E6, $E7
-	.byte $E8, $E9, $E9, $EA, $EB, $F2, $F3, $EF
-	.byte $EB, $00, $00, $EF, $EB, $00, $00, $EF
-	.byte $EB, $00, $00, $EF, $EC, $ED, $ED, $EE
-	.byte $E0, $E1, $E1, $E2, $E3, $00, $00, $E4
-	.byte $E3, $00, $00, $E4, $E3, $00, $00, $E4
-	.byte $E3, $F4, $F5, $E4, $E5, $E6, $E6, $E7
-	.byte $E8, $E9, $E9, $EA, $EB, $00, $00, $EF
-	.byte $EB, $00, $00, $EF, $EB, $00, $00, $EF
-	.byte $EB, $F6, $F7, $EF, $EC, $ED, $ED, $EE
-
-; -----------------------------------------------------------------------------
-
-sub_rom_B4B2:
+; Loads the starting attribute table for the fighter selection screen in RAM
+; This allows modifying it on the fly before uploading to the PPU
+; (we need to read from it to OR current values with a different mask for
+; each selectable fighter)
+sub_ftr_sel_init_attributes:
 	lda zp_tmp_idx
 	asl A
 	tax
-	lda @rom_B4CE+0,X
+	lda @tbl_attr_tables_ptrs+0,X
 	sta zp_ptr1_lo
-	lda @rom_B4CE+1,X
+	lda @tbl_attr_tables_ptrs+1,X
 	sta zp_ptr1_hi
+
 	ldx #$40
 	ldy #$00
-	@B4C4:
+	:
 		lda (zp_ptr1_lo),Y
 		sta ram_0680,Y
 		iny
 		dex
-	bne @B4C4
+	bne :-
 
 	rts
 
-; -----------------------------------------------------------------------------
+; ----------------
+	
+	@tbl_attr_tables_ptrs:
+	.word attr_fighter_sel, rom_B516
+	.word attr_fighter_sel, rom_B516
 
-	@rom_B4CE:
-	.word rom_B4D6, rom_B516, rom_B4D6, rom_B516
+; ----------------
 
-; -----------------------------------------------------------------------------
-
-rom_B4D6:
+attr_fighter_sel:
+	.byte $FF, $FF, $5F, $7F, $CF, $FF, $FF, $FF
+	.byte $FF, $FF, $51, $77, $CC, $B3, $FF, $FF
+	.byte $7F, $5F, $15, $57, $06, $9E, $AF, $FF
+	.byte $37, $58, $03, $45, $AA, $D9, $C8, $FF
+	.byte $FF, $FF, $FF, $75, $05, $FF, $FF, $FF
+	.byte $FF, $FF, $7F, $57, $00, $FF, $FF, $FF
 	.byte $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
-	.byte $FF, $FF, $5F, $FF, $FF, $0F, $FF, $FF
-	.byte $FF, $FF, $55, $FF, $FF, $00, $FF, $FF
-	.byte $FF, $0F, $7F, $DF, $7F, $DF, $AF, $FF
-	.byte $FF, $00, $77, $DD, $77, $DD, $AA, $FF
-	.byte $FF, $FF, $55, $33, $CC, $AA, $FF, $FF
-	.byte $FF, $FF, $F5, $F3, $FC, $FA, $FF, $FF
-	.byte $FF, $FF, $FF, $FF, $FF, $FF, $FF, $0F
+	.byte $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F
 
-; -----------------------------------------------------------------------------
+; ----------------
 
+; Unused?
 rom_B516:
 	.byte $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
 	.byte $FF, $7F, $1F, $CF, $BF, $2F, $CF, $FF
@@ -1054,7 +1108,7 @@ rom_B516:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B556:
+sub_ftr_sel_attributes:
 	lda zp_tmp_idx
 	asl A
 	tay
@@ -1062,19 +1116,21 @@ sub_rom_B556:
 	sta zp_ptr2_lo
 	lda rom_B5BF+1,Y
 	sta zp_ptr2_hi
-	ldx #$00
+
+	ldx #$00	; First run, player one
 	lda zp_5C,X
 	cmp #$05
 	bne :+
-		jsr sub_rom_B578
+		jsr sub_inner_ftr_sel_attr
 	:
-	ldx #$01
+	ldx #$01	; Second run, player two
 	lda zp_5C,X
 	cmp #$05
-	beq sub_rom_B578
+	beq sub_inner_ftr_sel_attr
+
 		rts
 ; ----------------
-sub_rom_B578:
+sub_inner_ftr_sel_attr:
 	inc zp_5C,X
 	lda zp_plr1_selection,X
 	asl A
@@ -1099,8 +1155,9 @@ sub_rom_B578:
 
 	lda #$23
 	sta zp_nmi_ppu_ptr_hi
-	lda #$C8
+	lda #$C0
 	sta zp_nmi_ppu_ptr_lo
+
 	lda #$00
 	sta zp_47
 	lda #$30
@@ -1108,116 +1165,166 @@ sub_rom_B578:
 	lda #$01
 	sta zp_nmi_ppu_rows
 
-	ldx #$08
-	ldy #$00
+	ldx #$00
+	;ldy #$00
 	@B5B2:
 		lda ram_0680,X
-		sta ram_ppu_data_buffer,Y
+		sta ram_ppu_data_buffer,X
 		inx
-		iny
-		cpy #$30
+		;iny
+		;cpy #$30
+		cpx #$30
 	bcc @B5B2
 
 	rts
 
 ; -----------------------------------------------------------------------------
 
+; TODO The second table is unused, we don't need a pointer to another pointer
 rom_B5BF:
 	.word rom_B5C7, rom_B5D9, rom_B5C7, rom_B5D9
 
 ; -----------------------------------------------------------------------------
 
+; Pointers for fighter selection attribute tables used to change the colours
+; of the selected fighter
 rom_B5C7:
-	.word rom_B5FD, rom_B602, rom_B607, rom_B60C
-	.word rom_B615, rom_B61E, rom_B623, rom_B628
-	.word rom_B631
+	.word attr_fgtr_0	; $00
+	.word attr_fgtr_1	; $01
+	.word attr_fgtr_2	; $02
+	.word attr_fgtr_3	; $03
+	.word attr_fgtr_4	; $04
+	.word attr_fgtr_5	; $05
+	.word attr_fgtr_6	; $06
+	.word attr_fgtr_7	; $07
+	.word attr_fgtr_8	; $08
 
 ; -----------------------------------------------------------------------------
 
+; Potentially unused
 rom_B5D9:
-	.word rom_B636, rom_B63F, rom_B648, rom_B651
-	.word rom_B65A, rom_B663, rom_B66C, rom_B675
-	.word rom_B67E, rom_B687, rom_B690, rom_B699
-	.word rom_B6A2, rom_B6AB, rom_B6B4, rom_B6BD
-	.word rom_B6C6, rom_B6CF
+	.word rom_B636
+;	.word rom_B63F, rom_B648, rom_B651
+;	.word rom_B65A, rom_B663, rom_B66C, rom_B675
+;	.word rom_B67E, rom_B687, rom_B690, rom_B699
+;	.word rom_B6A2, rom_B6AB, rom_B6B4, rom_B6BD
+;	.word rom_B6C6, rom_B6CF
 
 ; -----------------------------------------------------------------------------
 
-rom_B5FD:
-	.byte $0A, $F0, $12, $FF, $FF
-rom_B602:
-	.byte $0D, $F0, $15, $FF, $FF
-rom_B607:
-	.byte $19, $F0, $21, $FF, $FF
-rom_B60C:
-	.byte $1A, $C0, $1B, $30, $22, $CC, $23, $33
+; Data format (two bytes per entry):
+; Attribute table offset, Attribute value OR mask
+; Offset bit 7 set = stop
+
+attr_fgtr_0:
+	.byte $02, $FF
+	.byte $0A, $FF
+	.byte $12, $0F
 	.byte $FF
-rom_B615:
-	.byte $1C, $C0, $1D, $30, $24, $CC, $25, $33
+attr_fgtr_1:
+	.byte $03, $FF
+	.byte $04, $FF
+	.byte $0B, $FF
+	.byte $0C, $FF
+	.byte $13, $0F
+	.byte $14, $0F
 	.byte $FF
-rom_B61E:
-	.byte $1E, $F0, $26, $FF, $FF
-rom_B623:
-	.byte $2A, $FF, $32, $0F, $FF
-rom_B628:
-	.byte $2B, $CC, $2C, $33, $33, $0C, $34, $03
+attr_fgtr_2:
+	.byte $05, $FF
+	.byte $0D, $FF
+	.byte $15, $9F
 	.byte $FF
-rom_B631:
-	.byte $2D, $FF, $35, $0F, $FF
+
+attr_fgtr_3:
+	.byte $10, $FF
+	.byte $11, $FF
+	.byte $18, $FF
+	.byte $19, $FF
+	.byte $FF
+attr_fgtr_4:
+	.byte $12, $F0
+	.byte $13, $73
+	.byte $1A, $FF
+	.byte $1B, $77
+	.byte $FF
+attr_fgtr_5:
+	.byte $14, $F4
+	.byte $1C, $FF
+	.byte $FF
+attr_fgtr_6:
+	.byte $15, $D0
+	.byte $16, $FF
+	.byte $1D, $DD
+	.byte $1E, $FF
+	.byte $FF
+
+attr_fgtr_7:
+	.byte $22, $FF
+	.byte $23, $75
+	.byte $2A, $FF
+	.byte $2B, $77
+	.byte $FF
+attr_fgtr_8:
+	.byte $24, $F5
+	.byte $2C, $FF
+	.byte $FF
+
+; -----------------------------------------------------------------------------
+
 rom_B636:
 	.byte $09, $C0, $0A, $30, $11, $CC, $12, $33
 	.byte $FF
-rom_B63F:
-	.byte $0A, $C0, $0B, $30, $12, $CC, $13, $33
-	.byte $FF
-rom_B648:
-	.byte $0C, $C0, $0D, $30, $14, $CC, $15, $33
-	.byte $FF
-rom_B651:
-	.byte $0D, $C0, $0E, $30, $15, $CC, $16, $33
-	.byte $FF
-rom_B65A:
-	.byte $18, $CC, $19, $33, $20, $0C, $21, $03
-	.byte $FF
-rom_B663:
-	.byte $19, $CC, $1A, $33, $21, $0C, $22, $03
-	.byte $FF
-rom_B66C:
-	.byte $1A, $CC, $1B, $33, $22, $0C, $23, $03
-	.byte $FF
-rom_B675:
-	.byte $1B, $CC, $1C, $33, $23, $0C, $24, $03
-	.byte $FF
-rom_B67E:
-	.byte $1C, $CC, $1D, $33, $24, $0C, $25, $03
-	.byte $FF
-rom_B687:
-	.byte $1D, $CC, $1E, $33, $25, $0C, $26, $03
-	.byte $FF
-rom_B690:
-	.byte $1E, $CC, $1F, $33, $26, $0C, $27, $03
-	.byte $FF
-rom_B699:
-	.byte $20, $C0, $21, $30, $28, $CC, $29, $33
-	.byte $FF
-rom_B6A2:
-	.byte $21, $C0, $22, $30, $29, $CC, $2A, $33
-	.byte $FF
-rom_B6AB:
-	.byte $22, $C0, $23, $30, $2A, $CC, $2B, $33
-	.byte $FF
-rom_B6B4:
-	.byte $23, $C0, $24, $30, $2B, $CC, $2C, $33
-	.byte $FF
-rom_B6BD:
-	.byte $24, $C0, $25, $30, $2C, $CC, $2D, $33
-	.byte $FF
-rom_B6C6:
-	.byte $25, $C0, $26, $30, $2D, $CC, $2E, $33
-	.byte $FF
-rom_B6CF:
-	.byte $26, $C0, $27, $30, $2E, $CC, $2F, $33
-	.byte $FF
+;rom_B63F:
+;	.byte $0A, $C0, $0B, $30, $12, $CC, $13, $33
+;	.byte $FF
+;rom_B648:
+;	.byte $0C, $C0, $0D, $30, $14, $CC, $15, $33
+;	.byte $FF
+;rom_B651:
+;	.byte $0D, $C0, $0E, $30, $15, $CC, $16, $33
+;	.byte $FF
+;rom_B65A:
+;	.byte $18, $CC, $19, $33, $20, $0C, $21, $03
+;	.byte $FF
+;rom_B663:
+;	.byte $19, $CC, $1A, $33, $21, $0C, $22, $03
+;	.byte $FF
+;rom_B66C:
+;	.byte $1A, $CC, $1B, $33, $22, $0C, $23, $03
+;	.byte $FF
+;rom_B675:
+;	.byte $1B, $CC, $1C, $33, $23, $0C, $24, $03
+;	.byte $FF
+;rom_B67E:
+;	.byte $1C, $CC, $1D, $33, $24, $0C, $25, $03
+;	.byte $FF
+;rom_B687:
+;	.byte $1D, $CC, $1E, $33, $25, $0C, $26, $03
+;	.byte $FF
+;rom_B690:
+;	.byte $1E, $CC, $1F, $33, $26, $0C, $27, $03
+;	.byte $FF
+;rom_B699:
+;	.byte $20, $C0, $21, $30, $28, $CC, $29, $33
+;	.byte $FF
+;rom_B6A2:
+;	.byte $21, $C0, $22, $30, $29, $CC, $2A, $33
+;	.byte $FF
+;rom_B6AB:
+;	.byte $22, $C0, $23, $30, $2A, $CC, $2B, $33
+;	.byte $FF
+;rom_B6B4:
+;	.byte $23, $C0, $24, $30, $2B, $CC, $2C, $33
+;	.byte $FF
+;rom_B6BD:
+;	.byte $24, $C0, $25, $30, $2C, $CC, $2D, $33
+;	.byte $FF
+;rom_B6C6:
+;	.byte $25, $C0, $26, $30, $2D, $CC, $2E, $33
+;	.byte $FF
+;rom_B6CF:
+;	.byte $26, $C0, $27, $30, $2E, $CC, $2F, $33
+;	.byte $FF
 
 ; -----------------------------------------------------------------------------
 
@@ -1502,6 +1609,7 @@ sub_rom_B845:
 
 ; -----------------------------------------------------------------------------
 
+; Chooses two fighters for the attract mode?
 sub_rom_B864:
 	jsr sub_rom_cycle_palettes
 	lda zp_palette_fade_idx
@@ -1565,7 +1673,7 @@ sub_vs_state_machine:
 ; ----------------
 ; Jump pointers
 	.word sub_vs_state_init	; 0,2,0
-	.word sub_rom_B926	; 0,2,1
+	.word sub_prepare_vs_screen	; 0,2,1
 	.word sub_vs_fade_in	; 0,2,2
 	.word sub_rom_B993	; 0,2,3
 	.word sub_vs_fade_out	; 0,2,4
@@ -1573,58 +1681,56 @@ sub_vs_state_machine:
 ; -----------------------------------------------------------------------------
 
 sub_vs_state_init:
-	jsr sub_rom_BE15
+	; Get next fighter selection for the CPU
+	jsr sub_choose_opponent
 	; If both fighters have already been selected, move to VS screen,
 	; otherwise this will show the fighter selection screen
 	ldx #$00
 	lda zp_plr1_selection,X			; Player 1
-	bmi @B8E2
+	bmi @B8E2	; Branch if player 1 is CPU-controller
 
 		inx
 		lda zp_plr1_selection,X		; Player 2
 
-	bmi @B8E2
+	bmi @B8E2	; Branch if player 2 is CPU-controlled
 
+		; This is only for 2 players mode
 		inc zp_machine_state_2
 		lda #$00
-		sta zp_61
+		sta zp_match_number
 		sta zp_endurance_flag
 
 	rts
 ; ----------------
+	; Parameters:
+	; X = index of CPU opponent (0/1)
 	@B8E2:
 	lda zp_endurance_flag
-	bne @B8F2
+	bne :+
+		lda #$00
+		sta zp_endurance_opp_idx
 
-	lda #$00
-	sta zp_65
-	ldy zp_61
-	lda ram_06C0,Y
-	jmp @B917
-
-	@B8F2:
+		ldy zp_match_number
+		lda ram_opponent_idx,Y
+		jmp @B917_set_opponent
+	:
 	cmp #$01
-	bne @B905
+	bne :+
+		ldy zp_match_number
+		lda ram_06C3,Y
+		ora #$80
+		sta zp_endurance_opp_idx
 
-	ldy zp_61
-	lda ram_06C3,Y
-	ora #$80
-	sta zp_65
-	lda ram_06C0,Y
-	jmp @B917
-
-	@B905:
+		lda ram_opponent_idx,Y
+		jmp @B917_set_opponent
+	:
 	tay
 	lda #$00
-	sta zp_65
-	lda zp_66
-	bne @B914
-	lda rom_B91E,Y
-	jmp @B917
+	sta zp_endurance_opp_idx
 
-	@B914:
-	lda rom_B922,Y
-	@B917:
+	lda tbl_boss_sel_idx,Y
+
+	@B917_set_opponent:
 	ora #$80
 	sta zp_plr1_selection,X
 	inc zp_machine_state_2
@@ -1632,59 +1738,68 @@ sub_vs_state_init:
 
 ; -----------------------------------------------------------------------------
 
-rom_B91E:
-	.byte $01, $00, $01, $00
-rom_B922:
-	.byte $03, $00, $03, $00
+tbl_boss_sel_idx:
+	.byte $08, $07, $08, $07
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B926:
+sub_prepare_vs_screen:
 	lda zp_endurance_flag
 	cmp #$01
-	beq @B941
+	beq @B941_endurance_nam
 
 		lda #$02	; Index used for VS screen (it's the same as player select)
 		sta zp_tmp_idx
+
 		jsr sub_setup_new_screen
-		jsr sub_rom_BA74
-		jsr sub_rom_B9DB
+		jsr sub_vs_scr_portraits
+		jsr sub_vs_scr_attributes
+
 		lda #$8A
 		sta ram_0680
-		jmp @B956
+		jmp @B956_prepare_scr
 
-	@B941:
+	@B941_endurance_nam:
 	lda #$07	; Index for endurance match VS screen
 	sta zp_tmp_idx
 	jsr sub_setup_new_screen
 	jsr sub_rom_BC2B
+
 	ldy #$88
 	lda zp_plr1_selection
-	bpl @B953
-
-	ldy #$8A
-	@B953:
+	bpl :+
+		ldy #$8A
+	:
 	sty ram_0680
-	@B956:
+	
+	@B956_prepare_scr:
 	jsr sub_hide_all_sprites
+
 	lda #$00
 	sta zp_57
 	sta zp_palette_fade_idx
 	sta zp_scroll_x
 	sta zp_scroll_y
+
 	lda #$88
 	sta PpuControl_2000
 	sta zp_ppu_control_backup
+
 	cli
 	jsr sub_wait_vblank
+
 	lda #$1E
 	sta zp_ppu_mask_backup
-	lda ram_0680
+
+	lda ram_0680	; Select nametable
 	sta zp_ppu_control_backup
+
 	lda #$0C
 	sta ram_irq_routine_idx
 	sta ram_irq_latch_value
+
 	inc zp_machine_state_2
+
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1757,39 +1872,45 @@ sub_vs_fade_out:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B9DB:
+sub_vs_scr_attributes:
 	lda ram_0680
 	asl A
 	asl A
 	tax
+
 	ldy #$2B
 	sty PpuAddr_2006
 	lda #$D1
 	sta PpuAddr_2006
 	lda rom_BA68+0,X
 	sta PpuData_2007
+
 	;lda #$2B
 	sty PpuAddr_2006
 	lda #$D2
 	sta PpuAddr_2006
 	lda rom_BA68+1,X
 	sta PpuData_2007
+
 	;lda #$2B
 	sty PpuAddr_2006
 	lda #$D9
 	sta PpuAddr_2006
 	lda rom_BA6A+0,X
 	sta PpuData_2007
+
 	;lda #$2B
 	sty PpuAddr_2006
 	lda #$DA
 	sta PpuAddr_2006
 	lda rom_BA6A+1,X
 	sta PpuData_2007
+
 	lda ram_0681
 	asl A
 	asl A
 	tax
+
 	;lda #$2B
 	sty PpuAddr_2006
 	lda #$D5
@@ -1819,19 +1940,20 @@ sub_rom_B9DB:
 rom_BA68:
 	.byte $3F, $CF
 rom_BA6A:
-	.byte $33, $CC, $7F, $DF, $77, $DD, $BF, $EF
-	.byte $BB, $EE
+	.byte $33, $CC
+
+	.byte $7F, $DF, $77, $DD
+
+	.byte $BF, $EF, $BB, $EE
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_BA74:
-	lda zp_66
-	asl A
-	tay
-	lda rom_BB07+0,Y
+sub_vs_scr_portraits:
+	lda #<rom_BB0B
 	sta zp_ptr2_lo
-	lda rom_BB07+1,Y
+	lda #>rom_BB0B
 	sta zp_ptr2_hi
+
 	ldx #$00
 	lda zp_plr1_selection
 	and #$7F
@@ -1842,12 +1964,16 @@ sub_rom_BA74:
 	iny
 	lda (zp_ptr2_lo),Y
 	sta ram_0680,X
-	jsr sub_rom_BC9A
+
+	jsr sub_vs_scr_load_portrait
+
 	lda #$29
 	sta zp_nmi_ppu_ptr_hi
 	lda #$46
 	sta zp_nmi_ppu_ptr_lo
+
 	jsr sub_rom_BABF
+
 	ldx #$01
 	lda zp_plr2_selection
 	and #$7F
@@ -1858,7 +1984,9 @@ sub_rom_BA74:
 	iny
 	lda (zp_ptr2_lo),Y
 	sta ram_0680,X
-	jsr sub_rom_BC9A
+
+	jsr sub_vs_scr_load_portrait
+
 	lda #$29
 	sta zp_nmi_ppu_ptr_hi
 	lda #$56
@@ -1903,35 +2031,20 @@ sub_rom_BABF:
 
 ; -----------------------------------------------------------------------------
 
-; Potentially unused
-;rom_BAFB:
-;	.byte $3F, $CF, $33, $CC, $7F, $DF, $77, $DD
-;	.byte $BF, $EF, $BB, $EE
-
-; -----------------------------------------------------------------------------
-
-rom_BB07:
-	.word rom_BB0B, rom_BB1D
-
-; -----------------------------------------------------------------------------
-
 rom_BB0B:
-	.byte $00, $01, $01, $00, $02, $00, $03, $01
-	.byte $04, $01, $05, $02, $06, $01, $07, $00
+	.byte $00, $01
+	.byte $01, $00
+	.byte $02, $00
+	.byte $03, $01
+	.byte $04, $01
+	.byte $05, $02
+	.byte $06, $01
+	.byte $07, $00
 	.byte $08, $02
 
 ; -----------------------------------------------------------------------------
 
-rom_BB1D:
-	.byte $00, $01, $06, $00, $03, $02, $01, $00
-	.byte $06, $01, $02, $00, $03, $01, $04, $01
-	.byte $05, $00, $08, $02, $07, $00, $05, $02
-	.byte $07, $02, $08, $00, $00, $00, $02, $01
-	.byte $01, $01, $04, $02
-
-; -----------------------------------------------------------------------------
-
-rom_BB41:
+tbl_fighter_nam_ptrs:
 	.word rom_BB53
 	.word rom_BB6B
 	.word rom_BB83
@@ -1943,6 +2056,8 @@ rom_BB41:
 	.word rom_BC13
 
 ; -----------------------------------------------------------------------------
+
+; Fighter portrait nametables
 
 rom_BB53:
 	.byte $C0, $C1, $C2, $C3, $D0, $D1, $D2, $D3
@@ -1984,13 +2099,11 @@ rom_BC13:
 ; -----------------------------------------------------------------------------
 
 sub_rom_BC2B:
-	lda zp_66
-	asl A
-	tay
-	lda rom_BB07+0,Y
+	lda #<rom_BB0B
 	sta zp_ptr2_lo
-	lda rom_BB07+1,Y
+	lda #>rom_BB0B
 	sta zp_ptr2_hi
+
 	ldx #$00
 	stx zp_1C
 	lda zp_plr1_selection
@@ -2017,7 +2130,7 @@ sub_rom_BC57:
 	ldx zp_1C
 	lda (zp_ptr2_lo),Y
 	sta ram_0680,X
-	jsr sub_rom_BC9A
+	jsr sub_vs_scr_load_portrait
 	lda zp_1C
 	asl A
 	asl A
@@ -2045,18 +2158,20 @@ sub_rom_BC57:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_BC9A:
+sub_vs_scr_load_portrait:
 	lda zp_05
 	asl A
 	tay
-	lda rom_BB41+0,Y
+	lda tbl_fighter_nam_ptrs+0,Y
 	sta zp_ptr1_lo
-	lda rom_BB41+1,Y
+	lda tbl_fighter_nam_ptrs+1,Y
 	sta zp_ptr1_hi
+
 	lda #$04
 	sta zp_nmi_ppu_cols
 	lda #$06
 	sta zp_nmi_ppu_rows
+
 	ldy #$00
 	sty zp_47
 	:
@@ -2071,10 +2186,13 @@ sub_rom_BC9A:
 ; -----------------------------------------------------------------------------
 
 rom_BCBF:
-	.byte $21, $44
+	.word $2144
 rom_BCC1:
-	.byte $29, $44, $21, $52, $29, $58, $21, $58
-	.byte $29, $4A
+	.word $2944
+	.word $2152
+	.word $2958
+	.word $2158
+	.word $294A
 
 ; -----------------------------------------------------------------------------
 
@@ -2213,83 +2331,49 @@ rom_BE01:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_BE15:
-	lda zp_66
-	bne @BE44
+sub_choose_opponent:
 	lda zp_plr1_selection
-	bpl @BE1F
-	lda zp_plr2_selection
-	@BE1F:
-	sta zp_05
-	sta ram_06C6
-	and #$7F
+	bpl :+
+		; Use player 2 if player 1 is CPU opponent
+		lda zp_plr2_selection
+	:
+	sta zp_05	; Store player selection index in temp variable
+	sta ram_mirror_opp_idx	; Save it as mirror match opponent
+
+	and #$7F	; Remove AI flag if present
 	tay
-	lda rom_BE6F,Y
-	sta zp_07
+
+	lda tbl_num_opponents,Y
+	sta zp_07	; Number of matches to fight excluding endurance, mirror and bosses
+
 	ldx #$00
 	ldy #$00
-	@BE30:
-	lda rom_BE8A,X
+	@BE30_loop:
+	lda tbl_opponent_indices,X
 	cmp zp_05
-	bne @BE3A
-
-	inx
-	bne @BE30
-
-	@BE3A:
-	sta ram_06C0,Y
+	bne :+
+		; Skip opponent if same as player (mirror match is handled separately)
+		inx
+		bne @BE30_loop	; Always branches
+	:
+	sta ram_opponent_idx,Y	; Will fill in the table from 0 to 5 (or 6)
 	iny
 	inx
 	dec zp_07
-	bne @BE30
+	bne @BE30_loop
 
 	rts
+
 ; ----------------
-	@BE44:
-	lda zp_plr1_selection
-	bpl @BE4A
 
-	lda zp_plr2_selection
-	@BE4A:
-	sta zp_05
-	sta ram_06CD
-	and #$7F
-	tay
-	lda rom_BE78,Y
-	sta zp_07
-	ldx #$00
-	ldy #$00
-	@BE5B:
-	lda rom_BE91,X
-	cmp zp_05
-	bne @BE65
+; Goro and Shang-Tsung play one more match, apparently
+tbl_num_opponents:
+	.byte $06, $06, $06, $06, $06, $06, $06
+	.byte $07, $07
 
-	inx
-	bne @BE5B
-
-	@BE65:
-	sta ram_06C0,Y
-	iny
-	inx
-	dec zp_07
-	bne @BE5B
-
-	rts
-
-; -----------------------------------------------------------------------------
-
-rom_BE6F:
-	.byte $07, $07, $06, $06, $06, $06, $06, $06
-	.byte $06
-rom_BE78:
-	.byte $0E, $0D, $0D, $0E, $0D, $0D, $0D, $0D
-	.byte $0D, $0D, $0D, $0D, $0D, $0D, $0E, $0D
-	.byte $0E, $0D
-rom_BE8A:
-	.byte $02, $03, $04, $05, $06, $07, $08
-rom_BE91:
-	.byte $01, $02, $05, $07, $08, $09, $0A, $04
-	.byte $06, $0B, $0C, $0D, $0F, $11
+; This the list of opponent selections, excluding Goro and Shang-Tsung
+tbl_opponent_indices:
+	.byte $00, $01, $02, $03, $04, $05, $06
 
 ; -----------------------------------------------------------------------------
 
@@ -2297,71 +2381,44 @@ sub_rom_BE9F:
 	lda zp_plr1_selection
 	and #$80
 	sta zp_plr1_fighter_idx
+
 	lda zp_plr2_selection
 	and #$80
 	sta zp_plr2_fighter_idx
-	lda zp_65
+
+	lda zp_endurance_opp_idx
 	and #$80
 	sta zp_60
-	lda zp_66
-	bne @BEDC
 
 	lda zp_plr1_selection
 	and #$7F
 	tay
-	lda rom_BF03,Y
+	lda tbl_sel_to_ftr_idx,Y
 	ora zp_plr1_fighter_idx
 	sta zp_plr1_fighter_idx
+
 	lda zp_plr2_selection
 	and #$7F
 	tay
-	lda rom_BF03,Y
+	lda tbl_sel_to_ftr_idx,Y
 	ora zp_plr2_fighter_idx
 	sta zp_plr2_fighter_idx
-	lda zp_65
-	beq @BED9
-
-	and #$7F
-	tay
-	lda rom_BF03,Y
-	ora zp_60
-	@BED9:
-	sta zp_60
-	rts
-; ----------------
-	@BEDC:
-	lda zp_plr1_selection
-	and #$7F
-	tay
-	lda rom_BF0C,Y
-	ora zp_plr1_fighter_idx
-	sta zp_plr1_fighter_idx
-	lda zp_plr2_selection
-	and #$7F
-	tay
-	lda rom_BF0C,Y
-	ora zp_plr2_fighter_idx
-	sta zp_plr2_fighter_idx
-	lda zp_65
-	beq @BF00
-
-	and #$7F
-	tay
-	lda rom_BF0C,Y
-	ora zp_60
-	@BF00:
+	lda zp_endurance_opp_idx
+	beq :+
+		and #$7F
+		tay
+		lda tbl_sel_to_ftr_idx,Y
+		ora zp_60
+	:
 	sta zp_60
 	rts
 
 ; -----------------------------------------------------------------------------
+.export tbl_sel_to_ftr_idx
 
-rom_BF03:
-	.byte $08, $07, $05, $04, $02, $01, $00, $06
-	.byte $03
-rom_BF0C:
-	.byte $08, $00, $04, $07, $0C, $05, $10
-	.byte $02, $01, $03, $06, $0D, $12, $0F, $14
-	.byte $11, $13, $0E
+tbl_sel_to_ftr_idx:
+	.byte $02, $04, $03, $00, $05, $06, $01, $08
+	.byte $07
 
 ; -----------------------------------------------------------------------------
 

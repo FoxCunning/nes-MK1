@@ -12,10 +12,10 @@ zp_ppu_mask_backup = $04     ;
 zp_05 = $05     ;
 zp_06 = $06     ;
 zp_07 = $07     ;
-zp_08 = $08     ;
-zp_09 = $09     ;
+zp_var_x = $08  ;
+zp_x_counter = $09  ;
 zp_0A = $0A     ;
-zp_0B = $0B     ;
+zp_var_y = $0B     ;
 zp_0D = $0D     ;
 zp_backup_a = $0E   ; Register backup to avoid psh/pla
 zp_0F = $0F     ;
@@ -117,14 +117,13 @@ zp_5E = $5E     ;
 zp_endurance_flag = $5F ; Set to one for endurance matches (1 vs 2)
 
 zp_60 = $60     ;
-zp_61 = $61     ;
+zp_match_number = $61     ;
 zp_62 = $62     ;
 ; Index of menu option selected by controller 1
 zp_plr1_selection = $63 ;
 ; Index of menu option selected by controller 2
 zp_plr2_selection = $64 ;
-zp_65 = $65     ;
-zp_66 = $66     ;
+zp_endurance_opp_idx = $65     ;
 
 zp_frozen_timer = $70   ; Size=2 Player can't move until timer reaches zero
 zp_thaw_flag = $72  ; Size=2 Player will be "thawed" when this flag is set
@@ -163,9 +162,11 @@ zp_short_counter_target = $92     ;
 zp_short_counter = $94     ;
 zp_chr_bank_0 = $96     ;
 zp_chr_bank_1 = $97     ;
-zp_99 = $99     ;
-zp_9A = $9A     ;
-zp_9B = $9B     ;
+
+zp_plr1_sel_prev = $99  ; For fighter selection
+zp_plr2_sel_prev = $9A  ; For fighter selection
+
+;zp_9B = $9B     ;
 zp_players_x_distance = $9C ;
 zp_players_y_distance = $9D ;
 zp_9E = $9E     ;
@@ -302,7 +303,7 @@ ram_0414 = $0414    ;
 ram_0416 = $0416    ;
 ram_0418 = $0418    ;
 ram_0419 = $0419    ;
-ram_041F = $041F    ;
+;ram_041F = $041F    ;
 ram_0421 = $0421    ;
 ram_041A = $041A    ;
 ; The NMI routine will write this to the MMC3 latch register
@@ -325,8 +326,13 @@ ram_ranged_atk_x_pos = $0436    ; Ranged attack hit box coordinate
 ram_0438 = $0438    ;
 ram_043D = $043D    ;
 ram_special_atk_idx = $043E    ;
-ram_irq_counter_0 = $043F ; Used in IRQ routines as a counter (e.g. for parallax scrolling)
-ram_irq_counter_1 = $0440    ;
+ram_irq_counter_0 = $043F   ; Used in IRQ routines as a counter (e.g. for parallax scrolling)
+ram_irq_counter_1 = $0440   ;
+
+; To be copied to actual PPU buffer by IRQ routines
+ram_ppu_minibuf_0 = $0460   ; Size=16
+ram_ppu_minibuf_1 = $0480   ; Size=16
+ram_ppu_minibuf_2 = $04A0   ; Size=16
 
 ; This buffer will be copied to the PPU during vblank
 ram_ppu_data_buffer = $0600 ; Size=63
@@ -363,9 +369,9 @@ ram_0680 = $0680    ;
 ram_0681 = $0681    ;
 ram_0682 = $0682    ;
 
-ram_06C0 = $06C0    ;
+ram_opponent_idx = $06C0    ;
 ram_06C3 = $06C3    ;
-ram_06C6 = $06C6    ;
+ram_mirror_opp_idx = $06C6    ;
 ram_06CD = $06CD    ;
 
 ; ----------------
