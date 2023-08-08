@@ -892,13 +892,49 @@ sub_ftr_sel_cursors:
 
 		jmp sub_ftr_sel_update_cursors
 
-	; Hide the cursor if fighter selected
 	:
-	;lda tbl_sel_cur_oam_ofs,X
-	;tay
-	;lda #$F8
-	;sta ram_oam_copy_ypos,Y
+	cmp #$08
+	bne @ftr_sel_crsr_rts
+		; Hide the cursor if fighter selected
+		lda #$00	; PPU offset for player 1
+		cpx #$00
+		beq :+
+			; PPU offset for player 2
+			lda #$05
+		:
+		sta zp_var_x
 
+		ldy #$00
+		@erase_crsr_tiles:
+			lda #$3C
+			sta ram_ppu_minibuf_0+5,Y
+			inx
+		iny
+		cpy #$06
+		bcc @erase_crsr_tiles
+
+		lda #$01	; Columns
+		sta ram_ppu_minibuf_0+1
+		lda #$06	; Rows
+		sta ram_ppu_minibuf_0+2
+		; Bytes of tile data to copy (columns * rows)
+		sta ram_ppu_minibuf_0+0
+
+		; Set address of location to clear
+		ldx zp_07
+		lda zp_plr1_sel_prev,X
+		asl
+		tay
+
+		lda tbl_ftr_sel_addr+0,Y
+		clc
+		adc zp_var_x
+		sta ram_ppu_minibuf_0+4
+
+		lda tbl_ftr_sel_addr+1,Y
+		sta ram_ppu_minibuf_0+3
+
+	@ftr_sel_crsr_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
