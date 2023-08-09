@@ -612,51 +612,64 @@ sub_irq_handler_0C:
 sub_irq_handler_0D:
 	sta mmc3_irq_disable
 
-	; Timing for split-screen
-	ldy #$14
-	:
-	dey
-	bne :-
-
 	ldx #$80
 	stx mmc3_bank_select
-	lda #$F4
+	lda #$FC
 	sta mmc3_bank_data
 	inx
 	stx mmc3_bank_select
-	lda #$F6
+	lda #$FE
 	sta mmc3_bank_data
 	inx
-	lda #$F4
+	lda #$F8
 	stx mmc3_bank_select
 	sta mmc3_bank_data
 	inx
-	lda #$F5
+	lda #$F9
 	stx mmc3_bank_select
 	sta mmc3_bank_data
 	inx
-	lda #$F6
+	lda #$FA
 	stx mmc3_bank_select
 	sta mmc3_bank_data
 	inx
-	lda #$F7
+	lda #$FB
 	stx mmc3_bank_select
 	sta mmc3_bank_data
 
-	php	; Timing
-	plp
-	nop
+	;lda PpuStatus_2002
 
-	lda PpuStatus_2002
-	lda zp_ppu_ptr_hi
+	lda #$04
 	sta PpuAddr_2006
-	lda zp_ppu_ptr_lo
+
+	inc zp_irq_ver_scroll
+	lda zp_irq_ver_scroll
+	cmp #$F0
+	bne :+
+		lda #$00
+		sta zp_irq_ver_scroll
+	:
+	sta PpuScroll_2005
+
+	and #$F8
+	asl
+	asl
+	sta zp_irq_hor_scroll
+
+	;ldx #$04
+
+	; Timing
+	ldx #$10
+	:
+	dex
+	cpx #$04
+	bne :-
+
+	stx PpuScroll_2005
 	sta PpuAddr_2006
-	lda #$00
-	sta PpuScroll_2005
-	sta PpuScroll_2005
-	lda #$00
-	sta ram_irq_state_var
+
+	lda #$A9
+	sta PpuControl_2000
 
 	rts
 
@@ -1555,9 +1568,8 @@ sub_ftr_sel_sprites:
 	sta zp_var_y
 
 	iny
-	lda (zp_ptr3_lo),Y
+	lda #$10 ;lda (zp_ptr3_lo),Y
 	sta zp_0F			; X offset
-	; TODO Flip horizontally for player 2?
 	clc
 	adc zp_var_x
 	sta zp_var_x
@@ -1694,7 +1706,7 @@ sub_ftr_sel_sprites:
 ; ----------------
 
 	@tbl_base_x:
-	.byte $FC, $D4
+	.byte $FC, $D8
 
 	@tbl_oam_ofs:
 	.byte $00, $80
