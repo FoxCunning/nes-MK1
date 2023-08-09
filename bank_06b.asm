@@ -1532,16 +1532,16 @@ sub_ftr_sel_sprites:
 		ldy #$00		; Idle (Frame 0)
 
 		; Alternate between frames 0 and 1
-		lda #$40
-		isc zp_plr1_anim_frame,X
-		bcs :+
-			iny		; Idle frame 1
-			iny
-			cmp #$C0
-			bcs :+
+		;lda #$40
+		;isc zp_plr1_anim_frame,X
+		;bcs :+
+		;	iny		; Idle frame 1
+		;	iny
+		;	cmp #$C0
+		;	bcs :+
 				; Restart counter
-				lda #$00
-				sta zp_plr1_anim_frame,X
+		;		lda #$00
+		;		sta zp_plr1_anim_frame,X
 	:
 	lda (zp_ptr1_lo),Y
 	sta zp_ptr3_lo
