@@ -40,8 +40,8 @@ sub_main_menu_states:
 
 	.word sub_init_menu_screen		; 0,0,4
 	.word sub_menu_fade_in			; 0,0,5
-	.word sub_menu_slide_up			; 0,0,6
-	.word sub_menu_screen_shake		; 0,0,7
+	.word sub_main_menu_loop		; 0,0,6
+	.word sub_main_menu_loop		; 0,0,7
 	.word sub_main_menu_loop		; 0,0,8
 	.word sub_menu_fade_out			; 0,0,9
 	.word sub_eval_menu_choice		; 0,0,A
@@ -57,12 +57,15 @@ sub_init_menu_screen:
 	jsr sub_init_screen_common
 
 	; Switch to vertical mirroring
-	;lda #$01
-	;sta mmc3_mirroring
+	lda #$00
+	sta mmc3_mirroring
+
+	sta zp_irq_hor_scroll
+	sta zp_irq_ver_scroll
 
 	lda #$0D
 	sta ram_irq_routine_idx
-	lda #$ED
+	lda #$48
 	sta ram_irq_latch_value
 	
 	lda #$00
@@ -73,17 +76,54 @@ sub_init_menu_screen:
 	lda #$02
 	sta zp_plr2_selection
 
-	; Move "cursor" to default selection (left)
-	lda tbl_menu_cursor_ptrs+0
-	sta zp_ppu_ptr_hi
-	lda tbl_menu_cursor_ptrs+1
-	sta zp_ppu_ptr_lo
+	; OAM data for menu items
+	ldx #$00
+	:
+		lda @oam_menu_sprites,X
+		sta ram_oam_copy_ypos+4,X
+		inx
+		cpx #$30
+	bne :-
+
+	; Move the cursor sprite to default selection
+	lda tbl_menu_cursor_y
+	sta ram_oam_copy_ypos
+	lda #$95
+	sta ram_oam_copy_tileid
+	lda #$01
+	sta ram_oam_copy_attr
+	lda #$54
+	sta ram_oam_copy_xpos
 
 	inc zp_machine_state_2	; Move to next sub-state
 
 	lda #$00
 	sta zp_5E
+	sta zp_ppu_ptr_lo	; These are used for the scrolling effect
+	lda #$24
+	sta zp_ppu_ptr_hi
+
 	rts
+
+; ----------------
+
+	@oam_menu_sprites:
+
+	; Start
+	.byte $70, $BB, $02, $60
+	.byte $70, $AB, $02, $68
+	.byte $70, $AD, $02, $70
+	.byte $70, $A9, $02, $78
+	.byte $70, $AB, $02, $80
+
+	; Options
+	.byte $A0, $A7, $00, $60
+	.byte $A0, $B5, $00, $68
+	.byte $A0, $AB, $00, $70
+	.byte $A0, $B7, $00, $78
+	.byte $A0, $A7, $00, $80
+	.byte $A0, $B9, $00, $88
+	.byte $A0, $BB, $00, $90
 
 ; -----------------------------------------------------------------------------
 
@@ -93,82 +133,17 @@ sub_menu_fade_in:
 	jsr sub_rom_cycle_palettes
 	lda zp_palette_fade_idx
 	cmp #$05
-	bcc @menu_fade_in_end
-		; Palettes still cycling
-		;rts
-; ----------------
+	bcc @menu_fade_in_end	; Branch if palettes still cycling
 	
-	; Fade in complete
-	inc zp_machine_state_2	; Move to next sub-state
+		; Fade in complete
+		
+		lda #$0A
+		sta zp_counter_param	; Countdown for high scores
+
+		inc zp_machine_state_2	; Move to next sub-state
+
 	@menu_fade_in_end:
 	rts
-
-; -----------------------------------------------------------------------------
-
-; Machine state = 0,0,6
-; Gradually increases the latch value, making the bottom part of the menu
-; screen slide upwards
-sub_menu_slide_up:
-	lda zp_frame_counter
-	cmp zp_last_execution_frame
-	beq @menu_slide_end
-		; Already executed this frame
-		;rts
-; ----------------
-	
-	sta zp_last_execution_frame
-	;dec ram_irq_latch_value
-	;lda ram_irq_latch_value
-	;cmp #$8B
-	;bcs :+
-	lda #$8C
-	dcp ram_irq_latch_value
-	bcc @menu_slide_end
-		lda #$8C
-		sta ram_irq_latch_value
-		; Prepare the counter for the screen shake effect
-		lda #$07
-		sta zp_counter_param
-		; Advance to next sub-state
-		inc zp_machine_state_2
-	@menu_slide_end:
-	rts
-
-; -----------------------------------------------------------------------------
-
-; Machine state = 0,0,7
-; Makes the screen "shake" when the bottom half of the main menu hits the top
-sub_menu_screen_shake:
-	lda zp_frame_counter
-	cmp zp_last_execution_frame
-	beq @screen_shake_end
-		; Already executed during this frame
-		;rts
-; ----------------
-
-	sta zp_last_execution_frame
-	
-	ldx zp_counter_param
-	lda @tbl_scroll_shake_values,X
-	sta zp_scroll_y
-
-	dec zp_counter_param
-	bpl @screen_shake_end
-		; Counter underflow: we have finished shaking the screen
-		lda #$00
-		sta zp_scroll_y
-		; Prepare wait counter (when expired, it will show high scores)
-		lda #$0A
-		sta zp_counter_param
-		; Advance to next sub-state
-		inc zp_machine_state_2
-	@screen_shake_end:
-	rts
-
-; ----------------
-
-	@tbl_scroll_shake_values:
-	.byte $00, $02, $00, $03, $00, $04, $00, $07
 
 ; -----------------------------------------------------------------------------
 
@@ -176,49 +151,54 @@ sub_menu_screen_shake:
 sub_main_menu_loop:
 	lda zp_frame_counter
 	cmp zp_last_execution_frame
-	beq @main_menu_loop_end
-		; Already executed during this frame
-		;rts
-; ----------------
-	sta zp_last_execution_frame
+	beq @main_menu_loop_end	; Branch if already executed during this frame
+		
+		sta zp_last_execution_frame
 
-	lda zp_frame_counter
-	and #$3F
-	bne :+
+		; Animate cursor
+		lda zp_frame_counter
+		and #$01
+		bne :++
+			lda ram_oam_copy_tileid
+			clc
+			adc #$02
+			cmp #$A3
+			bcc :+
+				lda #$95
+			:
+			sta ram_oam_copy_tileid
+		:
+		
 
-		dec zp_counter_param
-		bpl :+
-			; Wait counter expired: show high score screen
-			lda #$0B
-			sta zp_machine_state_2	; 0,0,B = Fake high scores
-			rts
-; ----------------
-	:
-	jsr sub_get_controller1_main_menu
+		lda zp_frame_counter
+		and #$3F
+		bne :+
 
-	lda zp_plr1_selection	; 0 = left selection, 1 = right selection
-	asl A
-	tax
-	lda tbl_menu_cursor_ptrs+0,X
-	sta zp_ppu_ptr_hi
-	lda tbl_menu_cursor_ptrs+1,X
-	sta zp_ppu_ptr_lo
+			dec zp_counter_param
+			bpl :+
+				; Wait counter expired: show high score screen
+				lda #$0B
+				sta zp_machine_state_2	; 0,0,B = Fake high scores
+				rts
 
-	lda zp_controller1_new
-	and #$D0	; A, B or START
-	beq sub_main_menu_loop
+		:
+		jsr sub_get_controller1_main_menu
 
-	; ---- End of loop: a button was pressed
+		lda zp_controller1_new
+		and #$D0	; A, B or START
+		beq sub_main_menu_loop
 
-	;lda #$31	; This will stop music and play the "selection" sound instead
-	;sta ram_req_song
-	; TODO Use a DMC "gong" sample?
-	lda #$0C	; "Select" sound
-	sta ram_req_sfx
+		; ---- End of loop: a button was pressed
 
-	inc zp_machine_state_2
-	lda #$05
-	sta zp_palette_fade_idx
+			; TODO Use a DMC "gong" sample?
+			lda #$0C	; "Select" sound
+			sta ram_req_sfx
+
+			lda #$09
+			sta zp_machine_state_2
+
+			lda #$05
+			sta zp_palette_fade_idx
 	@main_menu_loop_end:
 	rts
 
@@ -313,18 +293,58 @@ sub_get_controller1_main_menu:
 	sta zp_05
 
 	jsr sub_ctrl_to_idx
-	bmi :+
+	bmi @menu_ctrl_rts
+
 		sta zp_plr1_selection
 		lda #$03	; Cursor bleep SFX
 		sta ram_req_sfx
-	:
+
+		; Move the cursor sprite and highlight the selected item
+
+		ldx zp_plr1_selection	; 0 = Start, 1 = Options
+		lda tbl_menu_cursor_y,X
+		sta ram_oam_copy_ypos
+
+		ldy #$00
+		cpx #$00
+		beq :+
+			ldy #$02
+		:
+
+		ldx #$00
+		:
+			lda @tbl_menu_sel_attr+0,Y
+			sta ram_oam_copy_attr+4,X
+			txa
+			axs #$FC
+			cpx #$14
+		bcc :-
+
+		:
+			lda @tbl_menu_sel_attr+1,Y
+			sta ram_oam_copy_attr+4,X
+			txa
+			axs #$FC
+			cpx #$34
+		bcc :-
+
+		lda #$0A
+		sta zp_counter_param
+
+	@menu_ctrl_rts:
 	rts
+
+; ----------------
+
+	@tbl_menu_sel_attr:
+	.byte $02, $00	; Start highlighted
+	.byte $00, $02	; Options highlighted
 
 ; -----------------------------------------------------------------------------
 
-; PPU pointers for "cursor" in main menu?
-tbl_menu_cursor_ptrs:
-	.byte $28, $20, $2A, $20
+; OAM Y value for cursor in main menu
+tbl_menu_cursor_y:
+	.byte $74, $A4
 
 ; -----------------------------------------------------------------------------
 
@@ -647,8 +667,10 @@ sub_fighter_sel_init:
 	jsr sub_setup_new_screen
 	jsr sub_ftr_sel_init_attributes
 
-	lda #$00
+	lda #$FC
 	sta zp_scroll_x
+
+	lda #$00
 	sta zp_scroll_y
 	sta ram_irq_state_var
 
@@ -2560,29 +2582,5 @@ sub_titles_loop:
 
 	@BFE9_rts:
 	rts
-
-; -----------------------------------------------------------------------------
-
-; Machine state = 0,0,3
-; Redundant: this was identical to sub_menu_fade_out
-;sub_titles_fade_out:
-;	jsr sub_rom_cycle_palettes
-;	lda zp_palette_fade_idx
-;	cmp #$09
-;	bcs :+
-		; Palettes are still cycling
-;		rts
-; ----------------
-;	:
-	; Fade out complete
-;	inc zp_machine_state_2	; Move to next sub-state
-;	rts
-
-; -----------------------------------------------------------------------------
-
-; Potentially unused
-;rom_BFF7:
-;	.byte $20, $24, $32, $31, $2C, $24, $34, $34
-;	.byte $2C
 
 ; -----------------------------------------------------------------------------

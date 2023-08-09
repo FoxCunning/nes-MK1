@@ -283,7 +283,7 @@ sub_ctrl_to_idx:
 ; Values for CHR bank data register, all banks (registers R0-R5)
 ; Trailing zeroes are just padding to keep 8-byte alignment for easy indexing
 tbl_chr_banks_per_screen:
-	.byte $F0, $F2, $F0, $F1, $F2, $F3, $00, $00	; $00	Main menu
+	.byte $FC, $FD, $FE, $FF, $FE, $FF, $00, $00	; $00	Main menu
 	.byte $FC, $FE, $FC, $FD, $FE, $FF, $00, $00	; $01	Options menu
 	.byte $FC, $FE, $F8, $F9, $FA, $FB, $00, $00	; $02	Fighter select / VS
 	.byte $FC, $FE, $F8, $F9, $FA, $FB, $00, $00	; $03	UNUSED/LEFTOVER
@@ -454,7 +454,7 @@ rom_8239:
 	.word palette_mask_8307
 ; ----------------
 rom_823D:
-	.word palette_8247
+	.word palette_main_menu
 	.word palette_options_menu
 	.word palette_fighter_select
 	.word palette_82A7
@@ -462,11 +462,11 @@ rom_823D:
 
 ; -----------------------------------------------------------------------------
 
-palette_8247:
-	.byte $0E, $00, $10, $27, $0E, $00, $10, $10
-	.byte $0E, $06, $00, $10, $0E, $16, $27, $30
-	.byte $0E, $00, $10, $20, $0E, $00, $10, $10
-	.byte $0E, $06, $00, $10, $0E, $16, $27, $30
+palette_main_menu:
+	.byte $0E, $16, $26, $36, $0E, $12, $21, $20
+	.byte $0E, $17, $27, $37, $0E, $00, $10, $20
+	.byte $0E, $0F, $00, $20, $0E, $16, $26, $20
+	.byte $0E, $0F, $00, $27, $0E, $16, $27, $30
 
 ; -----------------------------------------------------------------------------
 
@@ -706,8 +706,8 @@ tbl_menu_indices_ptrs:
 
 ; Indices for main menu (left=tournament, right=options)
 tbl_main_menu_indices:
-	.byte $00, $01, $FF, $FF	; $00 = Tournament
-	.byte $00, $01, $FF, $FF	; $01 = Options
+	.byte $FF, $FF, $FF, $01	; $00 = Tournament
+	.byte $FF, $FF, $00, $FF	; $01 = Options
 
 ; Indices for options menu (top=very easy ... bottom= exit)
 tbl_options_menu_indices:

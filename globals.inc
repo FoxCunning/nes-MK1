@@ -134,7 +134,7 @@ zp_plr_idx_param = $7C  ; Active player index parameter: 0 for player one, 1 for
 ; zp_attacker_anim = $7D  ;
 zp_7F = $7F     ;
 
-;zp_80 = $80     ;
+zp_irq_ver_scroll = $80 ; Used in the main menu
 
 ; Horizontal scroll value used in IRQ routines
 zp_irq_hor_scroll = $81 ;
