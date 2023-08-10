@@ -52,8 +52,6 @@ sub_main_menu_states:
 ; Machine state = 0,0,4
 sub_menu_screen_init:
 	lda #$00
-	;sta zp_tmp_idx
-	;lda #$00
 	jsr sub_init_screen_common
 
 	; Switch to vertical mirroring
@@ -69,7 +67,7 @@ sub_menu_screen_init:
 	sta ram_irq_latch_value
 	
 	lda #$00
-	sta zp_endurance_flag
+	sta zp_match_type
 	sta zp_match_number
 	;lda #$00
 	sta zp_plr1_selection
@@ -1709,7 +1707,7 @@ sub_vs_state_machine:
 ; ----------------
 ; Jump pointers
 	.word sub_vs_state_init	; 0,2,0
-	.word sub_prepare_vs_screen	; 0,2,1
+	.word sub_vs_screen_init	; 0,2,1
 	.word sub_vs_fade_in	; 0,2,2
 	.word sub_rom_B993	; 0,2,3
 	.word sub_vs_fade_out	; 0,2,4
@@ -1734,14 +1732,14 @@ sub_vs_state_init:
 		inc zp_machine_state_2
 		lda #$00
 		sta zp_match_number
-		sta zp_endurance_flag
+		sta zp_match_type
 
 	rts
 ; ----------------
 	; Parameters:
 	; X = index of CPU opponent (0/1)
 	@B8E2:
-	lda zp_endurance_flag
+	lda zp_match_type
 	bne :+
 		lda #$00
 		sta zp_endurance_opp_idx
@@ -1779,15 +1777,15 @@ tbl_boss_sel_idx:
 
 ; -----------------------------------------------------------------------------
 
-sub_prepare_vs_screen:
-	lda zp_endurance_flag
+sub_vs_screen_init:
+	lda zp_match_type
 	cmp #$01
 	beq @B941_endurance_nam
 
-		lda #$02	; Index used for VS screen (it's the same as player select)
-		sta zp_tmp_idx
+		lda #$03 ;lda #$02	; Index used for VS screen (it's the same as player select)
+		;sta zp_tmp_idx
+		jsr sub_init_screen_common ;sub_setup_new_screen
 
-		jsr sub_setup_new_screen
 		jsr sub_vs_scr_portraits
 		jsr sub_vs_scr_attributes
 
@@ -1812,7 +1810,7 @@ sub_prepare_vs_screen:
 	jsr sub_hide_all_sprites
 
 	lda #$00
-	sta zp_57
+	sta zp_pal_mask_idx
 	sta zp_palette_fade_idx
 	sta zp_scroll_x
 	sta zp_scroll_y

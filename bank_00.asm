@@ -694,7 +694,7 @@ tbl_fighter_name_ptrs:
 ; Byte 0 = lengh, Bytes 1 to (length) = name
 ; TODO custom string encoding
 str_name_raiden:
-	.byte $06, $52, $41, $59, $44, $45, $4E
+	.byte $06, $52, $50, $59, $44, $45, $4E
 str_name_sonya:
 	.byte $05, $53, $4F, $4E, $59, $41
 str_name_subzero:

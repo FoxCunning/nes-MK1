@@ -106,7 +106,7 @@ zp_last_execution_frame = $53   ;
 zp_counter_param = $54  ;
 zp_palette_fade_idx = $55   ;
 zp_palette_idx = $56    ;
-zp_57 = $57     ;
+zp_pal_mask_idx = $57   ; Used to cycle palettes for fade in/out effects
 zp_chr_bank_2 = $58     ;
 zp_chr_bank_3 = $59     ;
 zp_chr_bank_4 = $5A     ;
@@ -114,7 +114,13 @@ zp_chr_bank_5 = $5B     ;
 zp_5C = $5C     ;
 zp_5D = $5D     ;
 zp_5E = $5E     ;
-zp_endurance_flag = $5F ; Set to one for endurance matches (1 vs 2)
+
+; 0 = Normal/mirror
+; 1 = Endurance
+; 2 = Goro
+; 3 = Shang Tsung
+; 4 = Go to game ending
+zp_match_type = $5F ;
 
 zp_60 = $60     ;
 zp_match_number = $61     ;

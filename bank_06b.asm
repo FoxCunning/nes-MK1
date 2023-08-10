@@ -902,38 +902,40 @@ sub_state_menus:
 
 ; -----------------------------------------------------------------------------
 
-; Called if State Machine 0 is 2
+; Called if State Machine 0 is 2 (match end)
 sub_rom_E7F5:
 	lda #$00
 	sta zp_machine_state_2
 	sta zp_machine_state_0
 
-	ldx ram_040C
+	ldx ram_040C	; Index of the winning player (0 or 1)
 	lda zp_plr1_fighter_idx,X
-	bpl @E80B
+	bpl @E80B	; Skip if human player won
 
-		; Single player continue screen
+		; Continue screen
 		@E805:
 		; New machine state: 0,4,0
 		lda #$04
 		sta zp_machine_state_1
 		rts
 ; ----------------
-	; Two players continue screen
 	@E80B:
 	lda zp_plr1_fighter_idx
 	eor zp_plr2_fighter_idx
 	and #$80
-	beq @E805
+	beq @E805	; Both players were human: show continue screen
+
+		; Player won
 
 		lda #$03
 		sta zp_machine_state_1
-		lda ram_0100
-		asl A
-		asl A
-		clc
-		adc zp_endurance_flag
-		tax
+
+		;lda ram_0100	; Uh? This is always zero
+		;asl A
+		;asl A
+		;clc
+		;adc zp_endurance_flag
+		ldx zp_match_type ;tax
 		inc zp_match_number
 		lda zp_match_number
 		cmp @rom_E849,X
@@ -941,23 +943,29 @@ sub_rom_E7F5:
 
 			lda #$00
 			sta zp_match_number
-			inc zp_endurance_flag
-			lda zp_endurance_flag
+			inc zp_match_type
+			lda zp_match_type
 			cmp #$04
 			bcc :+
 
-				; New machine state: 0,6,0
+				; New machine state: 0,6,0 (ending)
 				lda #$00
 				sta zp_machine_state_2
 				lda #$06
 				sta zp_machine_state_1
-	:
+		:
+
 	rts
 
 ; ----------------
 
 	@rom_E849:
-	.byte $07, $03, $01, $01, $0E, $03, $01, $01
+	.byte $07	; Match 7 is first endurance match
+	.byte $03	; Number of endurance matches
+	.byte $01	; Number of matches against boss 1 (Goro)
+	.byte $01	; Number of matches against boss 2 (Shang Tsung)
+	; Unused?
+	.byte $0E, $03, $01, $01
 
 ; -----------------------------------------------------------------------------
 

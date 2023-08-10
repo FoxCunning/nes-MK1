@@ -12,24 +12,12 @@
 .export sub_wait_vblank
 
 sub_wait_vblank:
-.IFNDEF DENDY
-	lda PpuStatus_2002
-	bpl sub_wait_vblank
-
-	; Probably this repeat is to work around the potential issue that happens
-	; when the status is read right after the NMI flag was set in the PPU
-	:
-	lda PpuStatus_2002
-	bpl :-
-.ELSE
-	; Use the global frame counter instead
 	lda zp_frame_counter
 	clc
 	adc #$01
-	@wait_2frames:
+	:
 	cmp zp_frame_counter
-	bcc @wait_2frames
-.ENDIF
+	bcc :-
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -170,7 +158,7 @@ sub_setup_new_screen:
 	jsr sub_choose_music_track
 
 	lda #$00
-	sta zp_57
+	sta zp_pal_mask_idx
 	sta zp_palette_fade_idx
 
 	rts
@@ -363,7 +351,7 @@ tbl_palette_and_irq_ptrs:
     .byte $0C, $00	; $00	Main menu
     .byte $0E, $01	; $01	Options menu
     .byte $0C, $02	; $02	Fighter selection
-    .byte $0C, $02	; $03	VS Screen?
+    .byte $0C, $02	; $03	VS Screen
     .byte $0C, $01	; $04	Fake high scores screen
     .byte $0C, $01	; $05
     .byte $0C, $01	; $06
@@ -384,7 +372,7 @@ sub_rom_cycle_palettes:
 	lda rom_823D+1,Y
 	sta zp_ptr1_hi
 
-	lda zp_57
+	lda zp_pal_mask_idx
 	asl A
 	tay
 	lda rom_8239+0,Y
@@ -778,7 +766,7 @@ sub_choose_music_track:
 	.byte $20	; $04	High scores
 	.byte $22	; $05
 	.byte $22	; $06
-	.byte $21	; $07
+	.byte $21	; $07	Endurance match Vs. Screen
 	.byte $20	; $08	Titles screen
 	.byte $22	; $09	Sound test (silence)
 
