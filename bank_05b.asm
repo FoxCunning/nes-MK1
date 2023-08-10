@@ -20,8 +20,8 @@ sub_state_machine_0:
 ; ----------------
 	.word sub_main_menu_states			; 0,0
 	.word sub_option_menu_states		; 0,1
-	.word sub_fighter_sel_states	; 0,2
-	.word sub_vs_state_machine				; 0,3
+	.word sub_fighter_sel_states		; 0,2
+	.word sub_vs_state_machine			; 0,3
 	.word sub_continue_screen_state_machine	; 0,4
 	.word sub_high_scores_states		; 0,5
 	.word sub_rom_BF1E					; 0,6
@@ -33,12 +33,12 @@ sub_main_menu_states:
 	lda zp_machine_state_2
 	jsr sub_trampoline    ; Same trick again
 ; ----------------
-	.word sub_init_titles_screen	; 0,0,0
+	.word sub_titles_screen_init	; 0,0,0
 	.word sub_titles_fade_in		; 0,0,1
 	.word sub_titles_loop			; 0,0,2
 	.word sub_menu_fade_out 		; 0,0,3
 
-	.word sub_init_menu_screen		; 0,0,4
+	.word sub_menu_screen_init		; 0,0,4
 	.word sub_menu_fade_in			; 0,0,5
 	.word sub_main_menu_loop		; 0,0,6
 	.word sub_main_menu_loop		; 0,0,7
@@ -50,7 +50,7 @@ sub_main_menu_states:
 ; -----------------------------------------------------------------------------
 
 ; Machine state = 0,0,4
-sub_init_menu_screen:
+sub_menu_screen_init:
 	lda #$00
 	;sta zp_tmp_idx
 	;lda #$00
@@ -353,14 +353,14 @@ sub_option_menu_states:
 	lda zp_machine_state_2
 	jsr sub_trampoline
 ; ----------------
-	.word sub_init_options_menu		; 0,1,0
+	.word sub_options_menu_init		; 0,1,0
 	.word sub_menu_fade_in			; 0,1,1
 	.word sub_options_menu_loop		; 0,1,2
 	.word sub_menu_fade_out			; 0,1,3
 	.word sub_back_to_main			; 0,1,4
 
 	.word sub_menu_fade_out			; 0,1,5
-	.word sub_init_sound_test		; 0,1,6
+	.word sub_sound_test_init		; 0,1,6
 	.word sub_menu_fade_in			; 0,1,7
 	.word sub_sound_test_input_loop	; 0,1,8
 	.word sub_menu_fade_out			; 0,1,9
@@ -368,7 +368,7 @@ sub_option_menu_states:
 
 ; -----------------------------------------------------------------------------
 
-sub_init_options_menu:
+sub_options_menu_init:
 	lda #$01
 	jsr sub_init_screen_common
 	
@@ -387,6 +387,8 @@ sub_init_options_menu:
 	sta ram_irq_latch_value
 
 	; Show cursor at the default selection position
+	lda #$94
+	sta ram_oam_copy_tileid
 	jsr sub_option_menu_cursor
 
 	inc zp_machine_state_2
@@ -496,9 +498,21 @@ sub_option_menu_cursor:
 	sta ram_oam_copy_ypos
 	lda @tbl_options_menu_cursor_pos+1,X
 	sta ram_oam_copy_xpos
-	lda #$59
-	sta ram_oam_copy_tileid
-	lda #$01
+	
+	lda zp_frame_counter
+	and #$02
+	bne @skip_crsr_anim
+		lda ram_oam_copy_tileid
+		clc
+		adc #$02
+		cmp #$A1
+		bcc :+
+			lda #$94
+		:
+		sta ram_oam_copy_tileid
+
+	@skip_crsr_anim:
+	lda #$03
 	sta ram_oam_copy_attr
 	rts
 
@@ -522,7 +536,7 @@ tbl_option_menu_latches:
 
 ; -----------------------------------------------------------------------------
 
-sub_init_sound_test:
+sub_sound_test_init:
 	lda #$00
 	sta ram_irq_state_var
 	lda #$09
@@ -2523,7 +2537,7 @@ sub_rom_BF73:
 ; -----------------------------------------------------------------------------
 
 ; Called when Machine State is 0,0,0
-sub_init_titles_screen:
+sub_titles_screen_init:
 	lda #$08	; Index of palette, nametable and IRQ handler pointers
 	;sta zp_tmp_idx
 	jsr sub_init_screen_common
