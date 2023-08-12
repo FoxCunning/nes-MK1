@@ -1706,11 +1706,11 @@ sub_vs_state_machine:
 	jsr sub_trampoline
 ; ----------------
 ; Jump pointers
-	.word sub_vs_state_init	; 0,2,0
+	.word sub_vs_state_init		; 0,2,0
 	.word sub_vs_screen_init	; 0,2,1
-	.word sub_vs_fade_in	; 0,2,2
-	.word sub_rom_B993	; 0,2,3
-	.word sub_vs_fade_out	; 0,2,4
+	.word sub_vs_fade_in		; 0,2,2
+	.word sub_vs_loop			; 0,2,3
+	.word sub_vs_fade_out		; 0,2,4
 
 ; -----------------------------------------------------------------------------
 
@@ -1782,9 +1782,8 @@ sub_vs_screen_init:
 	cmp #$01
 	beq @B941_endurance_nam
 
-		lda #$03 ;lda #$02	; Index used for VS screen (it's the same as player select)
-		;sta zp_tmp_idx
-		jsr sub_init_screen_common ;sub_setup_new_screen
+		lda #$03
+		jsr sub_init_screen_common
 
 		jsr sub_vs_scr_portraits
 		jsr sub_vs_scr_attributes
@@ -1853,10 +1852,10 @@ sub_vs_fade_in:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B993:
+sub_vs_loop:
 	lda zp_frame_counter
 	cmp zp_last_execution_frame
-	beq @B9B4
+	beq @B9B4_rts
 
 		sta zp_last_execution_frame
 		lda zp_controller1_new
@@ -1867,17 +1866,17 @@ sub_rom_B993:
 
 		lda zp_frame_counter
 		and #$1F
-		bne @B9B4
+		bne @B9B4_rts
 
 		dec zp_counter_param
-		bne @B9B4
+		bne @B9B4_rts
 
 		@B9AE:
 		lda #$00
 		sta zp_counter_param
 		inc zp_machine_state_2
 
-	@B9B4:
+	@B9B4_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -1906,7 +1905,11 @@ sub_vs_fade_out:
 
 ; -----------------------------------------------------------------------------
 
+; TODO Changes the attribute tables for the Battle Plan to correctly display
+; fighter portraits
 sub_vs_scr_attributes:
+	rts
+	; TODO
 	lda ram_0680
 	asl A
 	asl A
@@ -1916,28 +1919,28 @@ sub_vs_scr_attributes:
 	sty PpuAddr_2006
 	lda #$D1
 	sta PpuAddr_2006
-	lda rom_BA68+0,X
+	lda tbl_vs_portr_attributes+0,X
 	sta PpuData_2007
 
 	;lda #$2B
 	sty PpuAddr_2006
 	lda #$D2
 	sta PpuAddr_2006
-	lda rom_BA68+1,X
+	lda tbl_vs_portr_attributes+1,X
 	sta PpuData_2007
 
 	;lda #$2B
 	sty PpuAddr_2006
 	lda #$D9
 	sta PpuAddr_2006
-	lda rom_BA6A+0,X
+	lda tbl_vs_portr_attributes+2,X
 	sta PpuData_2007
 
 	;lda #$2B
 	sty PpuAddr_2006
 	lda #$DA
 	sta PpuAddr_2006
-	lda rom_BA6A+1,X
+	lda tbl_vs_portr_attributes+3,X
 	sta PpuData_2007
 
 	lda ram_0681
@@ -1949,43 +1952,47 @@ sub_vs_scr_attributes:
 	sty PpuAddr_2006
 	lda #$D5
 	sta PpuAddr_2006
-	lda rom_BA68+0,X
+	lda tbl_vs_portr_attributes+0,X
 	sta PpuData_2007
 	;lda #$2B
 	sty PpuAddr_2006
 	lda #$D6
 	sta PpuAddr_2006
-	lda rom_BA68+1,X
+	lda tbl_vs_portr_attributes+1,X
 	sta PpuData_2007
 	;lda #$2B
 	sty PpuAddr_2006
 	lda #$DD
 	sta PpuAddr_2006
-	lda rom_BA6A+0,X
+	lda tbl_vs_portr_attributes+2,X
 	sta PpuData_2007
 	;lda #$2B
 	sty PpuAddr_2006
 	lda #$DE
 	sta PpuAddr_2006
-	lda rom_BA6A+1,X
+	lda tbl_vs_portr_attributes+3,X
 	sta PpuData_2007
 	rts
 ; ----------------
-rom_BA68:
+tbl_vs_portr_attributes:
 	.byte $3F, $CF
-rom_BA6A:
 	.byte $33, $CC
 
-	.byte $7F, $DF, $77, $DD
+	.byte $7F, $DF
+	.byte $77, $DD
 
-	.byte $BF, $EF, $BB, $EE
+	.byte $BF, $EF
+	.byte $BB, $EE
 
 ; -----------------------------------------------------------------------------
 
+; TODO Shows fighter portraits on the Battle Plan screen
 sub_vs_scr_portraits:
-	lda #<rom_BB0B
+	rts
+	; TODO
+	lda #<tbl_vs_portr_ptrs
 	sta zp_ptr2_lo
-	lda #>rom_BB0B
+	lda #>tbl_vs_portr_ptrs
 	sta zp_ptr2_hi
 
 	ldx #$00
@@ -2001,6 +2008,7 @@ sub_vs_scr_portraits:
 
 	jsr sub_vs_scr_load_portrait
 
+	; Left portrait
 	lda #$29
 	sta zp_nmi_ppu_ptr_hi
 	lda #$46
@@ -2021,43 +2029,51 @@ sub_vs_scr_portraits:
 
 	jsr sub_vs_scr_load_portrait
 
+	; Right portrait
 	lda #$29
 	sta zp_nmi_ppu_ptr_hi
 	lda #$56
 	sta zp_nmi_ppu_ptr_lo
 ; ----------------
 sub_rom_BABF:
+	rts
+	; TODO
+
 	lda zp_47
 	ora zp_ppu_control_backup
 	and #$7F
 	sta PpuControl_2000
+	
 	ldy #$00
 	ldx #$00
-	@BACC:
-	lda PpuStatus_2002
-	lda zp_nmi_ppu_ptr_hi
-	sta PpuAddr_2006
-	lda zp_nmi_ppu_ptr_lo
-	sta PpuAddr_2006
-	@BAD9:
-	lda ram_ppu_data_buffer,X
-	sta PpuData_2007
-	iny
-	inx
-	cpy zp_nmi_ppu_cols
-	bcc @BAD9
+	@BACC_loop:
 
-	lda zp_nmi_ppu_ptr_lo
-	clc
-	adc #$20
-	sta zp_nmi_ppu_ptr_lo
-	bcc @BAF0
+		lda PpuStatus_2002
+		lda zp_nmi_ppu_ptr_hi
+		sta PpuAddr_2006
+		lda zp_nmi_ppu_ptr_lo
+		sta PpuAddr_2006
 
-	inc zp_nmi_ppu_ptr_hi
-	@BAF0:
-	ldy #$00
-	dec zp_nmi_ppu_rows
-	bne @BACC
+		:
+			lda ram_ppu_data_buffer,X
+			sta PpuData_2007
+			iny
+			inx
+			cpy zp_nmi_ppu_cols
+		bcc :-
+
+		lda zp_nmi_ppu_ptr_lo
+		clc
+		adc #$20
+		sta zp_nmi_ppu_ptr_lo
+		bcc :+
+			inc zp_nmi_ppu_ptr_hi
+		:
+
+		ldy #$00
+		dec zp_nmi_ppu_rows
+
+	bne @BACC_loop
 
 	lda #$00
 	sta zp_nmi_ppu_ptr_hi
@@ -2065,7 +2081,9 @@ sub_rom_BABF:
 
 ; -----------------------------------------------------------------------------
 
-rom_BB0B:
+; Byte 0 = index for tbl_fighter_nam_ptrs
+; Byte 1 = index for tbl_vs_portr_attributes
+tbl_vs_portr_ptrs:
 	.byte $00, $01
 	.byte $01, $00
 	.byte $02, $00
@@ -2079,53 +2097,53 @@ rom_BB0B:
 ; -----------------------------------------------------------------------------
 
 tbl_fighter_nam_ptrs:
-	.word rom_BB53
-	.word rom_BB6B
-	.word rom_BB83
-	.word rom_BB9B
-	.word rom_BBB3
-	.word rom_BBCB
-	.word rom_BBE3
-	.word rom_BBFB
-	.word rom_BC13
+	.word nam_vs_portr_subzero
+	.word nam_vs_portr_kano
+	.word nam_vs_portr_scorpion
+	.word nam_vs_portr_raiden
+	.word nam_vs_portr_cage
+	.word nam_vs_portr_liukang
+	.word nam_vs_portr_sonya
+	.word nam_vs_portr_shangtsung
+	.word nam_vs_portr_goro
 
 ; -----------------------------------------------------------------------------
 
 ; Fighter portrait nametables
 
-rom_BB53:
+nam_vs_portr_subzero:
 	.byte $C0, $C1, $C2, $C3, $D0, $D1, $D2, $D3
 	.byte $C4, $C5, $C6, $C7, $D4, $D5, $D6, $D7
 	.byte $C8, $C9, $CA, $CB, $D8, $D9, $DA, $DB
-rom_BB6B:
+nam_vs_portr_kano:
 	.byte $6C, $6D, $6E, $6F, $7C, $7D, $7E, $7F
 	.byte $8C, $8D, $8E, $8F, $9C, $9D, $9E, $9F
 	.byte $AC, $AD, $AE, $AF, $BC, $BD, $BE, $BF
-rom_BB83:
+nam_vs_portr_scorpion:
 	.byte $08, $09, $0A, $0B, $18, $19, $1A, $1B
 	.byte $28, $29, $2A, $2B, $38, $39, $3A, $3B
 	.byte $48, $49, $4A, $4B, $58, $59, $5A, $5B
-rom_BB9B:
+nam_vs_portr_raiden:
 	.byte $64, $65, $66, $67, $74, $75, $76, $77
 	.byte $84, $85, $86, $87, $94, $95, $96, $97
 	.byte $A4, $A5, $A6, $A7, $B4, $B5, $B6, $B7
-rom_BBB3:
+nam_vs_portr_cage:
 	.byte $00, $01, $02, $03, $10, $11, $12, $13
 	.byte $20, $21, $22, $23, $30, $31, $32, $33
 	.byte $40, $15, $42, $43, $50, $51, $52, $53
-rom_BBCB:
+nam_vs_portr_liukang:
 	.byte $68, $69, $6A, $6B, $78, $79, $7A, $7B
 	.byte $88, $89, $8A, $8B, $98, $99, $9A, $9B
 	.byte $A8, $A9, $AA, $AB, $B8, $B9, $BA, $BB
-rom_BBE3:
+nam_vs_portr_sonya:
 	.byte $60, $61, $62, $63, $70, $71, $72, $73
 	.byte $80, $81, $82, $83, $90, $91, $92, $93
 	.byte $A0, $A1, $A2, $A3, $B0, $B1, $B2, $B3
-rom_BBFB:
+nam_vs_portr_shangtsung:
 	.byte $04, $05, $06, $07, $14, $15, $16, $17
 	.byte $24, $25, $26, $27, $34, $35, $36, $37
 	.byte $44, $45, $46, $47, $54, $55, $56, $57
-rom_BC13:
+nam_vs_portr_goro:
 	.byte $0C, $0D, $0E, $0F, $1C, $1D, $1E, $1F
 	.byte $2C, $2D, $2E, $2F, $3C, $3D, $3E, $3F
 	.byte $4C, $4D, $4E, $4F, $5C, $5D, $5E, $5F
@@ -2133,9 +2151,9 @@ rom_BC13:
 ; -----------------------------------------------------------------------------
 
 sub_rom_BC2B:
-	lda #<rom_BB0B
+	lda #<tbl_vs_portr_ptrs
 	sta zp_ptr2_lo
-	lda #>rom_BB0B
+	lda #>tbl_vs_portr_ptrs
 	sta zp_ptr2_hi
 
 	ldx #$00
@@ -2383,6 +2401,7 @@ sub_choose_opponent:
 	ldx #$00
 	ldy #$00
 	@BE30_loop:
+	; TODO Use a random list
 	lda tbl_opponent_indices,X
 	cmp zp_05
 	bne :+
@@ -2400,7 +2419,8 @@ sub_choose_opponent:
 
 ; ----------------
 
-; Goro and Shang-Tsung play one more match, apparently
+; Looks like Goro and Shang-Tsung play one more match, but that is because
+; they have no mirror match, so they just fight all regular opponents
 tbl_num_opponents:
 	.byte $06, $06, $06, $06, $06, $06, $06
 	.byte $07, $07

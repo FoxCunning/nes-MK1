@@ -136,10 +136,12 @@ sub_setup_new_screen:
 	lda #$01
 	sta mmc3_mirroring
 
-	lda #$00
-	jsr sub_clear_nametable
-	lda #$01
-	jsr sub_clear_nametable
+	; We load a full nametable: no need to clear it first
+	;lda #$00
+	;jsr sub_clear_nametable
+	;lda #$01
+	;jsr sub_clear_nametable
+
 	;lda #$02	; Pointless: already cleared because of mirroring
 	;jsr sub_clear_nametable
 
@@ -273,12 +275,12 @@ sub_ctrl_to_idx:
 tbl_chr_banks_per_screen:
 	.byte $FC, $FD, $FE, $FF, $FE, $FF, $00, $00	; $00	Main menu
 	.byte $FC, $FE, $FC, $FD, $FE, $FF, $00, $00	; $01	Options menu
-	.byte $FC, $FE, $F8, $F9, $FA, $FB, $00, $00	; $02	Fighter select / VS
-	.byte $FC, $FE, $F8, $F9, $FA, $FB, $00, $00	; $03	UNUSED/LEFTOVER
+	.byte $FC, $FE, $F8, $F9, $FA, $FB, $00, $00	; $02	Fighter select
+	.byte $F4, $F6, $F4, $F5, $F6, $F7, $00, $00	; $03	Battle plan
 	.byte $FC, $FE, $FC, $FD, $FE, $FF, $00, $00	; $04	(Fake) high scores
 	.byte $FC, $FE, $FC, $FD, $FE, $FF, $00, $00	; $05	Continue screen
 	.byte $D8, $DA, $D8, $D9, $DA, $DB, $00, $00	; $06	Ending
-	.byte $FC, $FE, $F8, $F9, $FA, $FB, $00, $00	; $07	Endurance match VS
+	.byte $FC, $FE, $F8, $F9, $FA, $FB, $00, $00	; $07	Endurance match VS TODO remove
 	.byte $BC, $BE, $BC, $BD, $BE, $BF, $00, $00	; $08	Titles screen
 	.byte $D8, $DA, $D8, $D9, $DA, $DB, $00, $00	; $09	Sound test
 
@@ -305,12 +307,14 @@ tbl_rle_data_ptr_odd:
 
     .word nam_fighter_select_rle	; $02
     .byte $20, $20
-	.word nam_vs_screen_2_rle
+	.word nam_battle_plan_top
     .byte $28, $28
 
-    .word nam_unused_rle			; $03
+	; We always keep the "top" loaded and at the bottom, because it gets modified
+	; dynamically to make a 32x80 screen
+    .word nam_battle_plan_btm		; $03
     .byte $20, $20
-	.word nam_vs_screen_2_rle
+	.word nam_dont_load
     .byte $28, $28
 
     .word nam_high_scores_rle		; $04	Fake "top winning streaks"
@@ -351,7 +355,7 @@ tbl_palette_and_irq_ptrs:
     .byte $0C, $00	; $00	Main menu
     .byte $0E, $01	; $01	Options menu
     .byte $0C, $02	; $02	Fighter selection
-    .byte $0C, $02	; $03	VS Screen
+    .byte $0C, $03	; $03	Battle Plan
     .byte $0C, $01	; $04	Fake high scores screen
     .byte $0C, $01	; $05
     .byte $0C, $01	; $06
@@ -445,7 +449,7 @@ rom_823D:
 	.word palette_main_menu
 	.word palette_options_menu
 	.word palette_fighter_select
-	.word palette_82A7
+	.word palette_battle_plan
 	.word palette_titles
 
 ; -----------------------------------------------------------------------------
@@ -475,11 +479,11 @@ palette_fighter_select:
 
 ; -----------------------------------------------------------------------------
 
-palette_82A7:
-	.byte $0E, $16, $2A, $38, $0E, $21, $26, $20
-	.byte $0E, $21, $26, $20, $0E, $21, $26, $20
-	.byte $0E, $16, $2A, $38, $0E, $21, $26, $20
-	.byte $0E, $21, $26, $20, $0E, $21, $26, $20
+palette_battle_plan:
+	.byte $07, $00, $2D, $30, $07, $11, $21, $30
+	.byte $07, $17, $27, $37, $07, $06, $16, $26
+	.byte $07, $16, $26, $36, $07, $11, $21, $30
+	.byte $07, $17, $27, $37, $07, $0C, $1C, $37
 
 ; -----------------------------------------------------------------------------
 
@@ -547,95 +551,18 @@ nam_fighter_select_rle:
 
 ; -----------------------------------------------------------------------------
 
-nam_unused_rle:
-	.byte $20, $00, $46, $00, $82, $01, $02, $02
-	.byte $03, $8F, $04, $05, $00, $06, $03, $07
-	.byte $08, $00, $09, $0A, $01, $02, $0B, $05
-	.byte $08, $0D, $00, $82, $0C, $0D, $02, $0E
-	.byte $8F, $0F, $10, $00, $11, $0E, $12, $13
-	.byte $00, $14, $15, $0C, $0D, $16, $10, $13
-	.byte $2C, $00, $81, $17, $14, $18, $81, $19
-	.byte $0A, $00, $89, $1A, $1B, $1C, $1D, $1E
-	.byte $B9, $BA, $BB, $BC, $04, $00, $89, $5E
-	.byte $5F, $60, $61, $1F, $20, $21, $22, $1A
-	.byte $0A, $00, $89, $1A, $23, $24, $25, $26
-	.byte $C5, $C6, $C7, $C8, $04, $00, $89, $6E
-	.byte $6F, $70, $71, $29, $2A, $2B, $2C, $1A
-	.byte $0A, $00, $89, $1A, $2D, $2E, $2F, $30
-	.byte $D0, $D1, $D2, $D3, $04, $00, $89, $7E
-	.byte $7F, $80, $81, $35, $36, $37, $38, $1A
-	.byte $0A, $00, $89, $1A, $3A, $3B, $3C, $3D
-	.byte $DC, $DD, $DE, $DF, $04, $00, $89, $8E
-	.byte $8F, $90, $91, $42, $43, $44, $45, $1A
-	.byte $0A, $00, $89, $1A, $47, $48, $49, $4A
-	.byte $E7, $E8, $E9, $EA, $04, $00, $89, $9E
-	.byte $9F, $A0, $A1, $4D, $4E, $4F, $50, $1A
-	.byte $06, $00, $81, $17, $03, $18, $89, $39
-	.byte $51, $52, $53, $54, $F2, $F3, $F4, $F5
-	.byte $04, $00, $89, $AD, $AE, $AF, $B0, $56
-	.byte $57, $58, $59, $46, $03, $18, $81, $19
-	.byte $02, $00, $9E, $1A, $B9, $BA, $BB, $BC
-	.byte $5A, $5B, $5C, $5D, $5E, $5F, $60, $61
-	.byte $62, $63, $64, $65, $66, $67, $68, $69
-	.byte $C1, $C2, $C3, $C4, $BD, $BE, $BF, $C0
-	.byte $1A, $02, $00, $9E, $1A, $C5, $C6, $C7
-	.byte $C8, $6A, $6B, $6C, $6D, $6E, $6F, $70
-	.byte $71, $72, $73, $74, $75, $76, $77, $78
-	.byte $79, $CC, $CD, $CE, $CF, $C9, $C1, $CA
-	.byte $CB, $1A, $02, $00, $9E, $1A, $D0, $D1
-	.byte $D2, $D3, $7A, $7B, $7C, $7D, $7E, $7F
-	.byte $80, $81, $82, $83, $84, $85, $86, $87
-	.byte $88, $89, $D8, $D9, $DA, $DB, $D4, $D5
-	.byte $D6, $D7, $1A, $02, $00, $9E, $1A, $DC
-	.byte $DD, $DE, $DF, $8A, $8B, $8C, $8D, $8E
-	.byte $8F, $90, $91, $92, $93, $94, $95, $96
-	.byte $97, $98, $99, $DF, $E4, $E5, $E6, $E0
-	.byte $E1, $E2, $E3, $1A, $02, $00, $9E, $1A
-	.byte $E7, $E8, $E9, $EA, $9A, $9B, $9C, $9D
-	.byte $9E, $9F, $A0, $A1, $A2, $C1, $A4, $A5
-	.byte $C1, $A6, $A7, $A8, $EE, $EF, $F0, $F1
-	.byte $A3, $EB, $EC, $ED, $1A, $02, $00, $9E
-	.byte $1A, $F2, $F3, $F4, $F5, $A9, $AA, $AB
-	.byte $AC, $AD, $AE, $AF, $B0, $B1, $B2, $B3
-	.byte $B4, $B5, $B6, $B7, $B8, $FA, $FB, $FC
-	.byte $FD, $F6, $F7, $F8, $F9, $1A, $02, $00
-	.byte $9E, $1A, $66, $67, $68, $69, $BD, $BE
-	.byte $BF, $C0, $C1, $C2, $C3, $C4, $1B, $1C
-	.byte $1D, $1E, $5A, $5B, $5C, $5D, $1F, $20
-	.byte $21, $22, $62, $63, $64, $65, $1A, $02
-	.byte $00, $9E, $1A, $76, $77, $78, $79, $C9
-	.byte $C1, $CA, $CB, $CC, $CD, $CE, $CF, $23
-	.byte $24, $25, $26, $6A, $6B, $6C, $6D, $29
-	.byte $2A, $2B, $2C, $72, $73, $74, $75, $1A
-	.byte $02, $00, $9E, $1A, $86, $87, $88, $89
-	.byte $D4, $D5, $D6, $D7, $D8, $D9, $DA, $DB
-	.byte $2D, $2E, $2F, $30, $7A, $7B, $7C, $7D
-	.byte $35, $36, $37, $38, $82, $83, $84, $85
-	.byte $1A, $02, $00, $9E, $1A, $96, $97, $98
-	.byte $99, $E0, $E1, $E2, $E3, $DF, $E4, $E5
-	.byte $E6, $3A, $3B, $3C, $3D, $8A, $8B, $8C
-	.byte $8D, $42, $43, $44, $45, $92, $93, $94
-	.byte $95, $1A, $02, $00, $9E, $1A, $C1, $A6
-	.byte $A7, $A8, $A3, $EB, $EC, $ED, $EE, $EF
-	.byte $F0, $F1, $47, $48, $49, $4A, $9A, $9B
-	.byte $9C, $9D, $4D, $4E, $4F, $50, $A2, $C1
-	.byte $A4, $A5, $1A, $02, $00, $9E, $1A, $B5
-	.byte $B6, $B7, $B8, $F6, $F7, $F8, $F9, $FA
-	.byte $FB, $FC, $FD, $51, $52, $53, $54, $A9
-	.byte $AA, $AB, $AC, $56, $57, $58, $59, $B1
-	.byte $B2, $B3, $B4, $1A, $02, $00, $81, $46
-	.byte $1C, $18, $81, $39, $77, $00, $2A, $00
-	.byte $09, $FF, $86, $7F, $1F, $CF, $BF, $2F
-	.byte $CF, $02, $FF, $9F, $77, $11, $CC, $BB
-	.byte $22, $CC, $FF, $77, $11, $44, $55, $11
-	.byte $88, $22, $CC, $B7, $A1, $24, $05, $41
-	.byte $58, $92, $EC, $BB, $AA, $22, $00, $44
-	.byte $55, $99, $EE, $10, $FF, $FF
+nam_battle_plan_top:
+.incbin "nam/battle_plan_top.rle"
 
 ; -----------------------------------------------------------------------------
 
-nam_vs_screen_2_rle:
-.incbin "nam/vs_screen_btm.rle"
+nam_battle_plan_btm:
+.incbin "nam/battle_plan_btm.rle"
+
+; -----------------------------------------------------------------------------
+
+nam_dont_load:
+	.byte $20, $00, $FF
 
 ; -----------------------------------------------------------------------------
 
