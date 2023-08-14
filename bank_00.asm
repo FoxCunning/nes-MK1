@@ -214,16 +214,21 @@ sub_init_game_mode:
 
 	lda zp_match_type
 	beq :++
-		cmp #$01
-		bne :+
+		cmp #$02
+		bcs :+
 			; Endurance
+			txa
+			adc #$07
+			tax
+			bne @set_stage_irq_idx
 		:
 		; Boss fights
+		ldx #$0A
 	:
-	; Regular matches
-	lda @tbl_stage_indices+0,X
 
 	@set_stage_irq_idx:
+	lda @tbl_stage_indices+0,X
+
 	sta ram_irq_routine_idx
 
 	; Disable rendering and NMI generation
@@ -316,7 +321,7 @@ sub_init_game_mode:
 	.byte $04, $01, $00
 
 	; Boss fights
-	.byte $00, $00
+	.byte $00
 
 ; ----------------
 
