@@ -6,6 +6,7 @@
 .feature pc_assignment
 
 .include "globals.inc"
+.include "charmap.inc"
 
 
 ; -----------------------------------------------------------------------------
@@ -1706,11 +1707,11 @@ sub_vs_state_machine:
 	jsr sub_trampoline
 ; ----------------
 ; Jump pointers
-	.word sub_vs_state_init	; 0,2,0
-	.word sub_vs_screen_init	; 0,2,1
-	.word sub_vs_fade_in	; 0,2,2
-	.word sub_rom_B993	; 0,2,3
-	.word sub_vs_fade_out	; 0,2,4
+	.word sub_vs_state_init		; 0,2,0
+	.word sub_vs_scr_init	; 0,2,1
+	.word sub_vs_fade_in		; 0,2,2
+	.word sub_vs_scr_loop			; 0,2,3
+	.word sub_vs_fade_out		; 0,2,4
 
 ; -----------------------------------------------------------------------------
 
@@ -1777,42 +1778,47 @@ tbl_boss_sel_idx:
 
 ; -----------------------------------------------------------------------------
 
-sub_vs_screen_init:
+sub_vs_scr_init:
+	lda zp_match_number
+	bne @B941_bottom_nam	; First match starts from the top and scrolls down
+
 	lda zp_match_type
-	cmp #$01
-	beq @B941_endurance_nam
+	beq @B941_bottom_nam	; Endurance and boss fights start from the top
 
-		lda #$03 ;lda #$02	; Index used for VS screen (it's the same as player select)
-		;sta zp_tmp_idx
-		jsr sub_init_screen_common ;sub_setup_new_screen
+		lda #$89
+		bne @B956_prepare_scr
 
-		jsr sub_vs_scr_portraits
-		jsr sub_vs_scr_attributes
-
-		lda #$8A
-		sta ram_0680
-		jmp @B956_prepare_scr
-
-	@B941_endurance_nam:
-	lda #$07	; Index for endurance match VS screen
-	sta zp_tmp_idx
-	jsr sub_setup_new_screen
-	jsr sub_rom_BC2B
-
-	ldy #$88
-	lda zp_plr1_selection
-	bpl :+
-		ldy #$8A
-	:
-	sty ram_0680
+	@B941_bottom_nam:
+	lda #$88
 	
 	@B956_prepare_scr:
-	jsr sub_hide_all_sprites
+	sta ram_0680
+	lda #$03
+	jsr sub_init_screen_common
+	jsr sub_vs_scr_portraits
+	jsr sub_vs_scr_sprites
 
 	lda #$00
 	sta zp_pal_mask_idx
 	sta zp_palette_fade_idx
 	sta zp_scroll_x
+
+	; Choose appropriate vertical scroll value for current match
+	lda #$00
+	ldx zp_match_type
+	beq @vs_init_scroll
+
+		cpx #$01
+		bne :+
+			; Endurance matches
+			ldx zp_match_number
+			lda @tbl_starting_y_scroll+0,X
+			bne @vs_init_scroll	; Must branche always
+		:
+		ldx zp_match_number
+		lda @tbl_starting_y_scroll+3,X
+
+	@vs_init_scroll:
 	sta zp_scroll_y
 
 	lda #$88
@@ -1836,6 +1842,13 @@ sub_vs_screen_init:
 
 	rts
 
+	@tbl_starting_y_scroll:
+	.byte $D0	; Endurance 1
+	.byte $A0	; Endurance 2
+	.byte $80	; Endurance 3
+	.byte $60	; Goro
+	.byte $28	; Shang Tsung
+
 ; -----------------------------------------------------------------------------
 
 sub_vs_fade_in:
@@ -1845,7 +1858,7 @@ sub_vs_fade_in:
 	bcc @B982_rts
 
 		inc zp_machine_state_2
-		lda #$04
+		lda #$00
 		sta zp_counter_param
 
 	@B982_rts:
@@ -1853,32 +1866,151 @@ sub_vs_fade_in:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_B993:
+sub_vs_scr_loop:
 	lda zp_frame_counter
 	cmp zp_last_execution_frame
-	beq @B9B4
+	bne :+
+		rts
+	:
+	sta zp_last_execution_frame
+	lda zp_controller1_new
+	and #$F0	; Press a button to skip the wait
+	beq @vs_loop_controller
 
-		sta zp_last_execution_frame
-		lda zp_controller1_new
-		bne @B9AE
-
-		lda zp_controller2_new
-		bne @B9AE
-
-		lda zp_frame_counter
-		and #$1F
-		bne @B9B4
-
-		dec zp_counter_param
-		bne @B9B4
-
-		@B9AE:
+		@B9AE_skip_wait:
 		lda #$00
 		sta zp_counter_param
 		inc zp_machine_state_2
+		rts
+		; ----
 
-	@B9B4:
+	@vs_loop_controller:
+	lda zp_controller2_new
+	and #$F0	; Press a button to skip the wait
+	bne @B9AE_skip_wait
+
+		lda zp_counter_param
+		beq :+
+			; Little pause before fading out
+			dec zp_counter_param
+			beq @B9AE_skip_wait
+			bne @B9B4_rts
+		:
+		; Scroll the screen if needed
+		lda zp_match_type
+		bne @vs_move_up
+
+			lda zp_match_number
+			bne @vs_move_up
+
+			; Move down
+
+				; Move the player portrait to the desired position
+				lda ram_oam_copy_ypos+0
+				cmp @tbl_target_spr_y+0
+				bcs :+
+					ldx #$0C
+					@spr_down_loop:
+						inc ram_oam_copy_ypos+0,X
+						inc ram_oam_copy_ypos+16,X
+						txa
+						axs #$04
+					bpl @spr_down_loop
+
+					rts
+				:
+				; Scroll the screen downwards
+				lda #$F0
+				isc zp_scroll_y
+				bne :+
+					lda #$78	; Wait 2 seconds (120 frames) before fading out
+					sta zp_counter_param
+
+					lda #$8A	; Bottom nametable
+					sta zp_ppu_control_backup
+					lda #$00
+					sta zp_scroll_y
+				:
+				rts
+
+
+		@vs_move_up:
+
+		; Move up
+
+		; Keep moving the player portrait until it has reached its target coordintes
+		ldy zp_match_number
+		lda zp_match_type
+		beq :++
+			cmp #$01
+			bne :+
+				tya
+				clc
+				adc #$07	; Endurance coordinates offset
+				tay
+				bne :++
+			:
+			tya
+			clc
+			adc #$0A	; Boss fight offset
+			tay
+		:
+
+		lda ram_oam_copy_ypos+0
+		cmp @tbl_target_spr_y+0,Y
+		beq :+	; Skip if coordinates have been reached
+			ldx #$0C
+			@spr_up_loop:
+				dec ram_oam_copy_ypos+0,X
+				dec ram_oam_copy_ypos+16,X
+				txa
+				axs #$04
+			bpl @spr_up_loop
+
+			rts
+		:
+		; Scroll the screen upwards for endurance and boss matches
+		lda zp_match_type
+		beq @vs_scroll_done
+			; Endurance match values offset
+			ldy zp_match_number		
+
+			cmp #$02
+			bne :+
+				; Boss matche values offset
+				iny
+				iny
+				iny
+			:
+			ldx @tbl_target_scroll_y,Y
+			cpx zp_scroll_y
+			beq @vs_scroll_done
+
+				dec zp_scroll_y
+				rts
+
+		@vs_scroll_done:
+		lda #$78	; 2 seconds wait
+		sta zp_counter_param
+
+	@B9B4_rts:
 	rts
+
+; ----------------
+
+	; Target Y coordinate where to move the player portrait for each match
+	@tbl_target_spr_y:
+	.byte $CF, $AF, $8F, $6F, $4F, $2F, $0B
+	; Endurance matches
+	.byte $0F, $0F, $0F
+	; Bosses
+	.byte $2F, $27
+
+	; Target Y scroll for endurance and boss fights
+	@tbl_target_scroll_y:
+	.byte $C0, $A0, $80
+	; Bosses
+	.byte $28, $00
 
 ; -----------------------------------------------------------------------------
 
@@ -1906,462 +2038,387 @@ sub_vs_fade_out:
 
 ; -----------------------------------------------------------------------------
 
-sub_vs_scr_attributes:
-	lda ram_0680
-	asl A
-	asl A
-	tax
-
-	ldy #$2B
-	sty PpuAddr_2006
-	lda #$D1
-	sta PpuAddr_2006
-	lda rom_BA68+0,X
-	sta PpuData_2007
-
-	;lda #$2B
-	sty PpuAddr_2006
-	lda #$D2
-	sta PpuAddr_2006
-	lda rom_BA68+1,X
-	sta PpuData_2007
-
-	;lda #$2B
-	sty PpuAddr_2006
-	lda #$D9
-	sta PpuAddr_2006
-	lda rom_BA6A+0,X
-	sta PpuData_2007
-
-	;lda #$2B
-	sty PpuAddr_2006
-	lda #$DA
-	sta PpuAddr_2006
-	lda rom_BA6A+1,X
-	sta PpuData_2007
-
-	lda ram_0681
-	asl A
-	asl A
-	tax
-
-	;lda #$2B
-	sty PpuAddr_2006
-	lda #$D5
-	sta PpuAddr_2006
-	lda rom_BA68+0,X
-	sta PpuData_2007
-	;lda #$2B
-	sty PpuAddr_2006
-	lda #$D6
-	sta PpuAddr_2006
-	lda rom_BA68+1,X
-	sta PpuData_2007
-	;lda #$2B
-	sty PpuAddr_2006
-	lda #$DD
-	sta PpuAddr_2006
-	lda rom_BA6A+0,X
-	sta PpuData_2007
-	;lda #$2B
-	sty PpuAddr_2006
-	lda #$DE
-	sta PpuAddr_2006
-	lda rom_BA6A+1,X
-	sta PpuData_2007
-	rts
-; ----------------
-rom_BA68:
-	.byte $3F, $CF
-rom_BA6A:
-	.byte $33, $CC
-
-	.byte $7F, $DF, $77, $DD
-
-	.byte $BF, $EF, $BB, $EE
-
-; -----------------------------------------------------------------------------
-
-sub_vs_scr_portraits:
-	lda #<rom_BB0B
-	sta zp_ptr2_lo
-	lda #>rom_BB0B
-	sta zp_ptr2_hi
-
-	ldx #$00
-	lda zp_plr1_selection
-	and #$7F
-	asl A
-	tay
-	lda (zp_ptr2_lo),Y
-	sta zp_05
-	iny
-	lda (zp_ptr2_lo),Y
-	sta ram_0680,X
-
-	jsr sub_vs_scr_load_portrait
-
-	lda #$29
-	sta zp_nmi_ppu_ptr_hi
-	lda #$46
-	sta zp_nmi_ppu_ptr_lo
-
-	jsr sub_rom_BABF
-
-	ldx #$01
-	lda zp_plr2_selection
-	and #$7F
-	asl A
-	tay
-	lda (zp_ptr2_lo),Y
-	sta zp_05
-	iny
-	lda (zp_ptr2_lo),Y
-	sta ram_0680,X
-
-	jsr sub_vs_scr_load_portrait
-
-	lda #$29
-	sta zp_nmi_ppu_ptr_hi
-	lda #$56
-	sta zp_nmi_ppu_ptr_lo
-; ----------------
-sub_rom_BABF:
-	lda zp_47
-	ora zp_ppu_control_backup
-	and #$7F
-	sta PpuControl_2000
-	ldy #$00
-	ldx #$00
-	@BACC:
-	lda PpuStatus_2002
-	lda zp_nmi_ppu_ptr_hi
-	sta PpuAddr_2006
-	lda zp_nmi_ppu_ptr_lo
-	sta PpuAddr_2006
-	@BAD9:
-	lda ram_ppu_data_buffer,X
-	sta PpuData_2007
-	iny
-	inx
-	cpy zp_nmi_ppu_cols
-	bcc @BAD9
-
-	lda zp_nmi_ppu_ptr_lo
-	clc
-	adc #$20
-	sta zp_nmi_ppu_ptr_lo
-	bcc @BAF0
-
-	inc zp_nmi_ppu_ptr_hi
-	@BAF0:
-	ldy #$00
-	dec zp_nmi_ppu_rows
-	bne @BACC
-
-	lda #$00
-	sta zp_nmi_ppu_ptr_hi
-	rts
-
-; -----------------------------------------------------------------------------
-
-rom_BB0B:
-	.byte $00, $01
-	.byte $01, $00
-	.byte $02, $00
-	.byte $03, $01
-	.byte $04, $01
-	.byte $05, $02
-	.byte $06, $01
-	.byte $07, $00
-	.byte $08, $02
-
-; -----------------------------------------------------------------------------
-
-tbl_fighter_nam_ptrs:
-	.word rom_BB53
-	.word rom_BB6B
-	.word rom_BB83
-	.word rom_BB9B
-	.word rom_BBB3
-	.word rom_BBCB
-	.word rom_BBE3
-	.word rom_BBFB
-	.word rom_BC13
-
-; -----------------------------------------------------------------------------
-
-; Fighter portrait nametables
-
-rom_BB53:
-	.byte $C0, $C1, $C2, $C3, $D0, $D1, $D2, $D3
-	.byte $C4, $C5, $C6, $C7, $D4, $D5, $D6, $D7
-	.byte $C8, $C9, $CA, $CB, $D8, $D9, $DA, $DB
-rom_BB6B:
-	.byte $6C, $6D, $6E, $6F, $7C, $7D, $7E, $7F
-	.byte $8C, $8D, $8E, $8F, $9C, $9D, $9E, $9F
-	.byte $AC, $AD, $AE, $AF, $BC, $BD, $BE, $BF
-rom_BB83:
-	.byte $08, $09, $0A, $0B, $18, $19, $1A, $1B
-	.byte $28, $29, $2A, $2B, $38, $39, $3A, $3B
-	.byte $48, $49, $4A, $4B, $58, $59, $5A, $5B
-rom_BB9B:
-	.byte $64, $65, $66, $67, $74, $75, $76, $77
-	.byte $84, $85, $86, $87, $94, $95, $96, $97
-	.byte $A4, $A5, $A6, $A7, $B4, $B5, $B6, $B7
-rom_BBB3:
-	.byte $00, $01, $02, $03, $10, $11, $12, $13
-	.byte $20, $21, $22, $23, $30, $31, $32, $33
-	.byte $40, $15, $42, $43, $50, $51, $52, $53
-rom_BBCB:
-	.byte $68, $69, $6A, $6B, $78, $79, $7A, $7B
-	.byte $88, $89, $8A, $8B, $98, $99, $9A, $9B
-	.byte $A8, $A9, $AA, $AB, $B8, $B9, $BA, $BB
-rom_BBE3:
-	.byte $60, $61, $62, $63, $70, $71, $72, $73
-	.byte $80, $81, $82, $83, $90, $91, $92, $93
-	.byte $A0, $A1, $A2, $A3, $B0, $B1, $B2, $B3
-rom_BBFB:
-	.byte $04, $05, $06, $07, $14, $15, $16, $17
-	.byte $24, $25, $26, $27, $34, $35, $36, $37
-	.byte $44, $45, $46, $47, $54, $55, $56, $57
-rom_BC13:
-	.byte $0C, $0D, $0E, $0F, $1C, $1D, $1E, $1F
-	.byte $2C, $2D, $2E, $2F, $3C, $3D, $3E, $3F
-	.byte $4C, $4D, $4E, $4F, $5C, $5D, $5E, $5F
-
-; -----------------------------------------------------------------------------
-
-sub_rom_BC2B:
-	lda #<rom_BB0B
-	sta zp_ptr2_lo
-	lda #>rom_BB0B
-	sta zp_ptr2_hi
-
-	ldx #$00
-	stx zp_1C
-	lda zp_plr1_selection
-	jsr sub_rom_BC57
-	ldx #$01
-	stx zp_1C
-	lda zp_plr1_selection,X
-	jsr sub_rom_BC57
-	ldx #$02
-	stx zp_1C
-	lda zp_plr1_selection,X
-	jsr sub_rom_BC57
-	jmp sub_rom_BCCB
-
-; -----------------------------------------------------------------------------
-
-sub_rom_BC57:
-	and #$7F
-	asl A
-	tay
-	lda (zp_ptr2_lo),Y
-	sta zp_05
-	iny
-	ldx zp_1C
-	lda (zp_ptr2_lo),Y
-	sta ram_0680,X
-	jsr sub_vs_scr_load_portrait
-	lda zp_1C
-	asl A
-	asl A
-	tax
-	lda rom_BCBF+0,X
-	sta zp_nmi_ppu_ptr_hi
-	lda rom_BCBF+1,X
-	sta zp_nmi_ppu_ptr_lo
-	jsr sub_rom_BABF
-	lda zp_1C
-	asl A
-	asl A
-	tax
-	lda rom_BCC1+0,X
-	sta zp_nmi_ppu_ptr_hi
-	lda rom_BCC1+1,X
-	sta zp_nmi_ppu_ptr_lo
-	lda #$04
-	sta zp_nmi_ppu_cols
-	lda #$06
-	sta zp_nmi_ppu_rows
-	ldy #$00
-	sty zp_47
-	jmp sub_rom_BABF
-
-; -----------------------------------------------------------------------------
-
-sub_vs_scr_load_portrait:
-	lda zp_05
-	asl A
-	tay
-	lda tbl_fighter_nam_ptrs+0,Y
-	sta zp_ptr1_lo
-	lda tbl_fighter_nam_ptrs+1,Y
-	sta zp_ptr1_hi
-
-	lda #$04
-	sta zp_nmi_ppu_cols
-	lda #$06
-	sta zp_nmi_ppu_rows
-
-	ldy #$00
-	sty zp_47
+; Shows the player's portrait as a sprite
+; Coordinates will be chosen depending on current match type/number
+sub_vs_scr_sprites:
+	ldy zp_plr1_selection
+	bpl :+	; If player 1 is AI-controlled, use player 2's portrait
+		ldy zp_plr2_selection
 	:
-		lda (zp_ptr1_lo),Y
-		sta ram_ppu_data_buffer,Y
+	
+	lda @tbl_vs_sprite_tiles,Y
+	sta zp_ptr1_lo	; Left
+	sta zp_ptr1_hi
+	inc zp_ptr1_hi	; Right
+
+
+	; Initial Y position
+
+	ldx zp_match_number
+
+	lda zp_match_type
+	beq :++		; Skip for regular matches
+		cmp #$01
+		bne :+
+			; Endurance
+			txa
+			clc
+			adc #$07
+			tax
+			bne :++
+		:
+		; Bosses
+		txa
+		clc
+		adc #$0A
+		tax
+	:
+	lda @tbl_initial_sprite_y,X
+	sta zp_var_y	; Initial Y coordinate
+
+
+	ldx #$00
+	@vs_spr_loop:
+		; Left
+		lda zp_var_y
+		sta ram_oam_copy_ypos+0,X
+		sta ram_oam_copy_ypos+16,X	; Background sprite
+		; Right
+		sta ram_oam_copy_ypos+4,X
+		sta ram_oam_copy_ypos+20,X
+
+		lda zp_ptr1_lo
+		sta ram_oam_copy_tileid+0,X
+		lda zp_ptr1_hi
+		sta ram_oam_copy_tileid+4,X
+
+		lda #$1F
+		sta ram_oam_copy_tileid+16,X
+		sta ram_oam_copy_tileid+20,X
+		
+		lda @tbl_vs_sprite_attr,Y
+		sta ram_oam_copy_attr+0,X
+		sta ram_oam_copy_attr+4,X
+
+		lda #$03
+		sta ram_oam_copy_attr+16,X
+		sta ram_oam_copy_attr+20,X
+
+		; Left
+		lda #$2A
+		sta ram_oam_copy_xpos+0,X
+		sta ram_oam_copy_xpos+16,X
+		; Right
+		lda #$32
+		sta ram_oam_copy_xpos+4,X
+		sta ram_oam_copy_xpos+20,X
+
+		; Next row
+		lda zp_var_y
+		clc
+		adc #$08
+		sta zp_var_y
+
+		lda zp_ptr1_lo
+		adc #$10
+		sta zp_ptr1_lo
+
+		lda zp_ptr1_hi
+		adc #$10
+		sta zp_ptr1_hi
+
+		; X = X + 8
+		txa
+		axs #$F8
+		cpx #$09
+	bcc @vs_spr_loop
+
+	rts
+
+; ----------------
+
+	; Index of first tile for each fighter
+	@tbl_vs_sprite_tiles:
+	.byte $20, $22, $24, $26, $28, $2A, $2C, $2E, $40
+
+	; Attribute values for each fighter's sprite
+	@tbl_vs_sprite_attr:
+	.byte $01, $01, $02, $01, $00, $02, $00, $01, $02
+
+	@tbl_initial_sprite_y:
+	.byte $2F, $CF, $AF, $8F, $6F, $4F, $2F
+
+	; Endurance
+	.byte $2F, $31, $2F
+
+	; Bosses
+	.byte $2F, $2F
+
+; -----------------------------------------------------------------------------
+
+; Shows fighter portraits on the Battle Plan screen
+sub_vs_scr_portraits:
+	lda zp_plr1_selection
+	bpl :+
+		lda zp_plr2_selection
+	:
+	sta zp_07
+
+	lda PpuControl_2000
+
+	ldx #$00
+	ldy #$00
+	@vs_regular_potraits:
+		; Top-Left
+		lda @tbl_vs_portr_ppu_ofs+1,Y
+		sta zp_ptr1_hi
+		sta PpuAddr_2006
+		lda @tbl_vs_portr_ppu_ofs+0,Y
+		sta zp_ptr1_lo
+		sta PpuAddr_2006
+
+		lda ram_opponent_idx,X
+		asl
+		adc #$20
+		sta zp_05
+		sta PpuData_2007
+
+		; Top-Right
+
+		lda zp_05
+		adc #$01
+		sta PpuData_2007
+
+		; Bottom-Left
+		lda zp_ptr1_hi
+		sta PpuAddr_2006
+
+		lda zp_ptr1_lo
+		adc #$20
+		sta PpuAddr_2006
+
+		lda zp_05
+		adc #$10
+		sta PpuData_2007
+
+		; Bottom-Right
+
+		lda zp_05
+		adc #$11
+		sta PpuData_2007
+
+		; Attribute
+		lda @tbl_vs_portr_attr_ofs+1,Y
+		sta PpuAddr_2006
+		lda @tbl_vs_portr_attr_ofs+0,Y
+		sta PpuAddr_2006
+
+		sty zp_backup_y		; Preserve Y
+		; ----
+		
+		lda ram_opponent_idx,X
+		tay
+		lda @tbl_vs_portr_attr_value,Y
+		sta PpuData_2007
+
+		; Name
+		lda ram_opponent_idx,X
+		cmp zp_07
+		bne :+
+			; If opponent's index is same as player's type "mirror match"
+			lda #<@str_mirror_match
+			sta zp_ptr2_lo
+			lda #>@str_mirror_match
+			sta zp_ptr2_hi
+			jmp @vs_print_name
+		:
+		asl
+		tay
+		lda @tbl_vs_names_ptrs+0,Y
+		sta zp_ptr2_lo
+		lda @tbl_vs_names_ptrs+1,Y
+		sta zp_ptr2_hi
+
+		@vs_print_name:
+		ldy #$00
+		:
+			lda zp_ptr1_hi
+			sta PpuAddr_2006
+			tya
+			clc
+			adc zp_ptr1_lo
+			adc #$04
+			sta PpuAddr_2006
+
+			lda (zp_ptr2_lo),Y
+			beq :+	; Check for string terminator
+			sta PpuData_2007
+
+			; Bottom half of the name
+			lda zp_ptr1_hi
+			sta PpuAddr_2006
+			tya
+			clc
+			adc #$24
+			adc zp_ptr1_lo
+			sta PpuAddr_2006
+
+			lda (zp_ptr2_lo),Y
+			adc #$20
+			sta PpuData_2007
+
+			iny
+			bne :-
+		:
+
+		; ----
+		ldy zp_backup_y		; Restore Y
+
 		iny
-		cpy #$18
-	bcc :-
+		iny
+		inx
+		cpx #$07
+		beq @vs_endurance_portraits
+	jmp @vs_regular_potraits
+
+	@vs_endurance_portraits:
+	; Endurance opponent portraits
+	ldx #$00	; Opponent index (0-6)
+	ldy #$00	; Pointer index
+	@vs_end_portr_loop:
+		lda @tbl_vs_portr_ppu_ofs+15,Y
+		sta zp_ptr1_hi
+		sta PpuAddr_2006
+		lda @tbl_vs_portr_ppu_ofs+14,Y
+		sta zp_ptr1_lo
+		sta PpuAddr_2006
+
+		; Top-Left
+		lda ram_opponent_idx,X
+		asl
+		adc #$20
+		sta zp_05
+		sta PpuData_2007
+
+		; Top-Right
+		lda zp_05
+		clc
+		adc #$01
+		sta PpuData_2007
+
+		; Bottom-Left
+		lda zp_ptr1_hi
+		sta PpuAddr_2006
+		lda zp_ptr1_lo
+		adc #$20
+		sta PpuAddr_2006
+
+		lda zp_05
+		adc #$10
+		sta PpuData_2007
+
+		; Bottom-Right
+		lda zp_05
+		adc #$11
+		sta PpuData_2007
+
+		; Attributes
+
+		lda @tbl_vs_portr_attr_ofs+15,Y
+		sta PpuAddr_2006
+		lda @tbl_vs_portr_attr_ofs+14,Y
+		sta PpuAddr_2006
+
+		sty zp_backup_y
+		
+			ldy ram_opponent_idx,X
+			lda @tbl_vs_portr_attr_value+7,Y
+			sta PpuData_2007
+
+		ldy zp_backup_y
+
+		iny
+		iny
+		inx
+		cpx #$06
+	bne @vs_end_portr_loop
 
 	rts
 
-; -----------------------------------------------------------------------------
+; ----------------
 
-rom_BCBF:
-	.word $2144
-rom_BCC1:
-	.word $2944
-	.word $2152
-	.word $2958
-	.word $2158
-	.word $294A
+	@tbl_vs_portr_ppu_ofs:
+	.word $2B4A		; Opponent 0
+	.word $2ACA		; Opponent 1
+	.word $2A4A		; Opponent 2
+	.word $29CA		; Opponent 3
+	.word $294A		; Opponent 4
+	.word $28CA		; Opponent 5
+	.word $284A		; Opponent 6
 
-; -----------------------------------------------------------------------------
+	; Endurance opponents
+	.word $2348		; 0, 0
+	.word $22C8		; 1, 0
+	.word $2248		; 2, 0
+	.word $234C		; 0, 1
+	.word $22CC		; 1, 1
+	.word $224C		; 2, 1
 
-sub_rom_BCCB:
-	lda ram_0680
-	asl A
-	tax
-	ldy #$23
-	sty PpuAddr_2006
-	lda #$D1
-	sta PpuAddr_2006
-	lda rom_BDDF+0,X
-	sta PpuData_2007
-	;lda #$23
-	sty PpuAddr_2006
-	lda #$D9
-	sta PpuAddr_2006
-	lda rom_BDDF+1,X
-	sta PpuData_2007
-	ldy #$2B
-	sty PpuAddr_2006
-	lda #$D1
-	sta PpuAddr_2006
-	lda rom_BDDF+0,X
-	sta PpuData_2007
-	;lda #$2B
-	sty PpuAddr_2006
-	lda #$D9
-	sta PpuAddr_2006
-	lda rom_BDDF+1,X
-	sta PpuData_2007
-	lda ram_0681
-	asl A
-	asl A
-	asl A
-	tax
-	ldy #$23
-	sty PpuAddr_2006
-	lda #$D4
-	sta PpuAddr_2006
-	lda rom_BDE5+0,X
-	sta PpuData_2007
-	;lda #$23
-	sty PpuAddr_2006
-	lda #$D5
-	sta PpuAddr_2006
-	lda rom_BDE5+1,X
-	sta PpuData_2007
-	;lda #$23
-	sty PpuAddr_2006
-	lda #$DC
-	sta PpuAddr_2006
-	lda rom_BDE7+0,X
-	sta PpuData_2007
-	;lda #$23
-	sty PpuAddr_2006
-	lda #$DD
-	sta PpuAddr_2006
-	lda rom_BDE7+1,X
-	sta PpuData_2007
-	ldy #$2B
-	sty PpuAddr_2006
-	lda #$D6
-	sta PpuAddr_2006
-	lda rom_BDE9+0,X
-	sta PpuData_2007
-	;lda #$2B
-	sty PpuAddr_2006
-	lda #$DE
-	sta PpuAddr_2006
-	lda rom_BDE9+1,X
-	sta PpuData_2007
-	lda ram_0682
-	asl A
-	asl A
-	asl A
-	tax
-	ldy #$23
-	sty PpuAddr_2006
-	lda #$D6
-	sta PpuAddr_2006
-	lda rom_BDFD+0,X
-	sta PpuData_2007
-	;lda #$23
-	sty PpuAddr_2006
-	lda #$DE
-	sta PpuAddr_2006
-	lda rom_BDFD+1,X
-	sta PpuData_2007
-	ldy #$2B
-	sty PpuAddr_2006
-	lda #$D2
-	sta PpuAddr_2006
-	lda rom_BDFF+0,X
-	sta PpuData_2007
-	;lda #$2B
-	sty PpuAddr_2006
-	lda #$D3
-	sta PpuAddr_2006
-	lda rom_BDFF+1,X
-	sta PpuData_2007
-	;lda #$2B
-	sty PpuAddr_2006
-	lda #$DA
-	sta PpuAddr_2006
-	lda rom_BE01+0,X
-	sta PpuData_2007
-	;lda #$2B
-	sty PpuAddr_2006
-	lda #$DB
-	sta PpuAddr_2006
-	lda rom_BE01+1,X
-	sta PpuData_2007
-	rts
+	@tbl_vs_portr_attr_ofs:
+	.word $2BF2		; 0
+	.word $2BEA		; 1
+	.word $2BE2		; 2
+	.word $2BDA		; 3
+	.word $2BD2		; 4
+	.word $2BCA		; 5
+	.word $2BC2		; 6
 
-; -----------------------------------------------------------------------------
+	; Endurance opponents
+	.word $23F2
+	.word $23EA
+	.word $23E2
+	.word $23F3
+	.word $23EB
+	.word $23E3
 
-rom_BDDF:
-	.byte $0F, $00, $5F, $55, $AF, $AA
-rom_BDE5:
-	.byte $3F, $CF
-rom_BDE7:
-	.byte $33, $CC
-rom_BDE9:
-	.byte $0F, $00, $00, $00, $7F, $DF, $77, $DD
-	.byte $5F, $55, $00, $00, $BF, $EF, $BB, $EE
-	.byte $AF, $AA, $00, $00
-rom_BDFD:
-	.byte $0F, $00
-rom_BDFF:
-	.byte $3F, $CF
-rom_BE01:
-	.byte $33, $CC, $00, $00, $5F, $55, $7F, $DF
-	.byte $77, $DD, $00, $00, $AF, $AA, $BF, $EF
-	.byte $BB, $EE, $00, $00
+	; $40 = blue
+	; $80 = yellow
+	; $C0 = red
+	@tbl_vs_portr_attr_value:
+	.byte $40, $40, $80, $40, $40, $C0, $80
+
+	; Endurance opponents
+	; $10 = blue
+	; $20 = yellow
+	; $30 = red
+	.byte $10, $10, $20, $10, $10, $30, $20
+
+	@tbl_vs_names_ptrs:
+	.word @str_vs_subzero
+	.word @str_vs_kano
+	.word @str_vs_scorpion
+	.word @str_vs_raiden
+	.word @str_vs_cage
+	.word @str_vs_liukang
+	.word @str_vs_sonya
+
+	@str_vs_subzero:
+	.byte "sub-zero", $00
+	@str_vs_kano:
+	.byte "kano", $00
+	@str_vs_scorpion:
+	.byte "scorpion", $00
+	@str_vs_raiden:
+	.byte "raiden", $00
+	@str_vs_cage:
+	.byte "johnny_cage", $00
+	@str_vs_liukang:
+	.byte "liu_kang", $00
+	@str_vs_sonya:
+	.byte "sonya", $00
+
+	@str_mirror_match:
+	.byte "mirror_match", $00
 
 ; -----------------------------------------------------------------------------
 
@@ -2383,6 +2440,7 @@ sub_choose_opponent:
 	ldx #$00
 	ldy #$00
 	@BE30_loop:
+	; TODO Use a random list
 	lda tbl_opponent_indices,X
 	cmp zp_05
 	bne :+
@@ -2400,7 +2458,8 @@ sub_choose_opponent:
 
 ; ----------------
 
-; Goro and Shang-Tsung play one more match, apparently
+; Looks like Goro and Shang-Tsung play one more match, but that is because
+; they have no mirror match, so they just fight all regular opponents
 tbl_num_opponents:
 	.byte $06, $06, $06, $06, $06, $06, $06
 	.byte $07, $07
