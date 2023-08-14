@@ -207,10 +207,23 @@ rle_throne_room_right:
 ; for the stage background, sprite data for the player(s) and music
 sub_init_game_mode:
 	; Retrieve the stage index
-	lda zp_plr2_fighter_idx	; This is player 2 fighter index, bit 7 is set for CPU opponent
-	and #$7F
-	tax
-	lda @tbl_stage_indices,X
+	;lda zp_plr2_fighter_idx	; This is player 2 fighter index, bit 7 is set for CPU opponent
+	;and #$7F
+	;tax
+	ldx zp_match_number
+
+	lda zp_match_type
+	beq :++
+		cmp #$01
+		bne :+
+			; Endurance
+		:
+		; Boss fights
+	:
+	; Regular matches
+	lda @tbl_stage_indices+0,X
+
+	@set_stage_irq_idx:
 	sta ram_irq_routine_idx
 
 	; Disable rendering and NMI generation
@@ -296,14 +309,18 @@ sub_init_game_mode:
 ; ----------------
 
 	@tbl_stage_indices:
-	.byte $00, $01, $05, $03, $04, $02, $02
-	.byte $01, $04, $01
-	.byte $02, $03
-	.byte $00, $01, $05, $03
-	.byte $04, $02, $02, $01, $04, $01, $02, $03
+	; Regular matches
+	.byte $02, $04, $01, $05, $04, $02, $03
+
+	; Endurance
+	.byte $04, $01, $00
+
+	; Boss fights
+	.byte $00, $00
 
 ; ----------------
 
+	; One value per stage
 	@tbl_y_pos_offsets:
 	.byte $DA, $D0, $DA, $DA, $DA, $DA
 
