@@ -172,6 +172,25 @@ sub_match_end:
 	sta zp_06
 	jsr sub_update_score_display
 
+	; Start playing bleep sounds when both counters are zero
+	lda zp_counter_param
+	bne @skip_bleep
+
+		lda zp_short_counter
+		beq @play_bleep
+
+			dec zp_short_counter
+			bne @skip_bleep
+
+		@play_bleep:
+		lda zp_frame_counter
+		and #$03
+		bne @skip_bleep
+			lda #$09	; Pulse bleep (score counter)
+			sta ram_req_sfx
+
+	@skip_bleep:
+
 	lda zp_plr_idx_param
 	eor #$01
 	sta zp_plr_idx_param
@@ -180,7 +199,6 @@ sub_match_end:
 	tax
 	stx zp_plr_ofs_param
 	jsr sub_rom_C6E2
-	; jsr sub_rom_C6BA this is just a rts
 
 	lda zp_16bit_lo
 	sec
@@ -193,8 +211,7 @@ sub_match_end:
 ; ----------------
 	@victory_end:
 	lda zp_counter_param
-	bne :+
-		; Wait for the announcer, if needed
+	bne :+	; Wait for the announcer, if needed
 		inc zp_game_substate
 		rts
 	:
@@ -231,6 +248,9 @@ sub_announce_winner_name:
 		@abort_announcement:
 		lda #$00
 		sta zp_counter_param
+
+		lda #$30
+		sta zp_short_counter
 
 	@winner_name_rts:
 	rts
@@ -1552,8 +1572,10 @@ sub_rom_C9F2:
 	cmp #$05
 	bcc @CA18
 
-	lda #$01	; The match end state will use this to sync DPCM sample playback
+	lda #$01	; The match end state will use these to sync DPCM sample playback
 	sta zp_counter_param
+	lda #$00
+	sta zp_short_counter
 
 	lda #$05	; Match end state
 	sta zp_game_substate

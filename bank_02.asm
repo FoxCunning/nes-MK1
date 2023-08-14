@@ -21,7 +21,7 @@ tbl_track_ptrs:
 	.word sfx_fight				; $06	Announcer "Fight!"
 	.word sfx_kick				; $07	Kick swing
 	.word sfx_kick				; $08	Punch swing
-	.word sfx_bleep				; $09	Pulse bleep (score counter)
+	.word sfx_soft_bleep		; $09	Pulse bleep (score counter)
 	.word sfx_land				; $0A	Landing bounce (after a jump)
 	.word sfx_silence			; $0B
 	.word sfx_select			; $0C	"Siren" sound (selection confirmed)
@@ -379,6 +379,21 @@ sfx_bleep:
 	.byte $81
 	.word rom_9778
 	.byte $FF
+
+; -----------------------------------------------------------------------------
+
+sfX_soft_bleep:
+	.byte $81
+	.word @soft_bleep_ch0
+	.byte $FFF
+
+; ----------------
+
+; Square 1
+	@soft_bleep_ch0:
+	.byte $F5, $02, $F8, $22
+	.byte $F9, $FF, $FA, $FF, $FB, $FF
+	.byte $81, $30, $81, $3A, $00, $FF
 
 ; -----------------------------------------------------------------------------
 
