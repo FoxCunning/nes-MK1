@@ -307,14 +307,12 @@ tbl_rle_data_ptr_odd:
 
     .word nam_fighter_select_rle	; $02
     .byte $20, $20
-	.word nam_battle_plan_top
+	.word nam_dont_load
     .byte $28, $28
 
-	; We always keep the "top" loaded and at the bottom, because it gets modified
-	; dynamically to make a 32x80 screen
-    .word nam_battle_plan_btm		; $03
+    .word nam_battle_plan_top		; $03
     .byte $20, $20
-	.word nam_dont_load
+	.word nam_battle_plan_btm
     .byte $28, $28
 
     .word nam_high_scores_rle		; $04	Fake "top winning streaks"
@@ -483,7 +481,7 @@ palette_battle_plan:
 	.byte $07, $00, $2D, $30, $07, $11, $21, $30
 	.byte $07, $17, $27, $37, $07, $06, $16, $26
 	.byte $07, $16, $26, $36, $07, $11, $21, $30
-	.byte $07, $17, $27, $37, $07, $0C, $1C, $37
+	.byte $07, $17, $27, $37, $07, $0F, $1A, $37
 
 ; -----------------------------------------------------------------------------
 
