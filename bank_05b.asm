@@ -1817,8 +1817,8 @@ sub_vs_scr_init:
 			lda @tbl_starting_y_scroll+0,X
 			bne @vs_init_scroll	; Must branche always
 		:
-		ldx zp_match_number
-		lda @tbl_starting_y_scroll+3,X
+		; X will be 2 for Goro, 3 for Shang Tsung
+		lda @tbl_starting_y_scroll+1,X
 
 	@vs_init_scroll:
 	sta zp_scroll_y
@@ -1941,25 +1941,17 @@ sub_vs_scr_loop:
 		; Move up
 
 		; Keep moving the player portrait until it has reached its target coordintes
-		ldy zp_match_number
 		lda zp_match_type
-		beq :++
-			cmp #$01
-			bne :+
-				tya
-				clc
-				adc #$07	; Endurance coordinates offset
-				tay
-				bne :++
-			:
-			tya
-			clc
-			adc #$0A	; Boss fight offset
-			tay
-		:
+		asl
+		tax
+		lda @tbl_target_spr_y_ptrs+0,X
+		sta zp_ptr1_lo
+		lda @tbl_target_spr_y_ptrs+1,X
+		sta zp_ptr1_hi
 
-		lda ram_oam_copy_ypos+0
-		cmp @tbl_target_spr_y+0,Y
+		ldy zp_match_number
+		lda (zp_ptr1_lo),Y
+		cmp ram_oam_copy_ypos+0
 		beq :+	; Skip if coordinates have been reached
 			ldx #$0C
 			@spr_up_loop:
@@ -1974,18 +1966,17 @@ sub_vs_scr_loop:
 		; Scroll the screen upwards for endurance and boss matches
 		lda zp_match_type
 		beq @vs_scroll_done
-			; Endurance match values offset
-			ldy zp_match_number		
+			asl
+			tax
+			lda @tbl_target_scroll_ptrs+0,X
+			sta zp_ptr1_lo
+			lda @tbl_target_scroll_ptrs+1,X
+			sta zp_ptr1_hi
 
-			cmp #$02
-			bne :+
-				; Boss matche values offset
-				iny
-				iny
-				iny
-			:
-			ldx @tbl_target_scroll_y,Y
-			cpx zp_scroll_y
+			ldy zp_match_number
+
+			lda (zp_ptr1_lo),Y
+			cmp zp_scroll_y
 			beq @vs_scroll_done
 
 				dec zp_scroll_y
@@ -2000,19 +1991,46 @@ sub_vs_scr_loop:
 
 ; ----------------
 
+	@tbl_target_spr_y_ptrs:
+	.word @tbl_target_spr_y
+	.word @tbl_target_spr_y_end
+	.word @tbl_target_spr_y_goro
+	.word @tbl_target_spr_y_shang
+
 	; Target Y coordinate where to move the player portrait for each match
 	@tbl_target_spr_y:
 	.byte $CF, $AF, $8F, $6F, $4F, $2F, $0B
+
+	@tbl_target_spr_y_end:
 	; Endurance matches
 	.byte $0F, $0F, $0F
-	; Bosses
-	.byte $2F, $27
+
+	@tbl_target_spr_y_goro:
+	; Goro
+	.byte $2F
+
+	@tbl_target_spr_y_shang:
+	; Shang Tsung
+	.byte $27
+
+; ----------------
+
+	@tbl_target_scroll_ptrs:
+	.byte $FF, $FF
+	.word @tbl_target_scroll_y
+	.word @tbl_target_scroll_y_goro
+	.word @tbl_target_scroll_y_shang
 
 	; Target Y scroll for endurance and boss fights
 	@tbl_target_scroll_y:
 	.byte $C0, $A0, $80
+
+	@tbl_target_scroll_y_goro:
+	.byte $28
+
+	@tbl_target_scroll_y_shang:
 	; Bosses
-	.byte $28, $00
+	.byte $00
 
 ; -----------------------------------------------------------------------------
 
@@ -2153,8 +2171,8 @@ sub_vs_scr_sprites:
 	; Endurance
 	.byte $2F, $31, $2F
 
-	; Bosses
-	.byte $2F, $2F
+	; Goro and Shang Tsung
+	.byte $2F
 
 ; -----------------------------------------------------------------------------
 
