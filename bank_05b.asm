@@ -1779,17 +1779,19 @@ tbl_boss_sel_idx:
 ; -----------------------------------------------------------------------------
 
 sub_vs_scr_init:
-	lda zp_match_number
-	bne @B941_bottom_nam	; First match starts from the top and scrolls down
-
 	lda zp_match_type
-	beq @B941_bottom_nam	; Endurance and boss fights start from the top
+	beq :+	; Endurance and boss fights start from the top
 
-		lda #$89
+		lda #$88
 		bne @B956_prepare_scr
+	:
 
-	@B941_bottom_nam:
-	lda #$88
+	lda zp_match_number
+	bne :+
+		lda #$88
+		bne @B956_prepare_scr	; First match starts from the top too
+	:
+	lda #$8A
 	
 	@B956_prepare_scr:
 	sta ram_0680

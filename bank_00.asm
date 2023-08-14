@@ -17,12 +17,15 @@ sub_load_stage_background:
 	asl A
 	sta zp_plr_ofs_param
 	jsr sub_prepare_stage_rle_pointer
+
 	lda #$00
 	sta zp_05
 	jsr sub_stage_rle_unpack
+
 	inc zp_plr_ofs_param
 	lda zp_plr_ofs_param
 	jsr sub_prepare_stage_rle_pointer
+
 	lda #$01
 	sta zp_05
 	jmp sub_stage_rle_unpack
@@ -293,9 +296,11 @@ sub_init_game_mode:
 ; ----------------
 
 	@tbl_stage_indices:
-	.byte $00, $01, $05, $03, $04, $02, $02, $01
-	.byte $04, $01, $02, $03, $00, $01, $05, $03
-	.byte $04, $02, $02, $01, $04, $01, $02, $03
+	.byte $00, $01, $05, $03, $04, $02, $02
+	.byte $01, $04, $01
+	.byte $02, $03
+	;.byte $00, $01, $05, $03
+	;.byte $04, $02, $02, $01, $04, $01, $02, $03
 
 ; ----------------
 
