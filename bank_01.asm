@@ -987,26 +987,28 @@ sub_rom_C6BB:
 ; ----------------
 sub_update_score_display:
 	clc
-	lda ram_0403,X
+	lda ram_plr1_score_lo,X
 	adc zp_05
-	sta ram_0403,X
-	lda ram_0404,X
+	sta ram_plr1_score_lo,X
+	lda ram_plr1_score_mid,X
 	adc zp_06
-	sta ram_0404,X
+	sta ram_plr1_score_mid,X
 	bcc sub_rom_C6E2
 
-		inc ram_0405,X
+		inc ram_plr1_score_hi,X
 ; ----------------
 sub_rom_C6E2:
-	lda ram_0403,X
+	lda ram_plr1_score_lo,X
 	sta zp_07
-	lda ram_0404,X
+	lda ram_plr1_score_mid,X
 	sta zp_var_x
-	lda ram_0405,X
+	lda ram_plr1_score_hi,X
 	sta zp_x_counter
 	lda #$B0
 	sta zp_0D
+
 	jsr sub_rom_CD56
+
 	ldy zp_plr_idx_param
 	ldx rom_C76A,Y
 	ldy #$04
@@ -1025,41 +1027,41 @@ sub_rom_C6E2:
 	txa
 	eor #$03
 	tay
-	lda ram_0405,Y
-	cmp ram_0405,X
+	lda ram_plr1_score_hi,Y
+	cmp ram_plr1_score_hi,X
 	bcc @C733
 	bne @C75F
 
-	lda ram_0404,Y
-	cmp ram_0404,X
+	lda ram_plr1_score_mid,Y
+	cmp ram_plr1_score_mid,X
 	bcc @C733
 	bne @C75F
 
-	lda ram_0403,Y
-	cmp ram_0403,X
+	lda ram_plr1_score_lo,Y
+	cmp ram_plr1_score_lo,X
 	bcs @C75F
 
 	@C733:
-	lda ram_0405,X
+	lda ram_plr1_score_hi,X
 	cmp ram_040B
 	bcc @C75F
 
-	lda ram_0404,X
+	lda ram_plr1_score_mid,X
 	cmp ram_040A
 	bcc @C75F
 
 	bne @C74D
 
 	lda ram_0409
-	cmp ram_0403,X
+	cmp ram_plr1_score_lo,X
 	bcs @C75F
 
 	@C74D:
-	lda ram_0403,X
+	lda ram_plr1_score_lo,X
 	sta ram_0409
-	lda ram_0404,X
+	lda ram_plr1_score_mid,X
 	sta ram_040A
-	lda ram_0405,X
+	lda ram_plr1_score_hi,X
 	sta ram_040B
 
 	@C75F:
@@ -1112,8 +1114,8 @@ sub_match_hit_loop:
 	bcc :+
 
 		lda #$00
-		sta zp_gained_score_idx
-		; sta zp_F0
+		sta zp_gained_score_idx+0	; Player one
+		sta zp_gained_score_idx+1	; Player two
 		sta zp_counter_var_F1	; Stop the "hit" counter
 		dec zp_game_substate	; Back to match main loop
 		rts
@@ -2251,13 +2253,13 @@ sub_rom_CD56:
 
 	lda #$01
 	sta zp_07
-	sta ram_0403,X
+	sta ram_plr1_score_lo,X
 	lda #$86
 	sta zp_var_x
-	sta ram_0404,X
+	sta ram_plr1_score_mid,X
 	lda #$9F
 	sta zp_x_counter
-	sta ram_0405,X
+	sta ram_plr1_score_hi,X
 	@CD7D:
 	jmp sub_rom_D6C7;jsr sub_rom_D6C7
 	;rts

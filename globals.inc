@@ -208,9 +208,9 @@ zp_E9 = $E9     ;
 ;zp_ED = $ED     ;
 
 ; Determines how many points to add to a player's score
-zp_gained_score_idx = $EF   ; 0 to 4 (low to high)
+; Value = 0 to 4 (low to high)
+zp_gained_score_idx = $EF   ; Size=2
 
-zp_last_player_hit = $F0    ; Index (0 or 1) of last player hit by non-ranged attack
 zp_counter_var_F1 = $F1     ;
 zp_plr1_fighter_idx = $F2     ;
 zp_plr2_fighter_idx = $F3     ;
@@ -219,6 +219,9 @@ zp_F5 = $F5     ;
 ; After this has been set to 1, IRQ handling subroutines will be used
 zp_mmc3_irq_ready = $F6     ;
 zp_F7 = $F7     ;
+
+zp_last_player_hit = $FB    ; Index (0 or 1) of last player hit by non-ranged attack
+
 ; Copy of the value last written in the MMC3 Bank Select register for PRG ROM
 zp_bank_select_value = $FC ;
 zp_FD = $FD     ;
@@ -291,9 +294,14 @@ ram_03E0 = $03E0    ;
 ram_0400 = $0400    ;
 ram_0401 = $0401    ;
 ram_0402 = $0402    ;
-ram_0403 = $0403    ;
-ram_0404 = $0404    ;
-ram_0405 = $0405    ;
+
+; Score is / 10
+ram_plr1_score_lo = $0403   ;
+ram_plr1_score_mid = $0404  ;
+ram_plr1_score_hi = $0405   ;
+
+; Player 2 score (24 bit unsigned) is in $406-$408
+
 ram_0409 = $0409    ;
 ram_040A = $040A    ;
 ram_040B = $040B    ;
