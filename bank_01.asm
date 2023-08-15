@@ -37,7 +37,7 @@ sub_state_machine_1:
 	.word sub_match_eval		; Substate 6	Evaluate result (choose either 7 or 8 for next state)
 	.word sub_match_fade_out	; Substate 7	Fade out
 	.word sub_match_fade_out	; Substate 8	Fade out (to next round)
-	.word sub_rom_C284	; Substate 9	Back to main menu?
+	.word sub_rom_C284			; Substate 9	Back to main menu?
 
 ; -----------------------------------------------------------------------------
 
@@ -279,31 +279,32 @@ sub_rom_C29E:
 	ldy #$00
 	sty zp_plr_idx_param
 	jsr sub_rom_C2A8
+
 	iny
 	sty zp_plr_idx_param
 
 ; -----------------------------------------------------------------------------
 
 sub_rom_C2A8:
-	lda zp_4C,Y
-	bpl @C2C4
+	;lda zp_4C,Y
+	;bpl @C2C4
 
-	cmp #$F0
-	bcs @C2BF
+	;cmp #$F0
+	;bcs @C2BF
 
-	lda #$03
-	and zp_frame_counter
-	bne @C2C4
+	;lda #$03
+	;and zp_frame_counter
+	;bne @C2C4
 
-	ldx zp_4C,Y
-	inx
-	stx zp_4C,Y
-	jmp @C2C4
+	;ldx zp_4C,Y
+	;inx
+	;stx zp_4C,Y
+	;jmp @C2C4
 
-	@C2BF:
-	lda #$00
-	sta zp_4C,Y
-	@C2C4:
+	;@C2BF:
+	;lda #$00
+	;sta zp_4C,Y
+	;@C2C4:
 	lda #$1E
 	cmp zp_plr1_cur_anim,Y
 
@@ -363,7 +364,8 @@ sub_rom_C2A8:
 	cmp #$27
 	beq @C317
 
-	jsr sub_ranged_attack
+		jsr sub_ranged_attack
+
 	@C317:
 	lda ram_ranged_atk_x_pos,Y
 	sta zp_05
@@ -378,7 +380,7 @@ sub_rom_C2A8:
 	ldx zp_plr1_fgtr_idx_clean,Y
 	lda zp_sprites_base_y
 	sec
-	sbc rom_C3BD,X
+	sbc tbl_ranged_atk_spr_y,X
 	;lda rom_C3BD,X
 	@C32C:
 	sta zp_06
@@ -495,7 +497,7 @@ sub_ranged_sprites_update:
 ; -----------------------------------------------------------------------------
 
 ; Relative Y coordinate for ranged attack sprite
-rom_C3BD:
+tbl_ranged_atk_spr_y:
 	.byte $DA-$9C	; Raiden
 	.byte $DA-$98	; Sonya
 	.byte $DA-$9C	; Sub-Zero
@@ -1233,20 +1235,20 @@ sub_inner_check_input_special:
 		ldy zp_plr_idx_param
 		lda ram_special_atk_idx
 		cmp #$1E	; Ranged attack
-		bne @C86A_assign_anim
+		;bne @C86A_assign_anim
 
-		lda zp_4C,Y
-		bmi @C875_rts
+		;lda zp_4C,Y
+		;bmi @C875_rts
 
-		ldx zp_4C,Y
-		inx
-		stx zp_4C,Y
-		cpx #$02
-		bcc @C86A_assign_anim
+		;ldx zp_4C,Y
+		;inx
+		;stx zp_4C,Y
+		;cpx #$02
+		;bcc @C86A_assign_anim
 
-			lda #$80
-			sta zp_4C,Y
-		@C86A_assign_anim:
+		;	lda #$80
+		;	sta zp_4C,Y
+		;@C86A_assign_anim:
 		lda ram_special_atk_idx
 		cmp zp_plr1_cur_anim,Y
 		beq @C875_rts	; Avoid resetting the animation if it had already started
