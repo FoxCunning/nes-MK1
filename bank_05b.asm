@@ -1730,10 +1730,15 @@ sub_vs_state_init:
 	bmi @B8E2	; Branch if player 2 is CPU-controlled
 
 		; This is only for 2 players mode
-		inc zp_machine_state_2
+		; inc zp_machine_state_2
 		lda #$00
 		sta zp_match_number
 		sta zp_match_type
+		; Skip the Battle Plan altogether
+		lda #$09
+		sta zp_palette_fade_idx
+		lda #$04
+		sta zp_machine_state_2
 
 	rts
 ; ----------------
