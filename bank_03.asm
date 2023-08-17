@@ -2623,9 +2623,9 @@ sub_stop_envelopes:
 		:
 		bne :+
 			; Mute triangle channel
-			lda #$80
-			sta TrgLinear_4008
-			and #$0F
+			;lda #$80
+			;sta TrgLinear_4008
+			lda #$00;and #$0F
 			sta ram_apu_output_volume+2
 	:
 	rts
@@ -2679,9 +2679,9 @@ sub_start_volume_envelope:
 	cpx #$02
 	bne :+
 		; Start playing triangle channel immediately
-		lda #$FF
-		sta TrgLinear_4008
-		and #$0F
+		;lda #$FF
+		;sta TrgLinear_4008
+		lda #$0F ;and #$0F
 		sta ram_apu_output_volume+2
 		;rts
 		jmp @skip_vol_env_start
@@ -3307,6 +3307,14 @@ sub_trg_output:
 		ora #$F8
 		sta TrgLength_400B
 	:
+
+	lda ram_apu_output_volume+2
+	beq :+
+		lda #$FF
+	:
+	ora #$80
+	sta TrgLinear_4008
+	
 	rts
 
 ; -----------------------------------------------------------------------------
