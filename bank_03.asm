@@ -3102,11 +3102,11 @@ sub_note_slide_effect:
 ; Applies envelopes, notes and effects to all channels
 sub_sound_output:
 	; TODO Just remove all RTS and there is no need for JSR
-	jsr sub_sq0_output
-	jsr sub_sq1_output
-	jsr sub_trg_output
-	jsr sub_noise_output
-	rts
+	;jsr sub_sq0_output
+	;jsr sub_sq1_output
+	;jsr sub_trg_output
+	;jsr sub_noise_output
+	;rts
 
 ; -----------------------------------------------------------------------------
 
@@ -3169,7 +3169,7 @@ sub_sq0_output:
 		ora #$F8
 		sta Sq0Length_4003
 	:
-	rts
+	;rts
 
 ; -----------------------------------------------------------------------------
 
@@ -3221,7 +3221,36 @@ sub_sq1_output:
 		ora #$F8
 		sta Sq1Length_4007
 :
-	rts
+	;rts
+
+; -----------------------------------------------------------------------------
+
+sub_noise_output:
+	ldx #$83		; SFX indices
+	ldy #$86
+	lda ram_sfx3_data_ptr_lo
+	ora ram_sfx3_data_ptr_hi
+	bne :+
+
+		ldx #$03	; Music indices
+		ldy #$06
+	:
+	jsr sub_get_volume_envelope
+	lda zp_sndptr_lo
+	ora #$30
+	sta NoiseVolume_400C
+	and #$0F
+	sta ram_apu_output_volume+3
+
+	; This will change the base period if needed
+	jsr sub_apply_arpeggio_noise
+
+	lda ram_base_period_lo,Y
+	sta NoisePeriod_400E
+	lda #$F8
+	sta NoiseLength_400F
+	
+	;rts
 
 ; -----------------------------------------------------------------------------
 
@@ -3278,35 +3307,6 @@ sub_trg_output:
 		ora #$F8
 		sta TrgLength_400B
 	:
-	rts
-
-; -----------------------------------------------------------------------------
-
-sub_noise_output:
-	ldx #$83		; SFX indices
-	ldy #$86
-	lda ram_sfx3_data_ptr_lo
-	ora ram_sfx3_data_ptr_hi
-	bne :+
-
-		ldx #$03	; Music indices
-		ldy #$06
-	:
-	jsr sub_get_volume_envelope
-	lda zp_sndptr_lo
-	ora #$30
-	sta NoiseVolume_400C
-	and #$0F
-	sta ram_apu_output_volume+3
-
-	; This will change the base period if needed
-	jsr sub_apply_arpeggio_noise
-
-	lda ram_base_period_lo,Y
-	sta NoisePeriod_400E
-	lda #$F8
-	sta NoiseLength_400F
-	
 	rts
 
 ; -----------------------------------------------------------------------------

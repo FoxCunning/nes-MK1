@@ -123,18 +123,24 @@ mus_test:
 	.byte $02
 	.word @test_ch2
 	.byte $03
-	.word rom_8A19
+	.word @test_ch3
 	.byte $FF
 
 	@test_ch2:
 	.byte $F5, $0A
-	@loop:
+	@loop_test02:
 	.byte $F8, $00, $FA, $FF, $FB, $FF
 	.byte $8A, $29, $00
 	.byte $F4
-	.word @loop
+	.word @loop_test02
 
-	.byte $00, $00, $00, $00, $00, $00, $00, $00
+	@test_ch3:
+	.byte $F8, $00, $FB, $02
+	@loop_test03:
+	.byte $8A, $06, $00
+	.byte $F4
+	.word @loop_test03
+
 
 ; -----------------------------------------------------------------------------
 
