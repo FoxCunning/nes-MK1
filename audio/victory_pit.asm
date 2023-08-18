@@ -52,7 +52,7 @@ victory_pit_ch_00:
 ; -----------------------------------------------------------------------------
 
 victory_pit_ch_01:
-	.byte $F5, $07	; Speed = 7
+	;.byte $F5, $07	; Speed = 7
 	@order_01:
 	.byte $F0	; CALL
 	.word @pattern_01
@@ -63,17 +63,20 @@ victory_pit_ch_01:
 	.byte $F9, $05		; Duty Envelope = "Bamboo x2"
 	.byte $FA, $FF		; Pitch Envelope = "Bamboo x2"
 	.byte $FB, $FF		; Arpeggio = "Bamboo x2"
-	.byte $82			; Duration = 2
+	.byte $81			; Duration = 1
 	.byte $19			; C#2
+	.byte $01
+	.byte $82			; Duration = 2
 	.byte $F8, $0F		; Volume Envelope = "Bamboo?"
 	.byte $F9, $04		; Duty Envelope = "Bamboo?"
 	.byte $19			; C#2
 	.byte $25			; C#3
 	.byte $81			; Duration = 1
 	.byte $25			; C#3
-	.byte $84			; Duration = 4
+	.byte $82			; Duration = 2
 	.byte $19			; C#2
 	.byte $81			; Duration = 1
+	.byte $01, $01
 	.byte $19			; C#2
 	.byte $1C			; E-2
 	.byte $1E			; F#2
@@ -96,7 +99,7 @@ victory_pit_ch_01:
 ; -----------------------------------------------------------------------------
 
 victory_pit_ch_02:
-	.byte $F5, $07	; Speed = 7
+	;.byte $F5, $07	; Speed = 7
 	@order_02:
 	.byte $F0	; CALL
 	.word @pattern_00
@@ -105,10 +108,11 @@ victory_pit_ch_02:
 	@pattern_00:
 	.byte $FA, $FF		; Pitch Envelope = "Blank"
 	.byte $FB, $FF		; Arpeggio = "Blank"
-	.byte $83			; Duration = 3
-	.byte $19			; C#2
-	.byte $F3, $05		; DELAYED CUT = 5
 	.byte $81			; Duration = 1
+	.byte $19			; C#2
+	.byte $01, $01
+	.byte $F3, $05		; DELAYED CUT = 5
+	;.byte $81			; Duration = 1
 	.byte $01			; HOLD
 	.byte $19			; C#2
 	.byte $FB, $01		; Arpeggio = "Tri Snare -> Bass"
@@ -120,9 +124,10 @@ victory_pit_ch_02:
 	.byte $F3, $05		; DELAYED CUT = 5
 	.byte $01			; HOLD
 	.byte $FB, $01		; Arpeggio = "Tri Snare -> Bass"
-	.byte $82			; Duration = 2
+	;.byte $82			; Duration = 2
 	.byte $19			; C#2
-	.byte $81			; Duration = 1
+	.byte $01
+	;.byte $81			; Duration = 1
 	.byte $19			; C#2
 	.byte $F3, $05		; DELAYED CUT = 5
 	.byte $19			; C#2
@@ -147,7 +152,7 @@ victory_pit_ch_02:
 ; -----------------------------------------------------------------------------
 
 victory_pit_ch_03:
-	.byte $F5, $07	; Speed = 7
+	;.byte $F5, $07	; Speed = 7
 	@order_03:
 	.byte $F0	; CALL
 	.word @pattern_00
@@ -156,8 +161,10 @@ victory_pit_ch_03:
 	@pattern_00:
 	.byte $F8, $08		; Volume Envelope = "Roll Drum"
 	.byte $FB, $FF		; Arpeggio = "Roll Drum"
-	.byte $85			; Duration = 5
+	.byte $81			; Duration = 1
 	.byte $0E			; 1-#
+	.byte $01
+	.byte $83, $01
 	.byte $F8, $01		; Volume Envelope = "Snare Noise Enhance"
 	.byte $FB, $03		; Arpeggio = "Snare Noise Enhance"
 	.byte $82			; Duration = 2
@@ -167,8 +174,8 @@ victory_pit_ch_03:
 	.byte $0E			; 1-#
 	.byte $F8, $01		; Volume Envelope = "Snare Noise Enhance"
 	.byte $FB, $03		; Arpeggio = "Snare Noise Enhance"
-	.byte $08			; 7-#
 	.byte $81			; Duration = 1
+	.byte $08, $01		; 7-#
 	.byte $08			; 7-#
 	.byte $08			; 7-#
 	.byte $F8, $02		; Volume Envelope = "Snare Roll"
