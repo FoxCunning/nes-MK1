@@ -1531,7 +1531,9 @@ sub_rom_D359:
 		bmi @D38B_rts
 
 			; Play the "victory jingle"
-			lda #$32
+			lda ram_irq_routine_idx
+			clc
+			adc #$2B
 			sta ram_req_song
 			lda #$10
 			sta zp_short_counter_target
