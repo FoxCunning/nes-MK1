@@ -40,6 +40,9 @@ tbl_vol_env_ptrs:
 	.word @vol_env_20
 	.word @vol_env_21
 	.word @vol_env_22
+	.word @vol_env_23
+	.word @vol_env_24
+	.word @vol_env_25
 
 ; -----------------
 
@@ -256,6 +259,23 @@ tbl_vol_env_ptrs:
 	@vol_env_22:
 	.byte $01, $02, $FF, $FF
 
+; ----------------
+
+	@vol_env_23:
+	.byte $06, $04, $15, $03, $01, $02, $FF, $FF
+
+; ----------------
+
+	@vol_env_24:
+	.byte $03, $02, $01, $01, $FF, $FF
+
+; ----------------
+
+	@vol_env_25:
+	.byte $01, $0A, $01, $08, $02, $07, $03, $06
+	.byte $04, $05, $06, $04, $09, $03, $0E, $02
+	.byte $17, $01, $FF, $FF
+
 ; ------------------------------------------------------------------------------
 
 tbl_arp_ptrs:
@@ -270,6 +290,7 @@ tbl_arp_ptrs:
 	.word @arp_08
 	.word @arp_09
 	.word @arp_0A
+	.word @arp_0B
 
 ; -----------------
 
@@ -327,6 +348,11 @@ tbl_arp_ptrs:
 	@arp_0A:
 	.byte $00, $00, $05, $7F
 
+; ----------------
+
+	@arp_0B:
+	.byte $00, $00, $01, $01, $02, $02, $03, $7F
+
 ; ------------------------------------------------------------------------------
 
 tbl_pitch_env_ptrs:
@@ -341,9 +367,12 @@ tbl_pitch_env_ptrs:
 ; -----------------
 
 	@pitch_env_00:
-	.byte $02, $00, $01, $01, $01, $00, $01, $FF
-	.byte $02, $00, $02, $00, $02, $FF, $02, $00
-	.byte $02, $01, $FF, $F8
+	.byte $07, $00
+	; Loop:
+	.byte $02, $FF
+	.byte $01, $00
+	.byte $02, $01
+	.byte $FF, $FA
 
 ; -----------------
 
@@ -352,10 +381,34 @@ tbl_pitch_env_ptrs:
 
 ; -----------------
 
+; Absolute:
+; 0 0 0 0 0 0 0 0 0 0 | -1 -2 -2 -1 0 0 2 2 1 0 0 -1 -2 -2 -1 0 1 2 2 1 0 0 -2 -2 -1 0 0 1 2 2 1 0 
 	@pitch_env_02:
-	.byte $0A, $00, $02, $FF, $04, $FE, $02, $FF
-	.byte $02, $00, $02, $01, $04, $02, $02, $01
-	.byte $02, $00, $FF, $F0
+	.byte $0A, $00
+	; Loop:
+	.byte $01, $FF
+	.byte $02, $FE
+	.byte $01, $FF
+	.byte $02, $00
+	.byte $02, $02
+	.byte $01, $01
+	.byte $02, $00
+	.byte $01, $FF
+	.byte $02, $FE
+	.byte $01, $FF
+	.byte $01, $00
+	.byte $01, $01
+	.byte $02, $02
+	.byte $01, $01
+	.byte $02, $00
+	.byte $02, $FE
+	.byte $01, $FF
+	.byte $02, $00
+	.byte $01, $01
+	.byte $02, $02
+	.byte $01, $01
+	.byte $01, $00
+	.byte $FF, $D4
 
 ; -----------------
 
@@ -364,21 +417,22 @@ tbl_pitch_env_ptrs:
 
 ; -----------------
 
-	@pitch_env_04:
-	
-	; Relative: 0 0 0 0 0 0 0 0 0 0 | -1 0 0 0 1 0 0 0 1 0 0 0 -1 0 0 0
-	;.byte $0A, $00, $01, $FF, $03, $00, $01, $01
-	;.byte $03, $00, $01, $01, $03, $00, $01, $FF
-	;.byte $03, $00, $FF, $F0
+; Relative:
+; 0 0 0 0 0 0 0 0 0 0 | 0 0 -1 -1 -1 0 0 1 1 1 
 
-	; Absolute equivalent: 0 0 0 0 0 0 | 0 0 0 0 -1 -1 -1 -1 0 0 0 0 1 1 1 1
-	.byte $06, $00
-	.byte $04, $00 ; Loop starts here
-	.byte $04, $FF
-	.byte $04, $00
-	.byte $04, $01
-	.byte $04, $00
-	.byte $FF, $F6
+; Absolute equivalent:
+; 0 0 0 0 0 0 0 0 0 0 | 0 0 -1 -2 -3 -3 -3 -2 -1 0
+	@pitch_env_04:	
+	.byte $0A, $00
+	; Loop:
+	.byte $02, $00
+	.byte $01, $FF
+	.byte $01, $FE
+	.byte $03, $FD
+	.byte $01, $FE
+	.byte $01, $FF
+	.byte $01, $00
+	.byte $FF, $F2
 
 ; -----------------
 
@@ -405,6 +459,7 @@ tbl_duty_env_ptrs:
 	.word @duty_env_09
 	.word @duty_env_0A
 	.word @duty_env_0B
+	.word @duty_env_0C
 
 ; -----------------
 
@@ -501,6 +556,15 @@ tbl_duty_env_ptrs:
 ; -----------------
 
 	@duty_env_0B:
+.IFDEF DENDY
+	.byte $40, $FF, $FF
+.ELSE
+	.byte $80, $FF, $FF
+.ENDIF
+
+; ----------------
+
+	@duty_env_0C:
 .IFDEF DENDY
 	.byte $40, $FF, $FF
 .ELSE
