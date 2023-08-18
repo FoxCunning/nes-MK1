@@ -56,13 +56,13 @@ tbl_track_ptrs:
 	.word mus_palace_gates		; $28	Palace Gates
 	.word mus_warrior_shrine	; $29	Warrior Shrine
 	.word mus_throne_room		; $2A	Throne Room
-	; ----
-	.word mus_goros_lair		; $2B
-	.word mus_pit				; $2C
-	.word mus_courtyard			; $2D
-	.word mus_palace_gates		; $2E
-	.word mus_warrior_shrine	; $2F
-	.word mus_throne_room		; $30
+	; ---- Victory jiingles per stage
+	.word mus_vict_goro			; $2B
+	.word mus_vict_pit			; $2C
+	.word mus_vict_courtyard	; $2D
+	.word mus_vict_palace		; $2E
+	.word mus_vict_shrine		; $2F
+	.word mus_vict_throne		; $30
 	; ----
 	.word sfx_select			; $31	"Siren" sound but as music (e.g. menu selection)
 	.word mus_victory_jingle	; $32
@@ -182,11 +182,6 @@ sfx_select:
 
 ; -----------------------------------------------------------------------------
 
-mus_victory_jingle:
-.include "audio/victory_jingle.asm"
-
-; -----------------------------------------------------------------------------
-
 mus_goros_lair:
 .include "audio/goros_lair.asm"
 
@@ -248,16 +243,6 @@ sfx_bounce:
 
 	@sfx_bounce_ch4:
 	.byte $F5, $01, $0E, $FF
-
-; -----------------------------------------------------------------------------
-
-sfx_dmcbleep:
-	.byte $84
-	.word @sfx_dmcbleep_ch4
-	.byte $FF
-
-	@sfx_dmcbleep_ch4:
-	.byte $F5, $01, $0B, $FF
 
 ; -----------------------------------------------------------------------------
 

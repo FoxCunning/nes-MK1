@@ -563,6 +563,7 @@ sub_sound_test_input_loop:
 
 		jsr sub_get_controller1_sound_test
 		jsr sub_sound_test_cursor
+		
 		lda zp_controller1_new
 		bit @bit_03+1	; Check if bit 0 (right) or bit 1 (left) is set
 		beq :+
@@ -601,7 +602,8 @@ sub_sound_test_input_loop:
 
 	@tbl_test_mus_indices:
 	.byte $22, $20, $21, $23, $24, $25, $26, $27
-	.byte $28, $29, $2A
+	.byte $28, $29, $2A, $2B, $2C, $2D, $2E, $2F
+	.byte $30
 
 ; -----------------------------------------------------------------------------
 

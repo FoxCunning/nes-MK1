@@ -2614,13 +2614,15 @@ sub_stop_envelopes:
 
 		; Stop pitch and volume envelopes by setting them to $FF
 		sta ram_cur_vol_env_duration,Y
-		sta ram_cur_pitch_env_duration,Y
-		cpx #$02
+		cpx #$03
 		bpl :+
-
-			; Stop duty envelope for square wave channels
-			sta ram_duty_env_idx,Y
+			sta ram_cur_pitch_env_duration,Y
 		:
+		cpx #$02
+		;bpl :+
+			; Stop duty envelope for square wave channels
+		;	sta ram_duty_env_idx,Y
+		;:
 		bne :+
 			; Mute triangle channel
 			;lda #$80
@@ -3265,18 +3267,6 @@ sub_trg_output:
 		ldy #$04
 	:
 
-	; ---- Don't waste time with volume envelopes on this channel
-	;		Just assume it's on when playing a note
-	;jsr sub_get_volume_envelope
-	;lda zp_sndptr_lo
-	;beq :+
-		; This will only turn on the channel when the volume envelope is not zero
-	;	lda #$FF
-	;:
-	;ora #$80
-	;sta TrgLinear_4008
-	; ----
-
 	; Apply arpeggio (if needed) before reading pitch values
 	; That is because the arpeggio can modify them, and we apply other effects
 	; (such as pitch envelopes/vibrato) to that new value
@@ -3655,3 +3645,47 @@ tbl_dpcm_freq:
 ; -----------------------------------------------------------------------------
 
 .include "audio/instruments.asm"
+
+; -----------------------------------------------------------------------------
+.export mus_victory_jingle
+
+mus_victory_jingle:
+.include "audio/victory_jingle.asm"
+
+; -----------------------------------------------------------------------------
+.export mus_vict_courtyard
+
+mus_vict_courtyard:
+.include "audio/victory_courtyard.asm"
+
+; -----------------------------------------------------------------------------
+.export mus_vict_shrine
+
+mus_vict_shrine:
+.include "audio/victory_shrine.asm"
+
+; -----------------------------------------------------------------------------
+.export mus_vict_pit
+
+mus_vict_pit:
+.include "audio/victory_pit.asm"
+
+; -----------------------------------------------------------------------------
+.export mus_vict_throne
+
+mus_vict_throne:
+.include "audio/victory_throne.asm"
+
+; -----------------------------------------------------------------------------
+.export mus_vict_goro
+
+mus_vict_goro:
+.include "audio/victory_goro.asm"
+
+; -----------------------------------------------------------------------------
+.export mus_vict_palace
+
+mus_vict_palace:
+.include "audio/victory_palace.asm"
+
+; -----------------------------------------------------------------------------

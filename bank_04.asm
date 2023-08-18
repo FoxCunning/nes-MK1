@@ -736,7 +736,7 @@ sub_select_music_to_test:
 	beq @music_prev
 
 		; Right = increase index
-		lda #$0C	; There are 11 choices (0-10)
+		lda #$12	; There are 17 choices (0-16)
 		isc zp_plr1_selection
 		bne :+
 			dec zp_plr1_selection
@@ -812,16 +812,16 @@ sub_show_playing_song:
 	sec
 	sbc #$20
 	asl
-	asl
-	asl
-	asl
 	tax
+	lda @tbl_song_name_ptrs+0,X
+	sta zp_ptr1_lo
+	lda @tbl_song_name_ptrs+1,X
+	sta zp_ptr1_hi
 
 	ldy #$00
 	:
-	lda @tbl_song_names,X
+	lda (zp_ptr1_lo),Y
 	sta ram_ppu_data_buffer,Y
-	inx
 	iny
 	cpy #$11
 	bne :-
@@ -836,18 +836,59 @@ sub_show_playing_song:
 
 ; ----------------
 
+	@tbl_song_name_ptrs:
+	.word @tbl_song_name_00
+	.word @tbl_song_name_01
+	.word @tbl_song_name_02
+	.word @tbl_song_name_03
+	.word @tbl_song_name_04
+	.word @tbl_song_name_05
+	.word @tbl_song_name_06
+	.word @tbl_song_name_07
+	.word @tbl_song_name_08
+	.word @tbl_song_name_09
+	.word @tbl_song_name_0A
+	.word @tbl_song_name_0B
+	.word @tbl_song_name_0C
+	.word @tbl_song_name_0D
+	.word @tbl_song_name_0E
+	.word @tbl_song_name_0F
+	.word @tbl_song_name_10
+
 	; Each string is 16 bytes long
-	@tbl_song_names:
+	@tbl_song_name_00:
 	.byte "    opening     "	; $20
+	@tbl_song_name_01:
 	.byte "  your destiny  "	; $21
+	@tbl_song_name_02:
 	.byte "    silence     "	; $22
+	@tbl_song_name_03:
 	.byte "   game over    "	; $23
+	@tbl_song_name_04:
 	.byte "    silence     "	; $24
+	@tbl_song_name_05:
 	.byte "   goros lair   "	; $25
+	@tbl_song_name_06:
 	.byte "    the pit     "	; $26
+	@tbl_song_name_07:
 	.byte "   courtyard    "	; $27
+	@tbl_song_name_08:
 	.byte "  palace gates  "	; $28
+	@tbl_song_name_09:
 	.byte " warrior shrine "	; $29
+	@tbl_song_name_0A:
 	.byte "  throne  room  "	; $2A
+	@tbl_song_name_0B:
+	.byte "    victory 1   "	; $2B
+	@tbl_song_name_0C:
+	.byte "    victory 2   "	; $2C
+	@tbl_song_name_0D:
+	.byte "    victory 3   "	; $2D
+	@tbl_song_name_0E:
+	.byte "    victory 4   "	; $2E
+	@tbl_song_name_0F:
+	.byte "    victory 5   "	; $2F
+	@tbl_song_name_10:
+	.byte "    victory 6   "	; $30
 
 ; -----------------------------------------------------------------------------

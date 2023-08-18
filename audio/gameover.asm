@@ -14,7 +14,7 @@
 
 gameover_ch_00:
 	.byte $F5, $07	; Speed = 7
-
+	@order_00:
 	.byte $F0	; CALL
 	.word @pattern_00
 	.byte $FF
@@ -38,10 +38,10 @@ gameover_ch_00:
 	.byte $2D			; A-3
 	.byte $88			; Duration = 8
 	.byte $36			; F#4
-	.byte $88			; Duration = 8
+	.byte $82			; Duration = 2
 	.byte $00			; REST
 	.byte $F1			; RETURN
-	; Pattern duration: 32.
+	; Pattern duration: 26.
 
 ; -----------------------------------------------------------------------------
 ;						SQUARE WAVE 1 CHANNEL
@@ -49,7 +49,7 @@ gameover_ch_00:
 
 gameover_ch_01:
 	.byte $F5, $07	; Speed = 7
-
+	@order_01:
 	.byte $F0	; CALL
 	.word @pattern_00
 	.byte $FF
@@ -74,15 +74,13 @@ gameover_ch_01:
 	.byte $23			; B-2
 	.byte $82			; Duration = 2
 	.byte $2D			; A-3
-	.byte $F8, $07		; Volume Envelope = "Pulse Bass"
-	.byte $F9, $01		; Duty Envelope = "Pulse Bass"
-	.byte $FA, $FF		; Pitch Envelope = "Pulse Bass"
+	.byte $F8, $11		; Volume Envelope = "Synth 2"
 	.byte $88			; Duration = 8
 	.byte $28			; E-3
-	.byte $88			; Duration = 8
+	.byte $82			; Duration = 2
 	.byte $00			; REST
 	.byte $F1			; RETURN
-	; Pattern duration: 32.
+	; Pattern duration: 26.
 
 ; -----------------------------------------------------------------------------
 ;						TRIANGLE WAVE CHANNEL
@@ -90,7 +88,7 @@ gameover_ch_01:
 
 gameover_ch_02:
 	.byte $F5, $07	; Speed = 7
-
+	@order_02:
 	.byte $F0	; CALL
 	.word @pattern_00
 	.byte $FF
@@ -100,31 +98,35 @@ gameover_ch_02:
 	.byte $FB, $00		; Arpeggio = "Tri Kick -> Bass"
 	.byte $82			; Duration = 2
 	.byte $23			; B-2
+	.byte $23			; B-2
+	.byte $F3, $02		; DELAYED CUT = 2
 	.byte $FB, $01		; Arpeggio = "Tri Snare -> Bass"
 	.byte $23			; B-2
-	.byte $00			; REST
 	.byte $FB, $00		; Arpeggio = "Tri Kick -> Bass"
 	.byte $23			; B-2
 	.byte $81			; Duration = 1
 	.byte $23			; B-2
-	.byte $00			; REST
+	.byte $F3, $05		; DELAYED CUT = 5
+	.byte $23			; B-2
+	.byte $23			; B-2
 	.byte $FB, $01		; Arpeggio = "Tri Snare -> Bass"
-	.byte $23			; B-2
-	.byte $23			; B-2
-	.byte $FB, $00		; Arpeggio = "Tri Kick -> Bass"
 	.byte $82			; Duration = 2
 	.byte $23			; B-2
+	.byte $FB, $00		; Arpeggio = "Tri Kick -> Bass"
+	.byte $1A			; D-2
+	.byte $81			; Duration = 1
 	.byte $1A			; D-2
 	.byte $FB, $01		; Arpeggio = "Tri Snare -> Bass"
 	.byte $84			; Duration = 4
 	.byte $26			; D-3
 	.byte $83			; Duration = 3
 	.byte $27			; D#3
+	.byte $82			; Duration = 2
 	.byte $28			; E-3
-	.byte $86			; Duration = 6
+	.byte $81			; Duration = 1
 	.byte $00			; REST
 	.byte $F1			; RETURN
-	; Pattern duration: 32.
+	; Pattern duration: 26.
 
 ; -----------------------------------------------------------------------------
 ;						        NOISE CHANNEL
@@ -132,37 +134,63 @@ gameover_ch_02:
 
 gameover_ch_03:
 	.byte $F5, $07	; Speed = 7
-
+	@order_03:
 	.byte $F0	; CALL
 	.word @pattern_00
 	.byte $FF
 
 	@pattern_00:
+	.byte $F8, $00		; Volume Envelope = "Kick Noise Enhance"
+	.byte $FB, $02		; Arpeggio = "Kick Noise Enhance"
+	.byte $81			; Duration = 1
+	.byte $06			; 9-#
+	.byte $F8, $04		; Volume Envelope = "Hat 1"
+	.byte $FB, $06		; Arpeggio = "Hat 1"
+	.byte $04			; B-#
+	.byte $F8, $00		; Volume Envelope = "Kick Noise Enhance"
+	.byte $FB, $02		; Arpeggio = "Kick Noise Enhance"
+	.byte $06			; 9-#
+	.byte $F8, $04		; Volume Envelope = "Hat 1"
+	.byte $FB, $06		; Arpeggio = "Hat 1"
+	.byte $04			; B-#
 	.byte $F8, $01		; Volume Envelope = "Snare Noise Enhance"
 	.byte $FB, $03		; Arpeggio = "Snare Noise Enhance"
-	.byte $81			; Duration = 1
-	.byte $0D			; 2-#
-	.byte $0D			; 2-#
-	.byte $09			; 6-#
-	.byte $09			; 6-#
 	.byte $82			; Duration = 2
+	.byte $08			; 7-#
+	.byte $F8, $00		; Volume Envelope = "Kick Noise Enhance"
+	.byte $FB, $02		; Arpeggio = "Kick Noise Enhance"
+	.byte $06			; 9-#
+	.byte $81			; Duration = 1
+	.byte $06			; 9-#
+	.byte $06			; 9-#
+	.byte $06			; 9-#
+	.byte $F8, $01		; Volume Envelope = "Snare Noise Enhance"
+	.byte $FB, $03		; Arpeggio = "Snare Noise Enhance"
+	.byte $82			; Duration = 2
+	.byte $08			; 7-#
+	.byte $F8, $00		; Volume Envelope = "Kick Noise Enhance"
+	.byte $FB, $02		; Arpeggio = "Kick Noise Enhance"
+	.byte $06			; 9-#
+	.byte $81			; Duration = 1
+	.byte $06			; 9-#
+	.byte $F8, $01		; Volume Envelope = "Snare Noise Enhance"
+	.byte $FB, $03		; Arpeggio = "Snare Noise Enhance"
+	.byte $82			; Duration = 2
+	.byte $08			; 7-#
+	.byte $F8, $04		; Volume Envelope = "Hat 1"
+	.byte $FB, $06		; Arpeggio = "Hat 1"
 	.byte $04			; B-#
-	.byte $04			; B-#
-	.byte $84			; Duration = 4
-	.byte $09			; 6-#
-	.byte $0D			; 2-#
+	.byte $F8, $01		; Volume Envelope = "Snare Noise Enhance"
+	.byte $FB, $03		; Arpeggio = "Snare Noise Enhance"
+	.byte $08			; 7-#
+	.byte $F8, $04		; Volume Envelope = "Hat 1"
+	.byte $FB, $06		; Arpeggio = "Hat 1"
 	.byte $81			; Duration = 1
 	.byte $04			; B-#
-	.byte $04			; B-#
-	.byte $0B			; 4-#
-	.byte $0B			; 4-#
-	.byte $09			; 6-#
-	.byte $09			; 6-#
-	.byte $04			; B-#
-	.byte $09			; 6-#
-	.byte $87			; Duration = 7
+	.byte $F8, $01		; Volume Envelope = "Snare Noise Enhance"
+	.byte $FB, $03		; Arpeggio = "Snare Noise Enhance"
+	.byte $08			; 7-#
+	.byte $82			; Duration = 2
 	.byte $00			; REST
-	.byte $81			; Duration = 1
-	.byte $01			; E-#
 	.byte $F1			; RETURN
-	; Pattern duration: 32.
+	; Pattern duration: 64.
