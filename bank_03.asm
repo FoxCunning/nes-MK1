@@ -958,13 +958,13 @@ sub_cpu_move_0:
 
 	and #$1F
 	tax
-	lda @rom_A69C,X
+	lda @tbl_random_moves_short_rng,X
 	jmp sub_set_cpu_anim ;jsr sub_rom_A773
 	;rts
 
 ; ----------------
 
-	@rom_A69C:
+	@tbl_random_moves_short_rng:
 	.byte $25, $18, $0C, $18, $25, $18, $0C, $18
 	.byte $25, $18, $0C, $18, $25, $18, $0C, $18
 	.byte $25, $18, $0C, $18, $25, $18, $0C, $18
@@ -988,13 +988,13 @@ sub_cpu_move_1:
 
 	and #$1F
 	tax
-	lda @rom_A6DE,X
+	lda @tbl_random_moves_med_rng,X
 	jmp sub_set_cpu_anim ;jsr sub_rom_A773
 	;rts
 
 ; ----------------
 
-	@rom_A6DE:
+	@tbl_random_moves_med_rng:
 	.byte $0B, $13, $10, $17, $13, $0D, $14, $0B
 	.byte $0B, $0D, $10, $17, $13, $14, $14, $10
 	.byte $0B, $13, $10, $17, $13, $0D, $14, $0B
@@ -1013,10 +1013,11 @@ sub_cpu_move_2:
 	sta zp_ptr3_hi
 	jsr sub_cpu_move_norng
 	jsr sub_cpu_opponent_delay
+
 	jsr sub_RNG
 	and #$1F
 	tax
-	lda @rom_A733,X
+	lda @tbl_random_moves_long_rng,X
 	bpl :+
 		ldx zp_plr1_fgtr_idx_clean,Y
 		lda @rom_A727,X
@@ -1036,12 +1037,11 @@ sub_cpu_move_2:
 	.byte $0D	; Liu Kang
 	.byte $0D	; Goro
 	.byte $1E	; Shang-Tsung's unused fireball
-	; Unused
-	;.byte $1B, $1E, $1E
 
 ; ----------------
 
-	@rom_A733:
+	; b7 set = use move from table above
+	@tbl_random_moves_long_rng:
 	.byte $03, $80, $03, $03, $03, $03, $03, $03
 	.byte $03, $03, $03, $03, $03, $03, $03, $03
 	.byte $03, $03, $03, $03, $1A, $03, $03, $03
@@ -1113,7 +1113,7 @@ sub_set_cpu_anim:
 
 ; -----------------------------------------------------------------------------
 
-; TODO It's always the same pointer, no need to read it from a table
+; TODO Use only one pointer table
 tbl_short_range_ptrs:
 	.word rom_A807	; Raiden
 	.word rom_A807	; Sonya
@@ -1124,12 +1124,9 @@ tbl_short_range_ptrs:
 	.word rom_A807	; Liu Kang
 	.word rom_A807	; Goro
 	.word rom_A807	; Shang-Tsung
-	; Unused
-	;.word rom_A807, rom_A807, rom_A8F9
 
 ; -----------------------------------------------------------------------------
 
-; TODO It's always the same pointer, no need to read it from a table
 tbl_med_range_ptrs:
 	.word rom_A81F
 	.word rom_A81F
@@ -1140,11 +1137,9 @@ tbl_med_range_ptrs:
 	.word rom_A81F
 	.word rom_A81F
 	.word rom_A81F
-	;.word rom_A81F, rom_A81F, rom_A911
 
 ; -----------------------------------------------------------------------------
 
-; TODO It's always the same pointer, no need to read it from a table
 tbl_long_range_ptrs:
 	.word rom_A837
 	.word rom_A837
@@ -1155,11 +1150,10 @@ tbl_long_range_ptrs:
 	.word rom_A837
 	.word rom_A837
 	.word rom_A837
-	;.word rom_A837, rom_A837, rom_A929
 
 ; -----------------------------------------------------------------------------
 
-; TODO It's always the same pointer, no need to read it from a table
+; TODO Use only one pointer table
 rom_A807:
 	.word tbl_short_range_moves, tbl_short_range_moves, tbl_short_range_moves, tbl_short_range_moves
 	.word tbl_short_range_moves, tbl_short_range_moves, tbl_short_range_moves, tbl_short_range_moves
@@ -1218,64 +1212,6 @@ tbl_long_range_moves:
 	; Unused?
 	.byte $80, $80, $80, $80, $80, $80, $80, $80
 	.byte $80, $80, $80
-
-; -----------------------------------------------------------------------------
-
-; TODO It's always the same pointer, no need to read it from a table
-;rom_A8F9:
-;	.word rom_A941, rom_A941, rom_A941, rom_A941
-;	.word rom_A941, rom_A941, rom_A941, rom_A941
-;	.word rom_A941, rom_A941, rom_A941, rom_A941
-
-; -----------------------------------------------------------------------------
-
-; TODO It's always the same pointer, no need to read it from a table
-;rom_A911:
-;	.word rom_A976, rom_A976, rom_A976, rom_A976
-;	.word rom_A976, rom_A976, rom_A976, rom_A976
-;	.word rom_A976, rom_A976, rom_A976, rom_A976
-
-; -----------------------------------------------------------------------------
-
-; TODO It's always the same pointer, no need to read it from a table
-;rom_A929:
-;	.word rom_A9AB, rom_A9AB, rom_A9AB, rom_A9AB
-;	.word rom_A9AB, rom_A9AB, rom_A9AB, rom_A9AB
-;	.word rom_A9AB, rom_A9AB, rom_A9AB, rom_A9AB
-
-; -----------------------------------------------------------------------------
-
-;rom_A941:
-;	.byte $80, $13, $1E, $18, $14, $14, $0C, $17
-;	.byte $17, $1A, $1C, $05, $05, $05, $13, $13
-;	.byte $05, $0C, $0C, $02, $02, $08, $08, $13
-;	.byte $80, $17, $17, $17, $17, $08, $08, $0C
-;	.byte $0C, $0C, $0C, $08, $08, $05, $04, $14
-;	.byte $17, $80, $80, $1C, $0E, $08, $0E, $08
-;	.byte $0F, $08, $08, $08, $17
-
-; -----------------------------------------------------------------------------
-
-;rom_A976:
-;	.byte $80, $80, $03, $0D, $80, $80, $1C, $80
-;	.byte $1C, $1C, $1C, $05, $05, $0D, $05, $05
-;	.byte $05, $0C, $0C, $02, $02, $80, $80, $11
-;	.byte $08, $80, $80, $80, $80, $80, $05, $0C
-;	.byte $0C, $0C, $0C, $80, $80, $05, $04, $14
-;	.byte $0D, $80, $80, $1C, $1A, $08, $19, $08
-;	.byte $08, $08, $08, $08, $1C
-
-; -----------------------------------------------------------------------------
-
-;rom_A9AB:
-;	.byte $80, $80, $03, $80, $80, $80, $80, $80
-;	.byte $03, $1A, $1C, $80, $80, $13, $80, $80
-;	.byte $80, $80, $80, $80, $80, $80, $80, $80
-;	.byte $80, $80, $80, $80, $80, $80, $1C, $0C
-;	.byte $0C, $0C, $0C, $80, $80, $80, $04, $03
-;	.byte $1C, $80, $80, $1C, $1A, $08, $19, $04
-;	.byte $04, $04, $04, $04, $03, $80, $80, $80
-;	.byte $80, $80, $80, $80, $80, $80, $80, $80
 
 ; -----------------------------------------------------------------------------
 

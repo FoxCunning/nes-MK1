@@ -271,14 +271,12 @@ mus29_channel_00:
 	; Pattern duration: 64.
 
 	@pattern_07:
-	.byte $F8, $06	; Volume Envelope = "Synth Echo"
-	.byte $F9, $00	; Duty Envelope = "Synth Echo"
-	.byte $FA, $FF	; Pitch Envelope = "Synth Echo"
-	.byte $FB, $FF	; Arpeggio = "Synth Echo"
-	.byte $82	; Duration = 2
-	.byte $2D	; A-3
 	.byte $F8, $09	; Volume Envelope = "Pluck"
 	.byte $F9, $02	; Duty Envelope = "Pluck"
+	.byte $FA, $FF	; Pitch Envelope = "Pluck"
+	.byte $FB, $FF	; Arpeggio = "Pluck"
+	.byte $82	; Duration = 2
+	.byte $2D	; A-3
 	.byte $84	; Duration = 4
 	.byte $2D	; A-3
 	.byte $82	; Duration = 2
