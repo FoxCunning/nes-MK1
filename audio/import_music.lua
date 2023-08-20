@@ -25,8 +25,8 @@ CMD_REST = 0
 CMD_HOLD = 1
 CMD_CALL = 0xF0
 CMD_RETURN = 0xF1
-CMD_NOTE_DELAY = 0xF2   -- TODO
-CMD_DELAYED_CUT = 0xF3  -- TODO
+CMD_NOTE_DELAY = 0xF2
+CMD_DELAYED_CUT = 0xF3
 CMD_JUMP = 0xF4
 CMD_SPEED = 0xF5
 CMD_TRANSPOSE = 0xF6    -- Change to delayed transpose
@@ -35,7 +35,7 @@ CMD_VOL_ENV = 0xF8
 CMD_DUT_ENV = 0xF9
 CMD_PIT_ENV = 0xFA
 CMD_SET_ARP = 0xFB
-CMD_NOTE_SLIDE = 0xFC   -- TODO
+CMD_NOTE_SLIDE = 0xFC  
 -- 0xFD
 -- 0xFE
 CMD_END = 0xFF
@@ -380,7 +380,7 @@ local function convert_fx(text)
 
         cmd = CMD_NOTE_SLIDE
         p1 = tonumber(text:sub(2, 3), 16)
-        p1 = (p1 & 0x0F)
+        p1 = (p1 & 0x0F) << 2
         name = "NOTE SLIDE UP"
 
     elseif fx == 'T' then
