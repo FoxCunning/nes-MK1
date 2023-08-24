@@ -707,7 +707,6 @@ rom_8CE1:
 	.byte $69, $6A, $6B, $6C, $6D
 rom_8CFE:
 	.byte $05, $09, $10, $68, $40
-unused_8D03:
 	.byte $FF, $FF, $FF, $02, $01, $FF, $FF, $08
 	.byte $07, $06, $FF, $FF, $0E, $0D, $0C, $FF
 	.byte $FF, $18, $17, $16, $FF, $20, $1F, $1E
