@@ -267,20 +267,16 @@ sub_irq_handler_01:
 		; Top (clouds)
 		sta mmc3_irq_disable
 		sta mmc3_irq_enable
-		lda #$1B
+		lda #$1C
 		sta mmc3_irq_latch
 
 		lda PpuStatus_2002
 
-		lda zp_frame_counter
-		and #$07
-		bne :+
-			inc ram_irq_counter_0
-		:
-		lda ram_irq_counter_0
-		clc
-		adc zp_irq_hor_scroll
+		lda zp_irq_hor_scroll
+		lsr
+		lsr
 		sta PpuScroll_2005
+
 		ldy #$E0
 		jmp sub_change_state_and_chr
 
@@ -291,20 +287,15 @@ sub_irq_handler_01:
 		; Middle clouds
 		sta mmc3_irq_disable
 		sta mmc3_irq_enable
-		lda #$15
+		lda #$23
 		sta mmc3_irq_latch
 
 		lda PpuStatus_2002
 
-		lda zp_frame_counter
-		and #$03
-		bne :+
-			inc ram_irq_counter_1
-		:
-		lda ram_irq_counter_1
-		clc
-		adc zp_irq_hor_scroll
+		lda zp_irq_hor_scroll
+		lsr
 		sta PpuScroll_2005
+
 		inc ram_irq_state_var
 		rts
 

@@ -3138,8 +3138,8 @@ tbl_bg_palette_ptrs:
 	.byte $0E, $08, $00, $38, $0E, $16, $29, $28
 	.byte $0E, $06, $16, $26, $0E, $08, $16, $36
 	@pal_pit:
-	.byte $02, $16, $2A, $28, $02, $18, $28, $38
-	.byte $02, $0E, $00, $10, $02, $08, $00, $10
+	.byte $0E, $16, $1A, $28, $0E, $08, $18, $01
+	.byte $0E, $0C, $00, $10, $0E, $0C, $00, $01
 	@pal_courtyard:
 	.byte $0C, $16, $1A, $28, $0C, $1C, $2C, $36
 	.byte $0C, $16, $27, $36, $0C, $00, $10, $36
@@ -4120,7 +4120,7 @@ sub_load_fighters_palettes:
 
 tbl_stage_bg_colours:
 	.byte $0E	; Goro's Lair
-	.byte $02	; The Pit
+	.byte $0E	; The Pit
 	.byte $0C	; Courtyard
 	.byte $0E	; Palace Gates
 	.byte $0E	; Warrior Shrine
