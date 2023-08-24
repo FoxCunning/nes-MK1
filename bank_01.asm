@@ -3800,6 +3800,8 @@ sub_animate_sprites:
 	; Preserve animation data offset
 	sty zp_backup_y
 
+		; No need to multiply bank index by two, because two CHR banks are always
+		; loaded with the index of the top one, so the values will be 0, 2, 4, 6...
 		ldy ram_0429 ;lda ram_0429
 		;tay
 		lda tbl_spr_attr_ptrs+0,Y
@@ -3855,7 +3857,9 @@ sub_animate_sprites:
 ; -----------------------------------------------------------------------------
 .export rom_DAB4
 
-; Probably an index/mask conversion table
+; This mask is used to select one bit from the sprite attribute tables
+; Each tile ID in a 4KB bank will be matched with one bit to choose either
+; palette 0 or 1
 rom_DAB4:
 	.byte $01, $02, $04, $08, $10, $20, $40, $80
 	; Potentially unused bytes (index is masked with and #$07)
@@ -4196,35 +4200,66 @@ sub_frozen_palette:
 
 ; Data pointers, indexed by CHR ROM bank number
 tbl_spr_attr_ptrs:
-	.word @rom_B0D8, @rom_B0E8, @rom_B0F8, @rom_B108
-	.word @rom_B118, @rom_B128, @rom_B138, @rom_B148
-	.word @rom_B158, @rom_B168, @rom_B178, @rom_B188
-	.word @rom_B198, @rom_B1A8, @rom_B0D8, @rom_B0E8
-	.word @rom_B0D8, @rom_B0E8, @rom_B0D8, @rom_B0E8
-	.word @rom_B0D8, @rom_B0E8, @rom_B0D8, @rom_B0E8
-	.word @rom_B0D8, @rom_B0E8, @rom_B0D8, @rom_B0E8
-	.word @rom_B1B8, @rom_B1C8, @rom_B1D8, @rom_B1E8
-	.word @rom_B1F8, @rom_B208, @rom_B218, @rom_B228
-	.word @rom_B238, @rom_B248, @rom_B258, @rom_B268
-	.word @rom_B278, @rom_B288, @rom_B298, @rom_B2A8
-	.word @rom_B2B8, @rom_B2C8, @rom_B2D8, @rom_B2E8
-	.word @rom_B2F8, @rom_B308, @rom_B318, @rom_B328
-	.word @rom_B338, @rom_B348, @rom_B358, @rom_B368
-	.word @rom_B378, @rom_B388, @rom_B398, @rom_B3A8
-	.word @rom_B3B8, @rom_B3C8, @rom_B3D8, @rom_B3E8
-	.word @rom_B3F8, @rom_B408, @rom_B418, @rom_B428
-	.word @rom_B438, @rom_B448, @rom_B458, @rom_B468
-	.word @rom_B478, @rom_B488, @rom_B498, @rom_B4A8
-	.word @rom_B4B8, @rom_B4C8, @rom_B4D8, @rom_B4E8
-	.word @rom_B4F8, @rom_B508, @rom_B518, @rom_B528
-	.word @rom_B538, @rom_B548, @rom_B558, @rom_B568
-	.word @rom_B578, @rom_B588, @rom_B598, @rom_B5A8
-	.word @rom_B5B8, @rom_B5C8, @rom_B5D8, @rom_B5E8
-	.word @rom_B5F8, @rom_B608, @rom_B618, @attr_fgtr_7
-	.word @rom_B638, @rom_B648, @rom_B658, @rom_B668
-	.word @rom_B678, @rom_B688, @rom_B698, @rom_B6A8
+	.word @rom_B0D8, @rom_B0E8		; Raiden
+	.word @rom_B0F8, @rom_B108
+	.word @rom_B118, @rom_B128
+	.word @rom_B138, @rom_B148
+	.word @rom_B158, @rom_B168
+	.word @rom_B178, @rom_B188
+	.word @rom_B198, @rom_B1A8
+	
+	.word @rom_B0D8, @rom_B0E8		; Stage BGs
+	.word @rom_B0D8, @rom_B0E8
+	.word @rom_B0D8, @rom_B0E8
+	.word @rom_B0D8, @rom_B0E8
+	.word @rom_B0D8, @rom_B0E8
+	.word @rom_B0D8, @rom_B0E8
+	.word @rom_B0D8, @rom_B0E8
+
+	.word @rom_B1B8, @rom_B1C8		; Sonya
+	.word @rom_B1D8, @rom_B1E8
+	.word @rom_B1F8, @rom_B208
+	.word @rom_B218, @rom_B228
+	.word @rom_B238, @rom_B248
+	.word @rom_B258, @rom_B268
+	.word @rom_B278, @rom_B288		; Shang Tsung
+	.word @rom_B298, @rom_B2A8
+	.word @rom_B2B8, @rom_B2C8		; Sub-Zero
+	.word @rom_B2D8, @rom_B2E8
+	.word @rom_B2F8, @rom_B308
+	.word @rom_B318, @rom_B328
+	.word @rom_B338, @rom_B348
+	.word @rom_B358, @rom_B368
+	.word @rom_B378, @rom_B388
+	.word @rom_B398, @rom_B3A8		; Liu Kang
+	.word @rom_B3B8, @rom_B3C8
+	.word @rom_B3D8, @rom_B3E8
+	.word @rom_B3F8, @rom_B408
+	.word @rom_B418, @rom_B428
+	.word @rom_B438, @rom_B448
+	.word @rom_B458, @rom_B468
+	.word @rom_B478, @rom_B488		; Johnny Cage
+	.word @rom_B498, @rom_B4A8
+	.word @rom_B4B8, @rom_B4C8
+	.word @rom_B4D8, @rom_B4E8
+	.word @rom_B4F8, @rom_B508
+	.word @rom_B518, @rom_B528		; Kano
+	.word @rom_B538, @rom_B548
+	.word @rom_B558, @rom_B568
+	.word @rom_B578, @rom_B588
+	.word @rom_B598, @rom_B5A8
+	.word @rom_B5B8, @rom_B5C8
+	.word @rom_B5D8, @rom_B5E8
+	.word @rom_B5F8, @rom_B608		; Goro
+	.word @rom_B618, @attr_fgtr_7
+	.word @rom_B638, @rom_B648
+	.word @rom_B658, @rom_B668
+	.word @rom_B678, @rom_B688		; Scorpion
+	.word @rom_B698, @rom_B6A8
 
 ; -----------------------------------------------------------------------------
+; These are basically 128 bit masks with one bit for each of the 128 patterns
+; in two 2KB CHR ROM banks
 
 	@rom_B0D8:
 	.byte $FF, $B7, $9C, $88, $22, $01, $40, $20
