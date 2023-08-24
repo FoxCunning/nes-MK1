@@ -1,6 +1,7 @@
 **/*.bmp
 *.code-workspace
 out/**
+**/*.ini
 **/*.nes
 **/.idea/**
 **/.vscode/**
