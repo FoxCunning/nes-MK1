@@ -258,7 +258,7 @@ sub_irq_handler_00:
 
 ; -----------------------------------------------------------------------------
 
-; This controls the parallax scrolling effect for the Pit
+; This controls the parallax scrolling effects for the Pit
 sub_irq_handler_01:
 	lda ram_irq_state_var	; 0 = top, 1 = mid, 2 = bottom
 
@@ -267,14 +267,14 @@ sub_irq_handler_01:
 		; Top (clouds)
 		sta mmc3_irq_disable
 		sta mmc3_irq_enable
-		lda #$1C
+		lda #$1F
 		sta mmc3_irq_latch
 
 		lda PpuStatus_2002
 
 		lda zp_irq_hor_scroll
 		lsr
-		lsr
+		;lsr this would give a more subtle effect
 		sta PpuScroll_2005
 
 		ldy #$E0
@@ -287,13 +287,19 @@ sub_irq_handler_01:
 		; Middle clouds
 		sta mmc3_irq_disable
 		sta mmc3_irq_enable
-		lda #$23
+		lda #$20
 		sta mmc3_irq_latch
 
 		lda PpuStatus_2002
 
-		lda zp_irq_hor_scroll
-		lsr
+		lda zp_frame_counter
+		and #$07
+		bne :+
+			inc ram_irq_counter_1
+		:
+		lda ram_irq_counter_1
+		clc
+		adc zp_irq_hor_scroll
 		sta PpuScroll_2005
 
 		inc ram_irq_state_var
