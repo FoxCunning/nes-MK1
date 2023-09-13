@@ -1377,34 +1377,34 @@ tbl_ctrl_move_ptrs:
 	.word tbl_move_raiden_torpedo
 	
 	; $01 Sonya
+	.word tbl_move_sonya_kick
+	.word tbl_move_ring_toss
 	.word tbl_move_square_flight
-	.word tbl_std_ranged_atk
-	.word tbl_move_lightning
 
 	; $02 Sub-Zero
-	.word rom_C977
-	.word tbl_std_ranged_atk
-	.word rom_C97F
+	.word tbl_move_subzero_punch
+	.word tbl_move_lightning
+	.word tbl_move_slide
 
 	; Scorpion
-	.word tbl_move_lightning
-	.word tbl_std_ranged_atk
-	.word rom_C98B
+	.word tbl_move_scorpion_punch
+	.word tbl_move_scorpion_spear
+	.word tbl_move_scorpion_teleport
 
 	; Kano
-	.word tbl_move_lightning
-	.word tbl_std_ranged_atk
-	.word rom_C997
+	.word tbl_move_scorpion_punch
+	.word tbl_move_kano_knife
+	.word tbl_move_kano_spin
 
 	; Johnny Cage
-	.word rom_C99B
-	.word rom_C9A2
-	.word tbl_move_lightning
+	.word tbl_move_cage_kick
+	.word tbl_move_green_bolt
+	.word tbl_move_shadow_kick
 
 	; Liu Kang
-	.word rom_C9AA
-	.word tbl_std_ranged_atk
-	.word rom_C9B2
+	.word tbl_move_liukang_kick
+	.word tbl_move_fireball
+	.word tbl_move_flying_kick
 
 	; Goro
 	.word rom_C9B6
@@ -1427,10 +1427,10 @@ tbl_move_raiden_teleport:
 	.byte $02
 	.byte $04, $08
 
-; Lightning (Bck, Fwd, A)
+; Lightning (Dn, Fwd, A)
 tbl_move_lightning:
 	.byte $03
-	.byte $02, $01, $80
+	.byte $04, $01, $80
 
 ; Torpedo (Bck, Bck, Fwd)
 tbl_move_raiden_torpedo:
@@ -1441,86 +1441,105 @@ tbl_move_raiden_torpedo:
 
 ; Sonya
 
-; Square Flight (Bck, Fwd, B)
+; Roundhouse Kick (Dn, Bck, B)
+tbl_move_sonya_kick:
+	.byte $03
+	.byte $04, $02, $40
+
+; Ring Toss (Bck, Bck, A)
+tbl_move_ring_toss:
+	.byte $03
+	.byte $80, $02, $80
+
+; Square Flight (Fwd, Bck, A)
 tbl_move_square_flight:
 	.byte $03
-	.byte $02, $01, $40
-; Ring Toss (Dn, Fwd, A)
-tbl_std_ranged_atk:
-	.byte $03, $04, $01, $80
-;rom_C973:	Standard left-right-kick
-;	.byte $03, $02, $01, $80
+	.byte $01, $02, $80
 
 ; ----------------
 
 ; Sub-Zero
 
-
-rom_C977:
+; Turbo uppercut (Dn, Bck, B)
+tbl_move_subzero_punch:
 	.byte $03
 	.byte $04, $02, $40
 
-;rom_C97B:	Standard ranged move
-;	.byte $03, $04, $01, $80
-
-rom_C97F:
+; Slide (Bck, A, B)
+tbl_move_slide:
 	.byte $03
-	.byte $01, $04, $80
+	.byte $02, $80, $40
 
 ; ----------------
 
 ; Scorpion
 
-; "Turbo uppercut"
-;rom_C983:	Standard left-right-kick
-;	.byte $03, $02, $01, $80
-
-;rom_C987:	Standard ranged move
-;	.byte $03, $04, $01, $80
-
-; Slide (Dn, Up, A)
-rom_C98B:
+; Turbo uppercut (Bck, Fwd, A)
+tbl_move_scorpion_punch:
 	.byte $03
-	.byte $04, $08, $80
+	.byte $02, $01, $80
+
+; Spear (Bck, Bck, A)
+tbl_move_scorpion_spear:
+	.byte $03
+	.byte $02, $01, $80
+
+; Teleport (Dn, Bck, A)
+tbl_move_scorpion_teleport:
+	.byte $03
+	.byte $04, $02, $80
 
 ; ----------------
 
 ; Kano
 
-;rom_C98F:	Standard left-right-kick
-;	.byte $03, $02, $01, $80
-;rom_C993:	Standard ranged move
-;	.byte $03, $04, $01, $80
-rom_C997:
+; Knife throw (B, Bck, Fwd)
+tbl_move_kano_knife:
 	.byte $03
-	.byte $04, $08, $40
+	.byte $40, $02, $01
+
+; Spin attack (Fwd, Dn, Bck, Up)
+tbl_move_kano_spin:
+	.byte $04
+	.byte $01, $04, $02, $08
 
 ; ----------------
 
 ; Johnny Cage
 
 ; "Turbo roundhouse kick" (A x 6)
-rom_C99B:
+tbl_move_cage_kick:
 	.byte $06
 	.byte $80, $80, $80, $80, $80, $80
-rom_C9A2:
+
+; Green Bolt (Bck, Fwd, A)
+tbl_move_green_bolt:
 	.byte $03
-	.byte $01, $04, $80
-;rom_C9A6:
-;	.byte $03, $02, $01, $80
+	.byte $02, $01, $80
+
+; Shadow kick (Bck, Fwd, B)
+tbl_move_shadow_kick:
+	.byte $03
+	.byte $02, $01, $40
 
 ; ----------------
 
 ; Liu Kang
 
-rom_C9AA:
+; Turbo kick (Dn, Fwd, B)
+tbl_move_liukang_kick:
 	.byte $03
 	.byte $04, $01, $40
-;rom_C9AE:	Standard ranged move
-;	.byte $03, $04, $01, $80
-rom_C9B2:
+
+; Fireball (Fwd, Fwd, A)
+tbl_move_fireball:
 	.byte $03
-	.byte $01, $04, $80
+	.byte $01, $01, $80
+
+; Flying kick (Fwd, Fwd, B)
+tbl_move_flying_kick:
+	.byte $03
+	.byte $01, $01, $40
 
 ; ----------------
 
