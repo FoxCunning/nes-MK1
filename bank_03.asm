@@ -920,18 +920,9 @@ sub_cpu_move_norng:
 	bne @A679_rts
 
 		@A660_get_anim_id:
-		lda zp_plr1_fgtr_idx_clean,X
-		asl A
-		tay
-		lda (zp_ptr3_lo),Y
-		sta zp_ptr4_lo
-		iny
-		lda (zp_ptr3_lo),Y
-		sta zp_ptr4_hi
-		
 		lda zp_plr1_cur_anim,X
 		tay
-		lda (zp_ptr4_lo),Y
+		lda (zp_ptr3_lo),Y
 		bmi @A679_rts
 
 			jsr sub_set_cpu_anim
@@ -1028,15 +1019,15 @@ sub_cpu_move_2:
 ; ----------------
 
 	@rom_A727:
-	.byte $0D	; Raiden
-	.byte $17	; Sonya's Square Flight
-	.byte $1E	; Sub-Zero's Ice Freeze
-	.byte $1B	; Scorpion
-	.byte $1E	; Kano's Knife Throw
-	.byte $17	; Johnny Cage
-	.byte $0D	; Liu Kang
+	.byte $0D	; Raiden - Teleport
+	.byte $17	; Sonya - Square Flight
+	.byte $1E	; Sub-Zero - Ice Freeze
+	.byte $1B	; Scorpion - 
+	.byte $1E	; Kano - Knife Throw
+	.byte $17	; Johnny Cage - Shadow Kick
+	.byte $0D	; Liu Kang - Flying Kick
 	.byte $0D	; Goro
-	.byte $1E	; Shang-Tsung's unused fireball
+	.byte $1E	; Shang-Tsung
 
 ; ----------------
 
@@ -1115,63 +1106,41 @@ sub_set_cpu_anim:
 
 ; TODO Use only one pointer table
 tbl_short_range_ptrs:
-	.word rom_A807	; Raiden
-	.word rom_A807	; Sonya
-	.word rom_A807	; Sub-Zero
-	.word rom_A807	; Scorpion
-	.word rom_A807	; Kano
-	.word rom_A807	; Johnny Cage
-	.word rom_A807	; Liu Kang
-	.word rom_A807	; Goro
-	.word rom_A807	; Shang-Tsung
+	.word tbl_short_range_moves	; Raiden
+	.word tbl_short_range_moves	; Sonya
+	.word tbl_short_range_moves	; Sub-Zero
+	.word tbl_short_range_moves	; Scorpion
+	.word tbl_short_range_moves	; Kano
+	.word tbl_short_range_moves	; Johnny Cage
+	.word tbl_short_range_moves	; Liu Kang
+	.word tbl_short_range_moves	; Goro
+	.word tbl_short_range_moves	; Shang-Tsung
 
 ; -----------------------------------------------------------------------------
 
 tbl_med_range_ptrs:
-	.word rom_A81F
-	.word rom_A81F
-	.word rom_A81F
-	.word rom_A81F
-	.word rom_A81F
-	.word rom_A81F
-	.word rom_A81F
-	.word rom_A81F
-	.word rom_A81F
+	.word tbl_med_range_moves
+	.word tbl_med_range_moves
+	.word tbl_med_range_moves
+	.word tbl_med_range_moves
+	.word tbl_med_range_moves
+	.word tbl_med_range_moves
+	.word tbl_med_range_moves
+	.word tbl_med_range_moves
+	.word tbl_med_range_moves
 
 ; -----------------------------------------------------------------------------
 
 tbl_long_range_ptrs:
-	.word rom_A837
-	.word rom_A837
-	.word rom_A837
-	.word rom_A837
-	.word rom_A837
-	.word rom_A837
-	.word rom_A837
-	.word rom_A837
-	.word rom_A837
-
-; -----------------------------------------------------------------------------
-
-; TODO Use only one pointer table
-rom_A807:
-	.word tbl_short_range_moves, tbl_short_range_moves, tbl_short_range_moves, tbl_short_range_moves
-	.word tbl_short_range_moves, tbl_short_range_moves, tbl_short_range_moves, tbl_short_range_moves
-	.word tbl_short_range_moves, tbl_short_range_moves, tbl_short_range_moves, tbl_short_range_moves
-
-; -----------------------------------------------------------------------------
-
-rom_A81F:
-	.word tbl_med_range_moves, tbl_med_range_moves, tbl_med_range_moves, tbl_med_range_moves
-	.word tbl_med_range_moves, tbl_med_range_moves, tbl_med_range_moves, tbl_med_range_moves
-	.word tbl_med_range_moves, tbl_med_range_moves, tbl_med_range_moves, tbl_med_range_moves
-
-; -----------------------------------------------------------------------------
-
-rom_A837:
-	.word tbl_long_range_moves, tbl_long_range_moves, tbl_long_range_moves, tbl_long_range_moves
-	.word tbl_long_range_moves, tbl_long_range_moves, tbl_long_range_moves, tbl_long_range_moves
-	.word tbl_long_range_moves, tbl_long_range_moves, tbl_long_range_moves, tbl_long_range_moves
+	.word tbl_long_range_moves
+	.word tbl_long_range_moves
+	.word tbl_long_range_moves
+	.word tbl_long_range_moves
+	.word tbl_long_range_moves
+	.word tbl_long_range_moves
+	.word tbl_long_range_moves
+	.word tbl_long_range_moves
+	.word tbl_long_range_moves
 
 ; -----------------------------------------------------------------------------
 
