@@ -4572,7 +4572,7 @@ tbl_movement_data_ptrs:
 	.word @rom_DB7D	; $00
 	.word @rom_DB98	; $01
 	.word @up_down_12_frames
-	.word @rom_DBB7
+	.word @back_10_frames
 	.word @rom_DBF6
 	.word @rom_DC17
 	.word @rom_DB8B
@@ -4607,13 +4607,14 @@ tbl_movement_data_ptrs:
 	.word @rom_DE2F
 	.word @rom_DE48
 	.word @rom_DB8E
-	.word @rom_DBAD
+	.word @back_15_frames
 	.word @knocked_up_21_frames
 	.word @rom_DE8E	; $28
 	.word @thrown
 	.word @throw_move
 	.word @rom_DECD
 	.word @rom_DEEE	; $2C
+	.word @scorpion_teleport
 
 ; ----------------
 
@@ -4685,13 +4686,13 @@ tbl_movement_data_ptrs:
 
 ; ----------------
 
-	@rom_DBAD:
+	@back_15_frames:
 	.byte $FC, $00, $FC, $00, $FC, $00, $FC, $00
 	.byte $FC, $00
 
 ; ----------------
 
-	@rom_DBB7:
+	@back_10_frames:
 	.byte $FC, $00, $FC, $00, $FC, $00, $FC, $00
 	.byte $FC, $00, $FC, $00, $FC, $00, $FC, $00
 	.byte $FC, $00, $FC, $00, $80
@@ -5010,6 +5011,15 @@ tbl_movement_data_ptrs:
 	.byte $0C, $00, $0C, $00, $08, $00, $08, $00
 	.byte $08, $00, $06, $00, $06, $00, $06, $00
 	.byte $04, $00, $04, $00, $04, $00, $04, $04
+	.byte $80
+
+; ----------------
+
+	@scorpion_teleport:
+	.byte $F8, $F8, $F8, $F8, $F8, $F8, $F8, $F8
+	.byte $F8, $00, $F8, $00, $F8, $00, $F8, $00
+	.byte $F8, $00, $F8, $00, $F8, $00, $F8, $00
+	.byte $F8, $08, $F8, $08, $F8, $08, $F8, $08
 	.byte $80
 
 ; -----------------------------------------------------------------------------
