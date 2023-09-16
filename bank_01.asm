@@ -1482,7 +1482,7 @@ tbl_move_scorpion_punch:
 ; Spear (Bck, Bck, A)
 tbl_move_scorpion_spear:
 	.byte $03
-	.byte $02, $01, $80
+	.byte $02, $02, $80
 
 ; Teleport (Dn, Bck, A)
 tbl_move_scorpion_teleport:
@@ -3418,6 +3418,7 @@ sub_move_fighter_sprites:
 ; ----------------
 sub_inner_move_sprites:
 	jsr sub_shangtsung_palettes
+
 	ldy zp_plr_idx_param
 	ldx zp_plr1_fgtr_idx_clean,Y
 	lda tbl_fighter_sprite_banks,X
@@ -3687,6 +3688,18 @@ sub_inner_move_sprites:
 ; ----------------
 
 sub_animate_sprites:
+	; If the current animation is $17 (special 2)
+	; and the player is Scorpion ($03)
+	; then teleport
+	lda zp_plr1_cur_anim,Y
+	cmp #$17
+	bne :+
+		lda zp_plr1_fgtr_idx_clean,Y
+		cmp #$03
+		bne :+
+			jsr sub_scorpion_teleport
+	:
+
 	ldx tbl_player_oam_offsets,Y
 	ldy #$00
 	lda #$F8
@@ -3937,6 +3950,50 @@ tbl_fighter_sprite_banks:
 
 ; -----------------------------------------------------------------------------
 
+; Move Scorpion's sprite during his teleport animation if close to the border
+; Parameters:
+; Y = player index
+sub_scorpion_teleport:
+	; Only teleport between frames 3 and 11
+	lda zp_plr1_anim_frame,Y
+	cmp #$03
+	bcc @scorpion_teleport_rts
+
+	cmp #$0C
+	bcs	@scorpion_teleport_rts
+
+	; Keep in mind that the direction is flipped
+	lda zp_plr1_facing_dir,Y
+	beq @teleport_left
+
+		; Teleport from left to right
+		lda zp_plr1_x_pos,Y
+		cmp #$24	; Must be at X = $23 or lower
+		bcs @scorpion_teleport_rts
+
+			;clc not needed, we know it's clear
+			lda #$E6
+			bne @do_teleport
+
+	; Teleport from right to left
+	@teleport_left:
+	lda zp_plr1_x_pos,Y
+	cmp #$C9	; Must be at X = $C9 or higher
+	bcc @scorpion_teleport_rts
+
+		lda #$19
+		@do_teleport:
+		adc zp_irq_hor_scroll
+		sta zp_plr1_x_lo,Y
+		lda #$00
+		adc #$00
+		sta zp_plr1_x_hi,Y
+
+	@scorpion_teleport_rts:
+	rts
+
+; -----------------------------------------------------------------------------
+
 ; Moves Raiden's sprite during his teleport animation
 ; Parameters:
 ; Y = player index
@@ -4138,9 +4195,10 @@ sub_load_fighters_palettes:
 
 	; Adjust global GB colour for the Pit stage
 	; Needed because Shang-Tsung can change palettes during the match
-	ldx ram_irq_routine_idx
-	lda tbl_stage_bg_colours,X
-	sta ram_ppu_data_buffer
+	; (Not needed anymore)
+	;ldx ram_irq_routine_idx
+	;lda tbl_stage_bg_colours,X
+	;sta ram_ppu_data_buffer
 
 	sty zp_nmi_ppu_cols
 	lda #$01
@@ -4157,13 +4215,14 @@ sub_load_fighters_palettes:
 
 ; ----------------
 
-tbl_stage_bg_colours:
-	.byte $0E	; Goro's Lair
-	.byte $0E	; The Pit
-	.byte $0E	; Courtyard
-	.byte $0E	; Palace Gates
-	.byte $0E	; Warrior Shrine
-	.byte $0E	; Throne room
+; Now unused, all stages use black
+;tbl_stage_bg_colours:
+;	.byte $0E	; Goro's Lair
+;	.byte $0E	; The Pit
+;	.byte $0E	; Courtyard
+;	.byte $0E	; Palace Gates
+;	.byte $0E	; Warrior Shrine
+;	.byte $0E	; Throne room
 
 ; -----------------------------------------------------------------------------
 
@@ -4179,14 +4238,15 @@ sub_rom_D96D:
 
 ; -----------------------------------------------------------------------------
 
+; Index by animation number ($00-$34)
 rom_D977:
-	.byte $00, $01, $00, $00, $00, $01, $01, $01
-	.byte $01, $01, $01, $01, $01, $01, $01, $01
-	.byte $01, $01, $01, $01, $01, $01, $01, $01
-	.byte $01, $01, $01, $01, $01, $01, $01, $01
-	.byte $01, $01, $01, $01, $01, $01, $02, $01
-	.byte $01, $02, $02, $01, $01, $01, $02, $01
-	.byte $01, $01, $01, $01, $01, $01, $01, $01
+	.byte $00, $01, $00, $00, $00, $01, $01, $01	; $00-$07
+	.byte $01, $01, $01, $01, $01, $01, $01, $01	; $08-$0F
+	.byte $01, $01, $01, $01, $01, $01, $01, $01	; $10-$17
+	.byte $01, $01, $01, $01, $01, $01, $01, $01	; $18-$1F
+	.byte $01, $01, $01, $01, $01, $01, $02, $01	; $20-$27
+	.byte $01, $02, $02, $01, $01, $01, $02, $01	; $28-$2F
+	.byte $01, $01, $01, $01, $01					; $30-$34
 
 ; -----------------------------------------------------------------------------
 
@@ -4209,9 +4269,10 @@ sub_frozen_palette:
 
 	; Adjust global GB colour for the Pit stage
 	; Needed because Shang-Tsung can change palettes during the match
-	ldx ram_irq_routine_idx
-	lda tbl_stage_bg_colours,X
-	sta ram_ppu_data_buffer
+	; (Not needed anymore)
+	;ldx ram_irq_routine_idx
+	;lda tbl_stage_bg_colours,X
+	;sta ram_ppu_data_buffer
 
 	sty zp_nmi_ppu_cols	; Y = 8
 	lda #$01
