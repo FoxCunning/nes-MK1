@@ -1662,10 +1662,27 @@ sub_rom_CA19:
 ; A = new animation index
 sub_change_fighter_anim:
 	ldy zp_plr_idx_param
-	sta zp_plr1_cur_anim,Y
+	sta zp_plr1_cur_anim,Y	; Set current animation index
+
+	; Check if Scorpion is teleporting
+	cmp #$17	; Teleport move index (special #2)
+	bne :+
+		lda zp_plr1_fgtr_idx_clean,Y
+		cmp #$03	; Scorpion's index
+		bne :+
+			; Change facing direction to jump back
+			lda zp_plr1_facing_dir,Y
+			eor #$01
+			sta zp_plr1_facing_dir,Y
+	:
+
+	; Start from frame zero
 	lda #$00
 	sta zp_plr1_anim_frame,Y
+
+	; Remember the index of the last player whose animation was changed
 	sty zp_last_anim_plr
+
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -3469,7 +3486,10 @@ sub_inner_move_sprites:
 		; Animation will be set to zero when this is >0
 		inc zp_18
 	:
+
+	; Check if we need to move the victim of Scorpion's spear
 	jsr sub_scorpion_spear_pull
+
 	ldx zp_plr_ofs_param	; 2-byte data / pointer offset for current player
 	ldy zp_plr_idx_param	; 1-byte data offset for current player
 	lda zp_05	; X movement for current animation
@@ -4569,23 +4589,23 @@ tbl_spr_attr_ptrs:
 ; Index for these pointers is first byte from 3-byte data on top of fighter's
 ; PRG ROM bank
 tbl_movement_data_ptrs:
-	.word @rom_DB7D	; $00
-	.word @rom_DB98	; $01
+	.word @rom_DB7D				; $00
+	.word @rom_DB98				; $01
 	.word @up_down_12_frames
 	.word @back_10_frames
 	.word @rom_DBF6
 	.word @rom_DC17
 	.word @rom_DB8B
 	.word @rom_DBE5
-	.word @still_6_frames	; $08
-	.word @still_16_frames	; $09
+	.word @still_6_frames		; $08
+	.word @still_16_frames		; $09
 	.word @rom_DB85
 	.word @rom_DC38
 	.word @rom_DC59
 	.word @knockback_19_frames
 	.word @rom_DC8D
 	.word @rom_DCA8
-	.word @still_20_frames	; $10
+	.word @still_20_frames		; $10
 	.word @rom_DB89
 	.word @rom_DCD3
 	.word @rom_DCEE
@@ -4593,15 +4613,15 @@ tbl_movement_data_ptrs:
 	.word @rom_DD46
 	.word @rom_DD53
 	.word @rom_DD68
-	.word @still_30_frames	; $18
-	.word @knocked_up_21_frames ;@rom_DD89
+	.word @still_30_frames		; $18
+	.word @knocked_up_21_frames
 	.word @rom_DDA8
 	.word @rom_DDC1
 	.word @rom_DDC2
 	.word @rom_DB75
 	.word @rom_DE03
-	.word @still_16_frames ;@special_hit_16_frames
-	.word @rom_DE05	; $20
+	.word @still_16_frames
+	.word @rom_DE05				; $20
 	.word @rom_DE12
 	.word @rom_DB87
 	.word @rom_DE2F
@@ -4609,12 +4629,12 @@ tbl_movement_data_ptrs:
 	.word @rom_DB8E
 	.word @back_15_frames
 	.word @knocked_up_21_frames
-	.word @rom_DE8E	; $28
+	.word @rom_DE8E				; $28
 	.word @thrown
 	.word @throw_move
 	.word @rom_DECD
-	.word @rom_DEEE	; $2C
-	.word @scorpion_teleport
+	.word @rom_DEEE				; $2C
+	.word @scorpion_teleport	; $2D
 
 ; ----------------
 
@@ -5016,10 +5036,10 @@ tbl_movement_data_ptrs:
 ; ----------------
 
 	@scorpion_teleport:
-	.byte $F8, $F8, $F8, $F8, $F8, $F8, $F8, $F8
-	.byte $F8, $00, $F8, $00, $F8, $00, $F8, $00
-	.byte $F8, $00, $F8, $00, $F8, $00, $F8, $00
-	.byte $F8, $08, $F8, $08, $F8, $08, $F8, $08
+	.byte $08, $F8, $08, $F8, $08, $F8, $08, $F8
+	.byte $08, $00, $08, $00, $08, $00, $08, $00
+	.byte $08, $00, $08, $00, $08, $00, $08, $00
+	.byte $08, $08, $08, $08, $08, $08, $08, $08
 	.byte $80
 
 ; -----------------------------------------------------------------------------
