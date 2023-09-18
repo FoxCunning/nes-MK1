@@ -28,13 +28,13 @@ rom_8004:
 	.byte $03
 	.word anim_walk_bk
 	.byte $08
-	.word anim_jump_up
+	.word anim_standing_parry
 	.byte $02
-	.word anim_jump_fw
+	.word anim_jump_up
 	.byte $05
-	.word anim_jump_bk
+	.word anim_jump_fw
 	.byte $04
-	.word rom_80ED
+	.word anim_jump_bk
 	.byte $07
 	.word rom_80FD
 	.byte $07
@@ -106,7 +106,7 @@ rom_8004:
 	.byte $07
 	.word anim_crouch_parry
 	.byte $07
-	.word anim_jump_up
+	.word anim_standing_parry
 	.byte $0F
 	.word rom_8270
 	.byte $0D
@@ -122,7 +122,7 @@ rom_8004:
 	.byte $18 ;$1F
 	.word anim_special_hit ;rom_82A1
 	.byte $04
-	.word rom_80ED
+	.word anim_jump_bk
 
 ; -----------------------------------------------------------------------------
 
@@ -139,15 +139,15 @@ anim_walk_fw:
 anim_walk_bk:
 	.byte $04, $05, $06, $07, $08, $04, $05, $06
 	.byte $07, $08
-anim_jump_up:
+anim_standing_parry:
 	.byte $09, $09, $09, $09, $09, $09, $09, $09
-anim_jump_fw:
+anim_jump_up:
 	.byte $0A, $0A, $0A, $0A, $0A, $0A, $0A, $0A
 	.byte $0A, $0A, $0A, $0A
-anim_jump_bk:
+anim_jump_fw:
 	.byte $0B, $0B, $0B, $0B, $0C, $0C, $0D, $0D
 	.byte $0C, $0C, $0D, $0D, $0C, $0B, $0B, $0B
-rom_80ED:
+anim_jump_bk:
 	.byte $0B, $0B, $0B, $0B, $0C, $0C, $0D, $0D
 	.byte $0C, $0C, $0D, $0D, $0C, $0B, $0B, $0B
 	

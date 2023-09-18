@@ -153,8 +153,8 @@ zp_plr1_x_pos = $86 ;
 zp_plr2_x_pos = $87 ;
 zp_plr1_y_pos = $88 ;
 zp_plr2_y_pos = $89 ;
-zp_plr1_facing_dir = $8A    ; 0 = forward, 1 = backwards
-zp_plr2_facing_dir = $8B    ; 0 = forward, 1 = backwards
+zp_plr1_facing_dir = $8A    ; 0 = right, 1 = left
+zp_plr2_facing_dir = $8B    ; 0 = right, 1 = left
 zp_last_anim_plr = $8C     ; Index of the last player (0 or 1) whose animation was changed
 zp_y_plane_skew = $8D   ; Set to 1 if one player is airborne while the other isn't
 
