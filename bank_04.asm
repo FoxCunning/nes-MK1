@@ -325,9 +325,9 @@ tbl_rle_data_ptr_odd:
 	.word nam_game_over_rle
     .byte $28, $28
 
-    .word nam_congratulations_rle	; $06
+    .word nam_ending_rle			; $06
     .byte $20, $20
-	.word nam_try_harder_rle
+	.word nam_credits_rle
     .byte $28, $28
 
     .word nam_endurance_top_rle		; $07
@@ -355,8 +355,8 @@ tbl_palette_and_irq_ptrs:
     .byte $0C, $02	; $02	Fighter selection
     .byte $0C, $03	; $03	Battle Plan
     .byte $0C, $01	; $04	Fake high scores screen
-    .byte $0C, $01	; $05
-    .byte $0C, $01	; $06
+    .byte $0C, $01	; $05	Continue / Game Over
+    .byte $0C, $01	; $06	Ending / Credits
     .byte $0C, $02	; $07
     .byte $0F, $04	; $08	Titles
 	.byte $10, $00	; $09	Sound test
@@ -510,13 +510,13 @@ palette_mask_8307:
 
 ; -----------------------------------------------------------------------------
 
-nam_congratulations_rle:
-.incbin "nam/congratulations.rle"
+nam_ending_rle:
+.incbin "nam/ending_base.rle"
 
 ; -----------------------------------------------------------------------------
 
-nam_try_harder_rle:
-.incbin "nam/try_harder.rle"
+nam_credits_rle:
+.incbin "nam/credits.rle"
 
 ; -----------------------------------------------------------------------------
 

@@ -25,7 +25,7 @@ sub_state_machine_0:
 	.word sub_vs_state_machine			; 0,3
 	.word sub_continue_screen_state_machine	; 0,4
 	.word sub_high_scores_states		; 0,5
-	.word sub_rom_BF1E					; 0,6
+	.word sub_ending_states					; 0,6
 
 ; -----------------------------------------------------------------------------
 
@@ -1585,7 +1585,7 @@ sub_high_scores_states:
 	.word sub_high_scores_init
 	.word sub_rom_B834
 	.word sub_rom_B845
-	.word sub_rom_B864
+	.word sub_attract_choose_ftrs
 	.word sub_rom_B8A5
 
 ; -----------------------------------------------------------------------------
@@ -1646,12 +1646,12 @@ sub_rom_B845:
 
 ; -----------------------------------------------------------------------------
 
-; Chooses two fighters for the attract mode?
-sub_rom_B864:
+; Chooses two fighters for the attract mode
+sub_attract_choose_ftrs:
 	jsr sub_rom_cycle_palettes
 	lda zp_palette_fade_idx
 	cmp #$09
-	bcc @B864_rts
+	bcc :+
 
 		lda #$00
 		sta PpuMask_2001
@@ -1669,18 +1669,18 @@ sub_rom_B864:
 		lda zp_62
 		and #$07
 		tay
-		lda rom_B89C+0,Y
+		lda @tbl_attract_mode_ftrs+0,Y
 		sta zp_plr1_fighter_idx
-		lda rom_B89C+1,Y
+		lda @tbl_attract_mode_ftrs+1,Y
 		sta zp_plr2_fighter_idx
 		inc zp_62
 
-	@B864_rts:
+	:
 	rts
 
-; -----------------------------------------------------------------------------
+; ----------------
 
-rom_B89C:
+	@tbl_attract_mode_ftrs:
 	.byte $83, $82, $84, $85, $86, $87, $88, $85
 	.byte $81
 
@@ -1710,9 +1710,9 @@ sub_vs_state_machine:
 ; ----------------
 ; Jump pointers
 	.word sub_vs_state_init		; 0,2,0
-	.word sub_vs_scr_init	; 0,2,1
+	.word sub_vs_scr_init		; 0,2,1
 	.word sub_vs_fade_in		; 0,2,2
-	.word sub_vs_scr_loop			; 0,2,3
+	.word sub_vs_scr_loop		; 0,2,3
 	.word sub_vs_fade_out		; 0,2,4
 
 ; -----------------------------------------------------------------------------
@@ -2542,18 +2542,18 @@ tbl_sel_to_ftr_idx:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_BF1E:
+sub_ending_states:
 	lda zp_machine_state_2
 	jsr sub_trampoline
 ; ----------------
 ; Jump pointers
-	.word sub_rom_BF29
-	.word sub_rom_BF66
-	.word sub_rom_BF73
+	.word sub_ending_init
+	.word sub_ending_fade_in
+	.word sub_ending_loop
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_BF29:
+sub_ending_init:
 	lda #$06
 	jsr sub_init_screen_common
 
@@ -2579,43 +2579,40 @@ sub_rom_BF29:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_BF66:
+sub_ending_fade_in:
 	jsr sub_rom_cycle_palettes
 	lda zp_palette_fade_idx
 	cmp #$05
-	bcs @BF70
-
-	rts
-; ----------------
-	@BF70:
-	inc zp_machine_state_2
+	bcc :+
+		inc zp_machine_state_2
+	:
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_BF73:
+sub_ending_loop:
 	jsr sub_rom_cycle_palettes
 	lda zp_palette_fade_idx
 	cmp #$09
-	bcs @BF7D
+	bcc @ending_loop_rts
 
-	rts
-; ----------------
-	@BF7D:
-	dec zp_counter_param
-	beq @BF89
+		dec zp_counter_param
+		beq :+
 
-	ldy #$00
-	sty zp_palette_fade_idx
-	iny
-	sty zp_machine_state_2
-	rts
-; ----------------
-	@BF89:
-	lda #$00
-	sta zp_machine_state_2
-	sta zp_machine_state_1
-	sta zp_machine_state_0
+			; Fade out
+			ldy #$00
+			sty zp_palette_fade_idx
+			iny
+			sty zp_machine_state_2
+			rts
+		; ----------------
+		:
+		lda #$00
+		sta zp_machine_state_2
+		sta zp_machine_state_1
+		sta zp_machine_state_0
+
+	@ending_loop_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -2646,7 +2643,7 @@ sub_titles_fade_in:
 	bcs :+
 		; Palettes are still cycling
 		rts
-; ----------------
+	; ----------------
 	:
 	; Palettes have finished cycling
 	inc zp_machine_state_2	; Move to next sub-state
