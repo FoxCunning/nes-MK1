@@ -2547,9 +2547,9 @@ sub_ending_states:
 	jsr sub_trampoline
 ; ----------------
 ; Jump pointers
-	.word sub_ending_init
-	.word sub_ending_fade_in
-	.word sub_ending_loop
+	.word sub_ending_init		; 0, 6, 0
+	.word sub_ending_fade_in	; 0, 6, 1
+	.word sub_ending_loop		; 0, 6, 2
 
 ; -----------------------------------------------------------------------------
 
@@ -2590,6 +2590,7 @@ sub_ending_fade_in:
 
 ; -----------------------------------------------------------------------------
 
+; This fades in and out constantly
 sub_ending_loop:
 	jsr sub_rom_cycle_palettes
 	lda zp_palette_fade_idx
@@ -2640,15 +2641,14 @@ sub_titles_fade_in:
 	jsr sub_rom_cycle_palettes
 	lda zp_palette_fade_idx
 	cmp #$05
-	bcs :+
-		; Palettes are still cycling
-		rts
-	; ----------------
-	:
-	; Palettes have finished cycling
-	inc zp_machine_state_2	; Move to next sub-state
-	lda #$03	; Wait timer for titles screen
-	sta zp_counter_param
+	bcc @titles_fade_in_rts	; Do nothing if palettes are still cycling
+		
+		; Palettes have finished cycling
+		inc zp_machine_state_2	; Move to next sub-state
+		lda #$03	; Wait timer for titles screen
+		sta zp_counter_param
+
+	@titles_fade_in_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
