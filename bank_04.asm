@@ -149,6 +149,20 @@ sub_setup_new_screen:
 	jsr sub_load_screen_data
 
 	lda zp_tmp_idx
+	cmp #$06
+	bne :+
+		; Ending palettes depend on winning character
+		lda #$0C
+		sta ram_irq_routine_idx
+		sta ram_irq_latch_value
+
+		lda zp_plr1_fighter_idx	; Winning character's index (0 to 8)
+		clc
+		adc #$05				; Index of palette for character 0
+		sta zp_palette_idx
+		; TODO Load winner's attribute table
+		bne @setup_clr_pal
+	:
 	asl A
 	tay
 	lda tbl_palette_and_irq_ptrs+0,Y
@@ -156,6 +170,7 @@ sub_setup_new_screen:
 	lda tbl_palette_and_irq_ptrs+1,Y
 	sta zp_palette_idx
 
+	@setup_clr_pal:
 	jsr sub_clear_palettes
 	jsr sub_choose_music_track
 
@@ -279,7 +294,7 @@ tbl_chr_banks_per_screen:
 	.byte $F4, $F6, $F4, $F5, $F6, $F7, $00, $00	; $03	Battle plan
 	.byte $FC, $FE, $FC, $FD, $FE, $FF, $00, $00	; $04	(Fake) high scores
 	.byte $FC, $FE, $FC, $FD, $FE, $FF, $00, $00	; $05	Continue screen
-	.byte $D8, $DA, $D8, $D9, $DA, $DB, $00, $00	; $06	Ending
+	.byte $F2, $F3, $F2, $F3, $F2, $F3, $00, $00	; $06	Ending
 	.byte $FC, $FE, $F8, $F9, $FA, $FB, $00, $00	; $07	Endurance match VS TODO remove
 	.byte $BC, $BE, $BC, $BD, $BE, $BF, $00, $00	; $08	Titles screen
 	.byte $D8, $DA, $D8, $D9, $DA, $DB, $00, $00	; $09	Sound test
@@ -369,17 +384,17 @@ sub_rom_cycle_palettes:
 	lda zp_palette_idx
 	asl A
 	tay
-	lda rom_823D+0,Y
+	lda tbl_palette_ptrs+0,Y
 	sta zp_ptr1_lo
-	lda rom_823D+1,Y
+	lda tbl_palette_ptrs+1,Y
 	sta zp_ptr1_hi
 
 	lda zp_pal_mask_idx
 	asl A
 	tay
-	lda rom_8239+0,Y
+	lda tbl_palette_mask_ptrs+0,Y
 	sta zp_ptr2_lo
-	lda rom_8239+1,Y
+	lda tbl_palette_mask_ptrs+1,Y
 	sta zp_ptr2_hi
 
 	lda zp_nmi_ppu_ptr_hi
@@ -439,16 +454,18 @@ tbl_palette_fade_subtrahends:
 
 ; -----------------------------------------------------------------------------
 
-rom_8239:
+tbl_palette_mask_ptrs:
 	.word palette_mask_82E7
 	.word palette_mask_8307
 ; ----------------
-rom_823D:
+tbl_palette_ptrs:
 	.word palette_main_menu
 	.word palette_options_menu
 	.word palette_fighter_select
 	.word palette_battle_plan
 	.word palette_titles
+
+	.word palette_ending_raiden
 
 ; -----------------------------------------------------------------------------
 
@@ -458,7 +475,7 @@ palette_main_menu:
 	.byte $0E, $0F, $00, $20, $0E, $16, $26, $20
 	.byte $0E, $0F, $00, $27, $0E, $06, $16, $26
 
-; -----------------------------------------------------------------------------
+; ----------------
 
 ; Used in option menu
 palette_options_menu:
@@ -467,7 +484,7 @@ palette_options_menu:
 	.byte $0E, $0F, $00, $20, $0E, $16, $26, $20
 	.byte $0E, $0F, $00, $27, $0E, $06, $16, $26
 
-; -----------------------------------------------------------------------------
+; ----------------
 
 palette_fighter_select:
 	.byte $FF, $16, $26, $36, $FF, $11, $21, $30
@@ -475,7 +492,7 @@ palette_fighter_select:
 	.byte $0F, $17, $27, $38, $0E, $13, $21, $30
 	.byte $0E, $09, $19, $3B, $0E, $06, $16, $36
 
-; -----------------------------------------------------------------------------
+; ----------------
 
 palette_battle_plan:
 	.byte $07, $00, $2D, $30, $07, $11, $21, $30
@@ -483,7 +500,7 @@ palette_battle_plan:
 	.byte $07, $16, $26, $36, $07, $11, $21, $30
 	.byte $07, $17, $27, $37, $07, $0F, $1A, $37
 
-; -----------------------------------------------------------------------------
+; ----------------
 
 ; Used in titles sequence
 palette_titles:
@@ -492,7 +509,7 @@ palette_titles:
 	.byte $0E, $21, $26, $20, $0E, $21, $26, $20
 	.byte $0E, $21, $26, $20, $0E, $16, $27, $20
 
-; -----------------------------------------------------------------------------
+; ----------------
 
 palette_mask_82E7:
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
@@ -500,7 +517,7 @@ palette_mask_82E7:
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 
-; -----------------------------------------------------------------------------
+; ----------------
 
 palette_mask_8307:
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
@@ -508,92 +525,111 @@ palette_mask_8307:
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $00, $00, $00, $00, $FF, $FF, $FF, $FF
 
+; ----------------
+
+palette_ending_raiden:
+	.byte $0E, $2D, $00, $10
+	.byte $0E, $0C, $11, $30
+	.byte $0E, $2D, $20, $27
+	.byte $0E, $11, $21, $20
+
+; ----------------
+
+; Padding for last ending palette
+
+	.byte $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
+	.byte $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
+
 ; -----------------------------------------------------------------------------
 
 nam_ending_rle:
 .incbin "nam/ending_base.rle"
 
-; -----------------------------------------------------------------------------
+; ----------------
 
 nam_credits_rle:
 .incbin "nam/credits.rle"
 
-; -----------------------------------------------------------------------------
+; ----------------
 
 nam_main_menu_top_rle:
 .incbin "nam/main_menu_top.rle"
 
-; -----------------------------------------------------------------------------
+; ----------------
 
 ; This is the bottom half the of the main menu, repeated twice vertically
 ; The bottom copy has the "options" menu item selected
 nam_main_menu_btm_rle:
 .incbin "nam/main_menu_btm.rle"
 
-; -----------------------------------------------------------------------------
+; ----------------
 
 nam_option_menu_rle:
 .incbin "nam/options_left.rle"
 
-; -----------------------------------------------------------------------------
+; ----------------
 
 ; This is basically the same as the previous nametable, but with different
 ; attributes to highlight the options
 nam_option_menu_2_rle:
 .incbin "nam/options_right.rle"
 
-; -----------------------------------------------------------------------------
+; ----------------
 
 nam_fighter_select_rle:
 .incbin "nam/fighter_select.rle"
 
-; -----------------------------------------------------------------------------
+; ----------------
 
 nam_battle_plan_top:
 .incbin "nam/battle_plan_top.rle"
 
-; -----------------------------------------------------------------------------
+; ----------------
 
 nam_battle_plan_btm:
 .incbin "nam/battle_plan_btm.rle"
 
-; -----------------------------------------------------------------------------
+; ----------------
 
 nam_dont_load:
 	.byte $20, $00, $FF
 
-; -----------------------------------------------------------------------------
+; ----------------
 
 nam_endurance_top_rle:
-.incbin "nam/vs_endurance_top.rle"
+;.incbin "nam/vs_endurance_top.rle"
+	; Not used anymore
+	.byte $20, $00, $FF
 
-; -----------------------------------------------------------------------------
+; ----------------
 
 nam_endurance_btm_rle:
-.incbin "nam/vs_endurance_btm.rle"
+;.incbin "nam/vs_endurance_btm.rle"
+	; Not used anymore
+	.byte $20, $00, $FF
 
-; -----------------------------------------------------------------------------
+; ----------------
 
 nam_continue_rle:
 .incbin "nam/continue_screen.rle"
 
-; -----------------------------------------------------------------------------
+; ----------------
 
 nam_game_over_rle:
 .incbin "nam/game_over_screen.rle"
 
-; -----------------------------------------------------------------------------
+; ----------------
 
 nam_high_scores_rle:
 .incbin "nam/winning_streaks.rle"
 
-; -----------------------------------------------------------------------------
+; ----------------
 
 ; This is the "title sequence" before the main menu appears
 nam_titles_rle:
 .incbin "nam/titles.rle"
 
-; -----------------------------------------------------------------------------
+; ----------------
 
 ; A plain-looking sound test menu
 nam_sound_test_rle:
@@ -657,15 +693,15 @@ rom_9CF9:
 	.byte $07, $09, $02, $0F
 
 ; Potentially unused
-	.byte $08, $0A, $03, $10
-	.byte $09, $04, $FF, $11
-	.byte $11, $0C, $04, $FF
-	.byte $0B, $0D, $05, $00
-	.byte $0C, $0E, $06, $01
-	.byte $0D, $0F, $07, $FF
-	.byte $0E, $10, $08, $02
-	.byte $0F, $11, $09, $03
-	.byte $10, $0B, $0A, $FF
+;	.byte $08, $0A, $03, $10
+;	.byte $09, $04, $FF, $11
+;	.byte $11, $0C, $04, $FF
+;	.byte $0B, $0D, $05, $00
+;	.byte $0C, $0E, $06, $01
+;	.byte $0D, $0F, $07, $FF
+;	.byte $0E, $10, $08, $02
+;	.byte $0F, $11, $09, $03
+;	.byte $10, $0B, $0A, $FF
 
 tbl_sound_test_indices:
 	.byte $FF, $FF, $00, $01	; Music track
@@ -892,3 +928,4 @@ sub_show_playing_song:
 	.byte "    victory 6   "	; $30
 
 ; -----------------------------------------------------------------------------
+

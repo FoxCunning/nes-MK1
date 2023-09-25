@@ -123,7 +123,7 @@ zp_5E = $5E     ;
 zp_match_type = $5F ;
 
 zp_60 = $60     ;
-zp_match_number = $61     ;
+zp_match_number = $61   ;
 zp_62 = $62     ;
 ; Index of menu option selected by controller 1
 zp_plr1_selection = $63 ;

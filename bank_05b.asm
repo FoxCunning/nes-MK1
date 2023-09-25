@@ -19,12 +19,12 @@ sub_state_machine_0:
 	jsr sub_trampoline		; The sub will use the following table of pointers
                         	; to jump to one of those locations
 ; ----------------
-	.word sub_main_menu_states			; 0,0
-	.word sub_option_menu_states		; 0,1
-	.word sub_fighter_sel_states		; 0,2
-	.word sub_vs_state_machine			; 0,3
+	.word sub_main_menu_states				; 0,0
+	.word sub_option_menu_states			; 0,1
+	.word sub_fighter_sel_states			; 0,2
+	.word sub_vs_state_machine				; 0,3
 	.word sub_continue_screen_state_machine	; 0,4
-	.word sub_high_scores_states		; 0,5
+	.word sub_high_scores_states			; 0,5
 	.word sub_ending_states					; 0,6
 
 ; -----------------------------------------------------------------------------
@@ -37,14 +37,14 @@ sub_main_menu_states:
 	.word sub_titles_screen_init	; 0,0,0
 	.word sub_titles_fade_in		; 0,0,1
 	.word sub_titles_loop			; 0,0,2
-	.word sub_menu_fade_out 		; 0,0,3
+	.word sub_generic_fade_out 		; 0,0,3
 
 	.word sub_menu_screen_init		; 0,0,4
 	.word sub_menu_fade_in			; 0,0,5
 	.word sub_main_menu_loop		; 0,0,6
 	.word sub_main_menu_loop		; 0,0,7
 	.word sub_main_menu_loop		; 0,0,8
-	.word sub_menu_fade_out			; 0,0,9
+	.word sub_generic_fade_out		; 0,0,9
 	.word sub_eval_menu_choice		; 0,0,A
 	.word sub_fade_to_high_scores	; 0,0,B
 
@@ -203,9 +203,9 @@ sub_main_menu_loop:
 
 ; -----------------------------------------------------------------------------
 
-; Machine state = 0,0,9 and 0,1,3
-; Used to fade out the Main Menu and Options Menu
-sub_menu_fade_out:
+; Machine state = 0,0,9 or 0,1,3 or 0,6,2 or 0,6,4
+; Fades out, then increases machine_state_2
+sub_generic_fade_out:
 	jsr sub_rom_cycle_palettes
 	lda zp_palette_fade_idx
 	cmp #$09
@@ -355,14 +355,14 @@ sub_option_menu_states:
 	.word sub_options_menu_init		; 0,1,0
 	.word sub_menu_fade_in			; 0,1,1
 	.word sub_options_menu_loop		; 0,1,2
-	.word sub_menu_fade_out			; 0,1,3
+	.word sub_generic_fade_out			; 0,1,3
 	.word sub_back_to_main			; 0,1,4
 
-	.word sub_menu_fade_out			; 0,1,5
+	.word sub_generic_fade_out			; 0,1,5
 	.word sub_sound_test_init		; 0,1,6
 	.word sub_menu_fade_in			; 0,1,7
 	.word sub_sound_test_input_loop	; 0,1,8
-	.word sub_menu_fade_out			; 0,1,9
+	.word sub_generic_fade_out			; 0,1,9
 	.word sub_back_to_main			; 0,1,A
 
 ; -----------------------------------------------------------------------------
@@ -2550,32 +2550,81 @@ sub_ending_states:
 	.word sub_ending_init		; 0, 6, 0
 	.word sub_ending_fade_in	; 0, 6, 1
 	.word sub_ending_loop		; 0, 6, 2
+	.word sub_generic_fade_out	; 0, 6, 3
+	.word sub_ending_reset		; 0, 6, 4
 
 ; -----------------------------------------------------------------------------
 
 sub_ending_init:
+	; If player 2 is controlled by CPU, then player 1 is the winner
+	; Otherwise, assume player 2 is the winner
+	lda zp_plr2_fighter_idx
+	bpl :+
+		lda zp_plr1_fighter_idx
+	:
+	; Clean and Store the winner's ID
+	cmp #$0C
+	bcc :+
+		clc
+		sbc #$0C
+	:
+	sta zp_plr1_fighter_idx	; This is now the winner's index
+
 	lda #$06
 	jsr sub_init_screen_common
 
-	; Not needed: init_screen_common calls setup_new_screen which does that
-	;lda #$01
-	;sta mmc3_mirroring
+	lda #$80
+	sta zp_ppu_control_backup
+	;lda #$0C
+	;sta ram_irq_routine_idx
+	;sta ram_irq_latch_value
 
-	ldy #$80
-	lda ram_difficulty_setting
-	cmp #$02
-	bcs @BF55
+	; Show fighter's name
+	ldy zp_plr1_fighter_idx
+	lda tbl_ending_name_ptrs_lo,Y
+	sta zp_ptr1_lo
+	lda tbl_ending_name_ptrs_hi,Y
+	sta zp_ptr1_hi
 
-		ldy #$8A
-	@BF55:
-	sty zp_ppu_control_backup
-	lda #$0C
-	sta ram_irq_routine_idx
-	sta ram_irq_latch_value
+	; Base PPU Address = $206A
+	lda #$20
+	sta zp_nmi_ppu_ptr_hi
+
+	ldy #$00
+	lda (zp_ptr1_lo),Y
+	clc
+	adc #$6A
+	sta zp_nmi_ppu_ptr_lo
+
+	ldy #$01
+	:
+	lda (zp_ptr1_lo),Y
+	beq :+
+	sta ram_ppu_data_buffer-1,Y
+	iny
+	bne :-
+	:
+
+	; Ready to transfer data
+	lda #$01
+	sta zp_nmi_ppu_rows
+	dey
+	sty zp_nmi_ppu_cols
+
+	; Switch to the CHR bank containing the winner's portrait
+	ldy zp_plr1_fighter_idx
+	lda @tbl_ending_banks,Y
+	sta zp_chr_bank_2
+
 	inc zp_machine_state_2
-	lda #$14
-	sta zp_counter_param
+
 	rts
+
+; ----------------
+
+	@tbl_ending_banks:
+	.byte $1B, $34, $35, $36, $37, $56, $57
+	.byte $F0, $F1
 
 ; -----------------------------------------------------------------------------
 
@@ -2590,31 +2639,71 @@ sub_ending_fade_in:
 
 ; -----------------------------------------------------------------------------
 
-; This fades in and out constantly
 sub_ending_loop:
-	jsr sub_rom_cycle_palettes
-	lda zp_palette_fade_idx
-	cmp #$09
-	bcc @ending_loop_rts
-
-		dec zp_counter_param
-		beq :+
-
-			; Fade out
-			ldy #$00
-			sty zp_palette_fade_idx
-			iny
-			sty zp_machine_state_2
-			rts
-		; ----------------
-		:
-		lda #$00
-		sta zp_machine_state_2
-		sta zp_machine_state_1
-		sta zp_machine_state_0
-
-	@ending_loop_rts:
+	; TODO Incrementally display the ending text, then wait and fade out
+	lda #$14
+	sta zp_counter_param
 	rts
+
+; -----------------------------------------------------------------------------
+
+; Back to titles
+sub_ending_reset:
+	lda #$00
+	sta zp_machine_state_0
+	sta zp_machine_state_1
+	sta zp_machine_state_2
+	rts
+
+; -----------------------------------------------------------------------------
+
+    .repeat 26, i   ; Letters
+        .charmap $61 + i, $E0 + i   ; Lowercase
+        .charmap $41 + i, $E0 + i   ; Uppercase
+    .endrepeat
+
+	.charmap $20, $B4		; Space
+	.charmap $2D, $A0   	; -
+	.charmap $27, $A1		; '
+	.charmap $2C, $B0		; ,
+	.charmap $3A, $B1		; ;
+	.charmap $2E, $B2		; .
+
+; -----------------------------------------------------------------------------
+
+tbl_ending_name_ptrs_lo:
+	.byte <txt_raiden_name
+
+tbl_ending_name_ptrs_hi:
+	.byte >txt_raiden_name
+
+; ----------------
+
+txt_raiden_name:
+	.byte $03, "raiden", $00
+
+; -----------------------------------------------------------------------------
+
+tbl_ending_text_ptrs_lo:
+	.byte <txt_raiden_ending
+
+tbl_ending_text_ptrs_hi:
+	.byte >txt_raiden_ending
+
+; ----------------
+
+txt_raiden_ending:
+	.byte "raiden's victory", $00
+	.byte "comes as no", $00
+	.byte "surprise to him.", $00
+	.byte "he was never", $00
+	.byte "impressed by", $00
+	.byte "shang-tsung's", $00
+	.byte "inferior sorcery", $00
+	.byte "goro's brute", $00
+	.byte "force, or the", $00
+	.byte "challenge of the", $00
+	.byte "other fighters.", $FF
 
 ; -----------------------------------------------------------------------------
 
