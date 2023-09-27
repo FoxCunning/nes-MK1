@@ -1,4 +1,4 @@
-.segment "BANK_07"
+.segment "BANK_07t"
 ; $8000-$9FFF
 .setcpu "6502X"
 
@@ -800,5 +800,3 @@ rom_8D33:
 	.byte $FF
 
 ; -----------------------------------------------------------------------------
-
-; The rest seems to be half-overwritten junk
