@@ -2550,8 +2550,9 @@ sub_ending_states:
 	.word sub_ending_init		; 0, 6, 0
 	.word sub_ending_fade_in	; 0, 6, 1
 	.word sub_ending_loop		; 0, 6, 2
-	.word sub_generic_fade_out	; 0, 6, 3
-	.word sub_ending_reset		; 0, 6, 4
+	.word sub_ending_wait		; 0, 6, 3
+	.word sub_generic_fade_out	; 0, 6, 4
+	.word sub_ending_reset		; 0, 6, 5
 
 ; -----------------------------------------------------------------------------
 
@@ -2633,16 +2634,106 @@ sub_ending_fade_in:
 	lda zp_palette_fade_idx
 	cmp #$05
 	bcc :+
+		lda #$00				; The counter will keep track of the last
+		sta zp_counter_param	; character displayed in the text area
 		inc zp_machine_state_2
+		; Starting PPU address for text: $20EE
+		lda #$20
+		sta zp_ptr3_hi
+		lda #$EE
+		sta zp_ptr3_lo
 	:
 	rts
 
 ; -----------------------------------------------------------------------------
 
+; Incrementally displays the ending text
 sub_ending_loop:
-	; TODO Incrementally display the ending text, then wait and fade out
-	lda #$14
-	sta zp_counter_param
+	lda zp_frame_counter
+	cmp zp_last_execution_frame
+	beq @ending_loop_rts
+
+		sta zp_last_execution_frame
+		and #$01	; Only execute every other frame (would be too fast otherwise)
+		beq @ending_loop_rts
+	
+			; Prepare pointer to winning character's ending text
+			ldy zp_plr1_fighter_idx
+			lda tbl_ending_text_ptrs_lo
+			sta zp_ptr1_lo
+			lda tbl_ending_text_ptrs_hi
+			sta zp_ptr1_hi
+
+			; Read next character
+			@next_ending_chr:
+			ldy zp_counter_param
+			inc zp_counter_param
+
+			lda (zp_ptr1_lo),Y
+			bne :+		; $00 = newline
+				; Down two rows
+				lda zp_ptr3_lo
+				clc
+				adc #$40
+				sta zp_ptr3_lo
+				lda zp_ptr3_hi
+				adc #$00
+				sta zp_ptr3_hi
+
+				; Move to the left
+				lda zp_ptr3_lo
+				and #$EE
+				ora #$0E
+				sta zp_ptr3_lo
+				bne @next_ending_chr	; (JMP) This will never be zero
+			:
+			cmp #$FF	; $FF = end of text
+			bne :+
+				inc zp_machine_state_2
+				lda #$40
+				sta zp_counter_param
+				rts
+			:
+			; Everything else: character to display
+			sta ram_ppu_data_buffer
+
+			lda zp_ptr3_lo
+			sta zp_nmi_ppu_ptr_lo
+			lda zp_ptr3_hi
+			sta zp_nmi_ppu_ptr_hi
+
+			inc zp_ptr3_lo
+
+			lda #$01
+			sta zp_nmi_ppu_cols
+			sta zp_nmi_ppu_rows
+	
+	@ending_loop_rts:
+	rts
+
+; -----------------------------------------------------------------------------
+
+sub_ending_wait:
+	lda zp_frame_counter
+	cmp zp_last_execution_frame
+	beq @ending_wait_rts
+
+		sta zp_last_execution_frame
+		
+		lda zp_controller1
+		and #$F0
+		beq :+
+			; Skip wait on any controller 1 button except D-pad
+			inc zp_machine_state_2
+			rts
+		:
+
+		dec zp_counter_param
+		bne @ending_wait_rts
+
+			inc zp_machine_state_2
+
+	@ending_wait_rts:
 	rts
 
 ; -----------------------------------------------------------------------------

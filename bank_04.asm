@@ -160,8 +160,24 @@ sub_setup_new_screen:
 		clc
 		adc #$05				; Index of palette for character 0
 		sta zp_palette_idx
-		; TODO Load winner's attribute table
-		bne @setup_clr_pal
+		
+		; Load winner's attribute table
+		ldx #$87
+		stx zp_bank_select_value
+		lda #$07
+		stx mmc3_bank_select
+		sta mmc3_bank_data
+
+		jsr sub_ending_attributes
+
+		; Switch back to bank 5
+		ldx #$87
+		stx zp_bank_select_value
+		lda #$05
+		stx mmc3_bank_select
+		sta mmc3_bank_data
+
+		jmp @setup_clr_pal
 	:
 	asl A
 	tay
@@ -726,7 +742,7 @@ sub_choose_music_track:
 	.byte $21	; $03	Vs. Screen
 	.byte $20	; $04	High scores
 	.byte $22	; $05
-	.byte $22	; $06
+	.byte $20	; $06	Ending screen
 	.byte $21	; $07	Endurance match Vs. Screen
 	.byte $20	; $08	Titles screen
 	.byte $22	; $09	Sound test (silence)
