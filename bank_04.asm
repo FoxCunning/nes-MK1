@@ -310,7 +310,7 @@ tbl_chr_banks_per_screen:
 	.byte $F4, $F6, $F4, $F5, $F6, $F7, $00, $00	; $03	Battle plan
 	.byte $FC, $FE, $FC, $FD, $FE, $FF, $00, $00	; $04	(Fake) high scores
 	.byte $FC, $FE, $FC, $FD, $FE, $FF, $00, $00	; $05	Continue screen
-	.byte $F2, $F3, $F2, $F3, $F2, $F3, $00, $00	; $06	Ending
+	.byte $F5, $F6, $F5, $F6, $F2, $F3, $00, $00	; $06	Ending
 	.byte $FC, $FE, $F8, $F9, $FA, $FB, $00, $00	; $07	Endurance match VS TODO remove
 	.byte $BC, $BE, $BC, $BD, $BE, $BF, $00, $00	; $08	Titles screen
 	.byte $D8, $DA, $D8, $D9, $DA, $DB, $00, $00	; $09	Sound test

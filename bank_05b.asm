@@ -2551,8 +2551,10 @@ sub_ending_states:
 	.word sub_ending_fade_in	; 0, 6, 1
 	.word sub_ending_loop		; 0, 6, 2
 	.word sub_ending_wait		; 0, 6, 3
-	.word sub_generic_fade_out	; 0, 6, 4
-	.word sub_ending_reset		; 0, 6, 5
+	.word sub_ending_credits	; 0, 6, 4
+	.word sub_ending_wait		; 0, 6, 5
+	.word sub_generic_fade_out	; 0, 6, 6
+	.word sub_ending_reset		; 0, 6, 7
 
 ; -----------------------------------------------------------------------------
 
@@ -2683,7 +2685,7 @@ sub_ending_loop:
 			cmp #$FF	; $FF = end of text
 			bne :+
 				inc zp_machine_state_2
-				lda #$40
+				lda #$C0
 				sta zp_counter_param
 				rts
 			:
@@ -2728,6 +2730,61 @@ sub_ending_wait:
 
 	@ending_wait_rts:
 	rts
+
+; -----------------------------------------------------------------------------
+
+sub_ending_credits:
+	lda zp_frame_counter
+	cmp zp_last_execution_frame
+	beq @credits_rts
+
+		sta zp_last_execution_frame
+
+		inc zp_scroll_y
+		lda zp_scroll_y
+		cmp #$EF
+		bne @credits_rts
+
+			; Load credits palette
+			lda PpuStatus_2002
+
+			ldy #$00
+			:
+				lda pal_credits,Y
+				sta ram_ppu_data_buffer,Y
+				iny
+				cpy #$04
+			bne :-
+
+			lda #$3F
+			sta zp_nmi_ppu_ptr_hi
+			lda #$04
+			sta zp_nmi_ppu_ptr_lo
+			;lda #$04
+			sta zp_nmi_ppu_cols
+			lda #$01
+			sta zp_nmi_ppu_rows
+
+			; Move screen down to show bottom table
+			lda #$82
+			sta zp_ppu_control_backup
+			;sta PpuControl_2000
+
+			lda #$00
+			sta zp_scroll_y
+
+			lda #$FF
+			sta zp_counter_param
+
+			inc zp_machine_state_2
+
+	@credits_rts:
+	rts
+
+; ----------------
+
+pal_credits:
+	.byte $0E, $16, $15, $30
 
 ; -----------------------------------------------------------------------------
 
