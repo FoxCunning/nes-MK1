@@ -19,13 +19,13 @@ sub_state_machine_0:
 	jsr sub_trampoline		; The sub will use the following table of pointers
                         	; to jump to one of those locations
 ; ----------------
-	.word sub_main_menu_states			; 0,0
-	.word sub_option_menu_states		; 0,1
-	.word sub_fighter_sel_states		; 0,2
-	.word sub_vs_state_machine			; 0,3
+	.word sub_main_menu_states				; 0,0
+	.word sub_option_menu_states			; 0,1
+	.word sub_fighter_sel_states			; 0,2
+	.word sub_vs_state_machine				; 0,3
 	.word sub_continue_screen_state_machine	; 0,4
-	.word sub_high_scores_states		; 0,5
-	.word sub_rom_BF1E					; 0,6
+	.word sub_high_scores_states			; 0,5
+	.word sub_ending_states					; 0,6
 
 ; -----------------------------------------------------------------------------
 
@@ -37,14 +37,14 @@ sub_main_menu_states:
 	.word sub_titles_screen_init	; 0,0,0
 	.word sub_titles_fade_in		; 0,0,1
 	.word sub_titles_loop			; 0,0,2
-	.word sub_menu_fade_out 		; 0,0,3
+	.word sub_generic_fade_out 		; 0,0,3
 
 	.word sub_menu_screen_init		; 0,0,4
 	.word sub_menu_fade_in			; 0,0,5
 	.word sub_main_menu_loop		; 0,0,6
 	.word sub_main_menu_loop		; 0,0,7
 	.word sub_main_menu_loop		; 0,0,8
-	.word sub_menu_fade_out			; 0,0,9
+	.word sub_generic_fade_out		; 0,0,9
 	.word sub_eval_menu_choice		; 0,0,A
 	.word sub_fade_to_high_scores	; 0,0,B
 
@@ -203,9 +203,9 @@ sub_main_menu_loop:
 
 ; -----------------------------------------------------------------------------
 
-; Machine state = 0,0,9 and 0,1,3
-; Used to fade out the Main Menu and Options Menu
-sub_menu_fade_out:
+; Machine state = 0,0,9 or 0,1,3 or 0,6,2 or 0,6,4
+; Fades out, then increases machine_state_2
+sub_generic_fade_out:
 	jsr sub_rom_cycle_palettes
 	lda zp_palette_fade_idx
 	cmp #$09
@@ -355,14 +355,14 @@ sub_option_menu_states:
 	.word sub_options_menu_init		; 0,1,0
 	.word sub_menu_fade_in			; 0,1,1
 	.word sub_options_menu_loop		; 0,1,2
-	.word sub_menu_fade_out			; 0,1,3
+	.word sub_generic_fade_out			; 0,1,3
 	.word sub_back_to_main			; 0,1,4
 
-	.word sub_menu_fade_out			; 0,1,5
+	.word sub_generic_fade_out			; 0,1,5
 	.word sub_sound_test_init		; 0,1,6
 	.word sub_menu_fade_in			; 0,1,7
 	.word sub_sound_test_input_loop	; 0,1,8
-	.word sub_menu_fade_out			; 0,1,9
+	.word sub_generic_fade_out			; 0,1,9
 	.word sub_back_to_main			; 0,1,A
 
 ; -----------------------------------------------------------------------------
@@ -1585,7 +1585,7 @@ sub_high_scores_states:
 	.word sub_high_scores_init
 	.word sub_rom_B834
 	.word sub_rom_B845
-	.word sub_rom_B864
+	.word sub_attract_choose_ftrs
 	.word sub_rom_B8A5
 
 ; -----------------------------------------------------------------------------
@@ -1646,12 +1646,12 @@ sub_rom_B845:
 
 ; -----------------------------------------------------------------------------
 
-; Chooses two fighters for the attract mode?
-sub_rom_B864:
+; Chooses two fighters for the attract mode
+sub_attract_choose_ftrs:
 	jsr sub_rom_cycle_palettes
 	lda zp_palette_fade_idx
 	cmp #$09
-	bcc @B864_rts
+	bcc :+
 
 		lda #$00
 		sta PpuMask_2001
@@ -1669,18 +1669,18 @@ sub_rom_B864:
 		lda zp_62
 		and #$07
 		tay
-		lda rom_B89C+0,Y
+		lda @tbl_attract_mode_ftrs+0,Y
 		sta zp_plr1_fighter_idx
-		lda rom_B89C+1,Y
+		lda @tbl_attract_mode_ftrs+1,Y
 		sta zp_plr2_fighter_idx
 		inc zp_62
 
-	@B864_rts:
+	:
 	rts
 
-; -----------------------------------------------------------------------------
+; ----------------
 
-rom_B89C:
+	@tbl_attract_mode_ftrs:
 	.byte $83, $82, $84, $85, $86, $87, $88, $85
 	.byte $81
 
@@ -1710,9 +1710,9 @@ sub_vs_state_machine:
 ; ----------------
 ; Jump pointers
 	.word sub_vs_state_init		; 0,2,0
-	.word sub_vs_scr_init	; 0,2,1
+	.word sub_vs_scr_init		; 0,2,1
 	.word sub_vs_fade_in		; 0,2,2
-	.word sub_vs_scr_loop			; 0,2,3
+	.word sub_vs_scr_loop		; 0,2,3
 	.word sub_vs_fade_out		; 0,2,4
 
 ; -----------------------------------------------------------------------------
@@ -2542,81 +2542,326 @@ tbl_sel_to_ftr_idx:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_BF1E:
+sub_ending_states:
 	lda zp_machine_state_2
 	jsr sub_trampoline
 ; ----------------
 ; Jump pointers
-	.word sub_rom_BF29
-	.word sub_rom_BF66
-	.word sub_rom_BF73
+	.word sub_ending_init		; 0, 6, 0
+	.word sub_ending_fade_in	; 0, 6, 1
+	.word sub_ending_loop		; 0, 6, 2
+	.word sub_ending_wait		; 0, 6, 3
+	.word sub_ending_credits	; 0, 6, 4
+	.word sub_ending_wait		; 0, 6, 5
+	.word sub_generic_fade_out	; 0, 6, 6
+	.word sub_ending_reset		; 0, 6, 7
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_BF29:
+sub_ending_init:
+	; If player 2 is controlled by CPU, then player 1 is the winner
+	; Otherwise, assume player 2 is the winner
+	lda zp_plr2_fighter_idx
+	bpl :+
+		lda zp_plr1_fighter_idx
+	:
+	; Clean and Store the winner's ID
+	cmp #$0C
+	bcc :+
+		clc
+		sbc #$0C
+	:
+	sta zp_plr1_fighter_idx	; This is now the winner's index
+
 	lda #$06
 	jsr sub_init_screen_common
 
-	; Not needed: init_screen_common calls setup_new_screen which does that
-	;lda #$01
-	;sta mmc3_mirroring
+	lda #$80
+	sta zp_ppu_control_backup
+	;lda #$0C
+	;sta ram_irq_routine_idx
+	;sta ram_irq_latch_value
 
-	ldy #$80
-	lda ram_difficulty_setting
-	cmp #$02
-	bcs @BF55
+	; Show fighter's name
+	ldy zp_plr1_fighter_idx
+	lda tbl_ending_name_ptrs_lo,Y
+	sta zp_ptr1_lo
+	lda tbl_ending_name_ptrs_hi,Y
+	sta zp_ptr1_hi
 
-		ldy #$8A
-	@BF55:
-	sty zp_ppu_control_backup
-	lda #$0C
-	sta ram_irq_routine_idx
-	sta ram_irq_latch_value
+	; Base PPU Address = $206A
+	lda #$20
+	sta zp_nmi_ppu_ptr_hi
+
+	ldy #$00
+	lda (zp_ptr1_lo),Y
+	clc
+	adc #$6A
+	sta zp_nmi_ppu_ptr_lo
+
+	ldy #$01
+	:
+	lda (zp_ptr1_lo),Y
+	beq :+
+	sta ram_ppu_data_buffer-1,Y
+	iny
+	bne :-
+	:
+
+	; Ready to transfer data
+	lda #$01
+	sta zp_nmi_ppu_rows
+	dey
+	sty zp_nmi_ppu_cols
+
+	; Switch to the CHR bank containing the winner's portrait
+	ldy zp_plr1_fighter_idx
+	lda @tbl_ending_banks,Y
+	sta zp_chr_bank_2
+
 	inc zp_machine_state_2
-	lda #$14
-	sta zp_counter_param
+
 	rts
+
+; ----------------
+
+	@tbl_ending_banks:
+	.byte $1B, $34, $35, $36, $37, $56, $57
+	.byte $F0, $F1
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_BF66:
+sub_ending_fade_in:
 	jsr sub_rom_cycle_palettes
 	lda zp_palette_fade_idx
 	cmp #$05
-	bcs @BF70
-
-	rts
-; ----------------
-	@BF70:
-	inc zp_machine_state_2
+	bcc :+
+		lda #$00				; The counter will keep track of the last
+		sta zp_counter_param	; character displayed in the text area
+		inc zp_machine_state_2
+		; Starting PPU address for text: $20EE
+		lda #$20
+		sta zp_ptr3_hi
+		lda #$EE
+		sta zp_ptr3_lo
+	:
 	rts
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_BF73:
-	jsr sub_rom_cycle_palettes
-	lda zp_palette_fade_idx
-	cmp #$09
-	bcs @BF7D
+; Incrementally displays the ending text
+sub_ending_loop:
+	lda zp_frame_counter
+	cmp zp_last_execution_frame
+	beq @ending_loop_rts
 
-	rts
-; ----------------
-	@BF7D:
-	dec zp_counter_param
-	beq @BF89
+		sta zp_last_execution_frame
+		and #$01	; Only execute every other frame (would be too fast otherwise)
+		beq @ending_loop_rts
 
-	ldy #$00
-	sty zp_palette_fade_idx
-	iny
-	sty zp_machine_state_2
+			; Read next character
+			@next_ending_chr:
+			ldy zp_counter_param
+			inc zp_counter_param
+
+			lda $6F00,Y
+			bne :+		; $00 = newline
+				; Down two rows
+				lda zp_ptr3_lo
+				clc
+				adc #$40
+				sta zp_ptr3_lo
+				lda zp_ptr3_hi
+				adc #$00
+				sta zp_ptr3_hi
+
+				; Move to the left
+				lda zp_ptr3_lo
+				and #$EE
+				ora #$0E
+				sta zp_ptr3_lo
+				bne @next_ending_chr	; (JMP) This will never be zero
+			:
+			cmp #$FF	; $FF = end of text
+			bne :+
+				inc zp_machine_state_2
+				lda #$C0
+				sta zp_counter_param
+				rts
+			:
+			; Everything else: character to display
+			sta ram_ppu_data_buffer
+
+			lda zp_ptr3_lo
+			sta zp_nmi_ppu_ptr_lo
+			lda zp_ptr3_hi
+			sta zp_nmi_ppu_ptr_hi
+
+			inc zp_ptr3_lo
+
+			lda #$01
+			sta zp_nmi_ppu_cols
+			sta zp_nmi_ppu_rows
+	
+	@ending_loop_rts:
 	rts
+
+; -----------------------------------------------------------------------------
+
+sub_ending_wait:
+	lda zp_frame_counter
+	cmp zp_last_execution_frame
+	beq @ending_wait_rts
+
+		sta zp_last_execution_frame
+		
+		lda zp_controller1
+		and #$F0
+		beq :+
+			; Skip wait on any controller 1 button except D-pad
+			inc zp_machine_state_2
+			rts
+		:
+
+		dec zp_counter_param
+		bne @ending_wait_rts
+
+			inc zp_machine_state_2
+
+	@ending_wait_rts:
+	rts
+
+; -----------------------------------------------------------------------------
+
+sub_ending_credits:
+	lda zp_frame_counter
+	cmp zp_last_execution_frame
+	beq @credits_rts
+
+		sta zp_last_execution_frame
+
+		inc zp_scroll_y
+		lda zp_scroll_y
+		cmp #$EF
+		bne @credits_rts
+
+			; Load credits palette
+			lda PpuStatus_2002
+
+			ldy #$00
+			:
+				lda pal_credits,Y
+				sta ram_ppu_data_buffer,Y
+				iny
+				cpy #$04
+			bne :-
+
+			lda #$3F
+			sta zp_nmi_ppu_ptr_hi
+			lda #$04
+			sta zp_nmi_ppu_ptr_lo
+			;lda #$04
+			sta zp_nmi_ppu_cols
+			lda #$01
+			sta zp_nmi_ppu_rows
+
+			; Move screen down to show bottom table
+			lda #$82
+			sta zp_ppu_control_backup
+			;sta PpuControl_2000
+
+			lda #$00
+			sta zp_scroll_y
+
+			lda #$FF
+			sta zp_counter_param
+
+			inc zp_machine_state_2
+
+	@credits_rts:
+	rts
+
 ; ----------------
-	@BF89:
+
+pal_credits:
+	.byte $0E, $16, $15, $30
+
+; -----------------------------------------------------------------------------
+
+; Back to titles
+sub_ending_reset:
 	lda #$00
-	sta zp_machine_state_2
-	sta zp_machine_state_1
 	sta zp_machine_state_0
+	sta zp_machine_state_1
+	sta zp_machine_state_2
 	rts
+
+; -----------------------------------------------------------------------------
+
+    .repeat 26, i   ; Letters
+        .charmap $61 + i, $E0 + i   ; Lowercase
+        .charmap $41 + i, $E0 + i   ; Uppercase
+    .endrepeat
+
+	.charmap $20, $B4		; Space
+	.charmap $2D, $A0   	; -
+	.charmap $27, $A1		; '
+	.charmap $2C, $B0		; ,
+	.charmap $3A, $B1		; ;
+	.charmap $2E, $B2		; .
+
+; -----------------------------------------------------------------------------
+
+tbl_ending_name_ptrs_lo:
+	.byte <txt_raiden_name
+	.byte <txt_sonya_name
+	.byte <txt_subzero_name
+	.byte <txt_scorpion_name
+	.byte <txt_kano_name
+	.byte <txt_cage_name
+	.byte <txt_liukang_name
+	.byte <txt_goro_name
+	.byte <txt_shangtsung_name
+
+tbl_ending_name_ptrs_hi:
+	.byte >txt_raiden_name
+	.byte >txt_sonya_name
+	.byte >txt_subzero_name
+	.byte >txt_scorpion_name
+	.byte >txt_kano_name
+	.byte >txt_cage_name
+	.byte >txt_liukang_name
+	.byte >txt_goro_name
+	.byte >txt_shangtsung_name
+
+; ----------------
+
+txt_raiden_name:
+	.byte $03, "raiden", $00
+
+txt_sonya_name:
+	.byte $03, "sonya", $00
+
+txt_subzero_name:
+	.byte $02, "sub-zero", $00
+
+txt_scorpion_name:
+	.byte $02, "scorpion", $00
+
+txt_kano_name:
+	.byte $04, "kano", $00
+
+txt_cage_name:
+	.byte $00, "johnny cage", $00
+
+txt_liukang_name:
+	.byte $02, "liu k ang", $00
+
+txt_goro_name:
+	.byte $04, "goro", $00
+
+txt_shangtsung_name:
+	.byte $00, "shang tsung", $00
 
 ; -----------------------------------------------------------------------------
 
@@ -2643,15 +2888,14 @@ sub_titles_fade_in:
 	jsr sub_rom_cycle_palettes
 	lda zp_palette_fade_idx
 	cmp #$05
-	bcs :+
-		; Palettes are still cycling
-		rts
-; ----------------
-	:
-	; Palettes have finished cycling
-	inc zp_machine_state_2	; Move to next sub-state
-	lda #$03	; Wait timer for titles screen
-	sta zp_counter_param
+	bcc @titles_fade_in_rts	; Do nothing if palettes are still cycling
+		
+		; Palettes have finished cycling
+		inc zp_machine_state_2	; Move to next sub-state
+		lda #$03	; Wait timer for titles screen
+		sta zp_counter_param
+
+	@titles_fade_in_rts:
 	rts
 
 ; -----------------------------------------------------------------------------
