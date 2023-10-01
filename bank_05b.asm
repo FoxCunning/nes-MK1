@@ -2656,20 +2656,13 @@ sub_ending_loop:
 		sta zp_last_execution_frame
 		and #$01	; Only execute every other frame (would be too fast otherwise)
 		beq @ending_loop_rts
-	
-			; Prepare pointer to winning character's ending text
-			ldy zp_plr1_fighter_idx
-			lda tbl_ending_text_ptrs_lo
-			sta zp_ptr1_lo
-			lda tbl_ending_text_ptrs_hi
-			sta zp_ptr1_hi
 
 			; Read next character
 			@next_ending_chr:
 			ldy zp_counter_param
 			inc zp_counter_param
 
-			lda (zp_ptr1_lo),Y
+			lda $6F00,Y
 			bne :+		; $00 = newline
 				; Down two rows
 				lda zp_ptr3_lo
@@ -2764,37 +2757,54 @@ sub_ending_reset:
 
 tbl_ending_name_ptrs_lo:
 	.byte <txt_raiden_name
+	.byte <txt_sonya_name
+	.byte <txt_subzero_name
+	.byte <txt_scorpion_name
+	.byte <txt_kano_name
+	.byte <txt_cage_name
+	.byte <txt_liukang_name
+	.byte <txt_goro_name
+	.byte <txt_shangtsung_name
 
 tbl_ending_name_ptrs_hi:
 	.byte >txt_raiden_name
+	.byte >txt_sonya_name
+	.byte >txt_subzero_name
+	.byte >txt_scorpion_name
+	.byte >txt_kano_name
+	.byte >txt_cage_name
+	.byte >txt_liukang_name
+	.byte >txt_goro_name
+	.byte >txt_shangtsung_name
 
 ; ----------------
 
 txt_raiden_name:
 	.byte $03, "raiden", $00
 
-; -----------------------------------------------------------------------------
+txt_sonya_name:
+	.byte $03, "sonya", $00
 
-tbl_ending_text_ptrs_lo:
-	.byte <txt_raiden_ending
+txt_subzero_name:
+	.byte $02, "sub-zero", $00
 
-tbl_ending_text_ptrs_hi:
-	.byte >txt_raiden_ending
+txt_scorpion_name:
+	.byte $02, "scorpion", $00
 
-; ----------------
+txt_kano_name:
+	.byte $04, "kano", $00
 
-txt_raiden_ending:
-	.byte "raiden's victory", $00
-	.byte "comes as no", $00
-	.byte "surprise to him.", $00
-	.byte "he was never", $00
-	.byte "impressed by", $00
-	.byte "shang-tsung's", $00
-	.byte "inferior sorcery", $00
-	.byte "goro's brute", $00
-	.byte "force, or the", $00
-	.byte "challenge of the", $00
-	.byte "other fighters.", $FF
+txt_cage_name:
+	.byte $00, "johnny cage", $00
+
+txt_liukang_name:
+	.byte $02, "liu k ang", $00
+
+txt_goro_name:
+	.byte $04, "goro", $00
+
+txt_shangtsung_name:
+	.byte $00, "shang tsung", $00
 
 ; -----------------------------------------------------------------------------
 

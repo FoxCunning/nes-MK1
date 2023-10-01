@@ -168,7 +168,7 @@ sub_setup_new_screen:
 		stx mmc3_bank_select
 		sta mmc3_bank_data
 
-		jsr sub_ending_attributes
+		jsr sub_ending_prepare
 
 		; Switch back to bank 5
 		ldx #$87
