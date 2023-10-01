@@ -482,6 +482,14 @@ tbl_palette_ptrs:
 	.word palette_titles
 
 	.word palette_ending_raiden
+	.word palette_ending_sonya
+	.word palette_ending_subzero
+	.word palette_ending_scorpion
+	.word palette_ending_kano
+	.word palette_ending_cage
+	.word palette_ending_liukang
+	.word palette_ending_goro
+	.word palette_ending_shangtsung
 
 ; -----------------------------------------------------------------------------
 
@@ -548,6 +556,54 @@ palette_ending_raiden:
 	.byte $0E, $0C, $11, $30
 	.byte $0E, $2D, $20, $27
 	.byte $0E, $11, $21, $20
+
+palette_ending_sonya:
+	.byte $0E, $2D, $00, $10
+	.byte $0E, $16, $37, $30
+	.byte $0E, $2D, $20, $27
+	.byte $0E, $21, $37, $20
+
+palette_ending_subzero:
+	.byte $0E, $2D, $00, $10
+	.byte $0E, $0C, $1C, $10
+	.byte $0E, $2D, $20, $27
+	.byte $0E, $0C, $1C, $37
+
+palette_ending_scorpion:
+	.byte $0E, $2D, $00, $10
+	.byte $0E, $00, $10, $38
+	.byte $0E, $2D, $20, $27
+	.byte $0E, $00, $27, $38
+
+palette_ending_kano:
+	.byte $0E, $2D, $00, $10
+	.byte $0E, $00, $26, $37
+	.byte $0E, $2D, $20, $27
+	.byte $0E, $03, $26, $36
+
+palette_ending_cage:
+	.byte $0E, $2D, $00, $10
+	.byte $0E, $17, $26, $20
+	.byte $0E, $2D, $20, $27
+	.byte $0E, $17, $26, $20
+
+palette_ending_liukang:
+	.byte $0E, $2D, $00, $10
+	.byte $0E, $17, $26, $20
+	.byte $0E, $2D, $20, $27
+	.byte $0E, $17, $26, $20
+
+palette_ending_goro:
+	.byte $0E, $2D, $00, $10
+	.byte $0E, $0B, $00, $26
+	.byte $0E, $2D, $20, $27
+	.byte $0E, $09, $19, $26
+
+palette_ending_shangtsung:
+	.byte $0E, $2D, $00, $10
+	.byte $0E, $0C, $00, $37
+	.byte $0E, $2D, $20, $27
+	.byte $0E, $0C, $17, $37
 
 ; ----------------
 
