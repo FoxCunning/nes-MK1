@@ -215,7 +215,7 @@ txt_subzero_ending:
 	.byte "rous profession.", $FF
 
 txt_scorpion_ending:
-	.byte "evven with his", $00
+	.byte "even with his", $00
 	.byte "triumph in the", $00
 	.byte "tournament, the", $00
 	.byte "price scorpion", $00
