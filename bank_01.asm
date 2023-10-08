@@ -229,7 +229,7 @@ sub_announce_winner_name:
 		; Announce name after 20 frames
 		ldx zp_plr_idx_param	; Winner index
 		lda zp_plr1_fgtr_idx_clean,X
-		cmp #$06	; Skip Goro and Shang-Tsung
+		cmp #$07	; Skip Goro and Shang-Tsung
 		bcs @abort_announcement
 
 			clc
