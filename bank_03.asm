@@ -3513,15 +3513,15 @@ tbl_dpcm_ptr:
 tbl_dpcm_len:
 	.byte $00	; $00 (rest)
 	.byte $00	; $01 (hold)
-	.byte $48	; $02 "Fight!"
-	.byte $47	; $03 "Raiden"
-	.byte $58	; $04 "Sonya"
-	.byte $85	; $05 "Sub-Zero"
-	.byte $77	; $06 "Scorpion"
-	.byte $4B	; $07 "Kano"
-	.byte $7C	; $08 "Johnny Cage"
-	.byte $73	; $09 "Liu Kang"
-	.byte $53	; $0A "...wins"
+	.byte $40	; $02 "Fight!"
+	.byte $35	; $03 "Raiden"
+	.byte $4B	; $04 "Sonya"
+	.byte $6B	; $05 "Sub-Zero"
+	.byte $5B	; $06 "Scorpion"
+	.byte $39	; $07 "Kano"
+	.byte $5C	; $08 "Johnny Cage"
+	.byte $58	; $09 "Liu Kang"
+	.byte $40	; $0A "...wins"
 	.byte $2E	; $0B "Come here!"
 	.byte $08	; $0C SFX punch/kick swing
 	.byte $0F	; $0D SFX hit
@@ -3533,15 +3533,15 @@ tbl_dpcm_len:
 tbl_dpcm_freq:
 	.byte $00	; $00 (rest)
 	.byte $00	; $01 (hold)
-	.byte $0C	; $02 "Fight!"
-	.byte $0C	; $03 "Raiden"
-	.byte $0C	; $04 "Sonya"
-	.byte $0C	; $05 "Sub-Zero"
-	.byte $0C	; $06 "Scorpion"
-	.byte $0C	; $07 "Kano"
-	.byte $0C	; $08 "Johnny Cage"
-	.byte $0C	; $09 "Liu Kang"
-	.byte $0C	; $0A "...wins"
+	.byte $0A	; $02 "Fight!"
+	.byte $0A	; $03 "Raiden"
+	.byte $0A	; $04 "Sonya"
+	.byte $0A	; $05 "Sub-Zero"
+	.byte $0A	; $06 "Scorpion"
+	.byte $0A	; $07 "Kano"
+	.byte $0A	; $08 "Johnny Cage"
+	.byte $0A	; $09 "Liu Kang"
+	.byte $0A	; $0A "...wins"
 	.byte $05	; $0B "Come here!"
 	.byte $08	; $0C SFX punch/kick swing
 	.byte $08	; $0D SFX hit

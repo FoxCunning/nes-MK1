@@ -12,43 +12,36 @@
 .export dmc_raiden
 
 dmc_raiden:
-.incbin "audio/raiden.dmc"
+.incbin "audio/raiden_sp10up.dmc"
 
 ; ----------------
 .export dmc_sonya
 
 dmc_sonya:
-.incbin "audio/sonya.dmc"
+.incbin "audio/sonya_sp10up.dmc"
 
 ; ----------------
 .export dmc_subzero
 
 dmc_subzero:
-.incbin "audio/subzero.dmc"
+.incbin "audio/subzero_sp10up.dmc"
 
 ; ----------------
 .export dmc_scorpion
 
 dmc_scorpion:
-.incbin "audio/scorpion.dmc"
+.incbin "audio/scorpion_sp10up.dmc"
 
 ; ----------------
 .export dmc_kano
 
 dmc_kano:
-.incbin "audio/kano.dmc"
-
-; ----------------
-;.export dmc_wins
-
-;dmc_wins:
-;.incbin "audio/wins.dmc"
+.incbin "audio/kano_sp10up.dmc"
 
 ; ----------------
 .export dmc_hit
 
 dmc_hit:
 .incbin "audio/hit_08.dmc"
-
 
 ; -----------------------------------------------------------------------------

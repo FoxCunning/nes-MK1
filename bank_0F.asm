@@ -348,19 +348,19 @@ nmi:
 .export dmc_fight
 
 dmc_fight:
-.incbin "audio/fight.dmc"
+.incbin "audio/fight_sp10up.dmc"
 
 ; ----------------
 .export dmc_liukang
 
 dmc_liukang:
-.incbin "audio/liukang.dmc"
+.incbin "audio/liukang_sp10up.dmc"
 
 ; ----------------
 .export dmc_cage
 
 dmc_cage:
-.incbin "audio/cage.dmc"
+.incbin "audio/cage_sp10up.dmc"
 
 ; ----------------
 .export dmc_swing
@@ -372,7 +372,7 @@ dmc_swing:
 .export dmc_wins
 
 dmc_wins:
-.incbin "audio/wins.dmc"
+.incbin "audio/wins_sp10up.dmc"
 
 ; ----------------
 .export dmc_comehere
