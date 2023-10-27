@@ -44,4 +44,10 @@ dmc_kano:
 dmc_hit:
 .incbin "audio/hit_08.dmc"
 
+; ----------------
+.export dmc_mortal
+
+dmc_mortal:
+.incbin "audio/mk_1_sp10up.dmc"
+
 ; -----------------------------------------------------------------------------

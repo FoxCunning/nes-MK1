@@ -1436,6 +1436,7 @@ sub_rom_D359:
 		bmi @D38B_rts
 
 			; Play the "victory jingle"
+			; The music index is the stage index + $2B
 			lda ram_irq_routine_idx
 			clc
 			adc #$2B
@@ -3508,6 +3509,8 @@ tbl_dpcm_ptr:
 	.byte >(dmc_hit<<2)			; $0E SFX bounce
 	.byte >(dmc_hit<<2)+1		; $0F SFX land
 	.byte >(dmc_rangedatk<<2)	; $10 SFX ranged attack
+	.byte >(dmc_mortal<<2)		; $11 "Mortal..."
+	.byte >(dmc_kombat<<2)		; $12 "Kombaaaat!""
 
 ; Values for DPCM length register
 tbl_dpcm_len:
@@ -3528,6 +3531,8 @@ tbl_dpcm_len:
 	.byte $0A	; $0E SFX bounce
 	.byte $04	; $0F SFX land
 	.byte $10	; $10 SFX ranged attack
+	.byte $58	; $11 "Mortal..."
+	.byte $54	; $12 "Kombaaaat!"
 
 ; Values for DPCM frequency register
 tbl_dpcm_freq:
@@ -3548,16 +3553,18 @@ tbl_dpcm_freq:
 	.byte $08	; $0E SFX bounce
 	.byte $08	; $0F SFX land
 	.byte $01	; $10 SFX ranged attack
+	.byte $0A	; $11 "Mortal..."
+	.byte $0A	; $12 "Kombaaaat!"
 
 ; -----------------------------------------------------------------------------
 
 .include "audio/instruments.asm"
 
 ; -----------------------------------------------------------------------------
-.export mus_victory_jingle
+;.export mus_victory_jingle
 
-mus_victory_jingle:
-.include "audio/victory_jingle.asm"
+;mus_victory_jingle:
+;.include "audio/victory_jingle.asm"
 
 ; -----------------------------------------------------------------------------
 .export mus_vict_courtyard
@@ -3596,3 +3603,7 @@ mus_vict_palace:
 .include "audio/victory_palace.asm"
 
 ; -----------------------------------------------------------------------------
+.export mus_techno_syndrome
+
+mus_techno_syndrome:
+	.byte $FF	; .include "audio/techno_syndrome.asm"FF

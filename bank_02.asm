@@ -42,8 +42,8 @@ tbl_track_ptrs:
 	.word sfx_comehere			; $1B	Scorpion "Come here!"
 	.word sfx_silence			; $1C
 	.word sfx_silence			; $1D
-	.word sfx_silence			; $1E
-	.word sfx_silence			; $1F
+	.word sfx_mortal			; $1E	"Mortal...""
+	.word sfx_kombat			; $1F	"...Kombaaaat!"
 	.word mus_opening			; $20
 	.word mus_player_select		; $21
 	.word mus_and_sfx_silence	; $22
@@ -57,15 +57,15 @@ tbl_track_ptrs:
 	.word mus_warrior_shrine	; $29	Warrior Shrine
 	.word mus_throne_room		; $2A	Throne Room
 	; ---- Victory jiingles per stage
-	.word mus_vict_goro			; $2B
-	.word mus_vict_pit			; $2C
-	.word mus_vict_courtyard	; $2D
-	.word mus_vict_palace		; $2E
-	.word mus_vict_shrine		; $2F
-	.word mus_vict_throne		; $30
+	.word mus_vict_goro			; $2B	Goro's Lair
+	.word mus_vict_pit			; $2C	The Pit
+	.word mus_vict_courtyard	; $2D	Courtyard
+	.word mus_vict_palace		; $2E	Palace Gates
+	.word mus_vict_shrine		; $2F	Warrior Shrine
+	.word mus_vict_throne		; $30	Throne Room
 	; ----
 	.word sfx_select			; $31	"Siren" sound but as music (e.g. menu selection)
-	.word mus_victory_jingle	; $32
+	.word mus_techno_syndrome	; $32
 
 ; -----------------------------------------------------------------------------
 
@@ -150,18 +150,18 @@ rom_8A19:
 
 ; ----------------
 
-mus_silence:
-	.byte $00
-	.word rom_8A19
-	.byte $01
-	.word rom_8A19
-	.byte $02
-	.word rom_8A19
-	.byte $03
-	.word rom_8A19
-	.byte $04
-	.word rom_8A19
-	.byte $FF
+;mus_silence:
+;	.byte $00
+;	.word rom_8A19
+;	.byte $01
+;	.word rom_8A19
+;	.byte $02
+;	.word rom_8A19
+;	.byte $03
+;	.word rom_8A19
+;	.byte $04
+;	.word rom_8A19
+;	.byte $FF
 
 ; -----------------------------------------------------------------------------
 
@@ -404,22 +404,6 @@ sfx_9796_unused:
 
 ; -----------------------------------------------------------------------------
 
-; Noise
-;rom_979A:
-;	.byte $F5, $03, $F8, $FF, $F9, $FF
-;	.byte $FA, $FF, $FB, $FF
-;	.byte $F8, $00, $85, $17, $FF
-
-; ----------------
-
-; This glitchy sound sometimes plays just before a match begins
-;sfx_97A7:
-;	.byte $83
-;	.word rom_979A
-;	.byte $FF
-
-; -----------------------------------------------------------------------------
-
 sfx_raiden:
 	.byte $84
 	.word @sfx_raiden_ch4
@@ -507,5 +491,25 @@ sfx_comehere:
 
 	@sfx_comehere_ch4:
 	.byte $F5, $01, $0B, $FF
+
+; -----------------------------------------------------------------------------
+
+sfx_mortal:
+	.byte $85
+	.word @sfx_mortal_ch4
+	.byte $FF
+
+	@sfx_mortal_ch4:
+	.byte $F5, $01, $11, $FF
+
+; -----------------------------------------------------------------------------
+
+sfx_kombat:
+	.byte $85
+	.word @sfx_kombat_ch4
+	.byte $FF
+
+	@sfx_kombat_ch4:
+	.byte $F5, $01, $12, $FF
 
 ; -----------------------------------------------------------------------------

@@ -386,6 +386,12 @@ dmc_comehere:
 dmc_rangedatk:
 .incbin "audio/ranged_sp06up.dmc"
 
+; ----------------
+.export dmc_kombat
+
+dmc_kombat:
+.incbin "audio/mk_2_sp10up.dmc"
+
 ; -----------------------------------------------------------------------------
 
 .segment "VECTORS"
