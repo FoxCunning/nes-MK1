@@ -59,7 +59,7 @@ sub_match_loop:
 		sta zp_controller2_new
 	:
 	jsr sub_calc_players_distance
-	jsr sub_check_fighter_ko
+	jsr sub_check_special_move
 	jsr sub_match_controller_input
 
 	jsr sub_call_match_routines
@@ -1128,10 +1128,12 @@ sub_match_hit_loop:
 
 ; -----------------------------------------------------------------------------
 
-sub_check_fighter_ko:
+sub_check_special_move:
 	lda #$58	; Max damage
 	cmp zp_plr1_damage
 	beq @C7BA_rts
+
+		; Skip if fighter is dead
 
 		cmp zp_plr2_damage
 		bne @C7BB
@@ -1142,11 +1144,12 @@ sub_check_fighter_ko:
 	@C7BB:
 	ldx #$00
 	stx zp_plr_idx_param
-	jsr sub_rom_C7C6
+	jsr sub_inner_check_special_move
+
 	inc zp_plr_idx_param
 	ldx zp_plr_idx_param
 ; ----------------
-sub_rom_C7C6:
+sub_inner_check_special_move:
 	lda zp_plr1_cur_anim,X
 	cmp #$28
 	beq @C800_rts
@@ -1703,7 +1706,6 @@ sub_inner_match_input:
 	cmp zp_plr2_damage
 	bne @CA7C_process_inputs
 
-	; The delay below causes the "slowmo" effect at the final blow
 	@CA70_delay_y:
 	ldy #$01
 
@@ -1738,6 +1740,7 @@ sub_inner_match_input:
 sub_rom_CA9D:
 	ldx #$00
 	jsr sub_rom_CAA3
+
 	inx
 ; ----------------
 sub_rom_CAA3:
@@ -1745,21 +1748,21 @@ sub_rom_CAA3:
 	cmp #$03
 	bcs @CABF_rts
 
-	lda zp_plr1_cur_anim,X
-	cmp #$09
-	beq @CAB3
+		lda zp_plr1_cur_anim,X
+		cmp #$09
+		beq @CAB3
 
-	cmp #$0A
-	bne @CABF_rts
+			cmp #$0A
+			bne @CABF_rts
 
-	@CAB3:
-	lda zp_plr1_anim_frame,X
-	cmp #$01
-	bne @CABF_rts
+		@CAB3:
+		lda zp_plr1_anim_frame,X
+		cmp #$01
+		bne @CABF_rts
 
-	inc zp_consecutive_hits_taken,X
-	lda #$00
-	sta zp_E9,X
+			inc zp_consecutive_hits_taken,X
+			lda #$00
+			sta zp_E9,X
 
 	@CABF_rts:
 	rts

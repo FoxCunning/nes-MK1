@@ -1441,9 +1441,12 @@ sub_rom_D359:
 			clc
 			adc #$2B
 			sta ram_req_song
-			lda #$10
-			sta zp_short_counter_target
-			sta ram_0438
+
+			; Incrementing the timer causes the "slow motion" K.O. effect
+			;lda #$10
+			;sta zp_short_counter_target
+			;sta ram_0438
+			
 			bne @D38B_rts
 
 	@D387_check_damage:
