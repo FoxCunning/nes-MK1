@@ -1405,7 +1405,6 @@ sub_call_match_routines:
 					sbc #$4E
 					sta zp_plr1_y_pos,X
 			:
-
 			stx zp_plr_idx_param
 			jmp sub_reload_fighters_palettes
 		@thaw_check_next:
@@ -1416,9 +1415,23 @@ sub_call_match_routines:
 
 ; -----------------------------------------------------------------------------
 
+; Change/reload palettes for one fighter
+; X: player index (0=plr1, 1=plr2)
 sub_reload_fighters_palettes:
 	lda zp_plr1_fgtr_idx_clean,X
 	asl A
+	; If this is player 2, and player 2 is Sub-Zero,
+	; and player 1 is also Sub-Zero, then add $0C to the index
+	; to use the secondary palette
+	cpx #$01
+	bne :+	; Skip if not player 2
+		cmp #$04
+		bne :+	; Skip it not Sub-Zero
+			ldy zp_plr1_fgtr_idx_clean
+			cpy #$02
+			bne :+	; Skip if player 1 is not also Sub-Zero
+				lda #$1C	; Secondary palette for Sub-Zero
+	:
 	tax
 	lda tbl_fighter_palette_ptrs+0,X
 	sta zp_ptr1_lo
