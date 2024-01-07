@@ -192,7 +192,7 @@ sub_inner_reg_hit_check:
 
 	@A0D2_check_consecutive_hits:
 	lda zp_consecutive_hits_taken,X
-	cmp #$03	; Number of consecutive hits before opponent is knocked out
+	cmp #$03	; Number of consecutive hits before opponent is knocked down
 	bcs @A0CE_knockback
 
 	lda (zp_ptr3_lo),Y
@@ -220,7 +220,8 @@ sub_inner_reg_hit_check:
 
 	lda #$01
 	sta zp_counter_var_F1	; Start the "hit" counter
-		
+	
+	; Check if we need to thaw a player
 	lda zp_frozen_timer,X
 	beq :+
 		inc zp_thaw_flag,X

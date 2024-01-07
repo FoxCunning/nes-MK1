@@ -802,8 +802,9 @@ sub_ranged_attack:
 	eor #$01	; Sets X = !Y (This might be unnecessary, because it was already
 	tax			; 				done before the call)
 	jsr sub_rom_C572
-	bcs @player_hit_anim
-
+	bcc :+
+		jmp @player_hit_anim
+	:
 	lda zp_sprites_base_y
 	sec
 	sbc #$21	; Hit box "height" = 33 pixels
@@ -858,13 +859,25 @@ sub_ranged_attack:
 	:
 	; Other special ranged attacks (Sub-Zero)
 	cmp #$02
-	bne :+
+	bne @check_airborne_hit
+
 		lda #$00
 		sta zp_plr1_cur_anim,Y
 		sta zp_plr1_anim_frame,Y
 
 		lda zp_frozen_timer,X
-		bne @C60D_rts_x2	; Don't re-freeze
+		beq :+
+			; Already frozen: Double Freeze!
+
+			; First, thaw the opponent
+			lda #$00
+			sta zp_frozen_timer,X
+			inc zp_thaw_flag,X
+
+			; Then, freeze the attacker
+			tya
+			tax
+		:
 
 		lda #$20
 		sta zp_frozen_timer,X
@@ -872,8 +885,8 @@ sub_ranged_attack:
 		jsr sub_frozen_palette
 
 		jmp @C60D_rts_x2
-	:
-	
+
+	@check_airborne_hit:
 	; Check if a player was hit whilst airborne
 	lda zp_plr1_y_pos,X
 	cmp zp_sprites_base_y
