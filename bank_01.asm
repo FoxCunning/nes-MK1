@@ -4677,14 +4677,14 @@ tbl_movement_data_ptrs:
 	.word @still_6_frames		; $08
 	.word @still_16_frames		; $09
 	.word @rom_DB85
-	.word @rom_DC38
-	.word @rom_DC59
+	.word @forward_flight
+	.word @torpedo
 	.word @knockback_19_frames
 	.word @rom_DC8D
 	.word @rom_DCA8
 	.word @still_20_frames		; $10
 	.word @rom_DB89
-	.word @rom_DCD3
+	.word @rom_DCD3_unused
 	.word @rom_DCEE
 	.word @rom_DD19
 	.word @rom_DD46
@@ -4838,18 +4838,45 @@ tbl_movement_data_ptrs:
 
 ; ----------------
 
-	@rom_DC38:
-	.byte $00, $00, $00, $00, $06, $E8, $0C, $00
-	.byte $0C, $00, $0C, $00, $08, $00, $08, $00
-	.byte $08, $00, $06, $00, $06, $00, $06, $00
-	.byte $04, $00, $04, $00, $04, $00, $04, $18
+	@forward_flight:
+	.byte $00, $00
+	.byte $00, $00
+	.byte $06, $E8	; 6, -24
+	.byte $0C, $00	; 12, 0
+	.byte $0C, $00	; 12, 0
+	.byte $0C, $00	; 12, 0
+	.byte $08, $00	; 8, 0
+	.byte $08, $00	; 8, 0
+	.byte $08, $00	; 8, 0
+	.byte $06, $00	; 6, 0
+	.byte $06, $00	; 6, 0
+	.byte $06, $00	; 6, 0
+	.byte $04, $00	; 4, 0
+	.byte $04, $00	; 4, 0
+	.byte $04, $00	; 4, 0
+	.byte $04, $18	; 4, 24
 	.byte $80
 
 ; ----------------
 
-	@rom_DC59:
-	.byte $10, $00, $00, $00, $00, $00, $00, $00
-	.byte $00, $00, $00, $00, $80
+	@torpedo:
+	.byte $00, $00
+	.byte $00, $00
+	.byte $06, $E8	; 6, -24
+	.byte $08, $00	; 8, 0
+	.byte $0C, $00	; 12, 0
+	.byte $0C, $00	; 12, 0
+	.byte $0C, $00	; 12, 0
+	.byte $0C, $00	; 12, 0
+	.byte $0C, $00	; 12, 0
+	.byte $08, $00	; 8, 0
+	.byte $08, $00	; 8, 0
+	.byte $08, $E8	; 8, -24
+	.byte $F8, $E8	; -8, -24
+	.byte $F4, $18	; -12, 24
+	.byte $F6, $18	; -10, 24
+	.byte $F8, $18	; -8, 24
+	.byte $80
 
 ; ----------------
 
@@ -4896,11 +4923,12 @@ tbl_movement_data_ptrs:
 
 ; ----------------
 
-	@rom_DCD3:
-	.byte $F6, $F8, $F8, $FA, $FA, $FC, $FC, $FE
-	.byte $FE, $02, $FF, $04, $00, $06, $00, $00
-	.byte $00, $00, $00, $00, $00, $00, $00, $00
-	.byte $00, $00, $80
+	@rom_DCD3_unused:
+	;.byte $F6, $F8, $F8, $FA, $FA, $FC, $FC, $FE
+	;.byte $FE, $02, $FF, $04, $00, $06, $00, $00
+	;.byte $00, $00, $00, $00, $00, $00, $00, $00
+	;.byte $00, $00, $80
+	.byte $80
 
 ; ----------------
 

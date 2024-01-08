@@ -63,7 +63,7 @@ rom_8004:
     .word rom_817B
     .byte $02
     .word rom_817C
-    .byte $0B				; $17 Torpedo
+    .byte $0C				; $17 Torpedo
     .word anim_special_move_2
 	.byte $2A
     .word rom_818D
