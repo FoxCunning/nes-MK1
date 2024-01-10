@@ -348,6 +348,8 @@ ram_ppu_minibuf_0 = $0460   ; Size=16
 ram_ppu_minibuf_1 = $0480   ; Size=16
 ram_ppu_minibuf_2 = $04A0   ; Size=16
 
+ram_tbl_opponent_indices = $04F0    ; Size = 8
+
 ; This buffer will be copied to the PPU during vblank
 ram_ppu_data_buffer = $0600 ; Size=63
 ; The last two bytes are also used to store the tile indices for the match timer

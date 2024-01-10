@@ -238,7 +238,7 @@ sub_eval_menu_choice:
 	sta zp_machine_state_2
 
 	lda zp_plr1_selection
-	bne :+
+	bne @next_state
 		; Option 0 = Tournament
 		lda #$03 	; Player 1 default selection
 		sta zp_plr1_selection
@@ -246,11 +246,40 @@ sub_eval_menu_choice:
 		sta zp_plr2_selection
 
 		inc zp_machine_state_1	; 0,2,0 (because it's increased again below)
-	:
+
+		; Choose a random opponent table for this game
+		lda zp_random
+		and #$03
+		asl
+		asl
+		asl
+		tax
+		; Copy this table to RAM
+		ldy #$00
+		:
+			lda tbl_opponent_indices_0+0,X
+			sta ram_tbl_opponent_indices,Y
+			inx
+			iny
+		cmp #$FF
+		bne :-
+		
+	@next_state:
 	; Option 1 = Options Menu
 	inc zp_machine_state_1	; 0,1,0
 	@main_menu_eval_end:
 	rts
+
+
+; This the list of opponent selections, excluding Goro and Shang-Tsung
+tbl_opponent_indices_0:
+	.byte $00, $01, $02, $03, $04, $05, $06, $FF
+tbl_opponent_indices_1:
+	.byte $02, $06, $00, $04, $03, $05, $01, $FF
+tbl_opponent_indices_2:
+	.byte $05, $01, $06, $03, $04, $00, $02, $FF
+tbl_opponent_indices_3:
+	.byte $03, $02, $05, $00, $06, $01, $04, $FF
 
 ; -----------------------------------------------------------------------------
 
@@ -2467,8 +2496,7 @@ sub_choose_opponent:
 	ldx #$00
 	ldy #$00
 	@BE30_loop:
-	; TODO Use a random list
-	lda tbl_opponent_indices,X
+	lda ram_tbl_opponent_indices,X
 	cmp zp_05
 	bne :+
 		; Skip opponent if same as player (mirror match is handled separately)
@@ -2490,10 +2518,6 @@ sub_choose_opponent:
 tbl_num_opponents:
 	.byte $06, $06, $06, $06, $06, $06, $06
 	.byte $07, $07
-
-; This the list of opponent selections, excluding Goro and Shang-Tsung
-tbl_opponent_indices:
-	.byte $00, $01, $02, $03, $04, $05, $06
 
 ; -----------------------------------------------------------------------------
 
