@@ -380,13 +380,13 @@ ram_067D = $067D    ; Set twice, but potentially unused
 ;ram_067F = $067F    ; Set once, but potentially unused
 
 ram_0680 = $0680    ;
-ram_0681 = $0681    ;
-ram_0682 = $0682    ;
+; ram_0681 = $0681    ;
+; ram_0682 = $0682    ;
 
 ram_opponent_idx = $06C0    ;
 ram_06C3 = $06C3    ;
 ram_mirror_opp_idx = $06C6    ;
-ram_06CD = $06CD    ;
+; ram_06CD = $06CD    ;
 
 ; ----------------
 

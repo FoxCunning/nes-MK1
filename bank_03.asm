@@ -1206,7 +1206,7 @@ sub_cpu_opponent_delay:
 
 ; -----------------------------------------------------------------------------
 
-; Is this supposed to be a RNG?
+; This will be called at each frame to generate pseudo-random numbers in RAM
 sub_RNG:
 	txa
 	adc zp_random
