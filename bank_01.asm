@@ -4313,69 +4313,69 @@ sub_frozen_palette:
 
 ; Data pointers, indexed by CHR ROM bank number
 tbl_spr_attr_ptrs:
-	.word @attr_bits_00, @attr_bits_01		; Raiden (00-0D)
-	.word @attr_bits_02, @attr_bits_03
-	.word @attr_bits_04, @attr_bits_05
-	.word @attr_bits_06, @attr_bits_07
-	.word @attr_bits_08, @attr_bits_09
-	.word @attr_bits_0A, @attr_bits_0B
-	.word @attr_bits_0C, @attr_bits_0D
+	.word @attr_bits_00, @attr_bits_02		; Raiden (00-0D)
+	.word @attr_bits_04, @attr_bits_06
+	.word @attr_bits_08, @attr_bits_0A
+	.word @attr_bits_0C, @attr_bits_0E
+	.word @attr_bits_10, @attr_bits_12
+	.word @attr_bits_14, @attr_bits_16
+	.word @attr_bits_18, @attr_bits_1A
 	
-	.word @attr_bits_00, @attr_bits_01		; Stage BGs (0E-1B, unused)
-	.word @attr_bits_00, @attr_bits_01
-	.word @attr_bits_00, @attr_bits_01
-	.word @attr_bits_00, @attr_bits_01
-	.word @attr_bits_00, @attr_bits_01
-	.word @attr_bits_00, @attr_bits_01
-	.word @attr_bits_00, @attr_bits_01
+	.word @attr_bits_00, @attr_bits_02		; Stage BGs (0E-1B, unused)
+	.word @attr_bits_00, @attr_bits_02
+	.word @attr_bits_00, @attr_bits_02
+	.word @attr_bits_00, @attr_bits_02
+	.word @attr_bits_00, @attr_bits_02
+	.word @attr_bits_00, @attr_bits_02
+	.word @attr_bits_00, @attr_bits_02
 
-	.word @attr_bits_1C, @attr_bits_1D		; Sonya (1C-27)
-	.word @attr_bits_1E, @attr_bits_1F
-	.word @attr_bits_20, @attr_bits_21
-	.word @attr_bits_22, @attr_bits_23
-	.word @attr_bits_24, @attr_bits_25
-	.word @attr_bits_26, @attr_bits_27
+	.word @attr_bits_38, @attr_bits_3A		; Sonya (1C-27)
+	.word @attr_bits_3C, @attr_bits_3E
+	.word @attr_bits_40, @attr_bits_42
+	.word @attr_bits_44, @attr_bits_46
+	.word @attr_bits_48, @attr_bits_4A
+	.word @attr_bits_4C, @attr_bits_4E
 
-	.word @attr_bits_28, @attr_bits_29		; Shang Tsung (28-2B)
-	.word @attr_bits_2A, @attr_bits_2B
+	.word @attr_bits_50, @attr_bits_52		; Shang Tsung (28-2B)
+	.word @attr_bits_54, @attr_bits_56
 
-	.word @attr_bits_2C, @attr_bits_2D		; Sub-Zero/Scorpion (2C-39)
-	.word @attr_bits_2E, @attr_bits_2F
-	.word @attr_bits_30, @attr_bits_31
-	.word @attr_bits_32, @attr_bits_33
-	.word @attr_bits_34, @attr_bits_35
-	.word @attr_bits_36, @attr_bits_37
-	.word @attr_bits_38, @attr_bits_39
+	.word @attr_bits_58, @attr_bits_5A		; Sub-Zero/Scorpion (2C-39)
+	.word @attr_bits_5C, @attr_bits_5E
+	.word @attr_bits_60, @attr_bits_62
+	.word @attr_bits_64, @attr_bits_66
+	.word @attr_bits_68, @attr_bits_6A
+	.word @attr_bits_6C, @attr_bits_6E
+	.word @attr_bits_70, @attr_bits_72
 
-	.word @attr_bits_3A, @attr_bits_3B		; Liu Kang (3A-45)
-	.word @attr_bits_3C, @attr_bits_3D
-	.word @attr_bits_3E, @attr_bits_3F
-	.word @attr_bits_40, @attr_bits_41
-	.word @attr_bits_42, @attr_bits_43
-	.word @attr_bits_44, @attr_bits_45
+	.word @attr_bits_74, @attr_bits_76		; Liu Kang (3A-45)
+	.word @attr_bits_78, @attr_bits_7A
+	.word @attr_bits_7C, @attr_bits_7E
+	.word @attr_bits_80, @attr_bits_82
+	.word @attr_bits_84, @attr_bits_86
+	.word @attr_bits_88, @attr_bits_8A
 
-	.word @attr_bits_46, @attr_bits_47		; Johnny Cage (46-51)
-	.word @attr_bits_48, @attr_bits_49
-	.word @attr_bits_4A, @attr_bits_4B
-	.word @attr_bits_4C, @attr_bits_4D
-	.word @attr_bits_4E, @attr_bits_4F
-	.word @attr_bits_50, @attr_bits_51
+	.word @attr_bits_8C, @attr_bits_8E		; Johnny Cage (46-51)
+	.word @attr_bits_90, @attr_bits_92
+	.word @attr_bits_94, @attr_bits_96
+	.word @attr_bits_98, @attr_bits_9A
+	.word @attr_bits_9C, @attr_bits_9E
+	.word @attr_bits_A0, @attr_bits_A2
 
-	.word @attr_bits_52, @attr_bits_53		; Kano (52-5F)
-	.word @attr_bits_54, @attr_bits_55
-	.word @attr_bits_56, @attr_bits_57
-	.word @attr_bits_58, @attr_bits_59
-	.word @attr_bits_5A, @attr_bits_5B
-	.word @attr_bits_5C, @attr_bits_5D
-	.word @attr_bits_5E, @attr_bits_5F
+	.word @attr_bits_A4, @attr_bits_A6		; Kano (52-5F)
+	.word @attr_bits_A8, @attr_bits_AA
+	.word @attr_bits_AC, @attr_bits_AE
+	.word @attr_bits_B0, @attr_bits_B2
+	.word @attr_bits_B4, @attr_bits_B6
+	.word @attr_bits_B8, @attr_bits_BA
+	.word @attr_bits_BC, @attr_bits_BE
 
-	.word @attr_bits_60, @attr_bits_61		; Goro (60-67)
-	.word @attr_bits_62, @attr_bits_63
-	.word @attr_bits_64, @attr_bits_65
-	.word @attr_bits_66, @attr_bits_67
+	.word @attr_bits_C0, @attr_bits_C2		; Goro (60-67)
+	.word @attr_bits_C4, @attr_bits_C6
+	.word @attr_bits_C8, @attr_bits_CA
+	.word @attr_bits_CC, @attr_bits_CE
 
-	.word @attr_bits_68, @attr_bits_69		; Scorpion (68-6B)
-	.word @attr_bits_6A, @attr_bits_6B
+	.word @attr_bits_D0, @attr_bits_D2		; Scorpion (68-6B)
+	.word @attr_bits_D4, @attr_bits_D6
 
 ; ----------------
 ; These are basically 128 bit masks with one bit for each of the 128 patterns
