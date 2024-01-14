@@ -479,13 +479,18 @@ def current_fighter() -> int:
     return FIGHTERS.index(var_fighters.get())
 
 
-def change_dir():
+def change_dir() -> bool:
     """
     Asks to choose a directory to load data from.
     :return:
     """
     global master_dir
     master_dir = filedialog.askdirectory(mustexist=True)
+
+    if master_dir == "" or master_dir is None:
+        return False
+
+    return True
 
 
 def load_custom_chr() -> bool:
@@ -1358,11 +1363,12 @@ if __name__ == "__main__":
     elif not os.path.isdir(master_dir):
         change_dir()
 
-    # Try to read the required files from the chosen path
-    if read_all():
-        if config.sections().count("Settings") == 0:
-            config.add_section("Settings")
-        config.set("Settings", "Dir", master_dir)
+    if master_dir != "" and master_dir is not None:
+        # Try to read the required files from the chosen path
+        if read_all():
+            if config.sections().count("Settings") == 0:
+                config.add_section("Settings")
+            config.set("Settings", "Dir", master_dir)
 
     root.protocol("WM_DELETE_WINDOW", on_root_destroy)
     root.mainloop()
