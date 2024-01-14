@@ -136,6 +136,11 @@ NES_COLOURS = [[124, 124, 124],
 # Used to retrieve the bit that tells if a sprite uses palette 0 or 1 from attribute_bits
 TILE_BIT_MASKS = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80]
 
+# Pixel magnification factor
+SCALING = 2
+# Tile side length, in pixels, after magnification
+TILE_SIZE = 16
+
 # ----------------------------------------------------------------------------------------------------------------------
 
 #           Globals
@@ -191,6 +196,7 @@ sprite_items: list = []
 cur_chr_bank = -1   # Currently selected CHR ROM bank
 attribute_bits: list = []    # One bytearray per CHR ROM bank, each containing 8 bytes (one bit per tile)
 cur_tile_idx = 0    # Currently selected tile from the active banks (0-127)
+cur_frame_id = 0    # Currently selected/displayed frame
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -787,7 +793,7 @@ def show_tileset(bank: int):
         tile_grid_items.append(tiles_canvas.create_line(0, pos, 255, pos, width=1, fill="#E0E0E0"))
 
     # Show selection
-    item_tile_selection = tiles_canvas.create_rectangle(0, 0, 16, 16, outline="red")
+    item_tile_selection = tiles_canvas.create_rectangle(0, 0, 16, 16, width=2, outline="#F00000")
 
 
 def show_frame(index: int = 0):
@@ -798,18 +804,17 @@ def show_frame(index: int = 0):
     data = animation_data[f].frames[index]
 
     # Base sprite coordinates
-    # _x = 128 - (16 * data.width) + (2 * data.offset)
-    _x = 160 - (16 * data.width)
-    _y = 240 - (16 * data.height)
+    _x = 128 - (SCALING * (8 + data.offset))
+    _y = 240 - (TILE_SIZE * data.height)
 
     _s = 0      # Sprite index
     _c = 0      # Actual sprite count
 
     for y in range(0, data.height):
-        _image_y = _y + (16 * y)
+        _image_y = _y + (TILE_SIZE * y)
 
         for x in range(0, data.width):
-            _image_x = _x + (16 * x)
+            _image_x = _x + (TILE_SIZE * x)
             _index = data.sprites[_s]   # Get tile index (in current bank)
 
             if _index != 0XFF:
@@ -900,14 +905,40 @@ def update_tile_selection():
     tiles_canvas.moveto(item_tile_selection, _x, _y)
 
 
+def select_sprite(index: int = 0):
+    """
+    Selects the tile used by a sprite.
+    :param index: Index of the sprite in the current animation frame.
+    :return:
+    """
+    # Get selected fighter index
+    f = current_fighter()
+    # Get currently selected animation frame
+    data = animation_data[f].frames[cur_frame_id]
+
+    # Get the tile used by the selected sprite
+    # print(f"Tile ID: {data.sprites[index]}")
+
+    if data.sprites[index] == 255:
+        # No sprite here
+        return
+
+    select_tile(data.sprites[index])
+
+
 def select_animation(index: int = 0):
+    """
+    Select an animation for the current fighter.
+    :param index: The animation index (0-34).
+    :return:
+    """
     # Get selected fighter index
     f = current_fighter()
 
     # Show data for the selected animation
     data = animation_data[f].animations[index]
 
-    # Show selected frame number (each animation must have at least one frame
+    # Show selected frame number (each animation must have at least one frame)
     change_text(text_cur_frame, "0", True)
 
     # Show frame count
@@ -923,6 +954,8 @@ def select_frame(index: int = 0):
     :param index: Index of the frame for the current fighter.
     :return:
     """
+    global cur_frame_id
+
     # Get selected fighter index
     f = current_fighter()
 
@@ -931,6 +964,7 @@ def select_frame(index: int = 0):
     show_tileset(data.bank)
 
     change_text(text_frame_id, f"{index}")
+    cur_frame_id = index
 
     change_text(text_width, f"{data.width}")
     change_text(text_height, f"{data.height}")
@@ -949,10 +983,52 @@ def select_frame(index: int = 0):
 
 
 def on_tile_canvas_click(*args):
+    """
+    Left-click on the tiles canvas.
+    :param args: args[0].x, args[0].y = mouse click coordinates.
+    :return:
+    """
     # print(f"Click at:{args[0].x}, {args[0].y}")
     # print(f"Tile: {args[0].x >> 4}, {args[0].y >> 4}")
     # print(f"Selection: {(args[0].x >> 4) + ((args[0].y >> 4) << 4)}")
     select_tile((args[0].x >> 4) + ((args[0].y >> 4) << 4))
+
+
+def on_main_canvas_right_click(*args):
+    """
+    Callback for right-click on the main canvas, where the fighter sprites and grid are displayed.
+    :param args: args[0].x, args[0].y = mouse click coordinates.
+    :return:
+    """
+    # Get selected fighter index
+    f = current_fighter()
+
+    # Data for the selected frame
+    data = animation_data[f].frames[cur_frame_id]
+
+    delta_x = 128 - SCALING * (8 + data.offset)
+    delta_y = 240 - (data.height * TILE_SIZE)
+
+    if args[0].x < delta_x or args[0].y < delta_y:
+        return
+
+    if args[0].x > delta_x + (data.width * TILE_SIZE):
+        return
+
+    if args[0].y > 240:
+        return
+
+    tile_x = (args[0].x - delta_x) >> 4
+    tile_y = (args[0].y - delta_y) >> 4
+
+    # Absolute coordinates
+    # print(f"Abs:  {args[0].x}, {args[0].y}")
+    # Relative coordinates
+    # print(f"Rel:  {args[0].x - delta_x}, {args[0].y - delta_y}")
+    # Selection:
+    # print(f"Tile: {tile_x}, {tile_y}")
+    # print(f"Selection: {tile_x + (tile_y * data.width)}")
+    select_sprite(tile_x + (tile_y * data.width))
 
 
 def on_select_fighter(*_args):
@@ -1047,6 +1123,15 @@ def command_save_fighter():
     tk.messagebox.showwarning("Save fighter", "Not yet implemented, sorry!")
 
 
+def bring_to_front(*_args):
+    root.attributes("-topmost", 1)
+    root.attributes("-topmost", 0)
+    log_win.attributes("-topmost", 1)
+    log_win.attributes("-topmost", 0)
+    tiles_win.attributes("-topmost", 1)
+    tiles_win.attributes("-topmost", 0)
+
+
 def init_root_window():
     global frame_left
     global frame_right
@@ -1109,6 +1194,8 @@ def init_root_window():
 
     main_canvas = tk.Canvas(frame_left, width=256, height=256, bg="#E0E0E0", cursor="hand2")
     main_canvas.grid(row=2, column=0)
+    main_canvas.bind("<Button-2>", on_main_canvas_right_click)
+    main_canvas.bind("<Button-3>", on_main_canvas_right_click)
 
     main_axis_items.clear()
     main_axis_items.append(main_canvas.create_line(32, 240, 223, 240, width=1, fill="magenta"))
@@ -1143,7 +1230,7 @@ def init_root_window():
     button_frame_next = tk.Button(frame_right, text="Next  Frame", font=_font, command=on_frame_next)
     button_frame_next.grid(row=3, column=1)
 
-    _label = tk.Label(frame_right, text="Index: ", font=_font)
+    _label = tk.Label(frame_right, text="ID: ", font=_font)
     _label.grid(row=4, column=0)
     text_frame_id = tk.Text(frame_right, width=4, height=1, font=_font)
     text_frame_id.grid(row=4, column=1)
@@ -1183,6 +1270,8 @@ def init_root_window():
     text_total = tk.Text(frame_right, width=4, height=1, font=_font, state=tk.DISABLED)
     text_total.grid(row=11, column=1)
 
+    root.bind("<FocusIn>", bring_to_front)
+
 
 def init_log_window():
     global log_win
@@ -1200,6 +1289,8 @@ def init_log_window():
     log_text.config(state=tk.DISABLED)
     log_text.pack()
 
+    log_win.bind("<FocusIn>", bring_to_front)
+
 
 def init_tiles_window():
     global tiles_win
@@ -1213,7 +1304,7 @@ def init_tiles_window():
     tiles_win.config(bg="white")
     tiles_win.resizable(False, False)
 
-    tiles_canvas = tk.Canvas(tiles_win, bg="#202070", borderwidth=0, width=256, height=128, cursor="hand2")
+    tiles_canvas = tk.Canvas(tiles_win, bg="#A0A0F0", borderwidth=0, width=256, height=128, cursor="hand2")
     tiles_canvas.pack()
 
     # Tile events
@@ -1237,6 +1328,8 @@ def init_tiles_window():
     _radio = tk.Radiobutton(frame_info, text="R", font=_font, bg="white", value=1, relief=tk.GROOVE, indicatoron=False,
                             state=tk.DISABLED, variable=var_attribute)
     _radio.pack(expand=True, fill=tk.X, side=tk.LEFT)
+
+    tiles_win.bind("<FocusIn>", bring_to_front)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
