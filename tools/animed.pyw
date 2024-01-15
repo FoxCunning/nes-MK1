@@ -928,7 +928,7 @@ def select_sprite(index: int = 0):
         # No sprite here
         return
 
-    select_tile(data.sprites[index])
+    select_tile(data.sprites[index] & 0x7F)
 
 
 def select_animation(index: int = 0):
@@ -1104,6 +1104,8 @@ def on_frame_next(*_args):
 
 
 def on_root_destroy():
+    if "Settings" not in config.sections():
+        config.add_section("Settings")
     config.set("Settings", "MainW", str(root.winfo_width()))
     config.set("Settings", "MainH", str(root.winfo_height()))
     config.set("Settings", "MainX", str(root.winfo_x()))
