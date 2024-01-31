@@ -236,7 +236,7 @@ txt_kano_ending:
 	.byte "tournament, now", $00
 	.byte "under the", $00
 	.byte "monopoly of", $00
-	.byte "the black dragon."
+	.byte "the black dragon.", $FF
 
 text_cage_ending:
 	.byte "cage returns to", $00
@@ -249,7 +249,7 @@ text_cage_ending:
 	.byte "kombat:the movie", $00
 	.byte "and its many", $00
 	.byte "successful", $00
-	.byte "sequels", $FF
+	.byte "sequels.", $FF
 
 txt_liukang_ending:
 	.byte "after defeating", $00
