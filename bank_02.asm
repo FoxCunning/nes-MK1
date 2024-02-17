@@ -63,8 +63,7 @@ tbl_track_ptrs:
 	.word mus_vict_palace		; $2E	Palace Gates
 	.word mus_vict_shrine		; $2F	Warrior Shrine
 	.word mus_vict_throne		; $30	Throne Room
-	; ----
-	.word sfx_select			; $31	"Siren" sound but as music (e.g. menu selection)
+	.word mus_vict_pit			; $31	The Pit (Bottom)
 	.word mus_techno_syndrome	; $32
 
 ; -----------------------------------------------------------------------------
