@@ -236,7 +236,7 @@ tbl_irq_handler_ptrs:
 	.word sub_irq_handler_03		; $03	Palace Gates
 	.word sub_irq_handler_04		; $04	Warrior Shrine
 	.word sub_irq_handler_05		; $05	Throne Room
-	.word sub_irq_handler_06		; $06
+	.word sub_irq_handler_06		; $06	The Pit - Bottom (Previously unused)
 	.word sub_irq_handler_07		; $07
 	.word sub_irq_handler_07		; $08
 	.word sub_irq_handler_07		; $09
@@ -398,7 +398,6 @@ sub_irq_handler_02:
 
 ; -----------------------------------------------------------------------------
 
-; TODO Fix timing for bottom part of the screen in two player mode
 ; Temple entrance stage
 sub_irq_handler_03:
 	lda ram_irq_state_var
@@ -478,63 +477,13 @@ sub_irq_handler_05:
 
 sub_irq_handler_06:
 	sta mmc3_irq_disable
-	ldx zp_03
-	lda zp_game_substate
-	cmp #$03
-	bcc @E3C0
-
-		cmp #$04
-		bne @E3AF
-
-			lda ram_0414
-			cmp #$C0
-			beq @E3C0
-
-		@E3AF:
-		lda zp_frame_counter
-		and #$01
-		bne @E3C0
-		inc ram_0414
-		bne @E3C0
-
-		txa
-		eor #$03
-		tax
-		stx zp_03
-
-	@E3C0:
 	lda PpuStatus_2002
-	stx PpuControl_2000
-	lda PpuStatus_2002
-	lda ram_0414
+	lda zp_irq_hor_scroll ;a:zp_81
 	sta PpuScroll_2005
-
-	ldx #$82
-	stx mmc3_bank_select
-	lda #$B0
-	sta mmc3_bank_data
-	inx
-	stx mmc3_bank_select
-	inx
-	sta mmc3_bank_data
-	inx
-	stx mmc3_bank_select
-	lda #$B2
-	sta mmc3_bank_data
-	inx
-	stx mmc3_bank_select
-	lda #$B3
-	sta mmc3_bank_data
-
 	lda #$00
-	sta ram_irq_state_var
-	lda ram_0421
-	beq @E406
-
-		ora #$F0
-		sta ram_0421
-	@E406:
-	rts
+	sta PpuScroll_2005
+	ldy #$D4
+	jmp sub_change_state_and_chr
 
 ; -----------------------------------------------------------------------------
 

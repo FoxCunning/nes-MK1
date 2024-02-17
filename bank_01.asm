@@ -3178,13 +3178,7 @@ tbl_bg_palette_ptrs:
 	.word @pal_palace_gates
 	.word @pal_warrior_shrine
 	.word @pal_throne_room
-	;.word @rom_D610
-	;.word @rom_D620
-	;.word @rom_D630
-	;.word @rom_D640
-	;.word @rom_D650
-	;.word @rom_D660
-	;.word @rom_D670
+	.word @pal_pit_bottom
 
 	@pal_goros_lair:
 	.byte $0E, $08, $00, $38, $0E, $16, $29, $28
@@ -3204,28 +3198,9 @@ tbl_bg_palette_ptrs:
 	@pal_throne_room:
 	.byte $0E, $16, $2A, $28, $0E, $0B, $18, $06
 	.byte $0E, $18, $28, $06, $0E, $00, $10, $06
-	;@rom_D610:
-	;.byte $0E, $06, $27, $30, $0E, $08, $18, $11
-	;.byte $0E, $0B, $1B, $11, $0E, $08, $18, $28
-	;@rom_D620:
-	;.byte $0E, $05, $27, $30, $0E, $0B, $1B, $2C
-	;.byte $0E, $07, $16, $26, $0E, $02, $12, $22
-	;@rom_D630:
-	;.byte $0E, $05, $27, $30, $0E, $0B, $1B, $3B
-	;.byte $0E, $08, $00, $10, $0E, $06, $16, $26
-	;@rom_D640:
-	;.byte $0E, $31, $20, $10, $0E, $3B, $20, $10
-	;.byte $0E, $31, $20, $17, $0E, $06, $38, $16
-	;@rom_D650:
-	;.byte $0E, $3B, $2A, $10, $0E, $2C, $1C, $3C
-	;.byte $0E, $26, $17, $36, $0E, $06, $38, $16
-	;@rom_D660:
-	;.byte $0E, $06, $27, $30, $0E, $05, $10, $2B
-	;.byte $0E, $06, $16, $28, $0E, $1C, $2C, $3C
-	;@rom_D670:
-	;.byte $0E, $8D, $00, $3E, $0E, $20, $00, $00
-	;.byte $0E, $02, $00, $90, $0E, $11, $0E, $30
-	;.byte $FF
+	@pal_pit_bottom:
+	.byte $0E, $16, $19, $28, $0E, $08, $16, $29
+	.byte $0E, $08, $2D, $20, $0E, $08, $18, $38
 
 ; -----------------------------------------------------------------------------
 
@@ -3250,13 +3225,13 @@ sub_game_trampoline:
 sub_clear_oam_data:
 	lda #$F8
 	ldx #$00
-	@D6A4:
-	sta ram_oam_data,X
-	inx
-	inx
-	inx
-	inx
-	bne @D6A4
+	:
+		sta ram_oam_data,X
+		inx
+		inx
+		inx
+		inx
+	bne :-
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -3733,11 +3708,11 @@ sub_animate_sprites:
 	ldy #$00
 	lda (zp_ptr3_lo),Y
 	sta zp_05			; Horizontal tiles count
-	sta zp_ptr2_lo		; This may be unused
+	;sta zp_ptr2_lo		; This may be unused
 	iny
 	lda (zp_ptr3_lo),Y
 	sta zp_06			; Vertical tiles count
-	sta zp_16			; Maybe also unused
+	;sta zp_16			; Maybe also unused
 	iny
 	lda (zp_ptr3_lo),Y
 	sta zp_0F			; X offset

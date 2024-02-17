@@ -12,6 +12,7 @@
 ; -----------------------------------------------------------------------------
 .export sub_load_stage_background
 
+; ram_irq_routine_idx = stage index
 sub_load_stage_background:
 	lda ram_irq_routine_idx
 	asl A
@@ -22,6 +23,7 @@ sub_load_stage_background:
 	sta zp_05
 	jsr sub_stage_rle_unpack
 
+	; Load the right half
 	inc zp_plr_ofs_param
 	lda zp_plr_ofs_param
 	jsr sub_prepare_stage_rle_pointer
@@ -127,6 +129,8 @@ tbl_stage_rle_ptrs:
 	.word rle_warrior_shrine_right
 	.word rle_throne_room_left		; $05
 	.word rle_throne_room_right
+	.word rle_pit_bottom_left		; $06
+	.word rle_pit_bottom_right
 
 ; -----------------------------------------------------------------------------
 
@@ -134,71 +138,56 @@ tbl_stage_rle_ptrs:
 rle_goros_lair_left:
 .incbin "nam/goros_lair_left.rle"
 
-; -----------------------------------------------------------------------------
-
-; Nametable data, starts with PPU address and terminates with $FFFF
 rle_goros_lair_right:
 .incbin "nam/goros_lair_right.rle"
 
-; -----------------------------------------------------------------------------
+; ----------------
 
-; Nametable data, starts with PPU address and terminates with $FFFF
 rle_pit_left:
 .incbin "nam/stage_pit_left.rle"
 
-; -----------------------------------------------------------------------------
-
-; Nametable data, starts with PPU address and terminates with $FFFF
 rle_pit_right:
 .incbin "nam/stage_pit_right.rle"
 
-; -----------------------------------------------------------------------------
+; ----------------
 
-; Nametable data, starts with PPU address and terminates with $FFFF
 rle_courtyard_left:
 .incbin "nam/courtyard_left.rle"
 
-; -----------------------------------------------------------------------------
-
-; Nametable data, starts with PPU address and terminates with $FFFF
 rle_courtyard_right:
 .incbin "nam/courtyard_right.rle"
 
-; -----------------------------------------------------------------------------
+; ----------------
 
-; Nametable data, starts with PPU address and terminates with $FFFF
 rle_palace_gates_left:
 .incbin "nam/palace_gates_left.rle"
 
-; -----------------------------------------------------------------------------
-
-; Nametable data, starts with PPU address and terminates with $FFFF
 rle_palace_gates_right:
 .incbin "nam/palace_gates_right.rle"
 
-; -----------------------------------------------------------------------------
+; ----------------
 
-; Nametable data, starts with PPU address and terminates with $FFFF
 rle_warrior_shrine_left:
 .incbin "nam/warrior_shrine_left.rle"
 
-; -----------------------------------------------------------------------------
-
-; Nametable data, starts with PPU address and terminates with $FFFF
 rle_warrior_shrine_right:
 .incbin "nam/warrior_shrine_right.rle"
 
-; -----------------------------------------------------------------------------
+; ----------------
 
-; Nametable data, starts with PPU address and terminates with $FFFF
 rle_throne_room_left:
 .incbin "nam/throne_room_left.rle"
 
-; -----------------------------------------------------------------------------
-
-; Nametable data, starts with PPU address and terminates with $FFFF
 rle_throne_room_right:
 .incbin "nam/throne_room_right.rle"
+
+; ----------------
+
+rle_pit_bottom_left:
+.incbin "nam/pit_bottom_left.rle"
+
+rle_pit_bottom_right:
+.incbin "nam/pit_bottom_right.rle"
 
 ; -----------------------------------------------------------------------------
 .export sub_init_game_mode
@@ -284,6 +273,11 @@ sub_init_game_mode:
 	txa
 	clc
 	adc #$25	; Stage music offset
+	; Make an exception for the Pit Bottom "bonus" stage
+	cmp #$2B
+	bne :+
+		lda #$26
+	:
 	sta ram_req_song
 
 	lda #$00
@@ -318,7 +312,7 @@ sub_init_game_mode:
 	.byte $02, $04, $01, $05, $04, $02, $03
 
 	; Endurance
-	.byte $04, $01, $00
+	.byte $04, $06, $00
 
 	; Boss fights
 	.byte $00
@@ -327,7 +321,7 @@ sub_init_game_mode:
 
 	; One value per stage
 	@tbl_y_pos_offsets:
-	.byte $DA, $D0, $DA, $DA, $DA, $DA
+	.byte $DA, $D0, $DA, $DA, $DA, $DA, $EA
 
 ; -----------------------------------------------------------------------------
 .export sub_call_load_stage_bg
