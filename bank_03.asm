@@ -259,7 +259,7 @@ tbl_hit_data_ptrs:
 ; Pointers table
 tbl_hit_ptrs_raiden:
 	.word hit_data_kick	; $00
-	.word rom_A37F
+	.word hit_data_close_kick
 	.word hit_data_ranged ; rom_AA1A	Using the ranged one should prevent damage
 	.word rom_A38F
 	.word rom_A398
@@ -270,7 +270,7 @@ tbl_hit_ptrs_raiden:
 	.word rom_A526
 	.word rom_A40A
 	.word rom_A3CF
-	.word rom_AA3D
+	.word hit_data_torpedo	; $0C Special 2
 	.word hit_data_throw
 	.word rom_A3E6
 	.word rom_A3EF
@@ -290,11 +290,11 @@ tbl_hit_ptrs_raiden:
 
 ; Pointers table
 tbl_hit_ptrs_sonya:
-	.word rom_A55B, rom_A37F, rom_AA1A, rom_A38F
+	.word rom_A55B, hit_data_close_kick, rom_AA1A, rom_A38F
 	.word rom_A398, rom_A554, rom_A3A8, rom_A3B1
 	.word hit_data_uppercut ;rom_A554
 	.word rom_A526, rom_A3C8, rom_A3CF
-	.word rom_AA21, hit_data_throw, rom_A3E6, rom_A3EF
+	.word hit_data_square_flight, hit_data_throw, rom_A3E6, rom_A3EF
 	.word rom_A3F8, rom_A401, rom_A40A, hit_data_ranged
 	.word rom_A576, rom_A57F, rom_A588, rom_A591
 	.word rom_A43C, rom_A443, rom_A44A
@@ -306,7 +306,7 @@ tbl_hit_ptrs_subzero:
 	.word rom_A42A, rom_A465, rom_A49E, rom_A38F
 	.word rom_A398, rom_A453, rom_A3A8, rom_A3B1
 	.word hit_data_uppercut, rom_A5D6, rom_A3C8, rom_A3CF
-	.word rom_A495, hit_data_throw, rom_A3E6, rom_A3EF
+	.word hit_data_slide, hit_data_throw, rom_A3E6, rom_A3EF
 	.word rom_A3F8, rom_A401, rom_A40A, hit_data_ranged
 	.word rom_A418, rom_A421, rom_A3F8, rom_A401
 	.word rom_A43C, rom_A443, rom_A44A
@@ -316,7 +316,7 @@ tbl_hit_ptrs_subzero:
 ; Pointers table
 tbl_hit_ptrs_scorpion:
 	.word rom_A59A
-	.word rom_A37F
+	.word hit_data_close_kick
 	.word rom_A5B3
 	.word rom_A38F
 	.word rom_A398
@@ -327,7 +327,7 @@ tbl_hit_ptrs_scorpion:
 	.word rom_A526
 	.word rom_A3C8
 	.word rom_A3CF
-	.word rom_A5BA
+	.word hit_data_teleport_punch
 	.word hit_data_throw
 	.word rom_A3E6
 	.word rom_A3EF
@@ -350,7 +350,7 @@ tbl_hit_ptrs_kano:
 	.word hit_data_kick, rom_A465, rom_A47E, rom_A38F
 	.word rom_A398, rom_A453, rom_A3A8, rom_A3B1
 	.word hit_data_uppercut, rom_A3C1, rom_A3C8, rom_A3CF
-	.word rom_A487, hit_data_throw, rom_A3E6, rom_A3EF
+	.word hit_data_spin, hit_data_throw, rom_A3E6, rom_A3EF
 	.word rom_A3F8, rom_A401, rom_A40A, hit_data_ranged
 	.word rom_A418, rom_A421, rom_A3F8, rom_A401
 	.word rom_A43C, rom_A443, rom_A44A
@@ -359,10 +359,10 @@ tbl_hit_ptrs_kano:
 
 ; Pointers table
 tbl_hit_ptrs_cage:
-	.word hit_data_kick, rom_A37F, rom_A54D, rom_A38F
+	.word hit_data_kick, hit_data_close_kick, rom_A54D, rom_A38F
 	.word rom_A398, rom_A3A1, rom_A3A8, rom_A3B1
 	.word hit_data_uppercut, rom_A526, rom_A3C8, rom_A3CF
-	.word rom_AA36, hit_data_throw, rom_A3E6, rom_A3EF
+	.word hit_data_shadow_kick, hit_data_throw, rom_A3E6, rom_A3EF
 	.word rom_A3F8, rom_A401, rom_A40A, hit_data_ranged
 	.word rom_A418, rom_A421, rom_A3F8, rom_A401
 	.word rom_A43C, rom_A443, rom_A44A
@@ -374,7 +374,7 @@ tbl_hit_ptrs_liukang:
 	.word rom_A5A1, rom_A5A1, rom_AA2F, rom_A38F
 	.word rom_A398, rom_A3A1, rom_A3A8, rom_A3B1
 	.word hit_data_uppercut, rom_A526, rom_A3C8, rom_A3CF
-	.word rom_A495, hit_data_throw, rom_A3E6, rom_A3EF
+	.word hit_data_slide, hit_data_throw, rom_A3E6, rom_A3EF
 	.word rom_A3F8, rom_A401, rom_A40A, hit_data_ranged
 	.word rom_A418, rom_A421, rom_A3F8, rom_A401
 	.word rom_A43C, rom_A443, rom_A44A
@@ -395,7 +395,7 @@ tbl_hit_ptrs_goro:
 
 ; Pointers table
 tbl_hit_ptrs_shangtsung:
-	.word hit_data_kick, rom_A37F, rom_A5C1, rom_A38F
+	.word hit_data_kick, hit_data_close_kick, rom_A5C1, rom_A38F
 	.word rom_A398, rom_A59A, rom_A3A8, rom_A3B1
 	.word hit_data_uppercut, rom_A526, rom_A3C8, rom_A3CF
 	.word rom_A5C8, hit_data_throw, rom_A3E6, rom_A3EF
@@ -422,7 +422,7 @@ rom_A340:
 	.word rom_A4D2_unused, rom_A4DB, rom_A4AE, rom_A433
 	.word rom_A4B7, rom_A3A1, rom_A3A8, rom_A3B1
 	.word hit_data_uppercut, rom_A3C1, rom_A3C8, rom_A3CF
-	.word rom_A495, rom_A4F6_unused, rom_A3E6, rom_A3EF
+	.word hit_data_slide, rom_A4F6_unused, rom_A3E6, rom_A3EF
 	.word rom_A4C0, rom_A4C9, rom_A40A, hit_data_ranged
 	.word rom_A418, rom_A421, rom_A4C0, rom_A4C9
 	.word rom_A43C, rom_A443, rom_A4ED
@@ -440,7 +440,7 @@ hit_data_kick:
 
 ; -----------------------------------------------------------------------------
 
-rom_A37F:
+hit_data_close_kick:
 	.byte $02, $03, $24, $30, $30, $0A, $01
 
 ; -----------------------------------------------------------------------------
@@ -602,7 +602,7 @@ rom_A47E:
 
 ; -----------------------------------------------------------------------------
 
-rom_A487:
+hit_data_spin:
 	.byte $02, $0A, $30, $30, $00, $2E, $01, $00
 
 ; -----------------------------------------------------------------------------
@@ -616,7 +616,7 @@ hit_data_throw:
 
 ; -----------------------------------------------------------------------------
 
-rom_A495:
+hit_data_slide:
 	.byte $02, $09, $28, $30, $00, $2E, $01, $20
 	.byte $40
 
@@ -782,7 +782,7 @@ rom_A5B3:
 
 ; -----------------------------------------------------------------------------
 
-rom_A5BA:
+hit_data_teleport_punch:
 	.byte $03, $0A, $28, $30, $00, $0A, $02
 
 ; -----------------------------------------------------------------------------
@@ -1237,9 +1237,11 @@ rom_AA1A:
 
 ; -----------------------------------------------------------------------------
 
-rom_AA21:
-	.byte $02, $0A, $38, $30, $00, $0A, $01, $02
-	.byte $05, $29, $30, $00, $0A, $01
+hit_data_square_flight:
+	.byte $02, $0A, $38, $30, $00, $0A, $01
+
+; Unused?
+;	.byte $02, $05, $29, $30, $00, $0A, $01
 
 ; -----------------------------------------------------------------------------
 
@@ -1248,26 +1250,27 @@ rom_AA2F:
 
 ; -----------------------------------------------------------------------------
 
-rom_AA36:
-	.byte $82, $0A, $29, $30, $00, $0A, $01
+hit_data_shadow_kick:
+	.byte $82, $0A, $29, $30, $00, $2E, $01
 
 ; -----------------------------------------------------------------------------
 
-rom_AA3D:
-	.byte $02, $0A, $38, $30, $00, $0A, $01, $02
-	.byte $05, $29, $30, $00, $0A, $02, $02, $05
-	.byte $29, $30, $00, $0A, $02, $02, $05, $29
-	.byte $30, $00, $0A, $02, $02, $05, $29, $30
-	.byte $00, $0A, $02, $02, $05, $29, $30, $00
-	.byte $0A, $02, $02, $05, $29, $30, $00, $0A
-	.byte $02, $02, $05, $29, $30, $00, $0A, $02
-	.byte $02, $05, $29, $30, $00, $0A, $02, $02
-	.byte $05, $29, $30, $00, $0A, $02, $02, $05
-	.byte $29, $30, $00, $0A, $02, $02, $05, $29
-	.byte $30
+hit_data_torpedo:
+	.byte $02, $0A, $38, $30, $00, $2E, $01
 
-	.byte $00, $0A, $02, $02, $05, $29, $30, $00
-	.byte $0A, $02
+; Unused data?
+;	.byte $02, $05, $29, $30, $00, $0A, $02
+;	.byte $02, $05, $29, $30, $00, $0A, $02
+;	.byte $02, $05, $29, $30, $00, $0A, $02
+;	.byte $02, $05, $29, $30, $00, $0A, $02
+;	.byte $02, $05, $29, $30, $00, $0A, $02
+;	.byte $02, $05, $29, $30, $00, $0A, $02
+;	.byte $02, $05, $29, $30, $00, $0A, $02
+;	.byte $02, $05, $29, $30, $00, $0A, $02
+;	.byte $02, $05, $29, $30, $00, $0A, $02
+;	.byte $02, $05, $29, $30, $00, $0A, $02
+;	.byte $02, $05, $29, $30, $00, $0A, $02
+;	.byte $02, $05, $29, $30, $00, $0A, $02
 
 ; -----------------------------------------------------------------------------
 

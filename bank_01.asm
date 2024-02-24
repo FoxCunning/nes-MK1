@@ -741,17 +741,26 @@ sub_calc_ranged_atk_distance:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_C572:
+; X = index of fighter being attacked
+; Y = index of attacking fighter
+; (0 = player 1, 1 = player 2)
+; Returns:
+; Carry set if both fighters were doing a ranged attack or special 1, and their
+; hits are connecting.
+; Carry clear otherwise.
+sub_check_double_special:
 	lda zp_plr1_cur_anim,X
 	cmp #$1E	; Ranged attack (opponent)
 	bne @C581_special_1_check
 
-	lda zp_plr1_cur_anim,Y
-	cmp #$1E	; Ranged attack (attacker)
-	beq @C58C_check_frame
+		; Target was in the middle of a ranged attack
 
-	bne @C5A2_no_hit
+		lda zp_plr1_cur_anim,Y
+		cmp #$1E	; Ranged attack (attacker)
+		beq @C58C_check_frame	; Branch if both were doing a ranged attack
+		bne @C5A2_no_hit
 
+	; Target was not doing a ranged attack, check for special 1 instead
 	@C581_special_1_check:
 	cmp #$0D	; Special 1 (opponent)
 	bne @C5A2_no_hit
@@ -762,7 +771,7 @@ sub_rom_C572:
 
 	@C58C_check_frame:
 	lda zp_plr1_anim_frame,X
-	cmp #$05
+	cmp #$05	; Hit only registers after 5 frames
 	bcc @C5A2_no_hit
 
 	lda ram_ranged_atk_x_pos,X
@@ -801,7 +810,7 @@ sub_ranged_attack:
 	tya
 	eor #$01	; Sets X = !Y (This might be unnecessary, because it was already
 	tax			; 				done before the call)
-	jsr sub_rom_C572
+	jsr sub_check_double_special
 	bcc :+
 		jmp @player_hit_anim
 	:
