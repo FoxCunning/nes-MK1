@@ -1740,7 +1740,7 @@ sub_inner_match_input:
 		jsr sub_crouching_input
 		jsr sub_jump_button_input
 		jsr sub_parry_button_input
-		jsr sub_check_apply_stunned
+		; jsr sub_check_apply_stunned
 
 	@CA94:
 	ldy zp_plr_idx_param
@@ -1783,53 +1783,49 @@ sub_rom_CAA3:
 ; -----------------------------------------------------------------------------
 
 ; Starts the "stunned" animation if needed (e.g. 3 consecutive hits)
-sub_check_apply_stunned:
-	ldy zp_plr_idx_param
-	lda zp_consecutive_hits_taken,Y
-	cmp #$03
-	bcc @CAE4
+;sub_check_apply_stunned:
+;	ldy zp_plr_idx_param
+;	lda zp_consecutive_hits_taken,Y
+;	cmp #$03
+;	bcc @CAE4
 
-	lda zp_plr1_cur_anim,Y
-	cmp #$27
-	bne @CAE4
+;	lda zp_plr1_cur_anim,Y
+;	cmp #$27
+;	bne @CAE4
 
-	lda zp_plr1_anim_frame,Y
-	cmp #$01
-	bne @CAE4
+;	lda zp_plr1_anim_frame,Y
+;	cmp #$01
+;	bne @CAE4
 
 		; Staggered if getting up after enough hits taken
 
-		lda #$28	; Staggered animation
-		sta zp_plr1_cur_anim,Y
+;		lda #$28	; Staggered animation
+;		sta zp_plr1_cur_anim,Y
 
-		lda #$00
-		sta zp_consecutive_hits_taken,Y
-		sta zp_plr1_anim_frame,Y
+;		lda #$00
+;		sta zp_consecutive_hits_taken,Y
+;		sta zp_plr1_anim_frame,Y
 
-	@CAE4:
-	lda zp_E9,Y
-	cmp #$70
-	bcc @CB00
+;	@CAE4:
+;	lda zp_E9,Y
+;	cmp #$70
+;	bcc @CB00
 
-		lda #$00
-		sta zp_E9,Y
-		lda zp_consecutive_hits_taken,Y
-		cmp zp_E7,Y
-		bne @CAFD
+;		lda #$00
+;		sta zp_E9,Y
+;		lda zp_consecutive_hits_taken,Y
+;		cmp zp_E7,Y
+;		bne @CAFD
 
-			lda #$00
-			sta zp_consecutive_hits_taken,Y
+;			lda #$00
+;			sta zp_consecutive_hits_taken,Y
 
-		@CAFD:
-		sta zp_E7,Y
+;		@CAFD:
+;		sta zp_E7,Y
 
-	@CB00:
-	;lda zp_E9,Y
-	;clc
-	;adc #$01
-	;sta zp_E9,Y
-	isc a:zp_E9,Y
-	rts
+;	@CB00:
+;	isc a:zp_E9,Y
+;	rts
 
 ; -----------------------------------------------------------------------------
 
