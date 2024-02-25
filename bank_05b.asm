@@ -2709,7 +2709,7 @@ sub_ending_loop:
 			cmp #$FF	; $FF = end of text
 			bne :+
 				inc zp_machine_state_2
-				lda #$C0
+				lda #$F0
 				sta zp_counter_param
 				rts
 			:
