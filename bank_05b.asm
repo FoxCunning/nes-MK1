@@ -2709,7 +2709,7 @@ sub_ending_loop:
 			cmp #$FF	; $FF = end of text
 			bne :+
 				inc zp_machine_state_2
-				lda #$C0
+				lda #$F0
 				sta zp_counter_param
 				rts
 			:
@@ -2879,7 +2879,7 @@ txt_cage_name:
 	.byte $00, "johnny cage", $00
 
 txt_liukang_name:
-	.byte $02, "liu k ang", $00
+	.byte $02, "liu kang", $00
 
 txt_goro_name:
 	.byte $04, "goro", $00
