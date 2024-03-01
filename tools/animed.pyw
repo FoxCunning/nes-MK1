@@ -159,7 +159,7 @@ tiles_canvas: tk.Canvas
 frame_left: tk.Frame
 main_canvas: tk.Canvas
 palette_canvas: tk.Canvas
-frame_right: tk.Frame
+frame_middle: tk.Frame
 option_fighters: tk.OptionMenu
 option_animations: tk.OptionMenu
 
@@ -517,12 +517,12 @@ def load_custom_chr() -> bool:
     select_animation(index)
 
 
-def change_text(widget: tk.Text, text: str, disable: bool = False):
+def change_text(widget: tk.Text, text: str, disable: bool = False) -> None:
     """
     Changes a widget's text.
     :param widget:
     :param text:
-    :param disable:
+    :param disable: If True, disables the widget after changing its value
     :return:
     """
     if disable:
@@ -968,7 +968,7 @@ def select_frame(index: int = 0):
 
     show_tileset(data.bank)
 
-    change_text(text_frame_id, f"{index}")
+    change_text(text_frame_id, f"{index}", True)
     cur_frame_id = index
 
     change_text(text_width, f"{data.width}")
@@ -1125,9 +1125,119 @@ def command_save_all():
     tk.messagebox.showwarning("Save everything", "Not yet implemented, sorry!")
 
 
-def command_save_fighter():
-    # TODO Export data to ASM
-    tk.messagebox.showwarning("Save fighter", "Not yet implemented, sorry!")
+def command_save_fighter(overwrite: bool = False) -> None:
+    """
+    Saves the current fighter's data to assembly.
+    :param overwrite: If True, will not ask for confirmation before overwriting.
+    :return:
+    """
+    # Set output file name depending on current fighter
+    _BANKS = ["05t", "06t", "07t", "08", "09", "0A", "0B", "0C", "0D"]
+    fighter = current_fighter()
+    file_name = master_dir + "/bank_" + _BANKS[fighter] + ".asm"
+
+    # Ask to overwrite
+    if overwrite is False and os.path.isfile(file_name):
+        if messagebox.askyesno("Save fighter", "File already exists. Overwrite?") is False:
+            return
+
+    # Build string with assembly to be saved
+    out_text = f'.segment "BANK_{_BANKS[fighter]}"\n; $8000-$8FFF\n.setcpu "6502X"\n'
+    out_text += '\n.feature org_per_seg\n.feature pc_assignment\n'
+    out_text += '\n.include "globals.inc"\n'
+    out_text += '\n; -----------------------------------------------------------------------------\n'
+    out_text += f'\n; Animation data for {FIGHTERS[fighter]}\n'
+    out_text += '\nrom_8000:\n\t.word rom_8004, rom_82C7\n'
+    out_text += '\n; -----------------------------------------------------------------------------\n'
+    out_text += '\nrom_8004:\n'
+
+    _ANIM_LABELS = ["idle", "crouch", "crouch_parry", "walk_fw", "walk_bk", "standing_parry", "jump_up", "jump_fw",
+                    "jump_bk", "strong_hit", "regular_hit", "base_kick", "close_kick", "special_1", "jump_kick_1",
+                    "jump_kick_2", "base_punch", "jump_punch_1", "jump_punch_2", "uppercut", "crouch_kick",
+                    "fw_jump_kick_1", "jump_punch_3", "special_2", "throw", "fw_jump_punch_1", "fw_jump_punch_2",
+                    "fw_jump_kick_2", "fw_jump_kick_3", "fw_jump_ranged", "ranged_attack", "bk_jump_punch_1",
+                    "bk_jump_punch_2", "bk_jump_kick_1", "bk_jump_kick_2", "air_fall_back_1", "air_fall_back_2",
+                    "close_punch", "fall_back_bounce", "get_up", "staggered", "shame", "victory",
+                    "crouch_parry_hit", "stand_parry_hit", "knock_back_1", "knock_back_2", "knock_back_3",
+                    "knock_back_4", "throw_fall", "uppercut_hit", "special_hit", "jump_bk_recover"]
+
+    # Table: movement index, pointer to frame indices table
+    for a in range(len(animation_data[fighter].animations)):
+        anim = animation_data[fighter].animations[a]
+
+        if anim == 0x0B:
+            out_text += "\n\t; Attack animations\n"
+        elif anim == 0x26:
+            out_text += "\t; End of attack animations\n\n"
+
+        out_text += f'\t.byte ${anim.movement_id:02X}\t; ${ANIMATIONS[a]}\n'
+        out_text += f'\t.word anim_{_ANIM_LABELS[a]}\n'
+
+    out_text += '\n; -----------------------------------------------------------------------------\n'
+    out_text += '\n; Indices for the frame pointers table'
+
+    # Frame indices per animation
+    highest_frame_id = 0    # Save this to avoid saving unused frames
+    for a in range(len(animation_data[fighter].animations)):
+        anim = animation_data[fighter].animations[a]
+
+        out_text += f'\nanim_{_ANIM_LABELS[a]}:'
+        for f in range(len(anim.frame_ids)):
+            if f % 8 == 0:
+                out_text += '\n\t.byte '
+            else:
+                out_text += ', '
+            out_text += f'${anim.frame_ids[f]:02X}'
+            if anim.frame_ids[f] > highest_frame_id:
+                highest_frame_id = anim.frame_ids[f]
+
+    out_text += '\n; -----------------------------------------------------------------------------\n'
+    out_text += '\nrom_82C7:\n'
+
+    # Frame data pointers
+    for f in range(highest_frame_id + 1):
+        out_text += f'\t.word frame_{f:02X}\n'
+
+    out_text += '\n; -----------------------------------------------------------------------------\n'
+
+    out_text += '''\n; Frame data format example:\n    ; .byte $05\t; Horizontal tiles count
+    ; .byte $09\t; Vertical tiles count
+    ; .byte $10\t; X offset (8 = neutral, higher = move forward, lower = backwards)
+    ; .byte $58\t; CHR bank number
+    ; .byte $00\t; Sprite attributes OR mask (e.g. force flip / priority / palette)
+    ; So we have 5 columns x 9 rows composing our meta-sprite
+    ; $FF = no sprite to display on that position,\n\t; Otherwise it's a sprite index ($00-$7F or $80-$FE)
+    ; .byte $FF, $FF, $01, $02, $FF\t; This is the top of the head
+    ; .byte $05, $06, $07, $08, $FF
+    ; .byte $0F, $10, $11, $12, $FF
+    ; .byte $FF, $1C, $1D, $1E, $FF
+    ; .byte $FF, $2A, $2B, $2C, $FF
+    ; .byte $FF, $37, $38, $39, $FF
+    ; .byte $FF, $47, $48, $49, $FF
+    ; .byte $FF, $57, $FF, $58, $FF
+    ; .byte $FF, $65, $FF, $66, $67\t; These are the feet\n'''
+    out_text += '\n; -----------------------------------------------------------------------------\n'
+
+    for frame in range(highest_frame_id + 1):
+        f = animation_data[fighter].frames[frame]
+        out_text += f'\nframe_{frame:02X}:\n'
+        out_text += f'\t.byte ${f.width:02X}, ${f.height:02X}, ${f.offset:02X}, ${f.bank:02X}, ${f.attribute:02X}'
+        for s in range(len(f.sprites)):
+            if s % f.width == 0:
+                out_text += f'\n\t.byte ${f.sprites[s]:02X}'
+            else:
+                out_text += f', ${f.sprites[s]:02X}'
+
+    out_text += '\n\n; -----------------------------------------------------------------------------\n'
+
+    try:
+        with open(file_name, "w") as asm_file:
+            asm_file.write(out_text)
+    except IOError as err:
+        messagebox.showerror("Save fighter", f"Error saving '{file_name}':\n{err}")
+        return
+
+    messagebox.showinfo("Save fighter", f"{FIGHTERS[fighter]}'s animation data saved to '{file_name}'.")
 
 
 def bring_to_front(*_args):
@@ -1141,7 +1251,7 @@ def bring_to_front(*_args):
 
 def init_root_window():
     global frame_left
-    global frame_right
+    global frame_middle
     global main_canvas
     global palette_canvas
     global option_fighters
@@ -1159,8 +1269,8 @@ def init_root_window():
     # noinspection SpellCheckingInspection
     _font = ("Fixedsys", 16)
 
-    w = config.get("Settings", "MainW", fallback=640)
-    h = config.get("Settings", "MainH", fallback=480)
+    w = config.get("Settings", "MainW", fallback=700)
+    h = config.get("Settings", "MainH", fallback=360)
     x = config.get("Settings", "MainX", fallback=50)
     y = config.get("Settings", "MainY", fallback=50)
 
@@ -1178,9 +1288,15 @@ def init_root_window():
     file_menu.add_separator()
     file_menu.add_command(label="Exit", command=command_exit)
 
-    # TODO Add a "view" menu with option to show/hide the CHR tiles and log window
-
     menu_bar.add_cascade(label="File", menu=file_menu)
+
+    edit_menu = tk.Menu(menu_bar, tearoff=0)
+    edit_menu.add_command(label="Undo", state=tk.DISABLED, accelerator="Ctrl+Z")
+    edit_menu.add_command(label="Redo", state=tk.DISABLED, accelerator="Ctrl+Y")
+
+    menu_bar.add_cascade(label="Edit", menu=edit_menu)
+
+    # TODO Add a "view" menu with option to show/hide the CHR tiles and log window
 
     root.config(menu=menu_bar)
 
@@ -1213,69 +1329,125 @@ def init_root_window():
     palette_canvas = tk.Canvas(frame_left, width=256, height=32, bg="#808080", cursor="hand2")
     palette_canvas.grid(row=3, column=0)
 
-    # ---- Right side ----
+    # ---- Middle frame ----
 
-    frame_right = tk.Frame(root, border=0)
-    frame_right.grid(row=0, column=1)
+    frame_middle = tk.Frame(root, border=0)
+    frame_middle.grid(row=0, column=1)
 
-    _label = tk.Label(frame_right, text="Animation data:", anchor="n", justify="center", font=_font, pady=24)
+    _label = tk.Label(frame_middle, text="Animation data:", anchor="n", justify="center", font=_font, pady=24)
     _label.grid(row=0, column=0, columnspan=2)
 
-    _label = tk.Label(frame_right, text="Frame count: ", font=_font)
+    _label = tk.Label(frame_middle, text="Frame count: ", font=_font)
     _label.grid(row=1, column=0)
-    text_frame_count = tk.Text(frame_right, width=4, height=1, font=_font, state=tk.DISABLED)
+    text_frame_count = tk.Text(frame_middle, width=4, height=1, font=_font, state=tk.DISABLED)
     text_frame_count.grid(row=1, column=1)
 
-    _label = tk.Label(frame_right, text="Current frame: ", font=_font)
+    _label = tk.Label(frame_middle, text="Current frame: ", font=_font)
     _label.grid(row=2, column=0)
-    text_cur_frame = tk.Text(frame_right, width=4, height=1, font=_font, state=tk.DISABLED)
+    text_cur_frame = tk.Text(frame_middle, width=4, height=1, font=_font, state=tk.DISABLED)
     text_cur_frame.grid(row=2, column=1)
 
-    button_frame_prev = tk.Button(frame_right, text="Prev. Frame", font=_font, command=on_frame_prev)
+    button_frame_prev = tk.Button(frame_middle, text="Prev. Frame", font=_font, command=on_frame_prev)
     button_frame_prev.grid(row=3, column=0)
 
-    button_frame_next = tk.Button(frame_right, text="Next  Frame", font=_font, command=on_frame_next)
+    button_frame_next = tk.Button(frame_middle, text="Next  Frame", font=_font, command=on_frame_next)
     button_frame_next.grid(row=3, column=1)
 
-    _label = tk.Label(frame_right, text="ID: ", font=_font)
+    _label = tk.Label(frame_middle, text="ID: ", font=_font)
     _label.grid(row=4, column=0)
-    text_frame_id = tk.Text(frame_right, width=4, height=1, font=_font)
+    text_frame_id = tk.Text(frame_middle, width=4, height=1, font=_font, state=tk.DISABLED)
     text_frame_id.grid(row=4, column=1)
 
     # Current frame data
 
-    _label = tk.Label(frame_right, text="Frame data:", anchor="n", justify="center", font=_font, pady=24)
+    _label = tk.Label(frame_middle, text="Frame data:", anchor="n", justify="center", font=_font, pady=24)
     _label.grid(row=5, column=0, columnspan=2)
 
-    _label = tk.Label(frame_right, text="Width (tiles): ", font=_font)
+    _label = tk.Label(frame_middle, text="Width (tiles): ", font=_font)
     _label.grid(row=6, column=0)
-    text_width = tk.Text(frame_right, width=4, height=1, font=_font)
+    text_width = tk.Text(frame_middle, width=4, height=1, font=_font)
     text_width.grid(row=6, column=1)
 
-    _label = tk.Label(frame_right, text="Height (tiles): ", font=_font)
+    _label = tk.Label(frame_middle, text="Height (tiles): ", font=_font)
     _label.grid(row=7, column=0)
-    text_height = tk.Text(frame_right, width=4, height=1, font=_font)
+    text_height = tk.Text(frame_middle, width=4, height=1, font=_font)
     text_height.grid(row=7, column=1)
 
-    _label = tk.Label(frame_right, text="Offset: ", font=_font)
+    _label = tk.Label(frame_middle, text="Offset: ", font=_font)
     _label.grid(row=8, column=0)
-    text_offset = tk.Text(frame_right, width=4, height=1, font=_font)
+    text_offset = tk.Text(frame_middle, width=4, height=1, font=_font)
     text_offset.grid(row=8, column=1)
 
-    _label = tk.Label(frame_right, text="CHR Bank: ", font=_font)
+    _label = tk.Label(frame_middle, text="CHR Bank: ", font=_font)
     _label.grid(row=9, column=0)
-    text_bank = tk.Text(frame_right, width=4, height=1, font=_font)
+    text_bank = tk.Text(frame_middle, width=4, height=1, font=_font)
     text_bank.grid(row=9, column=1)
 
-    _label = tk.Label(frame_right, text="Attribute: ", font=_font)
+    _label = tk.Label(frame_middle, text="Attribute: ", font=_font)
     _label.grid(row=10, column=0)
-    text_attribute = tk.Text(frame_right, width=4, height=1, font=_font)
+    text_attribute = tk.Text(frame_middle, width=4, height=1, font=_font)
     text_attribute.grid(row=10, column=1)
 
-    _label = tk.Label(frame_right, text="Sprite count: ", font=_font)
+    _label = tk.Label(frame_middle, text="Sprite count: ", font=_font)
     _label.grid(row=11, column=0)
-    text_total = tk.Text(frame_right, width=4, height=1, font=_font, state=tk.DISABLED)
+    text_total = tk.Text(frame_middle, width=4, height=1, font=_font, state=tk.DISABLED)
     text_total.grid(row=11, column=1)
+
+    # ---- Right Frame ----
+
+    frame_right = tk.Frame(root, border=0)
+    frame_right.grid(row=0, column=2, padx=(24, 0), pady=(8, 0))
+
+    # Move controls
+
+    button_move_up = tk.Button(frame_right, text=" Up ", font=_font)
+    button_move_up.grid(row=0, column=1)
+
+    button_move_left = tk.Button(frame_right, text=" Left", font=_font)
+    button_move_left.grid(row=1, column=0)
+
+    _label = tk.Label(frame_right, text="MOVE ", font=_font)
+    _label.grid(row=1, column=1, padx=4, pady=4)
+
+    button_move_right = tk.Button(frame_right, text="Right", font=_font)
+    button_move_right.grid(row=1, column=2)
+
+    button_move_down = tk.Button(frame_right, text="Down", font=_font)
+    button_move_down.grid(row=2, column=1)
+
+    # Expand controls
+
+    button_exp_up = tk.Button(frame_right, text=" Up ", font=_font)
+    button_exp_up.grid(row=3, column=1, pady=(32, 0))
+
+    button_exp_left = tk.Button(frame_right, text=" Left", font=_font)
+    button_exp_left.grid(row=4, column=0)
+
+    _label = tk.Label(frame_right, text="EXPAND", font=_font)
+    _label.grid(row=4, column=1, padx=4, pady=4)
+
+    button_exp_right = tk.Button(frame_right, text="Right", font=_font)
+    button_exp_right.grid(row=4, column=2)
+
+    button_exp_down = tk.Button(frame_right, text="Down", font=_font)
+    button_exp_down.grid(row=5, column=1)
+
+    # Shrink controls
+
+    button_shrink_up = tk.Button(frame_right, text=" Up ", font=_font)
+    button_shrink_up.grid(row=6, column=1, pady=(32, 0))
+
+    button_shrink_left = tk.Button(frame_right, text=" Left", font=_font)
+    button_shrink_left.grid(row=7, column=0)
+
+    _label = tk.Label(frame_right, text="SHRINK", font=_font)
+    _label.grid(row=7, column=1)
+
+    button_shrink_right = tk.Button(frame_right, text="Right", font=_font)
+    button_shrink_right.grid(row=7, column=2)
+
+    button_shrink_down = tk.Button(frame_right, text="Down ", font=_font)
+    button_shrink_down.grid(row=8, column=1)
 
     root.bind("<FocusIn>", bring_to_front)
 
