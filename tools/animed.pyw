@@ -481,7 +481,7 @@ def info(text: str, show_msg: bool = False):
         tk.messagebox.showinfo("Info", text)
 
 
-def add_log(text: str, log_type: bool = LOG_INFO):
+def add_log(text: str, log_type: int = LOG_INFO):
     """
     Appends a string to the log window.
     :param text: String to add.
