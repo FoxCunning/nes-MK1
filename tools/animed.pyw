@@ -30,10 +30,10 @@ SOFTWARE.
 import configparser
 import os
 import tkinter as tk
-from tkinter import filedialog, Tk, messagebox
+from tkinter import filedialog, Tk, messagebox, simpledialog
 from PIL import Image, ImageTk
 from typing import List
-
+from undo_redo import UndoRedo
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -133,19 +133,21 @@ NES_COLOURS = [[124, 124, 124],
                [0, 0, 0],
                [0, 0, 0]]
 
-# Used to retrieve the bit that tells if a sprite uses palette 0 or 1 from attribute_bits
 TILE_BIT_MASKS = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80]
+"""Used to retrieve the bit that tells if a sprite uses palette 0 or 1 from attribute_bits."""
 
-# Pixel magnification factor
 SCALING = 2
-# Tile side length, in pixels, after magnification
+"""Pixel magnification factor."""
+
 TILE_SIZE = 16
+"""Tile side length, in pixels, after magnification."""
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 #           Globals
 
 config: configparser
+undo_redo = UndoRedo()
 
 # Widgets
 root = Tk()
@@ -156,6 +158,7 @@ log_text: tk.Text
 tiles_win = tk.Toplevel(root)
 tiles_canvas: tk.Canvas
 
+edit_menu: tk.Menu
 frame_left: tk.Frame
 main_canvas: tk.Canvas
 palette_canvas: tk.Canvas
@@ -172,18 +175,23 @@ text_height: tk.Text
 text_offset: tk.Text
 text_bank: tk.Text
 text_attribute: tk.Text
-text_total: tk.Text     # Sprite count (must be <= 32)
+text_total: tk.Text
+"""Sprite count (must be <= 32)"""
 
-label_cur_tile: tk.Label    # Indicates currently selected sprite pattern (0x00-0x7F)
-item_tile_selection = -1    # Canvas item for the rectangle indicating the selected pattern
+label_cur_tile: tk.Label
+"""Indicates currently selected sprite pattern (0x00-0x7F)"""
+item_tile_selection = -1
+"""Canvas item for the rectangle indicating the selected pattern."""
 
 # Tk variables
 var_fighters = tk.StringVar(root)
 var_animations = tk.StringVar(root)
-var_attribute = tk.IntVar(root)     # 0 (left palette) or 1 (right palette)
+var_attribute = tk.IntVar(root)
+"""0 (left palette) or 1 (right palette)"""
 
 # Other variables and data
 master_dir = ""
+"""Base directory with source files."""
 unsaved_changes = False
 log = [f"MK1 Animation Editor v{__version__} by {__author__}"]
 char_rom_buffer = bytearray()
@@ -193,10 +201,14 @@ tile_grid_items: list = []
 main_axis_items: list = []
 main_grid_items: list = []
 sprite_items: list = []
-cur_chr_bank = -1   # Currently selected CHR ROM bank
-attribute_bits: list = []    # One bytearray per CHR ROM bank, each containing 8 bytes (one bit per tile)
-cur_tile_idx = 0    # Currently selected tile from the active banks (0-127)
-cur_frame_id = 0    # Currently selected/displayed frame
+cur_chr_bank = -1
+"""Currently selected CHR ROM bank."""
+attribute_bits: list = []
+"""One bytearray per CHR ROM bank, each containing 8 bytes (one bit per tile)"""
+cur_tile_idx = 0
+"""Currently selected tile from the active banks (0-127)"""
+cur_frame_id = 0
+"""Currently selected/displayed frame."""
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -535,6 +547,33 @@ def change_text(widget: tk.Text, text: str, disable: bool = False) -> None:
         widget.configure(state=tk.DISABLED)
 
 
+def update_undo_menu() -> None:
+    if undo_redo.undo_count() > 0:
+        edit_menu.entryconfigure(0, {"state": tk.NORMAL})
+    else:
+        edit_menu.entryconfigure(0, {"state": tk.DISABLED})
+
+    if undo_redo.redo_count() > 0:
+        edit_menu.entryconfigure(1, {"state": tk.NORMAL})
+    else:
+        edit_menu.entryconfigure(1, {"state": tk.DISABLED})
+
+
+def update_sprite_count() -> None:
+    """Counts sprites in the currently displayed animation frame and shows the value in its widget."""
+    data = animation_data[current_fighter()].frames[cur_frame_id]
+    count = 0
+    for s in data.sprites:
+        if s != 0xFF:
+            count = count + 1
+    change_text(text_total, f"{count}", True)
+    # If more than 32 frames, change the colour to red
+    if count > 32:
+        text_total.configure({"fg": "red"})
+    else:
+        text_total.configure({"fg": "black"})
+
+
 def get_int(widget: tk.Text) -> int:
     """
     Gets the value of a text widget as an integer.
@@ -714,9 +753,48 @@ def read_attribute_bits():
 
     info(f"Read {len(attribute_bits) * 8} sprite attribute values.", False)
 
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def get_frame_sprite_index(x: int, y: int) -> int:
+    """
+    Converts canvas coordinates to index in the frames list.
+    :param x: Horizontal position of the cursor within the canvas.
+    :param y: Vertical position of the cursor within the canvas.
+    :return: Index of the sprite in the frames list, or -1 if cursor out of frame.
+    """
+    # Get selected fighter index
+    f = current_fighter()
+
+    # Data for the selected frame
+    data = animation_data[f].frames[cur_frame_id]
+
+    delta_x = 128 - SCALING * (8 + data.offset)
+    delta_y = 240 - (data.height * TILE_SIZE)
+
+    if x < delta_x or y < delta_y:
+        return -1
+
+    if x > delta_x + (data.width * TILE_SIZE):
+        return -1
+
+    if y > 240:
+        return -1
+
+    tile_x = (x - delta_x) >> 4
+    tile_y = (y - delta_y) >> 4
+
+    # Absolute coordinates
+    # print(f"Abs:  {args[0].x}, {args[0].y}")
+    # Relative coordinates
+    # print(f"Rel:  {args[0].x - delta_x}, {args[0].y - delta_y}")
+    # Selection:
+    # print(f"Tile: {tile_x}, {tile_y}")
+    # print(f"Selection: {tile_x + (tile_y * data.width)}")
+    return tile_x + (tile_y * data.width)
+
 
 def get_tile_palette(tile_id: int) -> int:
-
     if tile_id < 64:
         _byte = attribute_bits[cur_chr_bank][tile_id >> 3]
         _bit = _byte & TILE_BIT_MASKS[tile_id % 8]
@@ -802,6 +880,11 @@ def show_tileset(bank: int):
 
 
 def show_frame(index: int = 0):
+    """
+    Draws or re-draws the frame *index* for the current fighter.
+    :param index: Index of the frame to show.
+    :return:
+    """
     # Get selected fighter index
     f = current_fighter()
 
@@ -812,15 +895,15 @@ def show_frame(index: int = 0):
     _x = 128 - (SCALING * (8 + data.offset))
     _y = 240 - (TILE_SIZE * data.height)
 
-    _s = 0      # Sprite index
-    _c = 0      # Actual sprite count
+    _s = 0  # Sprite index
+    _c = 0  # Actual sprite count
 
     for y in range(0, data.height):
         _image_y = _y + (TILE_SIZE * y)
 
         for x in range(0, data.width):
             _image_x = _x + (TILE_SIZE * x)
-            _index = data.sprites[_s]   # Get tile index (in current bank)
+            _index = data.sprites[_s]  # Get tile index (in current bank)
 
             if _index != 0XFF:
                 # The mask is needed because the sprite is taken from the top bank
@@ -971,20 +1054,54 @@ def select_frame(index: int = 0):
     change_text(text_frame_id, f"{index}", True)
     cur_frame_id = index
 
-    change_text(text_width, f"{data.width}")
-    change_text(text_height, f"{data.height}")
-    change_text(text_offset, f"{data.offset}")
-    change_text(text_bank, f"{data.bank}")
-    change_text(text_attribute, f"0x{data.attribute:02X}")
+    change_text(text_width, f"{data.width}", True)
+    change_text(text_height, f"{data.height}", True)
+    change_text(text_offset, f"{data.offset}", True)
+    change_text(text_bank, f"{data.bank}", True)
+    change_text(text_attribute, f"0x{data.attribute:02X}", True)
 
-    # Count sprites
-    count = 0
-    for s in data.sprites:
-        if s != 0xFF:
-            count = count + 1
-    change_text(text_total, f"{count}", True)
+    update_sprite_count()
 
     show_frame(index)
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def change_chr_bank(fighter: int, frame: int, new_bank: int) -> None:
+    """
+    Changes the CHR Bank number for the current frame and redraws it if needed.
+    :param fighter: Index of the fighter to edit.
+    :param frame: Index of the frame to edit.
+    :param new_bank: New bank number (0-255).
+    :return:
+    """
+    global cur_chr_bank
+
+    animation_data[fighter].frames[frame].bank = new_bank
+    if fighter == current_fighter() and frame == cur_frame_id:
+        show_tileset(new_bank)
+        show_frame(cur_frame_id)
+        change_text(text_bank, f"{new_bank}", True)
+        cur_chr_bank = new_bank
+
+
+def change_sprite_id(fighter: int, frame: int, sprite: int, new_id: int) -> None:
+    """
+    Changes the id of the sprite used in an animation frame.
+    :param fighter: Index of the fighter to edit.
+    :param frame: Index of the frame in the frames list.
+    :param sprite: Index of the sprite within the frame.
+    :param new_id: Tile ID of the new sprite.
+    :return:
+    """
+    animation_data[fighter].frames[frame].sprites[sprite] = new_id
+
+    # If editing the current fighter/frame, redraw
+    if fighter == current_fighter() and frame == cur_frame_id:
+        show_frame(frame)
+        update_sprite_count()
+
+# ----------------------------------------------------------------------------------------------------------------------
 
 
 def on_tile_canvas_click(*args):
@@ -1005,35 +1122,47 @@ def on_main_canvas_right_click(*args):
     :param args: args[0].x, args[0].y = mouse click coordinates.
     :return:
     """
-    # Get selected fighter index
+    tile_id = get_frame_sprite_index(args[0].x, args[0].y)
+    if tile_id >= 0:
+        select_sprite(tile_id)
+
+
+def on_main_canvas_left_click(*args):
+    """
+    Callback for left-click on the main canvas, where the fighter sprites and grid are displayed.
+    :param args: args[0].x, args[0].y = mouse click coordinates.
+    :return:
+    """
+    sprite = get_frame_sprite_index(args[0].x, args[0].y)
+    if sprite < 0:
+        return
+
     f = current_fighter()
+    old_tile_idx = animation_data[f].frames[cur_frame_id].sprites[sprite]
 
-    # Data for the selected frame
-    data = animation_data[f].frames[cur_frame_id]
+    # Change sprite
+    undo_redo(change_sprite_id, (f, cur_frame_id, sprite, cur_tile_idx),
+              (f, cur_frame_id, sprite, old_tile_idx), change_sprite_id)
+    update_undo_menu()
 
-    delta_x = 128 - SCALING * (8 + data.offset)
-    delta_y = 240 - (data.height * TILE_SIZE)
 
-    if args[0].x < delta_x or args[0].y < delta_y:
+def on_main_canvas_ctrl_left_click(*args):
+    """
+    Callback for control-left-click on the main canvas, where the fighter sprites and grid are displayed.
+    :param args: args[0].x, args[0].y = mouse click coordinates.
+    :return:
+    """
+    sprite = get_frame_sprite_index(args[0].x, args[0].y)
+    if sprite < 0:
         return
 
-    if args[0].x > delta_x + (data.width * TILE_SIZE):
-        return
+    f = current_fighter()
+    old_tile_idx = animation_data[f].frames[cur_frame_id].sprites[sprite]
 
-    if args[0].y > 240:
-        return
-
-    tile_x = (args[0].x - delta_x) >> 4
-    tile_y = (args[0].y - delta_y) >> 4
-
-    # Absolute coordinates
-    # print(f"Abs:  {args[0].x}, {args[0].y}")
-    # Relative coordinates
-    # print(f"Rel:  {args[0].x - delta_x}, {args[0].y - delta_y}")
-    # Selection:
-    # print(f"Tile: {tile_x}, {tile_y}")
-    # print(f"Selection: {tile_x + (tile_y * data.width)}")
-    select_sprite(tile_x + (tile_y * data.width))
+    # Erase sprite (i.e., change index to 0xFF)
+    undo_redo(change_sprite_id, (f, cur_frame_id, sprite, 0xFF),
+              (f, cur_frame_id, sprite, old_tile_idx), change_sprite_id)
+    update_undo_menu()
 
 
 def on_select_fighter(*_args):
@@ -1113,6 +1242,18 @@ def on_root_destroy():
     root.destroy()
 
 
+def on_chr_bank_click(*_args):
+    new_bank = simpledialog.askinteger("CHR Bank", "Enter a new value (0-255 or 0x00-0xFF):",
+                                       initialvalue=cur_chr_bank, minvalue=0, maxvalue=255)
+    if new_bank is not None:
+        f = current_fighter()
+        undo_redo(change_chr_bank, (f, cur_frame_id, new_bank),
+                  (f, cur_frame_id, cur_chr_bank,), change_chr_bank)
+        update_undo_menu()
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
 def command_exit():
     # TODO Don't ask confirmation if there are no unsaved changes
 
@@ -1131,6 +1272,8 @@ def command_save_fighter(overwrite: bool = False) -> None:
     :param overwrite: If True, will not ask for confirmation before overwriting.
     :return:
     """
+    global unsaved_changes
+
     # Set output file name depending on current fighter
     _BANKS = ["05t", "06t", "07t", "08", "09", "0A", "0B", "0C", "0D"]
     fighter = current_fighter()
@@ -1142,6 +1285,7 @@ def command_save_fighter(overwrite: bool = False) -> None:
             return
 
     # Build string with assembly to be saved
+    # noinspection SpellCheckingInspection
     out_text = f'.segment "BANK_{_BANKS[fighter]}"\n; $8000-$8FFF\n.setcpu "6502X"\n'
     out_text += '\n.feature org_per_seg\n.feature pc_assignment\n'
     out_text += '\n.include "globals.inc"\n'
@@ -1177,7 +1321,7 @@ def command_save_fighter(overwrite: bool = False) -> None:
     out_text += '\n; Indices for the frame pointers table'
 
     # Frame indices per animation
-    highest_frame_id = 0    # Save this to avoid saving unused frames
+    highest_frame_id = 0  # Save this to avoid saving unused frames
     for a in range(len(animation_data[fighter].animations)):
         anim = animation_data[fighter].animations[a]
 
@@ -1237,7 +1381,12 @@ def command_save_fighter(overwrite: bool = False) -> None:
         messagebox.showerror("Save fighter", f"Error saving '{file_name}':\n{err}")
         return
 
+    # TODO Save palette attribute data
+
     messagebox.showinfo("Save fighter", f"{FIGHTERS[fighter]}'s animation data saved to '{file_name}'.")
+    unsaved_changes = False
+
+# ----------------------------------------------------------------------------------------------------------------------
 
 
 def bring_to_front(*_args):
@@ -1250,6 +1399,7 @@ def bring_to_front(*_args):
 
 
 def init_root_window():
+    global edit_menu
     global frame_left
     global frame_middle
     global main_canvas
@@ -1317,6 +1467,9 @@ def init_root_window():
 
     main_canvas = tk.Canvas(frame_left, width=256, height=256, bg="#E0E0E0", cursor="hand2")
     main_canvas.grid(row=2, column=0)
+    main_canvas.bind("<Control-Button-1>", on_main_canvas_ctrl_left_click)
+    main_canvas.bind("<Command-Button-1>", on_main_canvas_ctrl_left_click)
+    main_canvas.bind("<Button-1>", on_main_canvas_left_click)
     main_canvas.bind("<Button-2>", on_main_canvas_right_click)
     main_canvas.bind("<Button-3>", on_main_canvas_right_click)
 
@@ -1380,7 +1533,8 @@ def init_root_window():
 
     _label = tk.Label(frame_middle, text="CHR Bank: ", font=_font)
     _label.grid(row=9, column=0)
-    text_bank = tk.Text(frame_middle, width=4, height=1, font=_font)
+    text_bank = tk.Text(frame_middle, width=4, height=1, font=_font, state=tk.DISABLED)
+    text_bank.bind("<Button-1>", on_chr_bank_click)
     text_bank.grid(row=9, column=1)
 
     _label = tk.Label(frame_middle, text="Attribute: ", font=_font)
@@ -1476,7 +1630,7 @@ def init_tiles_window():
     global tiles_canvas
     global label_cur_tile
 
-    # TODO Get geometry (at least position) from INI file
+    # TODO Get geometry (at least position) from INI file for the tile picker too
 
     tiles_win.title("CHR ROM")
     tiles_win.geometry("256x160+660+160")
