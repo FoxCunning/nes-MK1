@@ -1261,6 +1261,17 @@ def on_root_destroy():
     config.set("Settings", "MainH", str(root.winfo_height()))
     config.set("Settings", "MainX", str(root.winfo_x()))
     config.set("Settings", "MainY", str(root.winfo_y()))
+
+    config.set("Settings", "LogW", str(log_win.winfo_width()))
+    config.set("Settings", "LogH", str(log_win.winfo_height()))
+    config.set("Settings", "LogX", str(log_win.winfo_x()))
+    config.set("Settings", "LogY", str(log_win.winfo_y()))
+
+    config.set("Settings", "ChrW", str(tiles_win.winfo_width()))
+    config.set("Settings", "ChrH", str(tiles_win.winfo_height()))
+    config.set("Settings", "ChrX", str(tiles_win.winfo_x()))
+    config.set("Settings", "ChrY", str(tiles_win.winfo_y()))
+
     root.destroy()
 
 
@@ -1651,10 +1662,14 @@ def init_log_window():
     global log_win
     global log_text
 
-    # TODO Get geometry from INI file
+    # Get geometry from INI file
+    w = config.get("Settings", "LogW", fallback=512)
+    h = config.get("Settings", "LogH", fallback=360)
+    x = config.get("Settings", "LogX", fallback=100)
+    y = config.get("Settings", "LogY", fallback=100)
 
     log_win.title("Log")
-    log_win.geometry("512x360+100+100")
+    log_win.geometry(f"{w}x{h}+{x}+{y}")
     log_win.config(bg="black")
     log_win.resizable(False, False)
 
@@ -1671,10 +1686,14 @@ def init_tiles_window():
     global tiles_canvas
     global label_cur_tile
 
-    # TODO Get geometry (at least position) from INI file for the tile picker too
+    # Get geometry (at least position) from INI file for the tile picker too
+    w = config.get("Settings", "ChrW", fallback=256)
+    h = config.get("Settings", "ChrH", fallback=160)
+    x = config.get("Settings", "ChrX", fallback=660)
+    y = config.get("Settings", "ChrY", fallback=160)
 
     tiles_win.title("CHR ROM")
-    tiles_win.geometry("256x160+660+160")
+    tiles_win.geometry(f"{w}x{h}+{x}+{y}")
     tiles_win.config(bg="white")
     tiles_win.resizable(False, False)
 
