@@ -5,6 +5,7 @@ out/**
 **/*.nes
 **/.idea/**
 **/.vscode/**
+**/__pycache__/**
 **/*.bak
 *debug.txt
 _listing.txt
