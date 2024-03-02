@@ -1140,27 +1140,18 @@ def on_main_canvas_left_click(*args):
     f = current_fighter()
     old_tile_idx = animation_data[f].frames[cur_frame_id].sprites[sprite]
 
-    # Change sprite
-    undo_redo(change_sprite_id, (f, cur_frame_id, sprite, cur_tile_idx),
-              (f, cur_frame_id, sprite, old_tile_idx), change_sprite_id)
-    update_undo_menu()
+    if (args[0].state & 0x04) == 0:
+        new_tile_idx = cur_tile_idx
+    else:
+        # Control pressed: erase
+        new_tile_idx = 0xFF
 
-
-def on_main_canvas_ctrl_left_click(*args):
-    """
-    Callback for control-left-click on the main canvas, where the fighter sprites and grid are displayed.
-    :param args: args[0].x, args[0].y = mouse click coordinates.
-    :return:
-    """
-    sprite = get_frame_sprite_index(args[0].x, args[0].y)
-    if sprite < 0:
+    if old_tile_idx == new_tile_idx:
+        # Nothing to change
         return
 
-    f = current_fighter()
-    old_tile_idx = animation_data[f].frames[cur_frame_id].sprites[sprite]
-
-    # Erase sprite (i.e., change index to 0xFF)
-    undo_redo(change_sprite_id, (f, cur_frame_id, sprite, 0xFF),
+    # Change sprite
+    undo_redo(change_sprite_id, (f, cur_frame_id, sprite, new_tile_idx),
               (f, cur_frame_id, sprite, old_tile_idx), change_sprite_id)
     update_undo_menu()
 
@@ -1252,6 +1243,20 @@ def on_chr_bank_click(*_args):
         update_undo_menu()
 
 # ----------------------------------------------------------------------------------------------------------------------
+
+
+def command_undo(*_args):
+    """Undo last operation and update undo/redo menu items."""
+    if undo_redo.can_undo(1):
+        undo_redo.undo(1)
+    update_undo_menu()
+
+
+def command_redo(*_args):
+    """Redo last operation and update undo/redo menu items."""
+    if undo_redo.can_redo(1):
+        undo_redo.redo(1)
+    update_undo_menu()
 
 
 def command_exit():
@@ -1441,10 +1446,16 @@ def init_root_window():
     menu_bar.add_cascade(label="File", menu=file_menu)
 
     edit_menu = tk.Menu(menu_bar, tearoff=0)
-    edit_menu.add_command(label="Undo", state=tk.DISABLED, accelerator="Ctrl+Z")
-    edit_menu.add_command(label="Redo", state=tk.DISABLED, accelerator="Ctrl+Y")
+    edit_menu.add_command(label="Undo", state=tk.DISABLED, accelerator="Ctrl+Z", command=command_undo)
+    edit_menu.add_command(label="Redo", state=tk.DISABLED, accelerator="Ctrl+Y", command=command_redo)
+    root.bind_all("<Control-z>", command_undo)
+    root.bind_all("<Control-y>", command_redo)
 
     menu_bar.add_cascade(label="Edit", menu=edit_menu)
+
+    help_menu = tk.Menu(menu_bar, tearoff=0)
+    help_menu.add_command(label="Help")
+    help_menu.add_command(label="About...")
 
     # TODO Add a "view" menu with option to show/hide the CHR tiles and log window
 
@@ -1467,8 +1478,6 @@ def init_root_window():
 
     main_canvas = tk.Canvas(frame_left, width=256, height=256, bg="#E0E0E0", cursor="hand2")
     main_canvas.grid(row=2, column=0)
-    main_canvas.bind("<Control-Button-1>", on_main_canvas_ctrl_left_click)
-    main_canvas.bind("<Command-Button-1>", on_main_canvas_ctrl_left_click)
     main_canvas.bind("<Button-1>", on_main_canvas_left_click)
     main_canvas.bind("<Button-2>", on_main_canvas_right_click)
     main_canvas.bind("<Button-3>", on_main_canvas_right_click)
