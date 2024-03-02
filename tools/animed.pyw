@@ -216,8 +216,17 @@ cur_tile_idx = 0
 cur_frame_id = 0
 """Currently selected/displayed frame."""
 
+# Persistent UI elements
+IMG_APP_ICON = ImageTk.PhotoImage(file="img/icon.png")
+IMG_CHR_ICON = ImageTk.PhotoImage(file="img/chr.png")
+IMG_DOWN = ImageTk.PhotoImage(file="img/Down.png")
+IMG_UP = ImageTk.PhotoImage(file="img/Up.png")
+IMG_LEFT = ImageTk.PhotoImage(file="img/Left.png")
+IMG_RIGHT = ImageTk.PhotoImage(file="img/Right.png")
+
 
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def parse_bytes(asm: list) -> bytearray:
     """
@@ -1149,6 +1158,161 @@ def change_sprite_id(fighter: int, frame: int, sprite: int, new_id: int) -> None
     unsaved_changes = True
 
 
+def expand_frame(fighter: int, frame: int, direction: str) -> None:
+    """
+    Adds one row or one column of empty sprites to an animation frame.
+    :param fighter: Index of the fighter to edit.
+    :param frame: Index of the frame to expand.
+    :param direction: "U", "D", "L" or "R".
+    :return:
+    """
+    add_log("Expanding frame.", LOG_INFO)
+
+    old_frame = animation_data[fighter].frames[frame]
+    w = old_frame.width
+    h = old_frame.height
+
+    if direction == "U" or direction == "u":
+        # Crete an empty row of frames for the top
+        sprites = [0xFF] * w
+
+        # Append old data to the bottom
+        for s in old_frame.sprites:
+            sprites.append(s)
+
+        # Replace the sprites list and update size
+        animation_data[fighter].frames[frame].sprites = sprites
+        animation_data[fighter].frames[frame].height = h + 1
+
+    elif direction == "D" or direction == "d":
+        # Copy old sprite data, adding one row to the bottom
+        sprites = old_frame.sprites
+
+        for _ in range(w):
+            sprites.append(0xFF)
+
+        # Replace the sprites list and update size
+        animation_data[fighter].frames[frame].sprites = sprites
+        animation_data[fighter].frames[frame].height = h + 1
+
+    elif direction == "L" or direction == "l":
+        # Add one column to the left
+
+        # Create an empty list of sprites
+        sprites = []
+
+        # Populate the list
+        _s = 0
+        for y in range(h):
+            for x in range(w + 1):
+                if x == 0:
+                    # Add empty sprites to the left
+                    sprites.append(0xFF)
+                else:
+                    sprites.append(old_frame.sprites[_s])
+                    _s = _s + 1
+
+        # Replace the sprites list and update size
+        animation_data[fighter].frames[frame].sprites = sprites
+        animation_data[fighter].frames[frame].width = w + 1
+
+    elif direction == "R" or direction == "r":
+        # Add one column to the right
+        sprites = []
+
+        _s = 0
+        for y in range(h):
+            for x in range(w + 1):
+                if x == w:
+                    # Add empty sprites to the right
+                    sprites.append(0xFF)
+                else:
+                    sprites.append(old_frame.sprites[_s])
+                    _s = _s + 1
+
+        animation_data[fighter].frames[frame].sprites = sprites
+        animation_data[fighter].frames[frame].width = w + 1
+
+    else:
+        add_log(f"Unknown expand direction '{direction}'.", LOG_ERROR)
+        return
+
+    # Redraw the view if needed
+    if current_fighter() == fighter and cur_frame_id == frame:
+        show_frame(cur_frame_id)
+
+
+def shrink_frame(fighter: int, frame: int, direction: str) -> None:
+    """
+    Removes one row or column or sprites from a frame.
+    :param fighter: Index of the fighter to edit.
+    :param frame: Index of the frame to edit.
+    :param direction: Valid values are "U", "D", "L" or "R".
+    :return:
+    """
+    add_log("Shrinking frame.", LOG_INFO)
+
+    old_frame = animation_data[fighter].frames[frame]
+    w = old_frame.width
+    h = old_frame.height
+
+    if direction == "D":
+        # Simply copy everything except the first row, i.e. the first *width* sprites
+        sprites = old_frame.sprites[w:]
+
+        # Replace the old list and update size
+        animation_data[fighter].frames[frame].sprites = sprites
+        animation_data[fighter].frames[frame].height = h - 1
+
+    elif direction == "U":
+        # Copy everything except the last row, i.e. the last *width* sprites
+        sprites = old_frame.sprites[:len(old_frame.sprites) - w]
+
+        # Replace the old list and update size
+        animation_data[fighter].frames[frame].sprites = sprites
+        animation_data[fighter].frames[frame].height = h - 1
+
+    elif direction == "R":
+        # Create an empty list of sprites
+        sprites = []
+
+        # Populate the list with the old sprite indices, excluding the leftmost column
+        _s = 0
+        for y in range(h):
+            for x in range(w - 1):
+                if x == 0:
+                    # Skip left column
+                    _s = _s + 1
+                sprites.append(old_frame.sprites[_s])
+                _s = _s + 1
+
+        # Replace the old list and update size
+        animation_data[fighter].frames[frame].sprites = sprites
+        animation_data[fighter].frames[frame].width = w - 1
+
+    elif direction == "L":
+        sprites = []
+
+        _s = 0
+        for y in range(h):
+            for x in range(w - 1):
+                sprites.append(old_frame.sprites[_s])
+                _s = _s + 1
+                if x == w - 2:
+                    # Skip rightmost column
+                    _s = _s + 1
+
+        animation_data[fighter].frames[frame].sprites = sprites
+        animation_data[fighter].frames[frame].width = w - 1
+
+    else:
+        add_log(f"Unknown shrink direction '{direction}'.", LOG_ERROR)
+        return
+
+    # Redraw the view if needed
+    if current_fighter() == fighter and cur_frame_id == frame:
+        show_frame(cur_frame_id)
+
 # ----------------------------------------------------------------------------------------------------------------------
 
 
@@ -1296,21 +1460,113 @@ def on_frame_next(*_args):
         return
 
 
-def on_root_destroy():
+def on_expand_up(*_args):
+    f = current_fighter()
+
+    # Don't expand if height > 11
+    if animation_data[f].frames[cur_frame_id].height > 11:
+        print("\a")
+        return
+
+    undo_redo(expand_frame, (f, cur_frame_id, "U"), (f, cur_frame_id, "D"), shrink_frame)
+    update_undo_menu()
+
+
+def on_expand_down(*_args):
+    f = current_fighter()
+
+    # Don't expand if height > 11
+    if animation_data[f].frames[cur_frame_id].height > 11:
+        print("\a")
+        return
+
+    undo_redo(expand_frame, (f, cur_frame_id, "D"), (f, cur_frame_id, "U"), shrink_frame)
+    update_undo_menu()
+
+
+def on_expand_left(*_args):
+    f = current_fighter()
+
+    # Don't expand if width > 11
+    if animation_data[f].frames[cur_frame_id].width > 11:
+        print("\a")
+        return
+
+    undo_redo(expand_frame, (f, cur_frame_id, "L"), (f, cur_frame_id, "R"), shrink_frame)
+    update_undo_menu()
+
+
+def on_expand_right(*_args):
+    f = current_fighter()
+
+    # Don't expand if width > 11
+    if animation_data[f].frames[cur_frame_id].width > 11:
+        print("\a")
+        return
+
+    undo_redo(expand_frame, (f, cur_frame_id, "R"), (f, cur_frame_id, "L"), shrink_frame)
+    update_undo_menu()
+
+
+def on_shrink_up(*_args):
+    f = current_fighter()
+
+    # Don't shrink if height less than 2
+    if animation_data[f].frames[cur_frame_id].height < 2:
+        print("\a")
+        return
+
+    undo_redo(shrink_frame, (f, cur_frame_id, "U"), (f, cur_frame_id, "D"), expand_frame)
+    update_undo_menu()
+
+
+def on_shrink_down(*_args):
+    f = current_fighter()
+
+    # Don't shrink if height less than 2
+    if animation_data[f].frames[cur_frame_id].height < 2:
+        print("\a")
+        return
+
+    undo_redo(shrink_frame, (f, cur_frame_id, "D"), (f, cur_frame_id, "U"), expand_frame)
+    update_undo_menu()
+
+
+def on_shrink_left(*_args):
+    f = current_fighter()
+
+    # Don't shrink if width less than 2
+    if animation_data[f].frames[cur_frame_id].width < 2:
+        print("\a")
+        return
+
+    undo_redo(shrink_frame, (f, cur_frame_id, "L"), (f, cur_frame_id, "R"), expand_frame)
+    update_undo_menu()
+
+
+def on_shrink_right(*_args):
+    f = current_fighter()
+
+    # Don't shrink if width less than 2
+    if animation_data[f].frames[cur_frame_id].width < 2:
+        print("\a")
+        return
+
+    undo_redo(shrink_frame, (f, cur_frame_id, "R"), (f, cur_frame_id, "L"), expand_frame)
+    update_undo_menu()
+
+
+def on_root_destroy(*_args):
     if "Settings" not in config.sections():
         config.add_section("Settings")
-    config.set("Settings", "MainW", str(root.winfo_width()))
-    config.set("Settings", "MainH", str(root.winfo_height()))
+    config.set("Settings", "MainW", str(max(662, root.winfo_width())))
+    config.set("Settings", "MainH", str(max(380, root.winfo_height())))
     config.set("Settings", "MainX", str(root.winfo_x()))
     config.set("Settings", "MainY", str(root.winfo_y()))
 
-    config.set("Settings", "LogW", str(log_win.winfo_width()))
-    config.set("Settings", "LogH", str(log_win.winfo_height()))
     config.set("Settings", "LogX", str(log_win.winfo_x()))
     config.set("Settings", "LogY", str(log_win.winfo_y()))
 
-    config.set("Settings", "ChrW", str(tiles_win.winfo_width()))
-    config.set("Settings", "ChrH", str(tiles_win.winfo_height()))
     config.set("Settings", "ChrX", str(tiles_win.winfo_x()))
     config.set("Settings", "ChrY", str(tiles_win.winfo_y()))
 
@@ -1346,13 +1602,13 @@ def command_redo(*_args):
 
 def command_exit():
     # Don't ask confirmation if there are no unsaved changes
-    if not unsaved_changes or tk.messagebox.askyesno("Exit", "Are you sure you want to quit?") is True:
+    if not unsaved_changes or messagebox.askyesno("Exit", "Are you sure you want to quit?") is True:
         on_root_destroy()
 
 
 def command_save_all():
-    # TODO Export data to ASM
-    tk.messagebox.showwarning("Save everything", "Not yet implemented, sorry!")
+    # TODO Export all data to ASM
+    messagebox.showwarning("Save everything", "Not yet implemented, sorry!")
 
 
 def command_save_fighter(overwrite: bool = False) -> None:
@@ -1368,9 +1624,12 @@ def command_save_fighter(overwrite: bool = False) -> None:
     fighter = current_fighter()
     file_name = master_dir + "/bank_" + _BANKS[fighter] + ".asm"
 
+    add_log(f"Saving data for {FIGHTERS[fighter]}...", LOG_INFO)
+
     # Ask to overwrite
     if overwrite is False and os.path.isfile(file_name):
         if messagebox.askyesno("Save fighter", "File already exists. Overwrite?") is False:
+            add_log("Aborted.", LOG_INFO)
             return
 
     # Build string with assembly to be saved
@@ -1468,12 +1727,14 @@ def command_save_fighter(overwrite: bool = False) -> None:
             asm_file.write(out_text)
     except IOError as err:
         messagebox.showerror("Save fighter", f"Error saving '{file_name}':\n{err}")
+        add_log(f"ERROR: {err}.", LOG_ERROR)
         return
 
     # TODO Save palette attribute data
 
     messagebox.showinfo("Save fighter", f"{FIGHTERS[fighter]}'s animation data saved to '{file_name}'.")
     unsaved_changes = False
+    add_log("Done!", LOG_INFO)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -1514,13 +1775,14 @@ def init_root_window():
     # noinspection SpellCheckingInspection
     _font = ("Fixedsys", 16)
 
-    w = config.get("Settings", "MainW", fallback=700)
-    h = config.get("Settings", "MainH", fallback=360)
+    w = config.get("Settings", "MainW", fallback=662)
+    h = config.get("Settings", "MainH", fallback=380)
     x = config.get("Settings", "MainX", fallback=50)
     y = config.get("Settings", "MainY", fallback=50)
 
     root.title("MK1 Animation Editor")
     root.geometry(f"{w}x{h}+{x}+{y}")
+    root.wm_iconphoto(False, IMG_APP_ICON)
 
     menu_bar = tk.Menu(root)
 
@@ -1528,7 +1790,8 @@ def init_root_window():
     file_menu.add_command(label="Open folder", command=change_dir)
     file_menu.add_command(label="Open custom CHR", command=load_custom_chr)
     file_menu.add_separator()
-    file_menu.add_command(label="Save current fighter", command=command_save_fighter)
+    file_menu.add_command(label="Save current fighter", accelerator="Ctrl+S", underline=0, command=command_save_fighter)
+    root.bind_all("<Control-s>", lambda e: command_save_fighter(False))
     file_menu.add_command(label="Save everything", command=command_save_all)
     file_menu.add_separator()
     file_menu.add_command(label="Exit", command=command_exit)
@@ -1659,54 +1922,54 @@ def init_root_window():
 
     # Move controls
 
-    button_move_up = tk.Button(frame_right, text=" Up ", font=_font)
+    button_move_up = tk.Button(frame_right, image=IMG_UP, font=_font)
     button_move_up.grid(row=0, column=1)
 
-    button_move_left = tk.Button(frame_right, text=" Left", font=_font)
+    button_move_left = tk.Button(frame_right, image=IMG_LEFT, font=_font)
     button_move_left.grid(row=1, column=0)
 
-    _label = tk.Label(frame_right, text="MOVE ", font=_font)
+    _label = tk.Label(frame_right, text=" MOVE ", font=_font)
     _label.grid(row=1, column=1, padx=4, pady=4)
 
-    button_move_right = tk.Button(frame_right, text="Right", font=_font)
+    button_move_right = tk.Button(frame_right, image=IMG_RIGHT, font=_font)
     button_move_right.grid(row=1, column=2)
 
-    button_move_down = tk.Button(frame_right, text="Down", font=_font)
+    button_move_down = tk.Button(frame_right, image=IMG_DOWN, font=_font)
     button_move_down.grid(row=2, column=1)
 
     # Expand controls
 
-    button_exp_up = tk.Button(frame_right, text=" Up ", font=_font)
-    button_exp_up.grid(row=3, column=1, pady=(32, 0))
+    button_exp_up = tk.Button(frame_right, image=IMG_UP, font=_font, command=on_expand_up)
+    button_exp_up.grid(row=3, column=1, pady=(16, 0))
 
-    button_exp_left = tk.Button(frame_right, text=" Left", font=_font)
+    button_exp_left = tk.Button(frame_right, image=IMG_LEFT, font=_font, command=on_expand_left)
     button_exp_left.grid(row=4, column=0)
 
     _label = tk.Label(frame_right, text="EXPAND", font=_font)
     _label.grid(row=4, column=1, padx=4, pady=4)
 
-    button_exp_right = tk.Button(frame_right, text="Right", font=_font)
+    button_exp_right = tk.Button(frame_right, image=IMG_RIGHT, font=_font, command=on_expand_right)
     button_exp_right.grid(row=4, column=2)
 
-    button_exp_down = tk.Button(frame_right, text="Down", font=_font)
+    button_exp_down = tk.Button(frame_right, image=IMG_DOWN, font=_font, command=on_expand_down)
     button_exp_down.grid(row=5, column=1)
 
     # Shrink controls
 
-    button_shrink_up = tk.Button(frame_right, text=" Up ", font=_font)
-    button_shrink_up.grid(row=6, column=1, pady=(32, 0))
+    button_shrink_down = tk.Button(frame_right, image=IMG_DOWN, font=_font, command=on_shrink_down)
+    button_shrink_down.grid(row=6, column=1, pady=(16, 0))
 
-    button_shrink_left = tk.Button(frame_right, text=" Left", font=_font)
-    button_shrink_left.grid(row=7, column=0)
+    button_shrink_right = tk.Button(frame_right, image=IMG_RIGHT, font=_font, command=on_shrink_right)
+    button_shrink_right.grid(row=7, column=0)
 
     _label = tk.Label(frame_right, text="SHRINK", font=_font)
     _label.grid(row=7, column=1)
 
-    button_shrink_right = tk.Button(frame_right, text="Right", font=_font)
-    button_shrink_right.grid(row=7, column=2)
+    button_shrink_left = tk.Button(frame_right, image=IMG_LEFT, font=_font, command=on_shrink_left)
+    button_shrink_left.grid(row=7, column=2)
 
-    button_shrink_down = tk.Button(frame_right, text="Down ", font=_font)
-    button_shrink_down.grid(row=8, column=1)
+    button_shrink_up = tk.Button(frame_right, image=IMG_UP, font=_font, command=on_shrink_up)
+    button_shrink_up.grid(row=8, column=1)
 
     root.bind("<FocusIn>", bring_to_front)
 
@@ -1716,13 +1979,11 @@ def init_log_window():
     global log_text
 
     # Get geometry from INI file
-    w = config.get("Settings", "LogW", fallback=512)
-    h = config.get("Settings", "LogH", fallback=360)
     x = config.get("Settings", "LogX", fallback=100)
     y = config.get("Settings", "LogY", fallback=100)
 
     log_win.title("Log")
-    log_win.geometry(f"{w}x{h}+{x}+{y}")
+    log_win.geometry(f"512x360+{x}+{y}")
     log_win.config(bg="black")
     log_win.resizable(False, False)
 
@@ -1740,15 +2001,14 @@ def init_tiles_window():
     global label_cur_tile
 
     # Get geometry (at least position) from INI file for the tile picker too
-    w = config.get("Settings", "ChrW", fallback=256)
-    h = config.get("Settings", "ChrH", fallback=160)
     x = config.get("Settings", "ChrX", fallback=660)
     y = config.get("Settings", "ChrY", fallback=160)
 
     tiles_win.title("CHR ROM")
-    tiles_win.geometry(f"{w}x{h}+{x}+{y}")
+    tiles_win.geometry(f"256x160+{x}+{y}")
     tiles_win.config(bg="white")
     tiles_win.resizable(False, False)
+    tiles_win.wm_iconphoto(False, IMG_CHR_ICON)
 
     tiles_canvas = tk.Canvas(tiles_win, bg="#A0A0F0", borderwidth=0, width=256, height=128, cursor="hand2")
     tiles_canvas.pack()
