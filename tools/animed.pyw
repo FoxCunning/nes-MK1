@@ -187,7 +187,13 @@ item_tile_selection = -1
 var_fighters = tk.StringVar(root)
 var_animations = tk.StringVar(root)
 var_attribute = tk.IntVar(root)
-"""0 (left palette) or 1 (right palette)"""
+"""0 (left palette) or 1 (right palette)."""
+var_view_log_win = tk.BooleanVar(root)
+"""View/hide the log window."""
+var_view_chr_win = tk.BooleanVar(root)
+"""Vide/hide the tile selector (CHR ROM Bank) window."""
+var_view_grid = tk.BooleanVar(root)
+"""View/hide the grid in the frame canvas."""
 
 # Other variables and data
 master_dir = ""
@@ -898,6 +904,18 @@ def show_tileset(bank: int):
     item_tile_selection = tiles_canvas.create_rectangle(0, 0, 16, 16, width=2, outline="#F00000")
 
 
+def show_hide_grid(*_args):
+    """Shows or hides the grid around sprites in the current animation frame."""
+    if var_view_grid.get():
+        show_frame(cur_frame_id)
+    else:
+        for _spr in range(len(main_grid_items)):
+            try:
+                main_canvas.itemconfigure(main_grid_items[_spr], state=tk.HIDDEN)
+            except tk.TclError:
+                continue
+
+
 def show_frame(index: int = 0):
     """
     Draws or re-draws the frame *index* for the current fighter.
@@ -946,19 +964,20 @@ def show_frame(index: int = 0):
                 _c = _c + 1
 
             # Show grid item
-            # TODO Skip if option deselected
-            grid_colour = "white" if data.sprites[_s] != 0xFF else "red"
-            if len(main_grid_items) <= _s:
-                # Create new item if needed
-                main_grid_items.append(main_canvas.create_rectangle(_image_x, _image_y,
-                                                                    _image_x + 15, _image_y + 15,
-                                                                    outline=grid_colour, width=1,
-                                                                    state=tk.NORMAL))
-            else:
-                # Move and show existing item if there is one already
-                main_canvas.coords(main_grid_items[_s], _image_x, _image_y, _image_x + 15, _image_y + 15)
-                main_canvas.itemconfigure(main_grid_items[_s], outline=grid_colour, state=tk.NORMAL)
-                main_canvas.tag_raise(main_grid_items[_s])
+            # Skip if option deselected
+            if var_view_grid.get():
+                grid_colour = "white" if data.sprites[_s] != 0xFF else "red"
+                if len(main_grid_items) <= _s:
+                    # Create new item if needed
+                    main_grid_items.append(main_canvas.create_rectangle(_image_x, _image_y,
+                                                                        _image_x + 15, _image_y + 15,
+                                                                        outline=grid_colour, width=1,
+                                                                        state=tk.NORMAL))
+                else:
+                    # Move and show existing item if there is one already
+                    main_canvas.coords(main_grid_items[_s], _image_x, _image_y, _image_x + 15, _image_y + 15)
+                    main_canvas.itemconfigure(main_grid_items[_s], outline=grid_colour, state=tk.NORMAL)
+                    main_canvas.tag_raise(main_grid_items[_s])
 
             _s = _s + 1
 
@@ -970,12 +989,13 @@ def show_frame(index: int = 0):
             continue
 
     # Hide grid items that are not used
-    # TODO Skip if grid option deselected
-    for _spr in range(_s, len(main_grid_items)):
-        try:
-            main_canvas.itemconfigure(main_grid_items[_spr], state=tk.HIDDEN)
-        except tk.TclError:
-            continue
+    # Skip if grid option deselected
+    if var_view_grid.get():
+        for _spr in range(_s, len(main_grid_items)):
+            try:
+                main_canvas.itemconfigure(main_grid_items[_spr], state=tk.HIDDEN)
+            except tk.TclError:
+                continue
 
 
 def select_tile(index: int = 0):
@@ -1130,6 +1150,28 @@ def change_sprite_id(fighter: int, frame: int, sprite: int, new_id: int) -> None
 
 
 # ----------------------------------------------------------------------------------------------------------------------
+
+
+def on_help(*_args):
+    messagebox.showinfo("Help", """Frame view:
+    Right click - select tile
+    Left click  - change tile
+    CTRL+Left   - delete tile
+
+Tileset view:
+    Left click  - select tile
+""")
+
+
+def on_about(*_args):
+    # noinspection SpellCheckingInspection
+    messagebox.showinfo("About...", """Mortal Kombat Arkade Edition Editor
+    ©2023-20244 Fox Cunning
+       MIT Licence 1.0
+    
+Undo/Redo ©2017 jscuster, ©2024 Fox Cunning
+       APACHE Licence 2.0
+""")
 
 
 def on_tile_canvas_click(*args):
@@ -1464,6 +1506,11 @@ def init_root_window():
     global text_attribute
     global text_total
 
+    var_view_chr_win.set(True)
+    var_view_log_win.set(True)
+    var_view_grid.set(True)
+    var_view_grid.trace("w", show_hide_grid)
+
     # noinspection SpellCheckingInspection
     _font = ("Fixedsys", 16)
 
@@ -1496,11 +1543,17 @@ def init_root_window():
 
     menu_bar.add_cascade(label="Edit", menu=edit_menu)
 
-    help_menu = tk.Menu(menu_bar, tearoff=0)
-    help_menu.add_command(label="Help")
-    help_menu.add_command(label="About...")
+    view_menu = tk.Menu(menu_bar, tearoff=0)
+    view_menu.add_checkbutton(label="Log Window", variable=var_view_log_win)
+    view_menu.add_checkbutton(label="CHR Bank", variable=var_view_chr_win)
+    view_menu.add_checkbutton(label="Frame Grid", variable=var_view_grid)
+    menu_bar.add_cascade(label="View", menu=view_menu)
 
-    # TODO Add a "view" menu with option to show/hide the CHR tiles and log window
+    help_menu = tk.Menu(menu_bar, tearoff=0)
+    help_menu.add_command(label="Help", command=on_help)
+    help_menu.add_command(label="About...", command=on_about)
+
+    menu_bar.add_cascade(label="Help", menu=help_menu)
 
     root.config(menu=menu_bar)
 
