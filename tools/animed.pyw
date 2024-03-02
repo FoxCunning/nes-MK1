@@ -213,7 +213,12 @@ cur_frame_id = 0
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def parse_bytes(asm) -> bytearray:
+def parse_bytes(asm: list) -> bytearray:
+    """
+    Convert assembly lines containing .byte statements to a bytearray with their values.
+    :param asm: A list of strings containing assembly code.
+    :return: A bytearray containing values read from the assembly.
+    """
     values = bytearray()
 
     for line in asm:
@@ -237,7 +242,12 @@ def parse_bytes(asm) -> bytearray:
     return values
 
 
-def parse_pointers(asm):
+def parse_pointers(asm: list) -> list:
+    """
+    Convert assembly lines containing .word statements to a list of strings with label names.
+    :param asm: A list of strings containing assembly code.
+    :return: A list of strings containing label names.
+    """
     labels = []
 
     for line in asm:
@@ -261,6 +271,8 @@ def parse_pointers(asm):
 
 
 class Frame:
+    """A frame defines a set of sprites arranged to form a large meta-sprite."""
+
     def __init__(self):
         self.width = 0
         self.height = 0
@@ -271,19 +283,22 @@ class Frame:
 
 
 class Animation:
+    """An animation defines a list of frame indices and the index of a list of coordinates for its movement."""
+
     def __init__(self, mov=0):
         self.movement_id = mov
         self.frame_ids: list[int] = []
 
 
 class AnimationData:
+    """Contains lists of animations and frames."""
 
     def __init__(self):
         self.animations: list[Animation] = []
         self.frames: list[Frame] = []
 
     @staticmethod
-    def from_asm(asm):
+    def from_asm(asm: list):
         data = AnimationData()
         line_no = 0
         label_animations = ""
@@ -427,7 +442,10 @@ class Tile:
         self.photo = ImageTk.PhotoImage(image)
 
 
-def error(text, show_msg=True):
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def error(text: str, show_msg: bool = True):
     """
     Logs an error message. Optionally also shows a message box.
     :param text: Error message.
@@ -439,7 +457,7 @@ def error(text, show_msg=True):
         tk.messagebox.showerror("Error", text)
 
 
-def warning(text, show_msg=True):
+def warning(text: str, show_msg: bool = True):
     """
     Logs a warning message. Optionally also shows a message box.
     :param text: Warning message.
@@ -451,7 +469,7 @@ def warning(text, show_msg=True):
         tk.messagebox.showwarning("Warning", text)
 
 
-def info(text, show_msg=False):
+def info(text: str, show_msg: bool = False):
     """
     Logs an informational message. Optionally also shows a message box.
     :param text: Message text.
@@ -463,7 +481,7 @@ def info(text, show_msg=False):
         tk.messagebox.showinfo("Info", text)
 
 
-def add_log(text, log_type=LOG_INFO):
+def add_log(text: str, log_type: bool = LOG_INFO):
     """
     Appends a string to the log window.
     :param text: String to add.
@@ -752,6 +770,7 @@ def read_attribute_bits():
                     _bank = _bank + 1
 
     info(f"Read {len(attribute_bits) * 8} sprite attribute values.", False)
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -1064,6 +1083,7 @@ def select_frame(index: int = 0):
 
     show_frame(index)
 
+
 # ----------------------------------------------------------------------------------------------------------------------
 
 
@@ -1076,6 +1096,7 @@ def change_chr_bank(fighter: int, frame: int, new_bank: int) -> None:
     :return:
     """
     global cur_chr_bank
+    global unsaved_changes
 
     animation_data[fighter].frames[frame].bank = new_bank
     if fighter == current_fighter() and frame == cur_frame_id:
@@ -1083,6 +1104,8 @@ def change_chr_bank(fighter: int, frame: int, new_bank: int) -> None:
         show_frame(cur_frame_id)
         change_text(text_bank, f"{new_bank}", True)
         cur_chr_bank = new_bank
+
+    unsaved_changes = True
 
 
 def change_sprite_id(fighter: int, frame: int, sprite: int, new_id: int) -> None:
@@ -1094,12 +1117,17 @@ def change_sprite_id(fighter: int, frame: int, sprite: int, new_id: int) -> None
     :param new_id: Tile ID of the new sprite.
     :return:
     """
+    global unsaved_changes
+
     animation_data[fighter].frames[frame].sprites[sprite] = new_id
 
     # If editing the current fighter/frame, redraw
     if fighter == current_fighter() and frame == cur_frame_id:
         show_frame(frame)
         update_sprite_count()
+
+    unsaved_changes = True
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -1133,6 +1161,8 @@ def on_main_canvas_left_click(*args):
     :param args: args[0].x, args[0].y = mouse click coordinates.
     :return:
     """
+    global unsaved_changes
+
     sprite = get_frame_sprite_index(args[0].x, args[0].y)
     if sprite < 0:
         return
@@ -1154,6 +1184,7 @@ def on_main_canvas_left_click(*args):
     undo_redo(change_sprite_id, (f, cur_frame_id, sprite, new_tile_idx),
               (f, cur_frame_id, sprite, old_tile_idx), change_sprite_id)
     update_undo_menu()
+    unsaved_changes = True
 
 
 def on_select_fighter(*_args):
@@ -1242,6 +1273,7 @@ def on_chr_bank_click(*_args):
                   (f, cur_frame_id, cur_chr_bank,), change_chr_bank)
         update_undo_menu()
 
+
 # ----------------------------------------------------------------------------------------------------------------------
 
 
@@ -1260,9 +1292,8 @@ def command_redo(*_args):
 
 
 def command_exit():
-    # TODO Don't ask confirmation if there are no unsaved changes
-
-    if tk.messagebox.askyesno("Exit", "Are you sure you want to quit?") is True:
+    # Don't ask confirmation if there are no unsaved changes
+    if not unsaved_changes or tk.messagebox.askyesno("Exit", "Are you sure you want to quit?") is True:
         on_root_destroy()
 
 
@@ -1390,6 +1421,7 @@ def command_save_fighter(overwrite: bool = False) -> None:
 
     messagebox.showinfo("Save fighter", f"{FIGHTERS[fighter]}'s animation data saved to '{file_name}'.")
     unsaved_changes = False
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 
