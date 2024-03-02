@@ -1239,7 +1239,7 @@ def expand_frame(fighter: int, frame: int, direction: str) -> None:
 
     # Redraw the view if needed
     if current_fighter() == fighter and cur_frame_id == frame:
-        show_frame(cur_frame_id)
+        select_frame(cur_frame_id)
 
 
 def shrink_frame(fighter: int, frame: int, direction: str) -> None:
@@ -1311,12 +1311,15 @@ def shrink_frame(fighter: int, frame: int, direction: str) -> None:
 
     # Redraw the view if needed
     if current_fighter() == fighter and cur_frame_id == frame:
-        show_frame(cur_frame_id)
+        select_frame(cur_frame_id)
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 
 def on_help(*_args):
+    # noinspection SpellCheckingInspection
+    _font = ("Fixedsys", 16)
+
     messagebox.showinfo("Help", """Frame view:
     Right click - select tile
     Left click  - change tile
@@ -1336,6 +1339,10 @@ def on_about(*_args):
 Undo/Redo ©2017 jscuster, ©2024 Fox Cunning
        APACHE Licence 2.0
 """)
+
+
+def on_view_grid(*_args):
+    var_view_grid.set(not var_view_grid.get())
 
 
 def on_tile_canvas_click(*args):
@@ -1388,7 +1395,8 @@ def on_main_canvas_left_click(*args):
 
     # Change sprite
     undo_redo(change_sprite_id, (f, cur_frame_id, sprite, new_tile_idx),
-              (f, cur_frame_id, sprite, old_tile_idx), change_sprite_id)
+              (f, cur_frame_id, sprite, old_tile_idx), change_sprite_id,
+              text="Change sprite")
     update_undo_menu()
     unsaved_changes = True
 
@@ -1468,7 +1476,8 @@ def on_expand_up(*_args):
         print("\a")
         return
 
-    undo_redo(expand_frame, (f, cur_frame_id, "U"), (f, cur_frame_id, "D"), shrink_frame)
+    undo_redo(expand_frame, (f, cur_frame_id, "U"), (f, cur_frame_id, "D"), shrink_frame,
+              text="Expand up")
     update_undo_menu()
 
 
@@ -1480,7 +1489,8 @@ def on_expand_down(*_args):
         print("\a")
         return
 
-    undo_redo(expand_frame, (f, cur_frame_id, "D"), (f, cur_frame_id, "U"), shrink_frame)
+    undo_redo(expand_frame, (f, cur_frame_id, "D"), (f, cur_frame_id, "U"), shrink_frame,
+              text="Expand down")
     update_undo_menu()
 
 
@@ -1492,7 +1502,8 @@ def on_expand_left(*_args):
         print("\a")
         return
 
-    undo_redo(expand_frame, (f, cur_frame_id, "L"), (f, cur_frame_id, "R"), shrink_frame)
+    undo_redo(expand_frame, (f, cur_frame_id, "L"), (f, cur_frame_id, "R"), shrink_frame,
+              text="Expand left")
     update_undo_menu()
 
 
@@ -1504,7 +1515,8 @@ def on_expand_right(*_args):
         print("\a")
         return
 
-    undo_redo(expand_frame, (f, cur_frame_id, "R"), (f, cur_frame_id, "L"), shrink_frame)
+    undo_redo(expand_frame, (f, cur_frame_id, "R"), (f, cur_frame_id, "L"), shrink_frame,
+              text="Expand right")
     update_undo_menu()
 
 
@@ -1516,7 +1528,8 @@ def on_shrink_up(*_args):
         print("\a")
         return
 
-    undo_redo(shrink_frame, (f, cur_frame_id, "U"), (f, cur_frame_id, "D"), expand_frame)
+    undo_redo(shrink_frame, (f, cur_frame_id, "U"), (f, cur_frame_id, "D"), expand_frame,
+              text="Shrink up")
     update_undo_menu()
 
 
@@ -1528,7 +1541,8 @@ def on_shrink_down(*_args):
         print("\a")
         return
 
-    undo_redo(shrink_frame, (f, cur_frame_id, "D"), (f, cur_frame_id, "U"), expand_frame)
+    undo_redo(shrink_frame, (f, cur_frame_id, "D"), (f, cur_frame_id, "U"), expand_frame,
+              text="Shrink down")
     update_undo_menu()
 
 
@@ -1540,7 +1554,8 @@ def on_shrink_left(*_args):
         print("\a")
         return
 
-    undo_redo(shrink_frame, (f, cur_frame_id, "L"), (f, cur_frame_id, "R"), expand_frame)
+    undo_redo(shrink_frame, (f, cur_frame_id, "L"), (f, cur_frame_id, "R"), expand_frame,
+              text="Shrink left")
     update_undo_menu()
 
 
@@ -1552,7 +1567,8 @@ def on_shrink_right(*_args):
         print("\a")
         return
 
-    undo_redo(shrink_frame, (f, cur_frame_id, "R"), (f, cur_frame_id, "L"), expand_frame)
+    undo_redo(shrink_frame, (f, cur_frame_id, "R"), (f, cur_frame_id, "L"), expand_frame,
+              text="Shrink right")
     update_undo_menu()
 
 
@@ -1579,7 +1595,8 @@ def on_chr_bank_click(*_args):
     if new_bank is not None:
         f = current_fighter()
         undo_redo(change_chr_bank, (f, cur_frame_id, new_bank),
-                  (f, cur_frame_id, cur_chr_bank,), change_chr_bank)
+                  (f, cur_frame_id, cur_chr_bank,), change_chr_bank,
+                  text="Change CHR Bank")
         update_undo_menu()
 
 
@@ -1589,6 +1606,9 @@ def on_chr_bank_click(*_args):
 def command_undo(*_args):
     """Undo last operation and update undo/redo menu items."""
     if undo_redo.can_undo(1):
+        text = undo_redo.get_undo_text()
+        if len(text) > 0:
+            add_log(f"Undo action: {text}.", LOG_INFO)
         undo_redo.undo(1)
     update_undo_menu()
 
@@ -1596,6 +1616,9 @@ def command_undo(*_args):
 def command_redo(*_args):
     """Redo last operation and update undo/redo menu items."""
     if undo_redo.can_redo(1):
+        text = undo_redo.get_redo_text()
+        if len(text) > 0:
+            add_log(f"Redo action: {text}.", LOG_INFO)
         undo_redo.redo(1)
     update_undo_menu()
 
@@ -1795,7 +1818,6 @@ def init_root_window():
     file_menu.add_command(label="Save everything", command=command_save_all)
     file_menu.add_separator()
     file_menu.add_command(label="Exit", command=command_exit)
-
     menu_bar.add_cascade(label="File", menu=file_menu)
 
     edit_menu = tk.Menu(menu_bar, tearoff=0)
@@ -1803,19 +1825,18 @@ def init_root_window():
     edit_menu.add_command(label="Redo", state=tk.DISABLED, accelerator="Ctrl+Y", command=command_redo)
     root.bind_all("<Control-z>", command_undo)
     root.bind_all("<Control-y>", command_redo)
-
     menu_bar.add_cascade(label="Edit", menu=edit_menu)
 
     view_menu = tk.Menu(menu_bar, tearoff=0)
     view_menu.add_checkbutton(label="Log Window", variable=var_view_log_win)
     view_menu.add_checkbutton(label="CHR Bank", variable=var_view_chr_win)
-    view_menu.add_checkbutton(label="Frame Grid", variable=var_view_grid)
+    view_menu.add_checkbutton(label="Frame Grid", variable=var_view_grid, accelerator="Ctrl+G")
+    root.bind_all("<Control-g>", on_view_grid)
     menu_bar.add_cascade(label="View", menu=view_menu)
 
     help_menu = tk.Menu(menu_bar, tearoff=0)
     help_menu.add_command(label="Help", command=on_help)
     help_menu.add_command(label="About...", command=on_about)
-
     menu_bar.add_cascade(label="Help", menu=help_menu)
 
     root.config(menu=menu_bar)
