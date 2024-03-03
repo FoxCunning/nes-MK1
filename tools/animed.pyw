@@ -647,8 +647,9 @@ def read_all() -> bool:
     Parses all data, reads palettes and loads CHR tileset, then shows palette 0, fighter 0, animation 0.
     :return: False if an error occurred, otherwise True.
     """
-    file_name = ""
+    global attribute_bits
 
+    file_name = ""
     try:
         for b in range(0, 9):
             # Read animation data for each fighter
@@ -673,7 +674,9 @@ def read_all() -> bool:
         error(f"Could not open file:\n{file_name}\nError: {err}")
         return False
 
-    read_attribute_bits()
+    attribute_bits = read_attribute_bits()
+    info(f"Read {len(attribute_bits) * 8} sprite attribute values.", False)
+
     read_chr_rom()
 
     # Show palette 0
@@ -753,12 +756,12 @@ def read_pattern(bank: int, tile: int) -> bytearray:
     return pixels
 
 
-def read_attribute_bits():
+def read_attribute_bits() -> list:
     """
     Parse sprite attribute bits.
-    :return:
+    :return: A list containing 8 bytes per CHR bank.
     """
-    global attribute_bits
+    bits = []
     asm_file = master_dir + "/attr_bits.asm"
 
     try:
@@ -766,25 +769,21 @@ def read_attribute_bits():
             lines = file.readlines()
     except IOError as err:
         error(err, True)
-        return
-
-    # Empty old list before reading the new values
-    attribute_bits = []
+        return []
 
     _bank = 0
     for line in lines:
-        if line.find('.byte') > -1:
+        if ".byte" in line:
             # Each line contains 8 x 8 bit values = 64 sprite attributes (one full bank)
             _values = parse_bytes([line])
-            attribute_bits.append(_values)
+            bits.append(_values)
             _bank = _bank + 1
             if _bank == 0x1C:
                 # Skip unused banks (these do not contain sprites)
                 for _ in range(28):
-                    attribute_bits.append(bytearray([0, 0, 0, 0, 0, 0, 0, 0]))
+                    bits.append(bytearray([0, 0, 0, 0, 0, 0, 0, 0]))
                     _bank = _bank + 1
-
-    info(f"Read {len(attribute_bits) * 8} sprite attribute values.", False)
+    return bits
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -1166,7 +1165,7 @@ def expand_frame(fighter: int, frame: int, direction: str) -> None:
     :param direction: "U", "D", "L" or "R".
     :return:
     """
-    add_log("Expanding frame.", LOG_INFO)
+    info("Expanding frame.")
 
     old_frame = animation_data[fighter].frames[frame]
     w = old_frame.width
@@ -1234,7 +1233,7 @@ def expand_frame(fighter: int, frame: int, direction: str) -> None:
         animation_data[fighter].frames[frame].width = w + 1
 
     else:
-        add_log(f"Unknown expand direction '{direction}'.", LOG_ERROR)
+        error(f"Unknown expand direction '{direction}'.")
         return
 
     # Redraw the view if needed
@@ -1250,7 +1249,7 @@ def shrink_frame(fighter: int, frame: int, direction: str) -> None:
     :param direction: Valid values are "U", "D", "L" or "R".
     :return:
     """
-    add_log("Shrinking frame.", LOG_INFO)
+    info("Shrinking frame.")
 
     old_frame = animation_data[fighter].frames[frame]
     w = old_frame.width
@@ -1306,7 +1305,7 @@ def shrink_frame(fighter: int, frame: int, direction: str) -> None:
         animation_data[fighter].frames[frame].width = w - 1
 
     else:
-        add_log(f"Unknown shrink direction '{direction}'.", LOG_ERROR)
+        error(f"Unknown shrink direction '{direction}'.")
         return
 
     # Redraw the view if needed
@@ -1608,7 +1607,7 @@ def command_undo(*_args):
     if undo_redo.can_undo(1):
         text = undo_redo.get_undo_text()
         if len(text) > 0:
-            add_log(f"Undo action: {text}.", LOG_INFO)
+            info(f"Undo action: {text}.")
         undo_redo.undo(1)
     update_undo_menu()
 
@@ -1618,7 +1617,7 @@ def command_redo(*_args):
     if undo_redo.can_redo(1):
         text = undo_redo.get_redo_text()
         if len(text) > 0:
-            add_log(f"Redo action: {text}.", LOG_INFO)
+            info(f"Redo action: {text}.")
         undo_redo.redo(1)
     update_undo_menu()
 
@@ -1647,12 +1646,12 @@ def command_save_fighter(overwrite: bool = False) -> None:
     fighter = current_fighter()
     file_name = master_dir + "/bank_" + _BANKS[fighter] + ".asm"
 
-    add_log(f"Saving data for {FIGHTERS[fighter]}...", LOG_INFO)
+    info(f"Saving data for {FIGHTERS[fighter]}...")
 
     # Ask to overwrite
     if overwrite is False and os.path.isfile(file_name):
         if messagebox.askyesno("Save fighter", "File already exists. Overwrite?") is False:
-            add_log("Aborted.", LOG_INFO)
+            info("Aborted.")
             return
 
     # Build string with assembly to be saved
@@ -1749,15 +1748,13 @@ def command_save_fighter(overwrite: bool = False) -> None:
         with open(file_name, "w") as asm_file:
             asm_file.write(out_text)
     except IOError as err:
-        messagebox.showerror("Save fighter", f"Error saving '{file_name}':\n{err}")
-        add_log(f"ERROR: {err}.", LOG_ERROR)
+        error(f"Error saving '{file_name}':\n{err}")
         return
 
     # TODO Save palette attribute data
 
-    messagebox.showinfo("Save fighter", f"{FIGHTERS[fighter]}'s animation data saved to '{file_name}'.")
+    info(f"{FIGHTERS[fighter]}'s animation data saved to '{file_name}'.", True)
     unsaved_changes = False
-    add_log("Done!", LOG_INFO)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
