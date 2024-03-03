@@ -1751,9 +1751,47 @@ def command_save_fighter(overwrite: bool = False) -> None:
         error(f"Error saving '{file_name}':\n{err}")
         return
 
-    # TODO Save palette attribute data
-
     info(f"{FIGHTERS[fighter]}'s animation data saved to '{file_name}'.", True)
+
+    # Save palette attribute data
+
+    # Create a list of all the CHR banks used by this fighter
+    _chr_banks = []
+    for f in animation_data[fighter].frames:
+        if f.bank not in _chr_banks:
+            _chr_banks.append(f.bank)
+
+    # Re-read the file, because we only want to overwrite the portion used by this fighter
+    old_bits = read_attribute_bits()
+    new_bits = []
+
+    for bank in range(0, 0xD8, 2):
+        if bank in _chr_banks:
+            # Bank used by this fighter: save one set of data bits
+            new_bits.append(attribute_bits[bank])
+            new_bits.append(attribute_bits[bank + 1])
+        else:
+            # Otherwise, copy from the old values
+            new_bits.append(old_bits[bank])
+            new_bits.append(old_bits[bank + 1])
+
+    # Save to asm file
+    out_text = ""
+    for bank in range(0, 0xD8, 2):
+        # Skip banks 1C-37
+        if bank < 0x1C or bank > 0x37:
+            out_text += f"\t@attr_bits_{bank:02X}:\n"
+            out_text += "\t.byte $" + new_bits[bank].hex("$").replace("$", ", $").upper() + "\n"
+            out_text += "\t.byte $" + new_bits[bank + 1].hex("$").replace("$", ", $").upper() + "\n"
+
+    try:
+        with open(master_dir + "/attr_bits.asm", "w") as _fd:
+            _fd.write(out_text)
+    except IOError as err:
+        error(f"Error saving attribute bits:\n{err}")
+    else:
+        info("Attribute bits saved.")
+
     unsaved_changes = False
 
 
