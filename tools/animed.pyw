@@ -134,7 +134,9 @@ NES_COLOURS = [[124, 124, 124],
                [0, 0, 0]]
 
 TILE_BIT_MASKS = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80]
-"""Used to retrieve the bit that tells if a sprite uses palette 0 or 1 from attribute_bits."""
+"""Used to retrieve or set the bit that tells if a sprite uses palette 0 or 1 from attribute_bits."""
+TILE_BIT_CLEAR_MASKS = [0xFE, 0xFD, 0xFB, 0xF7, 0xEF, 0xDF, 0xBF, 0x7F]
+"""Used to clear the bit that tells if a sprite uses palette 0 or 1 from attribute_bits."""
 
 SCALING = 2
 """Pixel magnification factor."""
@@ -838,6 +840,53 @@ def get_tile_palette(tile_id: int) -> int:
     return 0 if _bit == 0 else 1
 
 
+def change_tile_palette(fighter: int, frame: int, tile_id: int, palette: int) -> None:
+    """
+    Changes the palette assigned to a sprite tile.
+    :param fighter: Index of the fighter to edit.
+    :param frame: Index of the frame to edit.
+    :param tile_id: Tile index (0-63).
+    :param palette: Palette index (0 or 1).
+    :return:
+    """
+    # Each byte has indices for 8 sprites, so each 8-byte group corresponds to 64 sprites
+    _id = tile_id >> 3
+    _bank = animation_data[fighter].frames[frame].bank
+    if _id > 7:
+        _bank = _bank + 1
+        _id = _id - 8
+    # Now we have the index of the byte we need to change
+
+    # However this byte has values for a group of 8 sprites
+    # We will use bitmasks to flip only the bit corresponding to the sprite we want to change
+
+    _bit_index = tile_id % 8
+    _bit = 1 if palette != 0 else 0
+    if _bit == 0:
+        attribute_bits[_bank][_id] &= TILE_BIT_CLEAR_MASKS[_bit_index]
+    else:
+        attribute_bits[_bank][_id] |= TILE_BIT_MASKS[_bit_index]
+
+    # If this CHR bank was currently displayed, update the sprite in the canvas
+    if _bank == cur_chr_bank or _bank == cur_chr_bank + 1:
+        # Change colours
+        if tile_id > 63:
+            pixels = bytes(read_pattern(_bank, tile_id - 64))
+        else:
+            pixels = bytes(read_pattern(_bank, tile_id))
+        image = Image.frombytes('P', (8, 8), pixels)
+        image.info["transparency"] = 0
+        image.putpalette(palettes[fighter].colours[:12] if _bit == 0 else palettes[fighter].colours[12:])
+
+        tiles[tile_id] = Tile(image.resize((16, 16)))
+
+        tiles_canvas.itemconfigure(tile_items[tile_id], image=tiles[tile_id].photo)
+        tiles_canvas.update_idletasks()
+
+        # Redraw frame
+        show_frame(frame)
+
+
 def show_palette(index=0):
     # Clear canvas
     palette_canvas.delete(tk.ALL)
@@ -889,7 +938,7 @@ def show_tileset(bank: int):
 
         tiles.append(Tile(image.resize((16, 16))))
 
-        # TODO Magnify x4
+        # TODO? Magnify x4
         # tiles_canvas.itemconfigure(tile_items[t], image=tiles[t].photo)
         tile_items.append(tiles_canvas.create_image(x, y, anchor="nw", image=tiles[t].photo))
         tiles_canvas.tag_lower(tile_items[t])
@@ -1312,6 +1361,7 @@ def shrink_frame(fighter: int, frame: int, direction: str) -> None:
     if current_fighter() == fighter and cur_frame_id == frame:
         select_frame(cur_frame_id)
 
+
 # ----------------------------------------------------------------------------------------------------------------------
 
 
@@ -1599,6 +1649,14 @@ def on_chr_bank_click(*_args):
         update_undo_menu()
 
 
+def on_tile_palette_click(*_args):
+    f = current_fighter()
+
+    _bit = 1 if var_attribute.get() else 0
+    _neg = (_bit + 1) % 2
+    undo_redo(change_tile_palette, (f, cur_frame_id, cur_tile_idx, _bit),
+              (f, cur_frame_id, cur_tile_idx, _neg), change_tile_palette, text="Change palette bit")
+
 # ----------------------------------------------------------------------------------------------------------------------
 
 
@@ -1751,11 +1809,54 @@ def command_save_fighter(overwrite: bool = False) -> None:
         error(f"Error saving '{file_name}':\n{err}")
         return
 
-    # TODO Save palette attribute data
-
     info(f"{FIGHTERS[fighter]}'s animation data saved to '{file_name}'.", True)
+
+    # Save palette attribute data
+
+    # Create a list of all the CHR banks used by this fighter
+    _chr_banks = []
+    for f in animation_data[fighter].frames:
+        if f.bank not in _chr_banks:
+            _chr_banks.append(f.bank)
+
+    # Re-read the file, because we only want to overwrite the portion used by this fighter
+    old_bits = read_attribute_bits()
+    new_bits = []
+
+    for bank in range(0, 0xD8, 2):
+        if bank in _chr_banks:
+            # Bank used by this fighter: save one set of data bits
+            new_bits.append(attribute_bits[bank])
+            new_bits.append(attribute_bits[bank + 1])
+        else:
+            # Otherwise, copy from the old values
+            new_bits.append(old_bits[bank])
+            new_bits.append(old_bits[bank + 1])
+
+    # Save to asm file
+    out_text = ""
+    for bank in range(0, 0xD8, 2):
+        # Skip banks 1C-37
+        if bank < 0x1C or bank > 0x37:
+            out_text += f"\t@attr_bits_{bank:02X}:\n"
+            out_text += "\t.byte $" + new_bits[bank].hex("$").replace("$", ", $").upper() + "\n"
+            out_text += "\t.byte $" + new_bits[bank + 1].hex("$").replace("$", ", $").upper() + "\n"
+
+    try:
+        with open(master_dir + "/attr_bits.asm", "w") as _fd:
+            _fd.write(out_text)
+    except IOError as err:
+        error(f"Error saving attribute bits: {err}")
+    else:
+        info("Attribute bits saved.")
+
     unsaved_changes = False
 
+
+def command_tile_palette_swap(*_args):
+    _bit = var_attribute.get()
+    var_attribute.set(0 if _bit == 1 else 1)
+    on_tile_palette_click()
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -1822,6 +1923,9 @@ def init_root_window():
     edit_menu.add_command(label="Redo", state=tk.DISABLED, accelerator="Ctrl+Y", command=command_redo)
     root.bind_all("<Control-z>", command_undo)
     root.bind_all("<Control-y>", command_redo)
+    edit_menu.add_separator()
+    edit_menu.add_command(label="Swap Tile Palettes", accelerator="Ctrl+P", command=command_tile_palette_swap)
+    root.bind_all("<Control-p>", command_tile_palette_swap)
     menu_bar.add_cascade(label="Edit", menu=edit_menu)
 
     view_menu = tk.Menu(menu_bar, tearoff=0)
@@ -2047,10 +2151,10 @@ def init_tiles_window():
     _label.pack(expand=True, fill=tk.X, side=tk.LEFT)
 
     _radio = tk.Radiobutton(frame_info, text="L", font=_font, bg="white", value=0, relief=tk.GROOVE, indicatoron=False,
-                            state=tk.DISABLED, variable=var_attribute)
+                            variable=var_attribute, command=on_tile_palette_click)
     _radio.pack(expand=True, fill=tk.X, side=tk.LEFT)
     _radio = tk.Radiobutton(frame_info, text="R", font=_font, bg="white", value=1, relief=tk.GROOVE, indicatoron=False,
-                            state=tk.DISABLED, variable=var_attribute)
+                            variable=var_attribute, command=on_tile_palette_click)
     _radio.pack(expand=True, fill=tk.X, side=tk.LEFT)
 
     tiles_win.bind("<FocusIn>", bring_to_front)
