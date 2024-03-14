@@ -151,6 +151,9 @@ anim_jump_fw:
 anim_jump_bk:
 	.byte $0B, $0B, $0B, $0B, $0C, $0C, $0D, $0D
 	.byte $0C, $0C, $0D, $0D, $0C, $0B, $0B, $0B
+anim_special_hit:
+	.byte $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
+	.byte $0E, $0E, $0E, $0E, $0E, $0E
 anim_strong_hit:
 	.byte $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
 anim_regular_hit:
@@ -267,9 +270,6 @@ anim_uppercut_hit:
 	.byte $22, $22, $22, $23, $23, $23, $24, $24
 	.byte $37, $37, $24, $24, $24, $24, $24, $24
 	.byte $24, $24, $24, $00, $00
-anim_special_hit:
-	.byte $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-	.byte $0E, $0E, $0E, $0E, $0E, $0E
 anim_jump_bk_recover:
 	.byte $0B, $0B, $0B, $0B, $0C, $0C, $0D, $0D
 	.byte $0C, $0C, $0D, $0D, $0C, $0B, $0B, $0B
