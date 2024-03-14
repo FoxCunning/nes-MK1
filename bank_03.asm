@@ -1041,8 +1041,7 @@ sub_inner_cpu_ai:
 
 ; -----------------------------------------------------------------------------
 
-; Y = moving fighter's index (0-1)
-; X = opponent's index (0-1)
+; Y = moving fighter's index (0 or 1)
 sub_cpu_move_norng:
 	ldx zp_plr_ofs_param
 	lda zp_5E
@@ -1093,7 +1092,14 @@ sub_cpu_move_0:
 	lda tbl_short_range_ptrs+1,X
 	sta zp_ptr3_hi
 
-	jsr sub_cpu_move_norng
+	; Force random move if opponent is frozen
+	tya
+	eor #$01
+	tax
+	lda zp_frozen_timer,X
+	bne :+
+		jsr sub_cpu_move_norng
+	:
 	jsr sub_cpu_opponent_delay
 	jsr sub_RNG
 
@@ -1124,7 +1130,14 @@ sub_cpu_move_1:
 	lda tbl_med_range_ptrs+1,X
 	sta zp_ptr3_hi
 
-	jsr sub_cpu_move_norng
+	; Force random move if opponent is frozen
+	tya
+	eor #$01
+	tax
+	lda zp_frozen_timer,X
+	bne :+
+		jsr sub_cpu_move_norng
+	:
 	jsr sub_cpu_opponent_delay
 	jsr sub_RNG
 
@@ -1154,7 +1167,15 @@ sub_cpu_move_2:
 	sta zp_ptr3_lo
 	lda tbl_long_range_ptrs+1,X
 	sta zp_ptr3_hi
-	jsr sub_cpu_move_norng
+
+	; Force random move if opponent is frozen
+	tya
+	eor #$01
+	tax
+	lda zp_frozen_timer,X
+	bne :+
+		jsr sub_cpu_move_norng
+	:
 	jsr sub_cpu_opponent_delay
 
 	jsr sub_RNG
@@ -1330,7 +1351,7 @@ tbl_med_range_moves:
 	.byte $05, $0C, $0C, $02, $02, $17, $17, $05
 	.byte $08, $17, $17, $17, $17, $80, $1C, $0C
 	.byte $0C, $0C, $0C, $80, $80, $05, $04, $14
-	.byte $17, $80, $80, $1C, $1A, $08, $19, $08
+	.byte $13, $80, $80, $1C, $1A, $08, $19, $08
 	.byte $08, $08, $08, $08, $1E
 
 ; -----------------------------------------------------------------------------
