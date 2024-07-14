@@ -12,3 +12,4 @@ tools/build.bat
 tools/dist/**
 tools/build/**
 tools/*.spec
+tools/__pycache__/**
