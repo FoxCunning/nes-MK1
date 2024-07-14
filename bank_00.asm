@@ -503,33 +503,31 @@ sub_match_eval:
 	inc zp_9E
 	ldy #$00
 	sty zp_counter_var_F1
-	jsr sub_rom_C207
+	jsr sub_inner_match_eval	; Player One
 
 	iny
-	jsr sub_rom_C207
+	jsr sub_inner_match_eval	; Player Two
 
 	rts
+	; ----------------
+sub_inner_match_eval:
+	ldx #$07	; Substate $07 = Fade out to a different state
 
-; -----------------------------------------------------------------------------
-
-sub_rom_C207:
-	ldx #$07
 	lda ram_plr1_rounds_won,Y
 	cmp #$02
 	bcs @C215
 
-	lda zp_5E
-	bne @C215
+		lda zp_5E
+		bne @C215
 
-	inx
+			inx		; Substate $08 =  Fade out to next round
 	@C215:
 	stx zp_game_substate
 	cpx #$08
-	beq @C21D
-
-	pla
-	pla
-	@C21D:
+	beq :+
+		pla
+		pla
+	:
 	rts
 
 ; -----------------------------------------------------------------------------
@@ -538,55 +536,61 @@ sub_rom_C207:
 sub_match_fade_out:
 	lda zp_counter_var_F1
 	cmp #$40
-	bcs @C227
+	bcs :+
 
-	inc zp_counter_var_F1
-	rts
+		inc zp_counter_var_F1
+		rts
 ; ----------------
-	@C227:
+	:
 	jsr sub_fade_palettes_out
-	bcc @C271
+	bcc @fade_out_rts
 
-	lda zp_9E
-	cmp #$09
-	bcs @C238
+		lda zp_9E
+		cmp #$09
+		bcs @match_over
 
-	lda zp_game_substate
-	cmp #$08
-	beq @C268
+		lda zp_game_substate
+		cmp #$08	; Fading out to next round
+		beq @state_change
 
-	@C238:
-	ldx #$01
-	lda ram_plr2_rounds_won
-	cmp ram_plr1_rounds_won
-	bcs @C243
+		; Fading out to new state
+		@match_over:
+		ldx #$01
+		lda ram_plr2_rounds_won
+		cmp ram_plr1_rounds_won
+		bcs :+
+			dex
+		:
+		stx ram_040C	; Winner index saved here (0 = player one, 1 = player two)
 
-	dex
-	@C243:
-	stx ram_040C
-	ldx #$02
-	lda zp_5E
-	beq @C24D
+		ldx #$02	; State $02 = Continue Screen
+		lda zp_5E
+		beq :+
+			inx		; State $01 = Next Match
+		:
+		stx zp_machine_state_0
 
-	inx
-	@C24D:
-	stx zp_machine_state_0
-	lda #$0B
-	sta ram_irq_routine_idx
-	lda #$00
-	sta zp_scroll_y
-	jsr sub_hide_fighter_sprites
-	lda #$00
-	sta ram_067C
-	sta ram_plr1_rounds_won
-	sta ram_plr2_rounds_won
-	sta zp_9E
-	@C268:
-	lda #$00
-	sta ram_067D
-	sta zp_game_substate
-	sta zp_counter_var_F1
-	@C271:
+		lda #$0B
+		sta ram_irq_routine_idx
+
+		lda #$00
+		sta zp_scroll_y
+
+		jsr sub_hide_fighter_sprites
+
+		lda #$00
+		sta ram_067C
+		sta ram_plr1_rounds_won
+		sta ram_plr2_rounds_won
+		sta zp_9E
+
+		@state_change:
+		lda #$00
+		sta ram_067D
+		sta zp_game_substate
+		sta zp_counter_var_F1
+
+	@fade_out_rts:
 	rts
 
 ; -----------------------------------------------------------------------------

@@ -30,10 +30,10 @@ SOFTWARE.
 import configparser
 import os
 import tkinter as tk
-from tkinter import filedialog, Tk, messagebox
+from tkinter import filedialog, Tk, messagebox, simpledialog
 from PIL import Image, ImageTk
 from typing import List
-
+from undo_redo import UndoRedo
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -133,19 +133,23 @@ NES_COLOURS = [[124, 124, 124],
                [0, 0, 0],
                [0, 0, 0]]
 
-# Used to retrieve the bit that tells if a sprite uses palette 0 or 1 from attribute_bits
 TILE_BIT_MASKS = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80]
+"""Used to retrieve or set the bit that tells if a sprite uses palette 0 or 1 from attribute_bits."""
+TILE_BIT_CLEAR_MASKS = [0xFE, 0xFD, 0xFB, 0xF7, 0xEF, 0xDF, 0xBF, 0x7F]
+"""Used to clear the bit that tells if a sprite uses palette 0 or 1 from attribute_bits."""
 
-# Pixel magnification factor
 SCALING = 2
-# Tile side length, in pixels, after magnification
+"""Pixel magnification factor."""
+
 TILE_SIZE = 16
+"""Tile side length, in pixels, after magnification."""
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 #           Globals
 
 config: configparser
+undo_redo = UndoRedo()
 
 # Widgets
 root = Tk()
@@ -156,10 +160,11 @@ log_text: tk.Text
 tiles_win = tk.Toplevel(root)
 tiles_canvas: tk.Canvas
 
+edit_menu: tk.Menu
 frame_left: tk.Frame
 main_canvas: tk.Canvas
 palette_canvas: tk.Canvas
-frame_right: tk.Frame
+frame_middle: tk.Frame
 option_fighters: tk.OptionMenu
 option_animations: tk.OptionMenu
 
@@ -172,18 +177,29 @@ text_height: tk.Text
 text_offset: tk.Text
 text_bank: tk.Text
 text_attribute: tk.Text
-text_total: tk.Text     # Sprite count (must be <= 32)
+text_total: tk.Text
+"""Sprite count (must be <= 32)"""
 
-label_cur_tile: tk.Label    # Indicates currently selected sprite pattern (0x00-0x7F)
-item_tile_selection = -1    # Canvas item for the rectangle indicating the selected pattern
+label_cur_tile: tk.Label
+"""Indicates currently selected sprite pattern (0x00-0x7F)"""
+item_tile_selection = -1
+"""Canvas item for the rectangle indicating the selected pattern."""
 
 # Tk variables
 var_fighters = tk.StringVar(root)
 var_animations = tk.StringVar(root)
-var_attribute = tk.IntVar(root)     # 0 (left palette) or 1 (right palette)
+var_attribute = tk.IntVar(root)
+"""0 (left palette) or 1 (right palette)."""
+var_view_log_win = tk.BooleanVar(root)
+"""View/hide the log window."""
+var_view_chr_win = tk.BooleanVar(root)
+"""Vide/hide the tile selector (CHR ROM Bank) window."""
+var_view_grid = tk.BooleanVar(root)
+"""View/hide the grid in the frame canvas."""
 
 # Other variables and data
 master_dir = ""
+"""Base directory with source files."""
 unsaved_changes = False
 log = [f"MK1 Animation Editor v{__version__} by {__author__}"]
 char_rom_buffer = bytearray()
@@ -193,15 +209,33 @@ tile_grid_items: list = []
 main_axis_items: list = []
 main_grid_items: list = []
 sprite_items: list = []
-cur_chr_bank = -1   # Currently selected CHR ROM bank
-attribute_bits: list = []    # One bytearray per CHR ROM bank, each containing 8 bytes (one bit per tile)
-cur_tile_idx = 0    # Currently selected tile from the active banks (0-127)
-cur_frame_id = 0    # Currently selected/displayed frame
+cur_chr_bank = -1
+"""Currently selected CHR ROM bank."""
+attribute_bits: list = []
+"""One bytearray per CHR ROM bank, each containing 8 bytes (one bit per tile)"""
+cur_tile_idx = 0
+"""Currently selected tile from the active banks (0-127)"""
+cur_frame_id = 0
+"""Currently selected/displayed frame."""
+
+# Persistent UI elements
+IMG_APP_ICON = ImageTk.PhotoImage(file="img/icon.png")
+IMG_CHR_ICON = ImageTk.PhotoImage(file="img/chr.png")
+IMG_DOWN = ImageTk.PhotoImage(file="img/Down.png")
+IMG_UP = ImageTk.PhotoImage(file="img/Up.png")
+IMG_LEFT = ImageTk.PhotoImage(file="img/Left.png")
+IMG_RIGHT = ImageTk.PhotoImage(file="img/Right.png")
 
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def parse_bytes(asm) -> bytearray:
+
+def parse_bytes(asm: list) -> bytearray:
+    """
+    Convert assembly lines containing .byte statements to a bytearray with their values.
+    :param asm: A list of strings containing assembly code.
+    :return: A bytearray containing values read from the assembly.
+    """
     values = bytearray()
 
     for line in asm:
@@ -225,7 +259,12 @@ def parse_bytes(asm) -> bytearray:
     return values
 
 
-def parse_pointers(asm):
+def parse_pointers(asm: list) -> list:
+    """
+    Convert assembly lines containing .word statements to a list of strings with label names.
+    :param asm: A list of strings containing assembly code.
+    :return: A list of strings containing label names.
+    """
     labels = []
 
     for line in asm:
@@ -249,6 +288,8 @@ def parse_pointers(asm):
 
 
 class Frame:
+    """A frame defines a set of sprites arranged to form a large meta-sprite."""
+
     def __init__(self):
         self.width = 0
         self.height = 0
@@ -259,19 +300,22 @@ class Frame:
 
 
 class Animation:
+    """An animation defines a list of frame indices and the index of a list of coordinates for its movement."""
+
     def __init__(self, mov=0):
         self.movement_id = mov
         self.frame_ids: list[int] = []
 
 
 class AnimationData:
+    """Contains lists of animations and frames."""
 
     def __init__(self):
         self.animations: list[Animation] = []
         self.frames: list[Frame] = []
 
     @staticmethod
-    def from_asm(asm):
+    def from_asm(asm: list):
         data = AnimationData()
         line_no = 0
         label_animations = ""
@@ -415,7 +459,10 @@ class Tile:
         self.photo = ImageTk.PhotoImage(image)
 
 
-def error(text, show_msg=True):
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def error(text: str, show_msg: bool = True):
     """
     Logs an error message. Optionally also shows a message box.
     :param text: Error message.
@@ -427,7 +474,7 @@ def error(text, show_msg=True):
         tk.messagebox.showerror("Error", text)
 
 
-def warning(text, show_msg=True):
+def warning(text: str, show_msg: bool = True):
     """
     Logs a warning message. Optionally also shows a message box.
     :param text: Warning message.
@@ -439,7 +486,7 @@ def warning(text, show_msg=True):
         tk.messagebox.showwarning("Warning", text)
 
 
-def info(text, show_msg=False):
+def info(text: str, show_msg: bool = False):
     """
     Logs an informational message. Optionally also shows a message box.
     :param text: Message text.
@@ -451,7 +498,7 @@ def info(text, show_msg=False):
         tk.messagebox.showinfo("Info", text)
 
 
-def add_log(text, log_type=LOG_INFO):
+def add_log(text: str, log_type: int = LOG_INFO):
     """
     Appends a string to the log window.
     :param text: String to add.
@@ -517,12 +564,12 @@ def load_custom_chr() -> bool:
     select_animation(index)
 
 
-def change_text(widget: tk.Text, text: str, disable: bool = False):
+def change_text(widget: tk.Text, text: str, disable: bool = False) -> None:
     """
     Changes a widget's text.
     :param widget:
     :param text:
-    :param disable:
+    :param disable: If True, disables the widget after changing its value
     :return:
     """
     if disable:
@@ -533,6 +580,33 @@ def change_text(widget: tk.Text, text: str, disable: bool = False):
 
     if disable:
         widget.configure(state=tk.DISABLED)
+
+
+def update_undo_menu() -> None:
+    if undo_redo.undo_count() > 0:
+        edit_menu.entryconfigure(0, {"state": tk.NORMAL})
+    else:
+        edit_menu.entryconfigure(0, {"state": tk.DISABLED})
+
+    if undo_redo.redo_count() > 0:
+        edit_menu.entryconfigure(1, {"state": tk.NORMAL})
+    else:
+        edit_menu.entryconfigure(1, {"state": tk.DISABLED})
+
+
+def update_sprite_count() -> None:
+    """Counts sprites in the currently displayed animation frame and shows the value in its widget."""
+    data = animation_data[current_fighter()].frames[cur_frame_id]
+    count = 0
+    for s in data.sprites:
+        if s != 0xFF:
+            count = count + 1
+    change_text(text_total, f"{count}", True)
+    # If more than 32 frames, change the colour to red
+    if count > 32:
+        text_total.configure({"fg": "red"})
+    else:
+        text_total.configure({"fg": "black"})
 
 
 def get_int(widget: tk.Text) -> int:
@@ -575,8 +649,9 @@ def read_all() -> bool:
     Parses all data, reads palettes and loads CHR tileset, then shows palette 0, fighter 0, animation 0.
     :return: False if an error occurred, otherwise True.
     """
-    file_name = ""
+    global attribute_bits
 
+    file_name = ""
     try:
         for b in range(0, 9):
             # Read animation data for each fighter
@@ -601,7 +676,9 @@ def read_all() -> bool:
         error(f"Could not open file:\n{file_name}\nError: {err}")
         return False
 
-    read_attribute_bits()
+    attribute_bits = read_attribute_bits()
+    info(f"Read {len(attribute_bits) * 8} sprite attribute values.", False)
+
     read_chr_rom()
 
     # Show palette 0
@@ -681,12 +758,12 @@ def read_pattern(bank: int, tile: int) -> bytearray:
     return pixels
 
 
-def read_attribute_bits():
+def read_attribute_bits() -> list:
     """
     Parse sprite attribute bits.
-    :return:
+    :return: A list containing 8 bytes per CHR bank.
     """
-    global attribute_bits
+    bits = []
     asm_file = master_dir + "/attr_bits.asm"
 
     try:
@@ -694,29 +771,65 @@ def read_attribute_bits():
             lines = file.readlines()
     except IOError as err:
         error(err, True)
-        return
-
-    # Empty old list before reading the new values
-    attribute_bits = []
+        return []
 
     _bank = 0
     for line in lines:
-        if line.find('.byte') > -1:
+        if ".byte" in line:
             # Each line contains 8 x 8 bit values = 64 sprite attributes (one full bank)
             _values = parse_bytes([line])
-            attribute_bits.append(_values)
+            bits.append(_values)
             _bank = _bank + 1
             if _bank == 0x1C:
                 # Skip unused banks (these do not contain sprites)
                 for _ in range(28):
-                    attribute_bits.append(bytearray([0, 0, 0, 0, 0, 0, 0, 0]))
+                    bits.append(bytearray([0, 0, 0, 0, 0, 0, 0, 0]))
                     _bank = _bank + 1
+    return bits
 
-    info(f"Read {len(attribute_bits) * 8} sprite attribute values.", False)
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def get_frame_sprite_index(x: int, y: int) -> int:
+    """
+    Converts canvas coordinates to index in the frames list.
+    :param x: Horizontal position of the cursor within the canvas.
+    :param y: Vertical position of the cursor within the canvas.
+    :return: Index of the sprite in the frames list, or -1 if cursor out of frame.
+    """
+    # Get selected fighter index
+    f = current_fighter()
+
+    # Data for the selected frame
+    data = animation_data[f].frames[cur_frame_id]
+
+    delta_x = 128 - SCALING * (8 + data.offset)
+    delta_y = 240 - (data.height * TILE_SIZE)
+
+    if x < delta_x or y < delta_y:
+        return -1
+
+    if x > delta_x + (data.width * TILE_SIZE):
+        return -1
+
+    if y > 240:
+        return -1
+
+    tile_x = (x - delta_x) >> 4
+    tile_y = (y - delta_y) >> 4
+
+    # Absolute coordinates
+    # print(f"Abs:  {args[0].x}, {args[0].y}")
+    # Relative coordinates
+    # print(f"Rel:  {args[0].x - delta_x}, {args[0].y - delta_y}")
+    # Selection:
+    # print(f"Tile: {tile_x}, {tile_y}")
+    # print(f"Selection: {tile_x + (tile_y * data.width)}")
+    return tile_x + (tile_y * data.width)
 
 
 def get_tile_palette(tile_id: int) -> int:
-
     if tile_id < 64:
         _byte = attribute_bits[cur_chr_bank][tile_id >> 3]
         _bit = _byte & TILE_BIT_MASKS[tile_id % 8]
@@ -725,6 +838,53 @@ def get_tile_palette(tile_id: int) -> int:
         _bit = _byte & TILE_BIT_MASKS[tile_id % 8]
 
     return 0 if _bit == 0 else 1
+
+
+def change_tile_palette(fighter: int, frame: int, tile_id: int, palette: int) -> None:
+    """
+    Changes the palette assigned to a sprite tile.
+    :param fighter: Index of the fighter to edit.
+    :param frame: Index of the frame to edit.
+    :param tile_id: Tile index (0-63).
+    :param palette: Palette index (0 or 1).
+    :return:
+    """
+    # Each byte has indices for 8 sprites, so each 8-byte group corresponds to 64 sprites
+    _id = tile_id >> 3
+    _bank = animation_data[fighter].frames[frame].bank
+    if _id > 7:
+        _bank = _bank + 1
+        _id = _id - 8
+    # Now we have the index of the byte we need to change
+
+    # However this byte has values for a group of 8 sprites
+    # We will use bitmasks to flip only the bit corresponding to the sprite we want to change
+
+    _bit_index = tile_id % 8
+    _bit = 1 if palette != 0 else 0
+    if _bit == 0:
+        attribute_bits[_bank][_id] &= TILE_BIT_CLEAR_MASKS[_bit_index]
+    else:
+        attribute_bits[_bank][_id] |= TILE_BIT_MASKS[_bit_index]
+
+    # If this CHR bank was currently displayed, update the sprite in the canvas
+    if _bank == cur_chr_bank or _bank == cur_chr_bank + 1:
+        # Change colours
+        if tile_id > 63:
+            pixels = bytes(read_pattern(_bank, tile_id - 64))
+        else:
+            pixels = bytes(read_pattern(_bank, tile_id))
+        image = Image.frombytes('P', (8, 8), pixels)
+        image.info["transparency"] = 0
+        image.putpalette(palettes[fighter].colours[:12] if _bit == 0 else palettes[fighter].colours[12:])
+
+        tiles[tile_id] = Tile(image.resize((16, 16)))
+
+        tiles_canvas.itemconfigure(tile_items[tile_id], image=tiles[tile_id].photo)
+        tiles_canvas.update_idletasks()
+
+        # Redraw frame
+        show_frame(frame)
 
 
 def show_palette(index=0):
@@ -778,7 +938,7 @@ def show_tileset(bank: int):
 
         tiles.append(Tile(image.resize((16, 16))))
 
-        # TODO Magnify x4
+        # TODO? Magnify x4
         # tiles_canvas.itemconfigure(tile_items[t], image=tiles[t].photo)
         tile_items.append(tiles_canvas.create_image(x, y, anchor="nw", image=tiles[t].photo))
         tiles_canvas.tag_lower(tile_items[t])
@@ -801,7 +961,24 @@ def show_tileset(bank: int):
     item_tile_selection = tiles_canvas.create_rectangle(0, 0, 16, 16, width=2, outline="#F00000")
 
 
+def show_hide_grid(*_args):
+    """Shows or hides the grid around sprites in the current animation frame."""
+    if var_view_grid.get():
+        show_frame(cur_frame_id)
+    else:
+        for _spr in range(len(main_grid_items)):
+            try:
+                main_canvas.itemconfigure(main_grid_items[_spr], state=tk.HIDDEN)
+            except tk.TclError:
+                continue
+
+
 def show_frame(index: int = 0):
+    """
+    Draws or re-draws the frame *index* for the current fighter.
+    :param index: Index of the frame to show.
+    :return:
+    """
     # Get selected fighter index
     f = current_fighter()
 
@@ -812,15 +989,15 @@ def show_frame(index: int = 0):
     _x = 128 - (SCALING * (8 + data.offset))
     _y = 240 - (TILE_SIZE * data.height)
 
-    _s = 0      # Sprite index
-    _c = 0      # Actual sprite count
+    _s = 0  # Sprite index
+    _c = 0  # Actual sprite count
 
     for y in range(0, data.height):
         _image_y = _y + (TILE_SIZE * y)
 
         for x in range(0, data.width):
             _image_x = _x + (TILE_SIZE * x)
-            _index = data.sprites[_s]   # Get tile index (in current bank)
+            _index = data.sprites[_s]  # Get tile index (in current bank)
 
             if _index != 0XFF:
                 # The mask is needed because the sprite is taken from the top bank
@@ -844,19 +1021,20 @@ def show_frame(index: int = 0):
                 _c = _c + 1
 
             # Show grid item
-            # TODO Skip if option deselected
-            grid_colour = "white" if data.sprites[_s] != 0xFF else "red"
-            if len(main_grid_items) <= _s:
-                # Create new item if needed
-                main_grid_items.append(main_canvas.create_rectangle(_image_x, _image_y,
-                                                                    _image_x + 15, _image_y + 15,
-                                                                    outline=grid_colour, width=1,
-                                                                    state=tk.NORMAL))
-            else:
-                # Move and show existing item if there is one already
-                main_canvas.coords(main_grid_items[_s], _image_x, _image_y, _image_x + 15, _image_y + 15)
-                main_canvas.itemconfigure(main_grid_items[_s], outline=grid_colour, state=tk.NORMAL)
-                main_canvas.tag_raise(main_grid_items[_s])
+            # Skip if option deselected
+            if var_view_grid.get():
+                grid_colour = "white" if data.sprites[_s] != 0xFF else "red"
+                if len(main_grid_items) <= _s:
+                    # Create new item if needed
+                    main_grid_items.append(main_canvas.create_rectangle(_image_x, _image_y,
+                                                                        _image_x + 15, _image_y + 15,
+                                                                        outline=grid_colour, width=1,
+                                                                        state=tk.NORMAL))
+                else:
+                    # Move and show existing item if there is one already
+                    main_canvas.coords(main_grid_items[_s], _image_x, _image_y, _image_x + 15, _image_y + 15)
+                    main_canvas.itemconfigure(main_grid_items[_s], outline=grid_colour, state=tk.NORMAL)
+                    main_canvas.tag_raise(main_grid_items[_s])
 
             _s = _s + 1
 
@@ -868,12 +1046,13 @@ def show_frame(index: int = 0):
             continue
 
     # Hide grid items that are not used
-    # TODO Skip if grid option deselected
-    for _spr in range(_s, len(main_grid_items)):
-        try:
-            main_canvas.itemconfigure(main_grid_items[_spr], state=tk.HIDDEN)
-        except tk.TclError:
-            continue
+    # Skip if grid option deselected
+    if var_view_grid.get():
+        for _spr in range(_s, len(main_grid_items)):
+            try:
+                main_canvas.itemconfigure(main_grid_items[_spr], state=tk.HIDDEN)
+            except tk.TclError:
+                continue
 
 
 def select_tile(index: int = 0):
@@ -968,23 +1147,251 @@ def select_frame(index: int = 0):
 
     show_tileset(data.bank)
 
-    change_text(text_frame_id, f"{index}")
+    change_text(text_frame_id, f"{index}", True)
     cur_frame_id = index
 
-    change_text(text_width, f"{data.width}")
-    change_text(text_height, f"{data.height}")
-    change_text(text_offset, f"{data.offset}")
-    change_text(text_bank, f"{data.bank}")
-    change_text(text_attribute, f"0x{data.attribute:02X}")
+    change_text(text_width, f"{data.width}", True)
+    change_text(text_height, f"{data.height}", True)
+    change_text(text_offset, f"{data.offset}", True)
+    change_text(text_bank, f"{data.bank}", True)
+    change_text(text_attribute, f"0x{data.attribute:02X}", True)
 
-    # Count sprites
-    count = 0
-    for s in data.sprites:
-        if s != 0xFF:
-            count = count + 1
-    change_text(text_total, f"{count}", True)
+    update_sprite_count()
 
     show_frame(index)
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def change_chr_bank(fighter: int, frame: int, new_bank: int) -> None:
+    """
+    Changes the CHR Bank number for the current frame and redraws it if needed.
+    :param fighter: Index of the fighter to edit.
+    :param frame: Index of the frame to edit.
+    :param new_bank: New bank number (0-255).
+    :return:
+    """
+    global cur_chr_bank
+    global unsaved_changes
+
+    animation_data[fighter].frames[frame].bank = new_bank
+    if fighter == current_fighter() and frame == cur_frame_id:
+        show_tileset(new_bank)
+        show_frame(cur_frame_id)
+        change_text(text_bank, f"{new_bank}", True)
+        cur_chr_bank = new_bank
+
+    unsaved_changes = True
+
+
+def change_sprite_id(fighter: int, frame: int, sprite: int, new_id: int) -> None:
+    """
+    Changes the id of the sprite used in an animation frame.
+    :param fighter: Index of the fighter to edit.
+    :param frame: Index of the frame in the frames list.
+    :param sprite: Index of the sprite within the frame.
+    :param new_id: Tile ID of the new sprite.
+    :return:
+    """
+    global unsaved_changes
+
+    animation_data[fighter].frames[frame].sprites[sprite] = new_id
+
+    # If editing the current fighter/frame, redraw
+    if fighter == current_fighter() and frame == cur_frame_id:
+        show_frame(frame)
+        update_sprite_count()
+
+    unsaved_changes = True
+
+
+def expand_frame(fighter: int, frame: int, direction: str) -> None:
+    """
+    Adds one row or one column of empty sprites to an animation frame.
+    :param fighter: Index of the fighter to edit.
+    :param frame: Index of the frame to expand.
+    :param direction: "U", "D", "L" or "R".
+    :return:
+    """
+    info("Expanding frame.")
+
+    old_frame = animation_data[fighter].frames[frame]
+    w = old_frame.width
+    h = old_frame.height
+
+    if direction == "U" or direction == "u":
+        # Crete an empty row of frames for the top
+        sprites = [0xFF] * w
+
+        # Append old data to the bottom
+        for s in old_frame.sprites:
+            sprites.append(s)
+
+        # Replace the sprites list and update size
+        animation_data[fighter].frames[frame].sprites = sprites
+        animation_data[fighter].frames[frame].height = h + 1
+
+    elif direction == "D" or direction == "d":
+        # Copy old sprite data, adding one row to the bottom
+        sprites = old_frame.sprites
+
+        for _ in range(w):
+            sprites.append(0xFF)
+
+        # Replace the sprites list and update size
+        animation_data[fighter].frames[frame].sprites = sprites
+        animation_data[fighter].frames[frame].height = h + 1
+
+    elif direction == "L" or direction == "l":
+        # Add one column to the left
+
+        # Create an empty list of sprites
+        sprites = []
+
+        # Populate the list
+        _s = 0
+        for y in range(h):
+            for x in range(w + 1):
+                if x == 0:
+                    # Add empty sprites to the left
+                    sprites.append(0xFF)
+                else:
+                    sprites.append(old_frame.sprites[_s])
+                    _s = _s + 1
+
+        # Replace the sprites list and update size
+        animation_data[fighter].frames[frame].sprites = sprites
+        animation_data[fighter].frames[frame].width = w + 1
+
+    elif direction == "R" or direction == "r":
+        # Add one column to the right
+        sprites = []
+
+        _s = 0
+        for y in range(h):
+            for x in range(w + 1):
+                if x == w:
+                    # Add empty sprites to the right
+                    sprites.append(0xFF)
+                else:
+                    sprites.append(old_frame.sprites[_s])
+                    _s = _s + 1
+
+        animation_data[fighter].frames[frame].sprites = sprites
+        animation_data[fighter].frames[frame].width = w + 1
+
+    else:
+        error(f"Unknown expand direction '{direction}'.")
+        return
+
+    # Redraw the view if needed
+    if current_fighter() == fighter and cur_frame_id == frame:
+        select_frame(cur_frame_id)
+
+
+def shrink_frame(fighter: int, frame: int, direction: str) -> None:
+    """
+    Removes one row or column or sprites from a frame.
+    :param fighter: Index of the fighter to edit.
+    :param frame: Index of the frame to edit.
+    :param direction: Valid values are "U", "D", "L" or "R".
+    :return:
+    """
+    info("Shrinking frame.")
+
+    old_frame = animation_data[fighter].frames[frame]
+    w = old_frame.width
+    h = old_frame.height
+
+    if direction == "D":
+        # Simply copy everything except the first row, i.e. the first *width* sprites
+        sprites = old_frame.sprites[w:]
+
+        # Replace the old list and update size
+        animation_data[fighter].frames[frame].sprites = sprites
+        animation_data[fighter].frames[frame].height = h - 1
+
+    elif direction == "U":
+        # Copy everything except the last row, i.e. the last *width* sprites
+        sprites = old_frame.sprites[:len(old_frame.sprites) - w]
+
+        # Replace the old list and update size
+        animation_data[fighter].frames[frame].sprites = sprites
+        animation_data[fighter].frames[frame].height = h - 1
+
+    elif direction == "R":
+        # Create an empty list of sprites
+        sprites = []
+
+        # Populate the list with the old sprite indices, excluding the leftmost column
+        _s = 0
+        for y in range(h):
+            for x in range(w - 1):
+                if x == 0:
+                    # Skip left column
+                    _s = _s + 1
+                sprites.append(old_frame.sprites[_s])
+                _s = _s + 1
+
+        # Replace the old list and update size
+        animation_data[fighter].frames[frame].sprites = sprites
+        animation_data[fighter].frames[frame].width = w - 1
+
+    elif direction == "L":
+        sprites = []
+
+        _s = 0
+        for y in range(h):
+            for x in range(w - 1):
+                sprites.append(old_frame.sprites[_s])
+                _s = _s + 1
+                if x == w - 2:
+                    # Skip rightmost column
+                    _s = _s + 1
+
+        animation_data[fighter].frames[frame].sprites = sprites
+        animation_data[fighter].frames[frame].width = w - 1
+
+    else:
+        error(f"Unknown shrink direction '{direction}'.")
+        return
+
+    # Redraw the view if needed
+    if current_fighter() == fighter and cur_frame_id == frame:
+        select_frame(cur_frame_id)
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def on_help(*_args):
+    # noinspection SpellCheckingInspection
+    _font = ("Fixedsys", 16)
+
+    messagebox.showinfo("Help", """Frame view:
+    Right click - select tile
+    Left click  - change tile
+    CTRL+Left   - delete tile
+
+Tileset view:
+    Left click  - select tile
+""")
+
+
+def on_about(*_args):
+    # noinspection SpellCheckingInspection
+    messagebox.showinfo("About...", """Mortal Kombat Arkade Edition Editor
+    ©2023-20244 Fox Cunning
+       MIT Licence 1.0
+    
+Undo/Redo ©2017 jscuster, ©2024 Fox Cunning
+       APACHE Licence 2.0
+""")
+
+
+def on_view_grid(*_args):
+    var_view_grid.set(not var_view_grid.get())
 
 
 def on_tile_canvas_click(*args):
@@ -1005,35 +1412,42 @@ def on_main_canvas_right_click(*args):
     :param args: args[0].x, args[0].y = mouse click coordinates.
     :return:
     """
-    # Get selected fighter index
+    tile_id = get_frame_sprite_index(args[0].x, args[0].y)
+    if tile_id >= 0:
+        select_sprite(tile_id)
+
+
+def on_main_canvas_left_click(*args):
+    """
+    Callback for left-click on the main canvas, where the fighter sprites and grid are displayed.
+    :param args: args[0].x, args[0].y = mouse click coordinates.
+    :return:
+    """
+    global unsaved_changes
+
+    sprite = get_frame_sprite_index(args[0].x, args[0].y)
+    if sprite < 0:
+        return
+
     f = current_fighter()
+    old_tile_idx = animation_data[f].frames[cur_frame_id].sprites[sprite]
 
-    # Data for the selected frame
-    data = animation_data[f].frames[cur_frame_id]
+    if (args[0].state & 0x04) == 0:
+        new_tile_idx = cur_tile_idx
+    else:
+        # Control pressed: erase
+        new_tile_idx = 0xFF
 
-    delta_x = 128 - SCALING * (8 + data.offset)
-    delta_y = 240 - (data.height * TILE_SIZE)
-
-    if args[0].x < delta_x or args[0].y < delta_y:
+    if old_tile_idx == new_tile_idx:
+        # Nothing to change
         return
 
-    if args[0].x > delta_x + (data.width * TILE_SIZE):
-        return
-
-    if args[0].y > 240:
-        return
-
-    tile_x = (args[0].x - delta_x) >> 4
-    tile_y = (args[0].y - delta_y) >> 4
-
-    # Absolute coordinates
-    # print(f"Abs:  {args[0].x}, {args[0].y}")
-    # Relative coordinates
-    # print(f"Rel:  {args[0].x - delta_x}, {args[0].y - delta_y}")
-    # Selection:
-    # print(f"Tile: {tile_x}, {tile_y}")
-    # print(f"Selection: {tile_x + (tile_y * data.width)}")
-    select_sprite(tile_x + (tile_y * data.width))
+    # Change sprite
+    undo_redo(change_sprite_id, (f, cur_frame_id, sprite, new_tile_idx),
+              (f, cur_frame_id, sprite, old_tile_idx), change_sprite_id,
+              text="Change sprite")
+    update_undo_menu()
+    unsaved_changes = True
 
 
 def on_select_fighter(*_args):
@@ -1103,31 +1517,348 @@ def on_frame_next(*_args):
         return
 
 
-def on_root_destroy():
+def on_expand_up(*_args):
+    f = current_fighter()
+
+    # Don't expand if height > 11
+    if animation_data[f].frames[cur_frame_id].height > 11:
+        print("\a")
+        return
+
+    undo_redo(expand_frame, (f, cur_frame_id, "U"), (f, cur_frame_id, "D"), shrink_frame,
+              text="Expand up")
+    update_undo_menu()
+
+
+def on_expand_down(*_args):
+    f = current_fighter()
+
+    # Don't expand if height > 11
+    if animation_data[f].frames[cur_frame_id].height > 11:
+        print("\a")
+        return
+
+    undo_redo(expand_frame, (f, cur_frame_id, "D"), (f, cur_frame_id, "U"), shrink_frame,
+              text="Expand down")
+    update_undo_menu()
+
+
+def on_expand_left(*_args):
+    f = current_fighter()
+
+    # Don't expand if width > 11
+    if animation_data[f].frames[cur_frame_id].width > 11:
+        print("\a")
+        return
+
+    undo_redo(expand_frame, (f, cur_frame_id, "L"), (f, cur_frame_id, "R"), shrink_frame,
+              text="Expand left")
+    update_undo_menu()
+
+
+def on_expand_right(*_args):
+    f = current_fighter()
+
+    # Don't expand if width > 11
+    if animation_data[f].frames[cur_frame_id].width > 11:
+        print("\a")
+        return
+
+    undo_redo(expand_frame, (f, cur_frame_id, "R"), (f, cur_frame_id, "L"), shrink_frame,
+              text="Expand right")
+    update_undo_menu()
+
+
+def on_shrink_up(*_args):
+    f = current_fighter()
+
+    # Don't shrink if height less than 2
+    if animation_data[f].frames[cur_frame_id].height < 2:
+        print("\a")
+        return
+
+    undo_redo(shrink_frame, (f, cur_frame_id, "U"), (f, cur_frame_id, "D"), expand_frame,
+              text="Shrink up")
+    update_undo_menu()
+
+
+def on_shrink_down(*_args):
+    f = current_fighter()
+
+    # Don't shrink if height less than 2
+    if animation_data[f].frames[cur_frame_id].height < 2:
+        print("\a")
+        return
+
+    undo_redo(shrink_frame, (f, cur_frame_id, "D"), (f, cur_frame_id, "U"), expand_frame,
+              text="Shrink down")
+    update_undo_menu()
+
+
+def on_shrink_left(*_args):
+    f = current_fighter()
+
+    # Don't shrink if width less than 2
+    if animation_data[f].frames[cur_frame_id].width < 2:
+        print("\a")
+        return
+
+    undo_redo(shrink_frame, (f, cur_frame_id, "L"), (f, cur_frame_id, "R"), expand_frame,
+              text="Shrink left")
+    update_undo_menu()
+
+
+def on_shrink_right(*_args):
+    f = current_fighter()
+
+    # Don't shrink if width less than 2
+    if animation_data[f].frames[cur_frame_id].width < 2:
+        print("\a")
+        return
+
+    undo_redo(shrink_frame, (f, cur_frame_id, "R"), (f, cur_frame_id, "L"), expand_frame,
+              text="Shrink right")
+    update_undo_menu()
+
+
+def on_root_destroy(*_args):
     if "Settings" not in config.sections():
         config.add_section("Settings")
-    config.set("Settings", "MainW", str(root.winfo_width()))
-    config.set("Settings", "MainH", str(root.winfo_height()))
+    config.set("Settings", "MainW", str(max(662, root.winfo_width())))
+    config.set("Settings", "MainH", str(max(380, root.winfo_height())))
     config.set("Settings", "MainX", str(root.winfo_x()))
     config.set("Settings", "MainY", str(root.winfo_y()))
+
+    config.set("Settings", "LogX", str(log_win.winfo_x()))
+    config.set("Settings", "LogY", str(log_win.winfo_y()))
+
+    config.set("Settings", "ChrX", str(tiles_win.winfo_x()))
+    config.set("Settings", "ChrY", str(tiles_win.winfo_y()))
+
     root.destroy()
 
 
-def command_exit():
-    # TODO Don't ask confirmation if there are no unsaved changes
+def on_chr_bank_click(*_args):
+    new_bank = simpledialog.askinteger("CHR Bank", "Enter a new value (0-255 or 0x00-0xFF):",
+                                       initialvalue=cur_chr_bank, minvalue=0, maxvalue=255)
+    if new_bank is not None:
+        f = current_fighter()
+        undo_redo(change_chr_bank, (f, cur_frame_id, new_bank),
+                  (f, cur_frame_id, cur_chr_bank,), change_chr_bank,
+                  text="Change CHR Bank")
+        update_undo_menu()
 
-    if tk.messagebox.askyesno("Exit", "Are you sure you want to quit?") is True:
+
+def on_tile_palette_click(*_args):
+    f = current_fighter()
+
+    _bit = 1 if var_attribute.get() else 0
+    _neg = (_bit + 1) % 2
+    undo_redo(change_tile_palette, (f, cur_frame_id, cur_tile_idx, _bit),
+              (f, cur_frame_id, cur_tile_idx, _neg), change_tile_palette, text="Change palette bit")
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def command_undo(*_args):
+    """Undo last operation and update undo/redo menu items."""
+    if undo_redo.can_undo(1):
+        text = undo_redo.get_undo_text()
+        if len(text) > 0:
+            info(f"Undo action: {text}.")
+        undo_redo.undo(1)
+    update_undo_menu()
+
+
+def command_redo(*_args):
+    """Redo last operation and update undo/redo menu items."""
+    if undo_redo.can_redo(1):
+        text = undo_redo.get_redo_text()
+        if len(text) > 0:
+            info(f"Redo action: {text}.")
+        undo_redo.redo(1)
+    update_undo_menu()
+
+
+def command_exit():
+    # Don't ask confirmation if there are no unsaved changes
+    if not unsaved_changes or messagebox.askyesno("Exit", "Are you sure you want to quit?") is True:
         on_root_destroy()
 
 
 def command_save_all():
-    # TODO Export data to ASM
-    tk.messagebox.showwarning("Save everything", "Not yet implemented, sorry!")
+    # TODO Export all data to ASM
+    messagebox.showwarning("Save everything", "Not yet implemented, sorry!")
 
 
-def command_save_fighter():
-    # TODO Export data to ASM
-    tk.messagebox.showwarning("Save fighter", "Not yet implemented, sorry!")
+def command_save_fighter(overwrite: bool = False) -> None:
+    """
+    Saves the current fighter's data to assembly.
+    :param overwrite: If True, will not ask for confirmation before overwriting.
+    :return:
+    """
+    global unsaved_changes
+
+    # Set output file name depending on current fighter
+    _BANKS = ["05t", "06t", "07t", "08", "09", "0A", "0B", "0C", "0D"]
+    fighter = current_fighter()
+    file_name = master_dir + "/bank_" + _BANKS[fighter] + ".asm"
+
+    info(f"Saving data for {FIGHTERS[fighter]}...")
+
+    # Ask to overwrite
+    if overwrite is False and os.path.isfile(file_name):
+        if messagebox.askyesno("Save fighter", "File already exists. Overwrite?") is False:
+            info("Aborted.")
+            return
+
+    # Build string with assembly to be saved
+    # noinspection SpellCheckingInspection
+    out_text = f'.segment "BANK_{_BANKS[fighter]}"\n; $8000-$8FFF\n.setcpu "6502X"\n'
+    out_text += '\n.feature org_per_seg\n.feature pc_assignment\n'
+    out_text += '\n.include "globals.inc"\n'
+    out_text += '\n; -----------------------------------------------------------------------------\n'
+    out_text += f'\n; Animation data for {FIGHTERS[fighter]}\n'
+    out_text += '\nrom_8000:\n\t.word rom_8004, rom_82C7\n'
+    out_text += '\n; -----------------------------------------------------------------------------\n'
+    out_text += '\nrom_8004:\n'
+
+    _ANIM_LABELS = ["idle", "crouch", "crouch_parry", "walk_fw", "walk_bk", "standing_parry", "jump_up", "jump_fw",
+                    "jump_bk", "strong_hit", "regular_hit", "base_kick", "close_kick", "special_1", "jump_kick_1",
+                    "jump_kick_2", "base_punch", "jump_punch_1", "jump_punch_2", "uppercut", "crouch_kick",
+                    "fw_jump_kick_1", "jump_punch_3", "special_2", "throw", "fw_jump_punch_1", "fw_jump_punch_2",
+                    "fw_jump_kick_2", "fw_jump_kick_3", "fw_jump_ranged", "ranged_attack", "bk_jump_punch_1",
+                    "bk_jump_punch_2", "bk_jump_kick_1", "bk_jump_kick_2", "air_fall_back_1", "air_fall_back_2",
+                    "close_punch", "fall_back_bounce", "get_up", "staggered", "shame", "victory",
+                    "crouch_parry_hit", "stand_parry_hit", "knock_back_1", "knock_back_2", "knock_back_3",
+                    "knock_back_4", "throw_fall", "uppercut_hit", "special_hit", "jump_bk_recover"]
+
+    # Table: movement index, pointer to frame indices table
+    for a in range(len(animation_data[fighter].animations)):
+        anim = animation_data[fighter].animations[a]
+
+        if anim == 0x0B:
+            out_text += "\n\t; Attack animations\n"
+        elif anim == 0x26:
+            out_text += "\t; End of attack animations\n\n"
+
+        out_text += f'\t.byte ${anim.movement_id:02X}\t; ${ANIMATIONS[a]}\n'
+        out_text += f'\t.word anim_{_ANIM_LABELS[a]}\n'
+
+    out_text += '\n; -----------------------------------------------------------------------------\n'
+    out_text += '\n; Indices for the frame pointers table'
+
+    # Frame indices per animation
+    highest_frame_id = 0  # Save this to avoid saving unused frames
+    for a in range(len(animation_data[fighter].animations)):
+        anim = animation_data[fighter].animations[a]
+
+        out_text += f'\nanim_{_ANIM_LABELS[a]}:'
+        for f in range(len(anim.frame_ids)):
+            if f % 8 == 0:
+                out_text += '\n\t.byte '
+            else:
+                out_text += ', '
+            out_text += f'${anim.frame_ids[f]:02X}'
+            if anim.frame_ids[f] > highest_frame_id:
+                highest_frame_id = anim.frame_ids[f]
+
+    out_text += '\n; -----------------------------------------------------------------------------\n'
+    out_text += '\nrom_82C7:\n'
+
+    # Frame data pointers
+    for f in range(highest_frame_id + 1):
+        out_text += f'\t.word frame_{f:02X}\n'
+
+    out_text += '\n; -----------------------------------------------------------------------------\n'
+
+    out_text += '''\n; Frame data format example:\n    ; .byte $05\t; Horizontal tiles count
+    ; .byte $09\t; Vertical tiles count
+    ; .byte $10\t; X offset (8 = neutral, higher = move forward, lower = backwards)
+    ; .byte $58\t; CHR bank number
+    ; .byte $00\t; Sprite attributes OR mask (e.g. force flip / priority / palette)
+    ; So we have 5 columns x 9 rows composing our meta-sprite
+    ; $FF = no sprite to display on that position,\n\t; Otherwise it's a sprite index ($00-$7F or $80-$FE)
+    ; .byte $FF, $FF, $01, $02, $FF\t; This is the top of the head
+    ; .byte $05, $06, $07, $08, $FF
+    ; .byte $0F, $10, $11, $12, $FF
+    ; .byte $FF, $1C, $1D, $1E, $FF
+    ; .byte $FF, $2A, $2B, $2C, $FF
+    ; .byte $FF, $37, $38, $39, $FF
+    ; .byte $FF, $47, $48, $49, $FF
+    ; .byte $FF, $57, $FF, $58, $FF
+    ; .byte $FF, $65, $FF, $66, $67\t; These are the feet\n'''
+    out_text += '\n; -----------------------------------------------------------------------------\n'
+
+    for frame in range(highest_frame_id + 1):
+        f = animation_data[fighter].frames[frame]
+        out_text += f'\nframe_{frame:02X}:\n'
+        out_text += f'\t.byte ${f.width:02X}, ${f.height:02X}, ${f.offset:02X}, ${f.bank:02X}, ${f.attribute:02X}'
+        for s in range(len(f.sprites)):
+            if s % f.width == 0:
+                out_text += f'\n\t.byte ${f.sprites[s]:02X}'
+            else:
+                out_text += f', ${f.sprites[s]:02X}'
+
+    out_text += '\n\n; -----------------------------------------------------------------------------\n'
+
+    try:
+        with open(file_name, "w") as asm_file:
+            asm_file.write(out_text)
+    except IOError as err:
+        error(f"Error saving '{file_name}':\n{err}")
+        return
+
+    info(f"{FIGHTERS[fighter]}'s animation data saved to '{file_name}'.", True)
+
+    # Save palette attribute data
+
+    # Create a list of all the CHR banks used by this fighter
+    _chr_banks = []
+    for f in animation_data[fighter].frames:
+        if f.bank not in _chr_banks:
+            _chr_banks.append(f.bank)
+
+    # Re-read the file, because we only want to overwrite the portion used by this fighter
+    old_bits = read_attribute_bits()
+    new_bits = []
+
+    for bank in range(0, 0xD8, 2):
+        if bank in _chr_banks:
+            # Bank used by this fighter: save one set of data bits
+            new_bits.append(attribute_bits[bank])
+            new_bits.append(attribute_bits[bank + 1])
+        else:
+            # Otherwise, copy from the old values
+            new_bits.append(old_bits[bank])
+            new_bits.append(old_bits[bank + 1])
+
+    # Save to asm file
+    out_text = ""
+    for bank in range(0, 0xD8, 2):
+        # Skip banks 1C-37
+        if bank < 0x1C or bank > 0x37:
+            out_text += f"\t@attr_bits_{bank:02X}:\n"
+            out_text += "\t.byte $" + new_bits[bank].hex("$").replace("$", ", $").upper() + "\n"
+            out_text += "\t.byte $" + new_bits[bank + 1].hex("$").replace("$", ", $").upper() + "\n"
+
+    try:
+        with open(master_dir + "/attr_bits.asm", "w") as _fd:
+            _fd.write(out_text)
+    except IOError as err:
+        error(f"Error saving attribute bits: {err}")
+    else:
+        info("Attribute bits saved.")
+
+    unsaved_changes = False
+
+
+def command_tile_palette_swap(*_args):
+    _bit = var_attribute.get()
+    var_attribute.set(0 if _bit == 1 else 1)
+    on_tile_palette_click()
+
+# ----------------------------------------------------------------------------------------------------------------------
 
 
 def bring_to_front(*_args):
@@ -1140,8 +1871,9 @@ def bring_to_front(*_args):
 
 
 def init_root_window():
+    global edit_menu
     global frame_left
-    global frame_right
+    global frame_middle
     global main_canvas
     global palette_canvas
     global option_fighters
@@ -1156,16 +1888,22 @@ def init_root_window():
     global text_attribute
     global text_total
 
+    var_view_chr_win.set(True)
+    var_view_log_win.set(True)
+    var_view_grid.set(True)
+    var_view_grid.trace("w", show_hide_grid)
+
     # noinspection SpellCheckingInspection
     _font = ("Fixedsys", 16)
 
-    w = config.get("Settings", "MainW", fallback=640)
-    h = config.get("Settings", "MainH", fallback=480)
+    w = config.get("Settings", "MainW", fallback=662)
+    h = config.get("Settings", "MainH", fallback=380)
     x = config.get("Settings", "MainX", fallback=50)
     y = config.get("Settings", "MainY", fallback=50)
 
     root.title("MK1 Animation Editor")
     root.geometry(f"{w}x{h}+{x}+{y}")
+    root.wm_iconphoto(False, IMG_APP_ICON)
 
     menu_bar = tk.Menu(root)
 
@@ -1173,14 +1911,34 @@ def init_root_window():
     file_menu.add_command(label="Open folder", command=change_dir)
     file_menu.add_command(label="Open custom CHR", command=load_custom_chr)
     file_menu.add_separator()
-    file_menu.add_command(label="Save current fighter", command=command_save_fighter)
+    file_menu.add_command(label="Save current fighter", accelerator="Ctrl+S", underline=0, command=command_save_fighter)
+    root.bind_all("<Control-s>", lambda e: command_save_fighter(False))
     file_menu.add_command(label="Save everything", command=command_save_all)
     file_menu.add_separator()
     file_menu.add_command(label="Exit", command=command_exit)
-
-    # TODO Add a "view" menu with option to show/hide the CHR tiles and log window
-
     menu_bar.add_cascade(label="File", menu=file_menu)
+
+    edit_menu = tk.Menu(menu_bar, tearoff=0)
+    edit_menu.add_command(label="Undo", state=tk.DISABLED, accelerator="Ctrl+Z", command=command_undo)
+    edit_menu.add_command(label="Redo", state=tk.DISABLED, accelerator="Ctrl+Y", command=command_redo)
+    root.bind_all("<Control-z>", command_undo)
+    root.bind_all("<Control-y>", command_redo)
+    edit_menu.add_separator()
+    edit_menu.add_command(label="Swap Tile Palettes", accelerator="Ctrl+P", command=command_tile_palette_swap)
+    root.bind_all("<Control-p>", command_tile_palette_swap)
+    menu_bar.add_cascade(label="Edit", menu=edit_menu)
+
+    view_menu = tk.Menu(menu_bar, tearoff=0)
+    view_menu.add_checkbutton(label="Log Window", variable=var_view_log_win)
+    view_menu.add_checkbutton(label="CHR Bank", variable=var_view_chr_win)
+    view_menu.add_checkbutton(label="Frame Grid", variable=var_view_grid, accelerator="Ctrl+G")
+    root.bind_all("<Control-g>", on_view_grid)
+    menu_bar.add_cascade(label="View", menu=view_menu)
+
+    help_menu = tk.Menu(menu_bar, tearoff=0)
+    help_menu.add_command(label="Help", command=on_help)
+    help_menu.add_command(label="About...", command=on_about)
+    menu_bar.add_cascade(label="Help", menu=help_menu)
 
     root.config(menu=menu_bar)
 
@@ -1201,6 +1959,7 @@ def init_root_window():
 
     main_canvas = tk.Canvas(frame_left, width=256, height=256, bg="#E0E0E0", cursor="hand2")
     main_canvas.grid(row=2, column=0)
+    main_canvas.bind("<Button-1>", on_main_canvas_left_click)
     main_canvas.bind("<Button-2>", on_main_canvas_right_click)
     main_canvas.bind("<Button-3>", on_main_canvas_right_click)
 
@@ -1213,69 +1972,126 @@ def init_root_window():
     palette_canvas = tk.Canvas(frame_left, width=256, height=32, bg="#808080", cursor="hand2")
     palette_canvas.grid(row=3, column=0)
 
-    # ---- Right side ----
+    # ---- Middle frame ----
 
-    frame_right = tk.Frame(root, border=0)
-    frame_right.grid(row=0, column=1)
+    frame_middle = tk.Frame(root, border=0)
+    frame_middle.grid(row=0, column=1)
 
-    _label = tk.Label(frame_right, text="Animation data:", anchor="n", justify="center", font=_font, pady=24)
+    _label = tk.Label(frame_middle, text="Animation data:", anchor="n", justify="center", font=_font, pady=24)
     _label.grid(row=0, column=0, columnspan=2)
 
-    _label = tk.Label(frame_right, text="Frame count: ", font=_font)
+    _label = tk.Label(frame_middle, text="Frame count: ", font=_font)
     _label.grid(row=1, column=0)
-    text_frame_count = tk.Text(frame_right, width=4, height=1, font=_font, state=tk.DISABLED)
+    text_frame_count = tk.Text(frame_middle, width=4, height=1, font=_font, state=tk.DISABLED)
     text_frame_count.grid(row=1, column=1)
 
-    _label = tk.Label(frame_right, text="Current frame: ", font=_font)
+    _label = tk.Label(frame_middle, text="Current frame: ", font=_font)
     _label.grid(row=2, column=0)
-    text_cur_frame = tk.Text(frame_right, width=4, height=1, font=_font, state=tk.DISABLED)
+    text_cur_frame = tk.Text(frame_middle, width=4, height=1, font=_font, state=tk.DISABLED)
     text_cur_frame.grid(row=2, column=1)
 
-    button_frame_prev = tk.Button(frame_right, text="Prev. Frame", font=_font, command=on_frame_prev)
+    button_frame_prev = tk.Button(frame_middle, text="Prev. Frame", font=_font, command=on_frame_prev)
     button_frame_prev.grid(row=3, column=0)
 
-    button_frame_next = tk.Button(frame_right, text="Next  Frame", font=_font, command=on_frame_next)
+    button_frame_next = tk.Button(frame_middle, text="Next  Frame", font=_font, command=on_frame_next)
     button_frame_next.grid(row=3, column=1)
 
-    _label = tk.Label(frame_right, text="ID: ", font=_font)
+    _label = tk.Label(frame_middle, text="ID: ", font=_font)
     _label.grid(row=4, column=0)
-    text_frame_id = tk.Text(frame_right, width=4, height=1, font=_font)
+    text_frame_id = tk.Text(frame_middle, width=4, height=1, font=_font, state=tk.DISABLED)
     text_frame_id.grid(row=4, column=1)
 
     # Current frame data
 
-    _label = tk.Label(frame_right, text="Frame data:", anchor="n", justify="center", font=_font, pady=24)
+    _label = tk.Label(frame_middle, text="Frame data:", anchor="n", justify="center", font=_font, pady=24)
     _label.grid(row=5, column=0, columnspan=2)
 
-    _label = tk.Label(frame_right, text="Width (tiles): ", font=_font)
+    _label = tk.Label(frame_middle, text="Width (tiles): ", font=_font)
     _label.grid(row=6, column=0)
-    text_width = tk.Text(frame_right, width=4, height=1, font=_font)
+    text_width = tk.Text(frame_middle, width=4, height=1, font=_font)
     text_width.grid(row=6, column=1)
 
-    _label = tk.Label(frame_right, text="Height (tiles): ", font=_font)
+    _label = tk.Label(frame_middle, text="Height (tiles): ", font=_font)
     _label.grid(row=7, column=0)
-    text_height = tk.Text(frame_right, width=4, height=1, font=_font)
+    text_height = tk.Text(frame_middle, width=4, height=1, font=_font)
     text_height.grid(row=7, column=1)
 
-    _label = tk.Label(frame_right, text="Offset: ", font=_font)
+    _label = tk.Label(frame_middle, text="Offset: ", font=_font)
     _label.grid(row=8, column=0)
-    text_offset = tk.Text(frame_right, width=4, height=1, font=_font)
+    text_offset = tk.Text(frame_middle, width=4, height=1, font=_font)
     text_offset.grid(row=8, column=1)
 
-    _label = tk.Label(frame_right, text="CHR Bank: ", font=_font)
+    _label = tk.Label(frame_middle, text="CHR Bank: ", font=_font)
     _label.grid(row=9, column=0)
-    text_bank = tk.Text(frame_right, width=4, height=1, font=_font)
+    text_bank = tk.Text(frame_middle, width=4, height=1, font=_font, state=tk.DISABLED)
+    text_bank.bind("<Button-1>", on_chr_bank_click)
     text_bank.grid(row=9, column=1)
 
-    _label = tk.Label(frame_right, text="Attribute: ", font=_font)
+    _label = tk.Label(frame_middle, text="Attribute: ", font=_font)
     _label.grid(row=10, column=0)
-    text_attribute = tk.Text(frame_right, width=4, height=1, font=_font)
+    text_attribute = tk.Text(frame_middle, width=4, height=1, font=_font)
     text_attribute.grid(row=10, column=1)
 
-    _label = tk.Label(frame_right, text="Sprite count: ", font=_font)
+    _label = tk.Label(frame_middle, text="Sprite count: ", font=_font)
     _label.grid(row=11, column=0)
-    text_total = tk.Text(frame_right, width=4, height=1, font=_font, state=tk.DISABLED)
+    text_total = tk.Text(frame_middle, width=4, height=1, font=_font, state=tk.DISABLED)
     text_total.grid(row=11, column=1)
+
+    # ---- Right Frame ----
+
+    frame_right = tk.Frame(root, border=0)
+    frame_right.grid(row=0, column=2, padx=(24, 0), pady=(8, 0))
+
+    # Move controls
+
+    button_move_up = tk.Button(frame_right, image=IMG_UP, font=_font)
+    button_move_up.grid(row=0, column=1)
+
+    button_move_left = tk.Button(frame_right, image=IMG_LEFT, font=_font)
+    button_move_left.grid(row=1, column=0)
+
+    _label = tk.Label(frame_right, text=" MOVE ", font=_font)
+    _label.grid(row=1, column=1, padx=4, pady=4)
+
+    button_move_right = tk.Button(frame_right, image=IMG_RIGHT, font=_font)
+    button_move_right.grid(row=1, column=2)
+
+    button_move_down = tk.Button(frame_right, image=IMG_DOWN, font=_font)
+    button_move_down.grid(row=2, column=1)
+
+    # Expand controls
+
+    button_exp_up = tk.Button(frame_right, image=IMG_UP, font=_font, command=on_expand_up)
+    button_exp_up.grid(row=3, column=1, pady=(16, 0))
+
+    button_exp_left = tk.Button(frame_right, image=IMG_LEFT, font=_font, command=on_expand_left)
+    button_exp_left.grid(row=4, column=0)
+
+    _label = tk.Label(frame_right, text="EXPAND", font=_font)
+    _label.grid(row=4, column=1, padx=4, pady=4)
+
+    button_exp_right = tk.Button(frame_right, image=IMG_RIGHT, font=_font, command=on_expand_right)
+    button_exp_right.grid(row=4, column=2)
+
+    button_exp_down = tk.Button(frame_right, image=IMG_DOWN, font=_font, command=on_expand_down)
+    button_exp_down.grid(row=5, column=1)
+
+    # Shrink controls
+
+    button_shrink_down = tk.Button(frame_right, image=IMG_DOWN, font=_font, command=on_shrink_down)
+    button_shrink_down.grid(row=6, column=1, pady=(16, 0))
+
+    button_shrink_right = tk.Button(frame_right, image=IMG_RIGHT, font=_font, command=on_shrink_right)
+    button_shrink_right.grid(row=7, column=0)
+
+    _label = tk.Label(frame_right, text="SHRINK", font=_font)
+    _label.grid(row=7, column=1)
+
+    button_shrink_left = tk.Button(frame_right, image=IMG_LEFT, font=_font, command=on_shrink_left)
+    button_shrink_left.grid(row=7, column=2)
+
+    button_shrink_up = tk.Button(frame_right, image=IMG_UP, font=_font, command=on_shrink_up)
+    button_shrink_up.grid(row=8, column=1)
 
     root.bind("<FocusIn>", bring_to_front)
 
@@ -1284,10 +2100,12 @@ def init_log_window():
     global log_win
     global log_text
 
-    # TODO Get geometry from INI file
+    # Get geometry from INI file
+    x = config.get("Settings", "LogX", fallback=100)
+    y = config.get("Settings", "LogY", fallback=100)
 
     log_win.title("Log")
-    log_win.geometry("512x360+100+100")
+    log_win.geometry(f"512x360+{x}+{y}")
     log_win.config(bg="black")
     log_win.resizable(False, False)
 
@@ -1304,12 +2122,15 @@ def init_tiles_window():
     global tiles_canvas
     global label_cur_tile
 
-    # TODO Get geometry (at least position) from INI file
+    # Get geometry (at least position) from INI file for the tile picker too
+    x = config.get("Settings", "ChrX", fallback=660)
+    y = config.get("Settings", "ChrY", fallback=160)
 
     tiles_win.title("CHR ROM")
-    tiles_win.geometry("256x160+660+160")
+    tiles_win.geometry(f"256x160+{x}+{y}")
     tiles_win.config(bg="white")
     tiles_win.resizable(False, False)
+    tiles_win.wm_iconphoto(False, IMG_CHR_ICON)
 
     tiles_canvas = tk.Canvas(tiles_win, bg="#A0A0F0", borderwidth=0, width=256, height=128, cursor="hand2")
     tiles_canvas.pack()
@@ -1330,10 +2151,10 @@ def init_tiles_window():
     _label.pack(expand=True, fill=tk.X, side=tk.LEFT)
 
     _radio = tk.Radiobutton(frame_info, text="L", font=_font, bg="white", value=0, relief=tk.GROOVE, indicatoron=False,
-                            state=tk.DISABLED, variable=var_attribute)
+                            variable=var_attribute, command=on_tile_palette_click)
     _radio.pack(expand=True, fill=tk.X, side=tk.LEFT)
     _radio = tk.Radiobutton(frame_info, text="R", font=_font, bg="white", value=1, relief=tk.GROOVE, indicatoron=False,
-                            state=tk.DISABLED, variable=var_attribute)
+                            variable=var_attribute, command=on_tile_palette_click)
     _radio.pack(expand=True, fill=tk.X, side=tk.LEFT)
 
     tiles_win.bind("<FocusIn>", bring_to_front)

@@ -5,10 +5,10 @@ out/**
 **/*.nes
 **/.idea/**
 **/.vscode/**
+**/__pycache__/**
 **/*.bak
 *debug.txt
 _listing.txt
-tools/build.bat
 tools/dist/**
 tools/build/**
 tools/*.spec

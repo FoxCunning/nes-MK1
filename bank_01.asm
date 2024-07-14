@@ -741,17 +741,26 @@ sub_calc_ranged_atk_distance:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_C572:
+; X = index of fighter being attacked
+; Y = index of attacking fighter
+; (0 = player 1, 1 = player 2)
+; Returns:
+; Carry set if both fighters were doing a ranged attack or special 1, and their
+; hits are connecting.
+; Carry clear otherwise.
+sub_check_double_special:
 	lda zp_plr1_cur_anim,X
 	cmp #$1E	; Ranged attack (opponent)
 	bne @C581_special_1_check
 
-	lda zp_plr1_cur_anim,Y
-	cmp #$1E	; Ranged attack (attacker)
-	beq @C58C_check_frame
+		; Target was in the middle of a ranged attack
 
-	bne @C5A2_no_hit
+		lda zp_plr1_cur_anim,Y
+		cmp #$1E	; Ranged attack (attacker)
+		beq @C58C_check_frame	; Branch if both were doing a ranged attack
+		bne @C5A2_no_hit
 
+	; Target was not doing a ranged attack, check for special 1 instead
 	@C581_special_1_check:
 	cmp #$0D	; Special 1 (opponent)
 	bne @C5A2_no_hit
@@ -762,7 +771,7 @@ sub_rom_C572:
 
 	@C58C_check_frame:
 	lda zp_plr1_anim_frame,X
-	cmp #$05
+	cmp #$05	; Hit only registers after 5 frames
 	bcc @C5A2_no_hit
 
 	lda ram_ranged_atk_x_pos,X
@@ -801,7 +810,7 @@ sub_ranged_attack:
 	tya
 	eor #$01	; Sets X = !Y (This might be unnecessary, because it was already
 	tax			; 				done before the call)
-	jsr sub_rom_C572
+	jsr sub_check_double_special
 	bcc :+
 		jmp @player_hit_anim
 	:
@@ -1740,7 +1749,7 @@ sub_inner_match_input:
 		jsr sub_crouching_input
 		jsr sub_jump_button_input
 		jsr sub_parry_button_input
-		jsr sub_check_apply_stunned
+		; jsr sub_check_apply_stunned
 
 	@CA94:
 	ldy zp_plr_idx_param
@@ -1783,53 +1792,49 @@ sub_rom_CAA3:
 ; -----------------------------------------------------------------------------
 
 ; Starts the "stunned" animation if needed (e.g. 3 consecutive hits)
-sub_check_apply_stunned:
-	ldy zp_plr_idx_param
-	lda zp_consecutive_hits_taken,Y
-	cmp #$03
-	bcc @CAE4
+;sub_check_apply_stunned:
+;	ldy zp_plr_idx_param
+;	lda zp_consecutive_hits_taken,Y
+;	cmp #$03
+;	bcc @CAE4
 
-	lda zp_plr1_cur_anim,Y
-	cmp #$27
-	bne @CAE4
+;	lda zp_plr1_cur_anim,Y
+;	cmp #$27
+;	bne @CAE4
 
-	lda zp_plr1_anim_frame,Y
-	cmp #$01
-	bne @CAE4
+;	lda zp_plr1_anim_frame,Y
+;	cmp #$01
+;	bne @CAE4
 
 		; Staggered if getting up after enough hits taken
 
-		lda #$28	; Staggered animation
-		sta zp_plr1_cur_anim,Y
+;		lda #$28	; Staggered animation
+;		sta zp_plr1_cur_anim,Y
 
-		lda #$00
-		sta zp_consecutive_hits_taken,Y
-		sta zp_plr1_anim_frame,Y
+;		lda #$00
+;		sta zp_consecutive_hits_taken,Y
+;		sta zp_plr1_anim_frame,Y
 
-	@CAE4:
-	lda zp_E9,Y
-	cmp #$70
-	bcc @CB00
+;	@CAE4:
+;	lda zp_E9,Y
+;	cmp #$70
+;	bcc @CB00
 
-		lda #$00
-		sta zp_E9,Y
-		lda zp_consecutive_hits_taken,Y
-		cmp zp_E7,Y
-		bne @CAFD
+;		lda #$00
+;		sta zp_E9,Y
+;		lda zp_consecutive_hits_taken,Y
+;		cmp zp_E7,Y
+;		bne @CAFD
 
-			lda #$00
-			sta zp_consecutive_hits_taken,Y
+;			lda #$00
+;			sta zp_consecutive_hits_taken,Y
 
-		@CAFD:
-		sta zp_E7,Y
+;		@CAFD:
+;		sta zp_E7,Y
 
-	@CB00:
-	;lda zp_E9,Y
-	;clc
-	;adc #$01
-	;sta zp_E9,Y
-	isc a:zp_E9,Y
-	rts
+;	@CB00:
+;	isc a:zp_E9,Y
+;	rts
 
 ; -----------------------------------------------------------------------------
 
@@ -3408,7 +3413,7 @@ sub_move_fighter_sprites:
 	stx zp_plr_idx_param
 ; ----------------
 sub_inner_move_sprites:
-	jsr sub_shangtsung_palettes
+	jsr sub_shangtsung_morph
 
 	ldy zp_plr_idx_param
 	ldx zp_plr1_fgtr_idx_clean,Y
@@ -4100,8 +4105,8 @@ sub_scorpion_spear_pull:
 
 ; -----------------------------------------------------------------------------
 
-; Change palettes if Shang-Tsung has morphed into a different fighter
-sub_shangtsung_palettes:
+; Allows Shang-Tsung to morph into a different fighter
+sub_shangtsung_morph:
 	ldx zp_plr_idx_param
 	
 	lda zp_frozen_timer,X
@@ -4114,7 +4119,7 @@ sub_shangtsung_palettes:
 	beq @D8FE
 
 	cmp #$14	; Shang-Tsung (alt palette)
-	bne @D92B_rts
+	bne @D92B_rts	; Return if not Shang-Tsung
 
 		@D8FE:
 		lda zp_plr1_anim_frame,X
@@ -4131,7 +4136,7 @@ sub_shangtsung_palettes:
 		cmp #$08
 		bne @D923
 
-		jsr sub_rom_D96D
+		jsr sub_rnd_y_0_7
 		cpy #$08
 		bne @D933
 
@@ -4142,6 +4147,7 @@ sub_shangtsung_palettes:
 		lda #$08
 		sta zp_plr1_fgtr_idx_clean,X
 		bne sub_load_fighters_palettes
+
 		@D923:
 		lda zp_48,X
 		cmp #$30
@@ -4155,7 +4161,7 @@ sub_shangtsung_palettes:
 	lda zp_plr1_cur_anim,X
 	bne @D92B_rts
 
-	jsr sub_rom_D96D
+	jsr sub_rnd_y_0_7
 	@D933:
 	sty zp_plr1_fgtr_idx_clean,X
 ; ----------------
@@ -4214,14 +4220,17 @@ sub_load_fighters_palettes:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_D96D:
+; Returns a random number between 0 and 6, or 8 in Y
+; The resulting number will be the indedx of the fighter Shang Tsung will
+; morph into (7 would be Goro, 8 is Shang Tsung)
+sub_rnd_y_0_7:
 	lda zp_random
 	and #$07
+	tay
+	cpy #$07
 	bne :+
 		iny
 	:
-	tay
-	iny
 	rts
 
 ; -----------------------------------------------------------------------------
