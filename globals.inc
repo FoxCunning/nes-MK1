@@ -180,9 +180,15 @@ zp_match_time = $9F ;
 
 zp_16bit_lo = $A0     ;
 zp_16bit_hi = $A1     ;
+
 zp_A2 = $A2     ;
-zp_plr1_fgtr_idx_clean = $A3    ; Fighter index without flags
-zp_plr2_fgtr_idx_clean = $A4    ; Fighter index without flags
+
+; Fighter index without flags (player 1)
+; For Shang Tsung this is the index of the fighter he has currently morphed into
+zp_plr1_fgtr_idx_clean = $A3    ;
+; Fighter index without flags (player 2)
+; For Shang Tsung this is the index of the fighter he has currently morphed into
+zp_plr2_fgtr_idx_clean = $A4    ;
 
 ; This basically represents missing health / hits taken
 zp_plr1_damage = $A5    ;

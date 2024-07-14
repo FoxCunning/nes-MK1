@@ -1041,6 +1041,7 @@ sub_inner_cpu_ai:
 
 ; -----------------------------------------------------------------------------
 
+; Y = moving fighter's index (0 or 1)
 sub_cpu_move_norng:
 	ldx zp_plr_ofs_param
 	lda zp_5E
@@ -1081,6 +1082,7 @@ sub_cpu_move_norng:
 ; -----------------------------------------------------------------------------
 
 ; Short distance (0 to 19 pixels) move
+; Y = moving fighter's index (0-1)
 sub_cpu_move_0:
 	lda zp_plr1_fgtr_idx_clean,Y
 	asl A
@@ -1090,7 +1092,14 @@ sub_cpu_move_0:
 	lda tbl_short_range_ptrs+1,X
 	sta zp_ptr3_hi
 
-	jsr sub_cpu_move_norng
+	; Force random move if opponent is frozen
+	tya
+	eor #$01
+	tax
+	lda zp_frozen_timer,X
+	bne :+
+		jsr sub_cpu_move_norng
+	:
 	jsr sub_cpu_opponent_delay
 	jsr sub_RNG
 
@@ -1111,6 +1120,7 @@ sub_cpu_move_0:
 ; -----------------------------------------------------------------------------
 
 ; Medium range (20 to 39 pixels) move
+; Y = moving fighter's index (0-1)
 sub_cpu_move_1:
 	lda zp_plr1_fgtr_idx_clean,Y
 	asl A
@@ -1120,7 +1130,14 @@ sub_cpu_move_1:
 	lda tbl_med_range_ptrs+1,X
 	sta zp_ptr3_hi
 
-	jsr sub_cpu_move_norng
+	; Force random move if opponent is frozen
+	tya
+	eor #$01
+	tax
+	lda zp_frozen_timer,X
+	bne :+
+		jsr sub_cpu_move_norng
+	:
 	jsr sub_cpu_opponent_delay
 	jsr sub_RNG
 
@@ -1141,6 +1158,7 @@ sub_cpu_move_1:
 ; -----------------------------------------------------------------------------
 
 ; Long range (40 to 127 pixels) move
+; Y = moving fighter's index (0-1)
 sub_cpu_move_2:
 	lda zp_plr1_fgtr_idx_clean,Y
 	asl A
@@ -1149,7 +1167,15 @@ sub_cpu_move_2:
 	sta zp_ptr3_lo
 	lda tbl_long_range_ptrs+1,X
 	sta zp_ptr3_hi
-	jsr sub_cpu_move_norng
+
+	; Force random move if opponent is frozen
+	tya
+	eor #$01
+	tax
+	lda zp_frozen_timer,X
+	bne :+
+		jsr sub_cpu_move_norng
+	:
 	jsr sub_cpu_opponent_delay
 
 	jsr sub_RNG
@@ -1200,6 +1226,19 @@ sub_set_cpu_anim:
 	cmp #$03	; Forward walk?
 	beq @A7AB_compare_anim_idx
 
+	cmp #$17	; Special #2 (gap-closer)
+	bne @check_throw
+
+		; Only for Scorpion: invert facing
+		lda zp_plr1_fgtr_idx_clean,Y
+		cmp #$03
+		bne @A7B0_reset_anim_frame
+			lda zp_plr1_facing_dir,Y
+			eor #$01
+			sta zp_plr1_facing_dir,Y
+			jmp @A7B0_reset_anim_frame
+
+	@check_throw:
 	cmp #$18	; Throw move?
 	bne @A7B0_reset_anim_frame
 
@@ -1296,13 +1335,13 @@ tbl_long_range_ptrs:
 ; will be used when the opponent is idle
 ; $80 = random move
 tbl_short_range_moves:
-	.byte $80, $13, $18, $18, $14, $14, $0C, $17
-	.byte $1E, $1A, $1C, $05, $05, $05, $13, $13
-	.byte $05, $0C, $0C, $02, $02, $08, $08, $13
-	.byte $80, $17, $17, $17, $17, $08, $01, $0C
-	.byte $0C, $0C, $0C, $08, $08, $05, $04, $14
-	.byte $17, $80, $80, $1C, $0E, $08, $0E, $08
-	.byte $0F, $08, $08, $08, $1E
+	.byte $80, $13, $18, $18, $14, $14, $0C, $17	; $00-$07
+	.byte $1E, $1A, $1C, $05, $05, $05, $13, $13	; $08-$0F
+	.byte $05, $0C, $0C, $02, $02, $08, $08, $13	; $10-$17
+	.byte $80, $17, $17, $17, $17, $08, $01, $0C	; $18-$1F
+	.byte $0C, $0C, $0C, $08, $08, $05, $04, $14	; $20-$27
+	.byte $13, $80, $80, $1C, $0E, $08, $0E, $08	; $28-$2F
+	.byte $0F, $08, $08, $08, $1E					; $30-$34
 
 ; -----------------------------------------------------------------------------
 
@@ -1312,7 +1351,7 @@ tbl_med_range_moves:
 	.byte $05, $0C, $0C, $02, $02, $17, $17, $05
 	.byte $08, $17, $17, $17, $17, $80, $1C, $0C
 	.byte $0C, $0C, $0C, $80, $80, $05, $04, $14
-	.byte $1E, $80, $80, $1C, $1A, $08, $19, $08
+	.byte $13, $80, $80, $1C, $1A, $08, $19, $08
 	.byte $08, $08, $08, $08, $1E
 
 ; -----------------------------------------------------------------------------
@@ -1323,7 +1362,7 @@ tbl_long_range_moves:
 	.byte $80, $80, $80, $80, $1E, $17, $17, $1E
 	.byte $80, $17, $17, $17, $17, $03, $07, $0C
 	.byte $0C, $0C, $0C, $03, $03, $80, $04, $03
-	.byte $1E, $80, $80, $1C, $1A, $08, $19, $04
+	.byte $07, $80, $80, $1C, $1A, $08, $19, $04
 	.byte $04, $04, $04, $04, $03
 	; Unused?
 	.byte $80, $80, $80, $80, $80, $80, $80, $80

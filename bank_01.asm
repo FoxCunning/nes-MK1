@@ -3413,7 +3413,7 @@ sub_move_fighter_sprites:
 	stx zp_plr_idx_param
 ; ----------------
 sub_inner_move_sprites:
-	jsr sub_shangtsung_palettes
+	jsr sub_shangtsung_morph
 
 	ldy zp_plr_idx_param
 	ldx zp_plr1_fgtr_idx_clean,Y
@@ -4105,8 +4105,8 @@ sub_scorpion_spear_pull:
 
 ; -----------------------------------------------------------------------------
 
-; Change palettes if Shang-Tsung has morphed into a different fighter
-sub_shangtsung_palettes:
+; Allows Shang-Tsung to morph into a different fighter
+sub_shangtsung_morph:
 	ldx zp_plr_idx_param
 	
 	lda zp_frozen_timer,X
@@ -4119,7 +4119,7 @@ sub_shangtsung_palettes:
 	beq @D8FE
 
 	cmp #$14	; Shang-Tsung (alt palette)
-	bne @D92B_rts
+	bne @D92B_rts	; Return if not Shang-Tsung
 
 		@D8FE:
 		lda zp_plr1_anim_frame,X
@@ -4136,7 +4136,7 @@ sub_shangtsung_palettes:
 		cmp #$08
 		bne @D923
 
-		jsr sub_rom_D96D
+		jsr sub_rnd_y_0_7
 		cpy #$08
 		bne @D933
 
@@ -4147,6 +4147,7 @@ sub_shangtsung_palettes:
 		lda #$08
 		sta zp_plr1_fgtr_idx_clean,X
 		bne sub_load_fighters_palettes
+
 		@D923:
 		lda zp_48,X
 		cmp #$30
@@ -4160,7 +4161,7 @@ sub_shangtsung_palettes:
 	lda zp_plr1_cur_anim,X
 	bne @D92B_rts
 
-	jsr sub_rom_D96D
+	jsr sub_rnd_y_0_7
 	@D933:
 	sty zp_plr1_fgtr_idx_clean,X
 ; ----------------
@@ -4219,14 +4220,17 @@ sub_load_fighters_palettes:
 
 ; -----------------------------------------------------------------------------
 
-sub_rom_D96D:
+; Returns a random number between 0 and 6, or 8 in Y
+; The resulting number will be the indedx of the fighter Shang Tsung will
+; morph into (7 would be Goro, 8 is Shang Tsung)
+sub_rnd_y_0_7:
 	lda zp_random
 	and #$07
+	tay
+	cpy #$07
 	bne :+
 		iny
 	:
-	tay
-	iny
 	rts
 
 ; -----------------------------------------------------------------------------
