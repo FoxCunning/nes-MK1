@@ -142,17 +142,19 @@ zp_7F = $7F     ;
 
 zp_irq_ver_scroll = $80 ; Used in the main menu
 
-; Horizontal scroll value used in IRQ routines
-zp_irq_hor_scroll = $81 ;
+zp_irq_hor_scroll = $81 ; Horizontal scroll value used in IRQ routines
+
 zp_plr1_x_lo = $82 ;
 zp_plr1_x_hi = $83  ; How much the player has moved from the starting position
 zp_plr2_x_lo = $84     ;
 zp_plr2_x_hi = $85  ; How much the player has moved from the starting position
+
 ; Hitbox coordinates
 zp_plr1_x_pos = $86 ;
 zp_plr2_x_pos = $87 ;
 zp_plr1_y_pos = $88 ;
 zp_plr2_y_pos = $89 ;
+
 zp_plr1_facing_dir = $8A    ; 0 = right, 1 = left
 zp_plr2_facing_dir = $8B    ; 0 = right, 1 = left
 zp_last_anim_plr = $8C     ; Index of the last player (0 or 1) whose animation was changed

@@ -3962,7 +3962,7 @@ sub_scorpion_teleport:
 
 		; Teleport from left to right
 		lda zp_plr1_x_pos,Y
-		cmp #$24	; Must be at X = $23 or lower
+		cmp #$24	; Must be at X <= $23
 		bcs @scorpion_teleport_rts
 
 			;clc not needed, we know it's clear
@@ -3972,16 +3972,16 @@ sub_scorpion_teleport:
 	; Teleport from right to left
 	@teleport_left:
 	lda zp_plr1_x_pos,Y
-	cmp #$C9	; Must be at X = $C9 or higher
+	cmp #$C9	; Must be at X >= $C9
 	bcc @scorpion_teleport_rts
-
-		; Index must be double for two-byte indexing
-		tya
-		asl
-		tay
 
 		lda #$19
 		@do_teleport:
+		cpy #$00
+		beq :+
+			; Fix for two-byte indexing (only needed for player 2)
+			iny
+		:
 		adc zp_irq_hor_scroll
 		sta zp_plr1_x_lo,Y
 		lda #$00
