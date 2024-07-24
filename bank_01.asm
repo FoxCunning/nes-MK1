@@ -2570,29 +2570,29 @@ sub_read_fighter_palette:
 
 sub_adjust_facing:
 	lda zp_plr1_cur_anim
-	cmp #$06
-	bcc @D045_plr1
+	cmp #$06	; Jump up
+	bcc @adjust_plr1_facing	; Branch if $00 <= P1 anim <= $05
 
-	cmp #$26
-	bcc @D055_plr2
+	cmp #$26	; Fall / bounce
+	bcc @check_plr2_facing	; Branch if $06 <= P1 anim <= 25
 
-	cmp #$2D
-	beq @D055_plr2
+	cmp #$2D	; Knocked back
+	beq @check_plr2_facing
 
-	cmp #$2E
-	beq @D055_plr2
+	cmp #$2E	; Strong hit
+	beq @check_plr2_facing
 
-	cmp #$31
-	beq @D055_plr2
+	cmp #$31	; Thrown
+	beq @check_plr2_facing
 
 	; Can't be $18 here: we already skipped if it was < $26
 	;cmp #$18	; Player 1: Throw move
 	;beq @D055_plr2
 
-	@D045_plr1:
-	ldx #$00
+	@adjust_plr1_facing:
+	ldx #$00	; Face right by default
 	
-	; This basically only affects the Carry bit
+	; Plr2.X - Plr1.X, then check carry to see if Plr2 is on the other side
 	sec
 	lda zp_plr1_x_lo
 	sbc zp_plr2_x_lo
@@ -2600,14 +2600,15 @@ sub_adjust_facing:
 	lda zp_plr1_x_hi
 	sbc zp_plr2_x_hi
 	bmi :+
-		; Change facing if players is on the other side
+		; Change player 1's facing if player 2 is on the left side
 		inx
 	:
 	stx zp_plr1_facing_dir
-	@D055_plr2:
+
+	@check_plr2_facing:
 	lda zp_plr2_cur_anim
 	cmp #$06	; Upwards jump
-	bcc @D06B_facing_dir
+	bcc @adjust_plr2_facing
 
 	cmp #$26
 	bcc @D07B_rts
@@ -2626,7 +2627,7 @@ sub_adjust_facing:
 	;beq @D07B_rts
 	
 	; Change facing dir if needed
-	@D06B_facing_dir:
+	@adjust_plr2_facing:
 	ldx #$00
 	sec
 	lda zp_plr1_x_lo
@@ -3976,6 +3977,7 @@ sub_scorpion_teleport:
 
 		lda #$19
 		@do_teleport:
+		iny
 		adc zp_irq_hor_scroll
 		sta zp_plr1_x_lo,Y
 		lda #$00
