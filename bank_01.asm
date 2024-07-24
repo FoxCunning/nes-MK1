@@ -3975,9 +3975,13 @@ sub_scorpion_teleport:
 	cmp #$C9	; Must be at X = $C9 or higher
 	bcc @scorpion_teleport_rts
 
+		; Index must be double for two-byte indexing
+		tya
+		asl
+		tay
+
 		lda #$19
 		@do_teleport:
-		iny
 		adc zp_irq_hor_scroll
 		sta zp_plr1_x_lo,Y
 		lda #$00
