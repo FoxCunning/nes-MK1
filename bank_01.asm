@@ -3152,15 +3152,15 @@ tbl_fighter_palette_ptrs:
 	@pal_raiden_alt:
 	.byte $0E, $0F, $16, $20, $0E, $0F, $26, $20
 	@pal_sonya_alt:
-	.byte $0E, $08, $15, $20, $0E, $08, $15, $36
+	.byte $0E, $08, $2B, $20, $0E, $08, $2B, $36
 	@pal_subzero_alt:
-	.byte $0E, $0F, $1C, $0C, $00, $0F, $1C, $37
+	.byte $0E, $0F, $21, $12, $00, $0F, $21, $37
 	@pal_scorpion_alt:
 	.byte $0E, $0F, $38, $37, $0E, $0F, $38, $37
 	@pal_kano_alt:
 	.byte $0E, $0F, $27, $20, $0E, $07, $28, $30
 	@pal_cage_alt:
-	.byte $0E, $06, $26, $36, $0E, $08, $26, $36
+	.byte $0E, $0F, $26, $36, $0E, $0F, $26, $36
 	@pal_liukang_alt:
 	.byte $0E, $0F, $11, $30, $0E, $0F, $27, $37
 	@pal_goro_alt:
