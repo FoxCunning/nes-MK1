@@ -3126,7 +3126,7 @@ tbl_fighter_palette_ptrs:
 	.word @pal_raiden_alt ;.word @rom_D58E	; $17 Unused?
 	
 	@pal_raiden:
-	.byte $0E, $0F, $21, $20, $0E, $0F, $18, $28
+	.byte $0E, $0F, $21, $20, $0E, $0F, $27, $28
 	@pal_sonya:
 	.byte $0E, $08, $18, $20, $0E, $08, $18, $36
 	@pal_subzero:
@@ -3150,19 +3150,19 @@ tbl_fighter_palette_ptrs:
 	;@rom_D52E:
 	;.byte $0E, $07, $27, $37, $0E, $0E, $15, $25
 	@pal_raiden_alt:
-	.byte $0E, $08, $1C, $20, $0E, $08, $25, $20
+	.byte $0E, $0F, $16, $20, $0E, $0F, $26, $20
 	@pal_sonya_alt:
 	.byte $0E, $08, $15, $20, $0E, $08, $15, $36
 	@pal_subzero_alt:
 	.byte $0E, $0F, $1C, $0C, $00, $0F, $1C, $37
 	@pal_scorpion_alt:
-	.byte $0E, $0F, $26, $16, $0E, $0F, $26, $37
+	.byte $0E, $0F, $38, $37, $0E, $0F, $38, $37
 	@pal_kano_alt:
 	.byte $0E, $0F, $27, $20, $0E, $07, $28, $30
 	@pal_cage_alt:
 	.byte $0E, $06, $26, $36, $0E, $08, $26, $36
 	@pal_liukang_alt:
-	.byte $0E, $05, $16, $30, $0E, $05, $27, $37
+	.byte $0E, $0F, $11, $30, $0E, $0F, $27, $37
 	@pal_goro_alt:
 	.byte $0E, $07, $28, $30, $0E, $07, $28, $38
 	@pal_shangtsung_alt:
