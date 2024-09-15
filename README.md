@@ -33,7 +33,9 @@ You will find this in the `tools` folder.
 If you have Python installed, you can simply open and then run the `animed.pyw` source file.
 To create an executable, edit the `build.bat` script and modify it to use your UPX installation path.
 
-```::Replace with UPX installation path
-pyinstaller -F -w -s -i editor.ico --upx-dir F:\Programs\UPX\ animed.pyw```
+```
+::Replace with UPX installation path
+pyinstaller -F -w -s -i editor.ico --upx-dir F:\Programs\UPX\ animed.pyw
+```
 
 Then run the script. The executable will be created in the `dist` folder.
